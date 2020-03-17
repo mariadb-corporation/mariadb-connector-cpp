@@ -1,4 +1,5 @@
 MariaDB Connector/C++ 0.9 alpha
+-------------------------------
 
 This is a alpha release of the MariaDB Connector/C++.
 MariaDB Connector/C++ is released under version 2.1 of the
@@ -7,3 +8,42 @@ GNU Lesser Public License.
 License information can be found in the COPYING file.
 
 To report issues: https://jira.mariadb.org/projects/CONCPP/issues/
+
+Basic Use
+---------
+
+Connector implements JDBC API with minimal extensions and minimal
+reductions of methods, that do not make sense in C++
+
+To obtain driver instance:
+sql::Driver* driver= sql::mariadb::get_driver_instance();
+
+To connect
+std::unique_ptr<Connection> conn(driver->connect(url, properties));
+
+For URL syntax and options name you may refer to
+https://mariadb.com/kb/en/about-mariadb-connector-j/
+but not all options will have effect at the moment.
+Properties is map of strings, and is another way to pass optional parameters.
+
+In addition to Connector/J URL style and JDBC connect method, Connector/C++ supports
+following connect methods:
+
+std::unique_ptr<Connection> conn(driver->connect(host, username, pwd));
+
+and
+
+std::unique_ptr<Connection> conn(driver->connect(properties));
+
+Host in former case is  (tcp|unix|pipe)://<host>[:port][/<db>]
+Properties in the latter case are the same, as in the first variant of the connect
+method, plus additionally supported
+  - hostName,
+  - pipe,
+  - socket,
+  - schema
+
+For further use one may refer to JDBC specs.
+
+Otherwise than Driver object, normally
+this is application's responsibility to delete objects, returned from connector by pointer.

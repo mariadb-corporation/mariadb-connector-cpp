@@ -32,9 +32,11 @@ namespace sql
 {
 namespace mariadb
 {
+  static MariaDbDriver theInstance;
+
   MARIADB_EXPORTED Driver* get_driver_instance()
   {
-    return new MariaDbDriver();
+    return &theInstance;
   }
 
 
