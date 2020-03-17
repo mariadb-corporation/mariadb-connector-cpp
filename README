@@ -1,0 +1,9 @@
+MariaDB Connector/C++ 0.9 alpha
+
+This is a alpha release of the MariaDB Connector/C++.
+MariaDB Connector/C++ is released under version 2.1 of the
+GNU Lesser Public License.
+
+License information can be found in the COPYING file.
+
+To report issues: https://jira.mariadb.org/projects/CONCPP/issues/

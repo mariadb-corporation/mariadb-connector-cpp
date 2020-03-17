@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?include @CPP_SOURCE_WIX_DIR@/binaries_dir.xml ?>
+  <Product Id="*" Name="@PRODUCT_NAME@" Language="1033" 
+    Version="@PRODUCT_VERSION@" 
+    Manufacturer="@PRODUCT_MANUFACTURER@" UpgradeCode="b43bad5d-118f-4368-8977-e60fd4dd4317">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="@WIXPLATFORM@"/>
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of @PRODUCT_NAME@ is already installed." />
+    <MediaTemplate EmbedCab="yes"/>
+      <UIRef Id="WixUI_Mondo" />
+      <WixVariable Id="WixUILicenseRtf" Value="@CPP_SOURCE_WIX_DIR@/license.rtf" />
+      <WixVariable Id="WixUIBannerBmp" Value="@CPP_SOURCE_WIX_DIR@/mdb-connector-cpp.png" />
+      <WixVariable Id="WixUIDialogBmp" Value="@CPP_SOURCE_WIX_DIR@/mdb-dialog-popup.png" />
+      <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Make User DSN's for older Connnector versions to use this version" />
+
+    <Feature Id="ProductFeature" Title="@PRODUCT_NAME@ @PRODUCT_VERSION@" Level="1">
+      <ComponentRef Id="Driver" />
+      <ComponentRef Id="CcPlugins" />
+      <@TLS_LIB_BEGIN@ComponentRef Id="TlsLib" /@TLS_LIB_END@>
+    </Feature>
+    <Feature Id="DebugFeature" Title="Debug Information" Level="2">
+      <ComponentRef Id="Debug" />
+    </Feature>
+    <Feature Id="PluginsFeature" Title="Authentification Plugins" Level="2">
+      <ComponentRef Id="CcPlugins" />
+      <ComponentRef Id="PluginsDebug" />
+    </Feature>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="@FOLDER@">
+        <Directory Id="MariaDB" Name="@PRODUCT_MANUFACTURER@">
+          <Directory Id="INSTALLFOLDER" Name="@PRODUCT_NAME@">
+            <Directory Id="PLUGINSFOLDER" Name="$(var.plugins_subdir_name)">
+            </Directory>
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <!--<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">-->
+      <Component Id="Driver" Guid="@GUID_DRIVER@" SharedDllRefCount="yes" Directory="INSTALLFOLDER" Win64="@IS_WIN64@">
+        <File Id="mariadb_conncpp_dll" Name="mariadbcpp.dll" KeyPath="yes" DiskId="1" Source="$(var.binaries_dir)/mariadbcpp.dll">
+        </File>
+        <File Id="mariadb_conncpp_lib" Name="mariadbcpp.lib" DiskId="1" Source="$(var.binaries_dir)/mariadbcpp.lib" />
+      </Component>
+    <Component Id="Debug" Guid="@GUID_DEBUG@" Directory="INSTALLFOLDER" DiskId="1" Win64="@IS_WIN64@">
+      <File Id="mariadb_conncpp_dll_pdb" Name="mariadbcpp.pdb" KeyPath="yes" DiskId="1" Source="$(var.binaries_dir)/mariadbcpp.pdb" />
+      <CreateFolder />
+    </Component>
+    <Component Id="CcPlugins" Guid="@GUID_PLUGINS@" Directory="PLUGINSFOLDER" DiskId="1" Win64="@IS_WIN64@">
+      <File Id="caching_sha2_password.dll" Name="caching_sha2_password.dll" DiskId="1" Source="$(var.plugins_source_dir)/caching_sha2_password.dll" />
+      <File Id="dialog_dll" Name="dialog.dll" KeyPath="yes" DiskId="1" Source="$(var.plugins_source_dir)/dialog.dll" />
+      <File Id="auth_gssapi_client_dll" Name="auth_gssapi_client.dll" DiskId="1" Source="$(var.plugins_source_dir)/auth_gssapi_client.dll" />
+      <File Id="mysql_clear_password_dll" Name="mysql_clear_password.dll"  DiskId="1" Source="$(var.plugins_source_dir)/mysql_clear_password.dll" />
+      <File Id="sha256_password_dll" Name="sha256_password.dll" DiskId="1" Source="$(var.plugins_source_dir)/sha256_password.dll" />
+      <File Id="client_ed25519_dll" Name="client_ed25519.dll" DiskId="1" Source="$(var.plugins_source_dir)/client_ed25519.dll" />
+    </Component>
+    <Component Id="PluginsDebug" Guid="@GUID_PLUGINS_DEBUG@" Directory="PLUGINSFOLDER" DiskId="1" Win64="@IS_WIN64@">
+      <File Id="caching_sha2_password_pdb" Name="caching_sha2_password.pdb" DiskId="1" Source="$(var.plugins_source_dir)/caching_sha2_password.pdb" />
+      <File Id="dialog_pdb" Name="dialog.pdb" DiskId="1" Source="$(var.plugins_source_dir)/dialog.pdb" />
+      <File Id="auth_gssapi_client_pdb" Name="auth_gssapi_client.pdb" DiskId="1" Source="$(var.plugins_source_dir)/auth_gssapi_client.pdb" />
+      <File Id="mysql_clear_password_pdb" Name="mysql_clear_password.pdb" DiskId="1" Source="$(var.plugins_source_dir)/mysql_clear_password.pdb" />
+      <File Id="sha256_password_pdb" Name="sha256_password.pdb" DiskId="1" Source="$(var.plugins_source_dir)/sha256_password.pdb" />
+      <File Id="client_ed25519_pdb" Name="client_ed25519.pdb" DiskId="1" Source="$(var.plugins_source_dir)/client_ed25519.pdb" />
+      <CreateFolder />
+    </Component>
+    <@TLS_LIB_BEGIN@Component Id="TlsLib" Guid="@GUID_TLS_LIB@" Directory="INSTALLFOLDER" DiskId="1" Win64="@IS_WIN64@">
+      <File Id="TlsLibFile1" Name="libgnutls-30.dll"  DiskId="1"  Source="@LIB_GNUTLS_LOCATION@/libgnutls-30.dll" />
+      <File Id="TlsLibFile2" Name="libgcc_s_seh-1.dll"  DiskId="1"  Source="@LIB_GNUTLS_LOCATION@/libgcc_s_seh-1.dll" />
+      <File Id="TlsLibFile3" Name="libgmp-10.dll"  DiskId="1"  Source="@LIB_GNUTLS_LOCATION@/libgmp-10.dll" />
+      <File Id="TlsLibFile4" Name="libhogweed-4.dll"  DiskId="1"  Source="@LIB_GNUTLS_LOCATION@/libhogweed-4.dll" />
+      <File Id="TlsLibFile5" Name="libidn2-0.dll"  DiskId="1"  Source="@LIB_GNUTLS_LOCATION@/libidn2-0.dll" />
+      <File Id="TlsLibFile6" Name="libnettle-6.dll"  DiskId="1"  Source="@LIB_GNUTLS_LOCATION@/libnettle-6.dll" />
+      <File Id="TlsLibFile7" Name="libp11-kit-0.dll"  DiskId="1"  Source="@LIB_GNUTLS_LOCATION@/libp11-kit-0.dll" />
+      <File Id="TlsLibFile8" Name="libwinpthread-1.dll"  DiskId="1"  Source="@LIB_GNUTLS_LOCATION@/libwinpthread-1.dll" />
+      <File Id="TlsLibFile9" Name="libffi-6.dll"  DiskId="1"  Source="@LIB_GNUTLS_LOCATION@/libffi-6.dll" />
+    </Component@TLS_LIB_END@>
+  <!--  </ComponentGroup> -->
+  </Fragment>
+</Wix>

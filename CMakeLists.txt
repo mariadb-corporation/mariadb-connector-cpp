@@ -1,0 +1,575 @@
+# ************************************************************************************
+#   Copyright (C) 2013,2019 MariaDB Corporation AB
+#
+#   This library is free software; you can redistribute it and/or
+#   modify it under the terms of the GNU Library General Public
+#   License as published by the Free Software Foundation; either
+#   version 2.1 of the License, or (at your option) any later version.
+#
+#   This library is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#   Library General Public License for more details.
+#
+#   You should have received a copy of the GNU Library General Public
+#   License along with this library; if not see <http://www.gnu.org/licenses>
+#   or write to the Free Software Foundation, Inc.,
+#   51 Franklin St., Fifth Floor, Boston, MA 02110, USA
+# *************************************************************************************/
+
+cmake_minimum_required(VERSION 3.0)
+
+CMAKE_POLICY(SET CMP0048 NEW)
+
+PROJECT(mariadb_connector_cpp
+        VERSION 0.9.0
+#        DESCRIPTION "MariaDB Connector/C++"
+        LANGUAGES CXX)
+
+SET(MACPP_VERSION_QUALITY "alpha")
+SET(MACPP_VERSION "0.09.0000")
+SET(MARIADB_DEFAULT_PLUGINS_SUBDIR "plugin")
+
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/Version.h.in
+               ${CMAKE_SOURCE_DIR}/src/Version.h)
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.rc.in
+               ${CMAKE_SOURCE_DIR}/src/maconncpp.rc)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/SearchLibrary.cmake)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/SetValueMacro.cmake)
+
+
+SET (MACPP_SOURCES src/MariaDbDriver.cpp
+                   src/UrlParser.cpp
+                   src/MariaDbDatabaseMetaData.cpp
+                   src/HostAddress.cpp
+                   src/Consts.cpp
+                   src/SQLString.cpp
+                   src/MariaDbConnection.cpp
+                   src/MariaDbStatement.cpp
+                   src/MariaDBException.cpp
+                   src/MariaDBWarning.cpp
+                   src/Identifier.cpp
+                   src/MariaDbSavepoint.cpp
+                   src/SqlStates.cpp
+                   src/Results.cpp
+
+                   src/ColumnType.cpp
+
+                   src/ColumnDefinition.cpp
+                   src/protocol/MasterProtocol.cpp
+
+                   src/protocol/capi/QueryProtocol.cpp
+                   src/protocol/capi/ConnectProtocol.cpp
+                   src/com/capi/ColumnDefinitionCapi.cpp
+
+                   src/cache/CallableStatementCache.cpp
+                   src/cache/CallableStatementCacheKey.cpp
+
+                   src/util/Value.cpp
+                   src/util/Utils.cpp
+
+                   src/logger/NoLogger.cpp
+                   src/logger/LoggerFactory.cpp
+                   src/logger/ProtocolLoggingProxy.cpp
+
+                   src/parameters/ParameterHolder.cpp
+
+                   src/options/Options.cpp
+                   src/options/DefaultOptions.cpp
+
+                   src/pool/GlobalStateInfo.cpp
+                   src/pool/Pools.cpp
+
+                   src/failover/FailoverProxy.cpp
+
+                   src/credential/CredentialPluginLoader.cpp
+
+                   src/SelectResultSet.cpp
+                   src/com/capi/SelectResultSetCapi.cpp
+                   #src/com/SelectResultSetPacket.cpp
+
+                   #src/com/ColumnDefinitionPacket.cpp
+
+                   src/com/ColumnNameMap.cpp
+
+                   src/io/StandardPacketInputStream.cpp
+
+                   src/Charset.cpp
+                   #src/ClientSidePreparedStatement.cpp
+                   src/BasePrepareStatement.cpp
+                   src/MariaDbFunctionStatement.cpp
+                   src/MariaDbProcedureStatement.cpp
+                   src/ServerSidePreparedStatement.cpp
+
+                   src/parameters/BigDecimalParameter.cpp
+                   src/parameters/BooleanParameter.cpp
+                   src/parameters/ByteArrayParameter.cpp
+                   src/parameters/ByteParameter.cpp
+                   src/parameters/DateParameter.cpp
+                   src/parameters/DefaultParameter.cpp
+                   src/parameters/DoubleParameter.cpp
+                   src/parameters/FloatParameter.cpp
+                   src/parameters/IntParameter.cpp
+                   #src/parameters/LocalTimeParameter.cpp
+                   src/parameters/LongParameter.cpp
+                   src/parameters/ULongParameter.cpp
+                   src/parameters/NullParameter.cpp
+                   #src/parameters/OffsetTimeParameter.cpp
+                   src/parameters/ParameterHolder.cpp
+                   src/parameters/ReaderParameter.cpp
+                   #src/parameters/SerializableParameter.cpp
+                   src/parameters/ShortParameter.cpp
+                   src/parameters/StreamParameter.cpp
+                   src/parameters/TimeParameter.cpp
+                   src/parameters/TimestampParameter.cpp
+                   #src/parameters/ZonedDateTimeParameter.cpp
+                   src/parameters/StringParameter.cpp
+                   src/MariaDbPooledConnection.cpp
+                   src/MariaDbParameterMetaData.cpp
+                   src/MariaDbResultSetMetaData.cpp
+                   src/CallParameter.cpp
+                   src/CallableParameterMetaData.cpp
+                   src/com/Packet.cpp
+                   # src/util/ServerStatus.cpp # Won't be needed
+                   # src/MariaDbServerCapabilities.cpp # Won't be needed
+                   src/credential/Credential.cpp
+                   src/util/LogQueryTool.cpp
+                   src/util/ClientPrepareResult.cpp
+                   src/util/ServerPrepareResult.cpp
+                   src/util/ServerPrepareStatementCache.cpp
+                   src/com/CmdInformationSingle.cpp
+                   src/com/CmdInformationBatch.cpp
+                   src/com/CmdInformationMultiple.cpp
+                   src/com/RowProtocol.cpp
+                   src/protocol/capi/BinRowProtocolCapi.cpp
+                   src/protocol/capi/TextRowProtocolCapi.cpp
+                   src/ExceptionFactory.cpp
+                   ####CPP####
+                   )
+
+# Raw class implementations of classes we are not gonna use atm
+#                   src/pool/Pool.cpp
+
+IF(WIN32)
+  SET(MACPP_SOURCES ${MACPP_SOURCES}
+                   src/Dll.c
+
+                   src/MariaDBConnCpp.h
+                   src/MariaDbDriver.h
+                   src/UrlParser.h
+                   src/MariaDbDatabaseMetaData.h
+                   src/HostAddress.h
+                   src/Version.h
+                   src/Consts.h
+                   src/MariaDbConnection.h
+                   src/MariaDbStatement.h
+                   src/MariaDBWarning.h
+                   src/Protocol.h
+                   src/Identifier.h
+                   src/MariaDbSavepoint.h
+                   src/SqlStates.h
+                   src/Results.h
+                   src/ColumnDefinition.h
+                   src/MariaDbServerCapabilities.h
+
+                   src/protocol/MasterProtocol.h
+                   src/protocol/AbstractQueryProtocol.h
+                   src/protocol/AbstractConnectProtocol.h
+
+                   src/protocol/capi/QueryProtocol.h
+                   src/protocol/capi/ConnectProtocol.h
+                   src/com/capi/ColumnDefinitionCapi.h
+
+                   src/cache/CallableStatementCache.h
+                   src/cache/CallableStatementCacheKey.h
+
+                   src/util/Value.h
+                   src/util/ClassField.h
+                   src/util/Utils.h
+                   src/util/StateChange.h
+
+                   src/logger/NoLogger.h
+                   src/logger/LoggerFactory.h
+                   src/logger/Logger.h
+                   src/logger/ProtocolLoggingProxy.h
+
+                   src/parameters/ParameterHolder.h
+
+                   src/options/Options.h
+                   src/options/DefaultOptions.h
+                   src/options/DriverPropertyInfo.h
+
+                   src/io/PacketOutputStream.h
+                   src/io/PacketInputStream.h
+                   src/io/StandardPacketInputStream.h
+
+                   src/credential/CredentialPlugin.h
+                   src/credential/CredentialPluginLoader.h
+
+                   src/pool/GlobalStateInfo.h
+                   src/pool/Pools.h
+                   src/pool/Pool.h
+
+                   src/failover/FailoverProxy.h
+
+                   src/Listener.h
+
+                   src/com/CmdInformation.h
+
+                   "include/ConnCpp.h"
+                   "include/Connection.h"
+                   "include/Statement.h"
+                   "include/ResultSet.h"
+                   "include/PreparedStatement.h"
+                   "include/ParameterMetaData.h"
+                   "include/ResultSetMetaData.h"
+                   "include/DatabaseMetaData.h"
+                   "include/CallableStatement.h"
+                   "include/SQLString.h"
+                   "include/Warning.h"
+                   "include/Exception.h"
+                   "include/jdbccompat.h"
+                   "include/Driver.h"
+                   "include/Types.h"
+
+                   src/SelectResultSet.h
+                   src/com/capi/SelectResultSetCapi.h
+                   src/com/SelectResultSetPacket.h
+                   src/ColumnType.h
+                   src/com/ColumnDefinitionPacket.h
+                   src/com/ColumnNameMap.h
+                   src/Charset.h
+                   src/ClientSidePreparedStatement.h
+                   src/BasePrepareStatement.h
+                   src/MariaDbFunctionStatement.h
+                   src/MariaDbProcedureStatement.h
+                   src/ServerSidePreparedStatement.h
+
+                   src/parameters/BigDecimalParameter.h
+                   src/parameters/BooleanParameter.h
+                   src/parameters/ByteArrayParameter.h
+                   src/parameters/ByteParameter.h
+                   src/parameters/DateParameter.h
+                   src/parameters/DefaultParameter.h
+                   src/parameters/DoubleParameter.h
+                   src/parameters/FloatParameter.h
+                   src/parameters/IntParameter.h
+                   #src/parameters/LocalTimeParameter.h
+                   src/parameters/LongParameter.h
+                   src/parameters/ULongParameter.h
+                   src/parameters/NullParameter.h
+                   #src/parameters/OffsetTimeParameter.h
+                   src/parameters/ReaderParameter.h
+                   #src/parameters/SerializableParameter.h
+                   src/parameters/ShortParameter.h
+                   src/parameters/StreamParameter.h
+                   src/parameters/TimeParameter.h
+                   src/parameters/TimestampParameter.h
+                   #src/parameters/ZonedDateTimeParameter.h
+                   src/parameters/StringParameter.h
+
+                   src/Parameters.h
+                   src/MariaDbPooledConnection.h
+                   src/MariaDbParameterMetaData.h
+                   src/CallParameter.h
+                   src/CallableParameterMetaData.h
+                   src/MariaDbResultSetMetaData.h
+                   src/com/Packet.h
+                   src/util/ServerStatus.h
+                   src/credential/Credential.h
+                   src/util/LogQueryTool.h
+                   src/util/ClientPrepareResult.h
+                   src/util/ServerPrepareResult.h
+                   src/util/ServerPrepareStatementCache.h
+                   src/com/CmdInformationSingle.h
+                   src/com/CmdInformationBatch.h
+                   src/com/CmdInformationMultiple.h
+                   src/com/RowProtocol.h
+                   src/protocol/capi/BinRowProtocolCapi.h
+                   src/protocol/capi/TextRowProtocolCapi.h
+                   src/ExceptionFactory.h
+                   ####H####
+                       )
+  SOURCE_GROUP(Logging REGULAR_EXPRESSION "/logger/")
+  SOURCE_GROUP(PublicAPI REGULAR_EXPRESSION "include/")
+  SOURCE_GROUP(Parameters REGULAR_EXPRESSION "src/parameters")
+  SOURCE_GROUP(Options REGULAR_EXPRESSION "src/options")
+  SOURCE_GROUP(IO REGULAR_EXPRESSION "src/io")
+  SOURCE_GROUP(Credential REGULAR_EXPRESSION "src/credential")
+  SOURCE_GROUP(Pool REGULAR_EXPRESSION "src/pool")
+  SOURCE_GROUP(Utils REGULAR_EXPRESSION "src/util")
+  SOURCE_GROUP(Caches REGULAR_EXPRESSION "src/cache")
+  SOURCE_GROUP(Failover REGULAR_EXPRESSION "src/failover")
+  SOURCE_GROUP(Commands REGULAR_EXPRESSION "src/com/")
+  SOURCE_GROUP(Protocol REGULAR_EXPRESSION "src/protocol/")
+  SOURCE_GROUP(C_API REGULAR_EXPRESSION "/capi/")
+
+  SET(PLATFORM_DEPENDENCIES ws2_32)# Shlwapi)
+ELSE()
+  SEARCH_LIBRARY(LIB_MATH floor m)
+  MESSAGE(STATUS "Found math lib: ${LIB_MATH}")
+  SET(PLATFORM_DEPENDENCIES ${LIB_MATH})
+ENDIF()
+MACRO(ADD_OPTION _name _text _default)
+  IF(NOT DEFINED ${_name})
+    OPTION(${OPT}${_name} "${_text}" "${_default}")
+  ELSE()
+    OPTION(${OPT}${_name} "${_text}" "${${_name}}")
+  ENDIF()
+ENDMACRO()
+# This has to be before C/C's cmake run, or it will build with /MD
+IF(WIN32)
+  IF (MSVC)
+    SET(CONFIG_TYPES "DEBUG" "RELEASE" "RELWITHDEBINFO" "MINSIZEREL")
+    FOREACH(BUILD_TYPE ${CONFIG_TYPES})
+      FOREACH(COMPILER CXX C)
+        SET(COMPILER_FLAGS "${CMAKE_${COMPILER}_FLAGS_${BUILD_TYPE}}")
+        IF (NOT COMPILER_FLAGS STREQUAL "")
+          STRING(REPLACE "/MD" "/MT" COMPILER_FLAGS ${COMPILER_FLAGS})
+          IF (BUILD_TYPE STREQUAL "Debug")
+            SET(COMPILER_FLAGS "${COMPILER_FLAGS} /RTC1 /RTCc")
+            STRING(REPLACE "/Zi" "/ZI" COMPILER_FLAGS ${COMPILER_FLAGS})
+          ENDIF()
+          MESSAGE (STATUS "CMAKE_${COMPILER}_FLAGS_${BUILD_TYPE}= ${COMPILER_FLAGS}")
+          SET(CMAKE_${COMPILER}_FLAGS_${BUILD_TYPE} ${COMPILER_FLAGS} CACHE
+               STRING "overwritten by mariadb-odbc" FORCE)
+        ENDIF()
+      ENDFOREACH()
+    ENDFOREACH()
+  ENDIF()
+  ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS -DWIN32_LEAN_AND_MEAN)
+  ADD_DEFINITIONS("-DMARIADB_EXPORTED=__declspec(dllexport)")
+  SET(INSTALL_PLUGINDIR "${MARIADB_DEFAULT_PLUGINS_SUBDIR}")
+ELSE()
+  # This has been done before C/C cmake scripts are included
+  IF(NOT DEFINED INSTALL_LIB_SUFFIX)
+    SET(INSTALL_LIB_SUFFIX "lib" CACHE STRING "Directory, under which to install libraries, e.g. lib or lib64")
+    IF("${CMAKE_SIZEOF_VOID_P}" EQUAL "8" AND EXISTS "/usr/lib64/")
+      SET(INSTALL_LIB_SUFFIX "lib64")
+    ENDIF()
+  ENDIF()
+  MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIB_SUFFIX}")
+  SET(INSTALL_PLUGINDIR "${INSTALL_LIB_SUFFIX}/mariadb/plugin")
+#  ADD_DEFINITIONS(-DMARIADB_EXPORTED)
+  MESSAGE(STATUS "Autentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
+ENDIF()
+IF(WIN32 OR WITH_OPENSSL OR "${WITH_SSL}" STREQUAL  "OPENSSL")
+  IF(WITH_OPENSSL OR "${WITH_SSL}" STREQUAL  "OPENSSL")
+    FIND_PACKAGE(OpenSSL)
+    IF(OPENSSL_FOUND)
+      MESSAGE(STATUS "Configuring to build with OpenSSL ${OPENSSL_LIBRARIES}")
+      ADD_DEFINITIONS(-DHAVE_OPENSSL)
+      INCLUDE_DIRECTORIES(${OPENSSL_INCLUDE_DIR})
+      SET(SSL_LIBRARIES ${OPENSSL_LIBRARIES})
+      #IF(OPENSSL_CRYPTO_LIBRARIES)
+      #  SET(SSL_LIBRARIES ${SSL_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARIES})
+      #ENDIF()
+      SET(PLATFORM_DEPENDENCIES ${PLATFORM_DEPENDENCIES} ${SSL_LIBRARIES})
+    ELSE()
+      MESSAGE(FATAL_ERROR "OpenSSL not found. Please install OpenSSL or disable SSL support via option -DWITH_OPENSSL=Off")
+    ENDIF()
+  ELSE()
+    MESSAGE(STATUS "Configuring SSL support using SChannel")
+    SET(PLATFORM_DEPENDENCIES ${PLATFORM_DEPENDENCIES} version.lib)
+  ENDIF()
+ELSE()
+  MESSAGE(STATUS "Configuring to build without SSL support")
+ENDIF()
+IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
+  IF(GIT_BUILD_SRCPKG)
+    # We don't want conn/c (wrong) src pkg to be built.
+    SET(GIT_BUILD_SRCPKG FALSE)
+    SET(CONNCPP_GIT_BUILD_SRCPKG TRUE)
+  ENDIF()
+  MESSAGE(STATUS "Running C/C cmake scripts")
+  INCLUDE(${CMAKE_SOURCE_DIR}/cmake/connector_c.cmake)
+ELSE()
+  SET(USE_SYSTEM_INSTALLED_LIB TRUE)
+  MESSAGE(STATUS "There is no Connector/C sub-project folder, linking against libmariadb installed on the system")
+ENDIF()
+IF(WIN32)
+  #ADD_OPTION(WITH_MSI "Build MSI installation package" OFF)
+  ADD_OPTION(WITH_SIGNCODE "Digitally sign files" OFF)
+ENDIF()
+#ADD_OPTION(WITH_UNIT_TESTS "build test suite" ON)
+#ADD_OPTION(WITH_SSL "Enables use of TLS/SSL library" ON)
+IF(WITH_SIGNCODE)
+  IF(WIN32 AND NOT SIGN_OPTIONS)
+    SET(SIGN_OPTIONS /a /t http://timestamp.verisign.com/scripts/timstamp.dll)
+  ELSE()
+    SEPARATE_ARGUMENTS(SIGN_OPTIONS)
+  ENDIF()
+  MARK_AS_ADVANCED(SIGN_OPTIONS)
+ENDIF()
+
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/libmariadb/include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}/libmariadb/include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
+IF(NOT CMAKE_BUILD_TYPE)
+  SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
+ENDIF()
+SET(CPACK_PACKAGE_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
+SET(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
+SET(CPACK_COMPONENTS_ALL ClientPlugins CppLibs Documentation PublicApi)
+#SET(CPACK_COMPONENTS_ALL CppLibs Documentation)
+SET(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
+SET(LIBRARY_NAME "mariadbcpp")
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.def.in
+               ${CMAKE_SOURCE_DIR}/src/maconncpp.def)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+IF(MARIADB_LINK_DYNAMIC)# OR USE_SYSTEM_INSTALLED_LIB)
+  IF(USE_SYSTEM_INSTALLED_LIB)
+    SET(MARIADB_CLIENT_TARGET_NAME mariadb)
+  ELSE()
+    SET(MARIADB_CLIENT_TARGET_NAME libmariadb)
+  ENDIF()
+  MESSAGE(STATUS "Linking Connector/C library dynamically(${MARIADB_CLIENT_TARGET_NAME})")
+ELSE()
+  SET(MARIADB_CLIENT_TARGET_NAME mariadbclient)
+  MESSAGE(STATUS "Linking Connector/C library statically(${MARIADB_CLIENT_TARGET_NAME})")
+ENDIF()
+IF(WIN32)
+  ADD_LIBRARY(${LIBRARY_NAME} SHARED ${MACPP_SOURCES} ${CMAKE_SOURCE_DIR}/src/maconncpp.def ${CMAKE_SOURCE_DIR}/src/maconncpp.rc)
+ELSE()
+#  MESSAGE(STATUS "Version script: ${CMAKE_SOURCE_DIR}/src/maconncpp.def")
+  ADD_LIBRARY(${LIBRARY_NAME} SHARED ${MACPP_SOURCES})
+  IF(APPLE)
+    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl")
+  ELSE()
+#    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_SOURCE_DIR}/src/maconncpp.def")
+  ENDIF()
+ENDIF()
+
+#SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LANGUAGE C)
+TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${MARIADB_CLIENT_TARGET_NAME} ${PLATFORM_DEPENDENCIES})
+# Currently on Windows only
+IF(WIN32)
+  ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} ARGS -DDRIVER_LIB_DIR=$<TARGET_FILE_DIR:${LIBRARY_NAME}>
+                                  -DPLUGINS_LIB_DIR=$<TARGET_FILE_DIR:dialog>
+                                  -DPLUGINS_SUBDIR_NAME=${MARIADB_DEFAULT_PLUGINS_SUBDIR}
+                                  -DFILE_IN=${CMAKE_SOURCE_DIR}/wininstall/binaries_dir.xml.in
+                                  -DFILE_OUT=${CMAKE_SOURCE_DIR}/wininstall/binaries_dir.xml
+                                  -P ${CMAKE_SOURCE_DIR}/cmake/ConfigureFile.cmake
+                     )
+ENDIF()
+SET(CPACK_PACKAGE_NAME "${LIBRARY_NAME}")
+IF(WIN32)
+  ADD_SUBDIRECTORY(wininstall)
+ELSE()
+  IF(APPLE)
+    MESSAGE(STATUS "Configuring to generate PKG package")
+    ADD_SUBDIRECTORY(osxinstall)
+  ENDIF()
+  INSTALL(TARGETS
+          ${LIBRARY_NAME}
+          LIBRARY DESTINATION ./${INSTALL_LIB_SUFFIX}
+          COMPONENT CppLibs)
+  IF(NOT DEFINED INSTALL_DOC_DIR)
+    SET(INSTALL_DOC_DIR "./share/doc/${CPACK_PACKAGE_NAME}/" CACHE STRING "Directory, where to install documentation(README)")
+  ENDIF()
+  IF(NOT DEFINED INSTALL_LICENSE_DIR)
+    SET(INSTALL_LICENSE_DIR "./share/doc/${CPACK_PACKAGE_NAME}/" CACHE STRING "Directory, where to install license file")
+  ENDIF()
+  IF(NOT DEFINED INSTALL_INCLUDE_DIR)
+    SET(INSTALL_INCLUDE_DIR "./include/${CPACK_PACKAGE_NAME}/" CACHE STRING "Directory, where to install header files")
+  ENDIF()
+
+  MESSAGE(STATUS "Documetnation installed to ${INSTALL_DOC_DIR}")
+  MESSAGE(STATUS "License file installed to ${INSTALL_LICENSE_DIR}")
+  MESSAGE(STATUS "Public API header files installed to ${INSTALL_INCLUDE_DIR}")
+  INSTALL(FILES
+          ${CMAKE_SOURCE_DIR}/README
+          DESTINATION
+          ${INSTALL_DOC_DIR}
+          COMPONENT Documentation)
+  INSTALL(FILES
+          ${CMAKE_SOURCE_DIR}/COPYING
+          DESTINATION
+          ${INSTALL_LICENSE_DIR}
+          COMPONENT Documentation)
+  INSTALL(DIRECTORY include
+          DESTINATION ${INSTALL_INCLUDE_DIR}
+          COMPONENT PublicApi)
+
+ENDIF()
+# Tests. Checking if we have them. May be not the case if we are building from source package
+IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
+  ADD_SUBDIRECTORY(test)
+ENDIF()
+# Packaging
+SET(CPACK_PACKAGE_VENDOR "MariaDB Corporation Ab")
+SET(CPACK_PACKAGE_DESCRIPTION "MariaDB Connector/C++. C++ driver library for connecting to MariaDB and MySQL servers")
+IF(NOT SYSTEM_NAME)
+  STRING(TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_NAME)
+ENDIF()
+MESSAGE(STATUS "${SYSTEM_NAME}")
+SET(CPACK_PACKAGE_FILE_NAME "mariadb-connector-cpp-${CPACK_PACKAGE_VERSION}-${MACPP_VERSION_QUALITY}-${SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
+SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
+SET(CPACK_PACKAGE_API_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME "mariadb-connector-cpp-${CPACK_PACKAGE_VERSION}-${MACPP_VERSION_QUALITY}-src")
+SET(CPACK_PACKAGE_CONTACT "info@mariadb.com")
+SET(CPACK_PACKAGE_VENDOR "MariaDB Corporation AB")
+SET(CPACK_SOURCE_IGNORE_FILES
+/test/
+/.git/
+.gitignore
+.gitmodules
+.gitattributes
+CMakeCache.txt
+cmake_dist.cmake
+CPackSourceConfig.cmake
+CPackConfig.cmake
+/.build/
+cmake_install.cmake
+CTestTestfile.cmake
+/CMakeFiles/
+/version_resources/
+.*vcxproj
+.*gz$
+.*zip$
+.*so$
+.*so.2
+.*so.3
+.*dll$
+.*a$
+.*pdb$
+.*sln$
+.*sdf$
+Makefile$
+/autom4te.cache/
+/.travis/
+.travis.yml
+/libmariadb/
+/_CPack_Packages/
+)
+# Build source packages
+IF(GIT_BUILD_SRCPKG OR CONNCPP_GIT_BUILD_SRCPKG)
+  IF(WIN32)
+    EXECUTE_PROCESS(COMMAND git archive --format=zip --prefix=${CPACK_SOURCE_PACKAGE_FILE_NAME}/ --output=${CPACK_SOURCE_PACKAGE_FILE_NAME}.zip --worktree-attributes -v HEAD)
+  ELSE()
+    EXECUTE_PROCESS(COMMAND git archive ${GIT_BRANCH} --format=zip --prefix=${CPACK_SOURCE_PACKAGE_FILE_NAME}/ --output=${CPACK_SOURCE_PACKAGE_FILE_NAME}.zip -v HEAD)
+    EXECUTE_PROCESS(COMMAND git archive ${GIT_BRANCH} --format=tar --prefix=${CPACK_SOURCE_PACKAGE_FILE_NAME}/ --output=${CPACK_SOURCE_PACKAGE_FILE_NAME}.tar -v HEAD)
+    EXECUTE_PROCESS(COMMAND gzip -9 -f ${CPACK_SOURCE_PACKAGE_FILE_NAME}.tar)
+  ENDIF()
+ENDIF()
+IF(WIN32)
+  SET(DEFAULT_GENERATOR "ZIP")
+ELSE()
+  SET(DEFAULT_GENERATOR "TGZ")
+ENDIF()
+IF(NOT CPACK_GENERATOR)
+  SET(CPACK_GENERATOR "${DEFAULT_GENERATOR}")
+ENDIF()
+IF(NOT CPACK_SOURCE_GENERATOR)
+  SET(CPACK_SOURCE_GENERATOR "${DEFAULT_GENERATOR}")
+ENDIF()
+MESSAGE(STATUS "License File: ${CPACK_RESOURCE_FILE_LICENSE}")
+MESSAGE(STATUS "ReadMe File: ${CPACK_PACKAGE_DESCRIPTION_FILE}")
+MESSAGE(STATUS "Source Package Filename: ${CPACK_SOURCE_PACKAGE_FILE_NAME}.${CPACK_SOURCE_GENERATOR}")
+INCLUDE(CPack)

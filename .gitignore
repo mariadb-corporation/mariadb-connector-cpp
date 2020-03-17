@@ -1,0 +1,69 @@
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+
+Testing
+CTestTestfile.cmake
+
+ma_odbc_version.h
+wininstall/mariadb_conncpp.xml
+marconncpp.def
+maconncpp.rc
+
+*.vcxproj
+*.vcxproj.*
+*.sln
+*.suo
+*.sdf
+*.dir
+Debug
+Win32
+ipch
+
+*.msi
+*.wixobj
+*.wixpdb
+
+*.*~
+*.swp
+*.diff
+*.bak
+*.so
+*.dylib
+.idea/
+Makefile
+CPackConfig.cmake
+CPackSourceConfig.cmake
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app

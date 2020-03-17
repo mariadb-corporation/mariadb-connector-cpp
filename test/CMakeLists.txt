@@ -1,0 +1,86 @@
+# Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+#               2020 MariaDB Corporation AB
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License, version 2.0, as
+# published by the Free Software Foundation.
+#
+# This program is also distributed with certain software (including
+# but not limited to OpenSSL) that is licensed under separate terms,
+# as designated in a particular file or component or in included license
+# documentation.  The authors of MySQL hereby grant you an
+# additional permission to link the program and your derivative works
+# with the separately licensed software that they have included with
+# MySQL.
+#
+# Without limiting anything contained in the foregoing, this file,
+# which is part of MySQL Connector/C++, is also subject to the
+# Universal FOSS Exception, version 1.0, a copy of which can be found at
+# http://oss.oracle.com/licenses/universal-foss-exception.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License, version 2.0, for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+
+#Use Options to configure default test server params
+
+SET(TEST_DEFAULT_HOST   "tcp://localhost:3306"  CACHE STRING "Defines Unit Tests default server" )
+SET(TEST_DEFAULT_DB     "test"                  CACHE STRING "Defines Unit Tests default Database" )
+SET(TEST_DEFAULT_LOGIN  "root"                  CACHE STRING "Defines Unit Tests default login user" )
+SET(TEST_DEFAULT_PASSWD "root"                  CACHE STRING "Defines Unit Tests default login user password" )
+
+
+configure_file(tests_config.h.in
+               ${CMAKE_BINARY_DIR}/tests_config.h)
+
+             #INCLUDE_DIRECTORIES("${CMAKE_BINARY_DIR}")
+
+IF(WIN32)
+  IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    #LINK_DIRECTORIES(${}/lib/debug)
+  ELSEIF(CMAKE_BUILD_TYPE STREQUAL "")
+    #LINK_DIRECTORIES(${}/lib/opt)
+  ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+  ADD_DEFINITIONS("-D_SCL_SECURE_NO_WARNINGS")
+  ADD_DEFINITIONS("-D_CRT_SECURE_NO_WARNINGS")
+  ADD_DEFINITIONS("-DMARIADB_EXPORTED=__declspec(dllimport)")
+
+ELSEIF(NOT WIN32)
+  #ADD_DEFINITIONS("-DMARIADB_EXPORTED")
+
+ENDIF(WIN32)
+
+ENABLE_TESTING()
+
+IF(CMAKE_COMPILER_IS_GNUCC AND MYSQLCPPCONN_GCOV_ENABLE)
+  SET(MY_GCOV_LINK_LIBRARIES gcov)
+ENDIF(CMAKE_COMPILER_IS_GNUCC AND MYSQLCPPCONN_GCOV_ENABLE)
+
+ADD_EXECUTABLE(static_test static_test.cpp)
+TARGET_LINK_LIBRARIES(static_test ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} ${MY_GCOV_LINK_LIBRARIES})
+
+ADD_TEST(static_test ${EXECUTABLE_OUTPUT_PATH}/static_test WORKING_DIRECTORY <TARGET_FILE_DIR:${LIBRARY_NAME}>)
+SET_TESTS_PROPERTIES(static_test PROPERTIES TIMEOUT 120)
+
+#SET_TARGET_PROPERTIES(static_test PROPERTIES
+#        LINK_FLAGS "${} "
+#        COMPILE_FLAGS "${}")
+
+ADD_EXECUTABLE(driver_test driver_test.cpp)
+TARGET_LINK_LIBRARIES(driver_test ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} ${MY_GCOV_LINK_LIBRARIES})
+
+ADD_TEST(driver_test ${EXECUTABLE_OUTPUT_PATH}/driver_test)
+SET_TESTS_PROPERTIES(static_test driver_test PROPERTIES TIMEOUT 120 WORKING_DIRECTORY <TARGET_FILE_DIR:${LIBRARY_NAME}>)
+
+
+ADD_SUBDIRECTORY(framework)
+ADD_SUBDIRECTORY(CJUnitTestsPort)
+ADD_SUBDIRECTORY(unit)
+
+MESSAGE(STATUS "Configuring test cases")
