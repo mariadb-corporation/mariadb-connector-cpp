@@ -541,7 +541,9 @@ CTestTestfile.cmake
 .*pdb$
 .*sln$
 .*sdf$
+install_manifest_*txt
 Makefile$
+tests_config.h
 /autom4te.cache/
 /.travis/
 .travis.yml
