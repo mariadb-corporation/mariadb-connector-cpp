@@ -24,7 +24,7 @@ CMAKE_POLICY(SET CMP0048 NEW)
 PROJECT(mariadb_connector_cpp
         VERSION 0.9.1
 #        DESCRIPTION "MariaDB Connector/C++"
-        LANGUAGES CXX)
+        LANGUAGES CXX C)
 
 SET(MACPP_VERSION_QUALITY "alpha")
 SET(MACPP_VERSION "0.09.0001")
@@ -332,7 +332,7 @@ IF(WIN32)
           ENDIF()
           MESSAGE (STATUS "CMAKE_${COMPILER}_FLAGS_${BUILD_TYPE}= ${COMPILER_FLAGS}")
           SET(CMAKE_${COMPILER}_FLAGS_${BUILD_TYPE} ${COMPILER_FLAGS} CACHE
-               STRING "overwritten by mariadb-odbc" FORCE)
+               STRING "overwritten by mariadb-cpp" FORCE)
         ENDIF()
       ENDFOREACH()
     ENDFOREACH()
@@ -353,6 +353,7 @@ ELSE()
 #  ADD_DEFINITIONS(-DMARIADB_EXPORTED)
   MESSAGE(STATUS "Autentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
 ENDIF()
+
 IF(WIN32 OR WITH_OPENSSL OR "${WITH_SSL}" STREQUAL  "OPENSSL")
   IF(WITH_OPENSSL OR "${WITH_SSL}" STREQUAL  "OPENSSL")
     FIND_PACKAGE(OpenSSL)
@@ -375,6 +376,7 @@ IF(WIN32 OR WITH_OPENSSL OR "${WITH_SSL}" STREQUAL  "OPENSSL")
 ELSE()
   MESSAGE(STATUS "Configuring to build without SSL support")
 ENDIF()
+
 IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
   IF(GIT_BUILD_SRCPKG)
     # We don't want conn/c (wrong) src pkg to be built.

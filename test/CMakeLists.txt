@@ -38,7 +38,7 @@ SET(TEST_DEFAULT_PASSWD "root"                  CACHE STRING "Defines Unit Tests
 configure_file(tests_config.h.in
                ${CMAKE_BINARY_DIR}/tests_config.h)
 
-             #INCLUDE_DIRECTORIES("${CMAKE_BINARY_DIR}")
+INCLUDE_DIRECTORIES("${CMAKE_BINARY_DIR}")
 
 IF(WIN32)
   IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
