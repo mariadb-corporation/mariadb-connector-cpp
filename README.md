@@ -1,4 +1,4 @@
-# mariadb-connector-cpp
+# MariaDB Connector/C++
 <p align="center">
   <a href="http://mariadb.com/">
     <img src="https://mariadb.com/kb/static/images/logo-2018-black.png">
@@ -13,12 +13,17 @@ GNU Lesser Public License.
 License information can be found in the COPYING file.
 [![License (LGPL version 2.1)](https://img.shields.io/badge/license-GNU%20LGPL%20version%202.1-green.svg?style=flat-square)](http://opensource.org/licenses/LGPL-2.1)
 
-To report issues: [![https://jira.mariadb.org/projects/CONCPP/issues/]](https://jira.mariadb.org/projects/CONCPP/issues/)
+To report issues: [https://jira.mariadb.org/projects/CONCPP/issues/](https://jira.mariadb.org/projects/CONCPP/issues/)
 
-#Basic Use
+## Basic Use
 
 Connector implements JDBC API with minimal extensions and minimal
 reductions of methods, that do not make sense in C++
+
+To be able to use API, a program should include its definition in ConnCpp.h
+header
+
+\#include  <ConnCpp.h>
 
 To obtain driver instance:
 sql::Driveri\* driver= sql::mariadb::get_driver_instance();
@@ -26,7 +31,7 @@ sql::Driveri\* driver= sql::mariadb::get_driver_instance();
 To connect
 std::unique_ptr<Connection> conn(driver->connect(url, properties));
 
-For URL syntax and options name you may find [![here]](https://mariadb.com/kb/en/about-mariadb-connector-j/)
+For URL syntax and options name you may find [here](https://mariadb.com/kb/en/about-mariadb-connector-j/)
 but not all options will have effect at the moment.
 Properties is map of strings, and is another way to pass optional parameters.
 
@@ -49,5 +54,5 @@ method, plus additionally supported
 
 For further use one may refer to JDBC specs.
 
-Otherwise than Driver object, normally
-this is application's responsibility to delete objects, returned from connector by pointer.
+Except Driver object, normally this is application's responsibility to delete
+objects returned by the connector.

@@ -15,6 +15,11 @@ Basic Use
 Connector implements JDBC API with minimal extensions and minimal
 reductions of methods, that do not make sense in C++
 
+To be able to use API, a program should include its definition in ConnCpp.h
+header
+
+#include  <ConnCpp.h>
+
 To obtain driver instance:
 sql::Driver* driver= sql::mariadb::get_driver_instance();
 
@@ -45,5 +50,5 @@ method, plus additionally supported
 
 For further use one may refer to JDBC specs.
 
-Otherwise than Driver object, normally
-this is application's responsibility to delete objects, returned from connector by pointer.
+Except Driver object, normally this is application's responsibility to delete
+objects returned by the connector.
