@@ -393,8 +393,7 @@ IF(WIN32)
   #ADD_OPTION(WITH_MSI "Build MSI installation package" OFF)
   ADD_OPTION(WITH_SIGNCODE "Digitally sign files" OFF)
 ENDIF()
-#ADD_OPTION(WITH_UNIT_TESTS "build test suite" ON)
-#ADD_OPTION(WITH_SSL "Enables use of TLS/SSL library" ON)
+
 IF(WITH_SIGNCODE)
   IF(WIN32 AND NOT SIGN_OPTIONS)
     SET(SIGN_OPTIONS /a /t http://timestamp.verisign.com/scripts/timstamp.dll)
@@ -459,13 +458,15 @@ IF(WIN32)
                                   -P ${CMAKE_SOURCE_DIR}/cmake/ConfigureFile.cmake
                      )
 ENDIF()
+
 SET(CPACK_PACKAGE_NAME "${LIBRARY_NAME}")
+
 IF(WIN32)
   ADD_SUBDIRECTORY(wininstall)
 ELSE()
   IF(APPLE)
-    MESSAGE(STATUS "Configuring to generate PKG package")
-    ADD_SUBDIRECTORY(osxinstall)
+    #MESSAGE(STATUS "Configuring to generate PKG package")
+    #ADD_SUBDIRECTORY(osxinstall)
   ENDIF()
   INSTALL(TARGETS
           ${LIBRARY_NAME}
@@ -502,7 +503,10 @@ ENDIF()
 # Tests. Checking if we have them. May be not the case if we are building from source package
 IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
   ADD_SUBDIRECTORY(test)
+  ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
+	  COMMAND ${CMAKE_COMMAND} ARGS -E copy $<TARGET_FILE:${LIBRARY_NAME}> test)
 ENDIF()
+
 # Packaging
 SET(CPACK_PACKAGE_VENDOR "MariaDB Corporation Ab")
 SET(CPACK_PACKAGE_DESCRIPTION "MariaDB Connector/C++. C++ driver library for connecting to MariaDB and MySQL servers")

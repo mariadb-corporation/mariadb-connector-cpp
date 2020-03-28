@@ -376,14 +376,6 @@ unit_fixture::getConnection(sql::ConnectOptionsMap *additional_options)
   bool bval= !TestsRunner::getStartOptions()->getBool("dont-use-is");
   connection_properties["metadataUseInfoSchema"]= bval ? "1" : "0";
 
-  bval=TestsRunner::getStartOptions()->getBool("use-dynamic-load");
-  if (bval)
-  {
-    sql::SQLString clientlib(DYNLOAD_MYSQL_LIB);
-    connection_properties["clientlib"]=clientlib;
-    logMsg("Connection using dynamic load of clientlib " DYNLOAD_MYSQL_LIB);
-  }
-
   if (additional_options != NULL)
   {
     for (sql::ConnectOptionsMap::const_iterator cit= additional_options->begin();

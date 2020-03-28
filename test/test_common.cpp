@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -40,6 +41,8 @@
 #include <inttypes.h>
 #endif
 
+#include "tests_config.h"
+
 /*
   __FUNCTION__/__func__ is not portable. We do not promise
   that  our example definition covers each and every compiler.
@@ -78,8 +81,6 @@
 static int total_errors = 0;
 static int total_tests = 0;
 static int silent = 1;
-
-#define USED_DATABASE "test"
 
 #define ENTER_FUNCTION()		if (!silent) printf("# >>>>   %s\n# ", CPPCONN_FUNC);
 #define LEAVE_FUNCTION()		if (!silent) printf("# <<<<   %s\n# ", CPPCONN_FUNC); else printf("\n# ");
@@ -2989,14 +2990,14 @@ int run_tests(int argc, const char **argv)
   int last_error_total = 0;
   int i;
 
-  const std::string user(argc >=3 ? argv[2] : "root");
-  const std::string pass(argc >=4 ? argv[3] : "root");
-  const std::string database(argc >=5 ? argv[4] : USED_DATABASE);
+  const std::string user(argc >=3 ? argv[2] : TEST_DEFAULT_LOGIN);
+  const std::string pass(argc >=4 ? argv[3] : TEST_DEFAULT_PASSWD);
+  const std::string database(argc >=5 ? argv[4] : TEST_DEFAULT_DB);
 
   for (i = 0 ; i < loops; ++i) {
     last_error_total = total_errors;
                 printf("# 0 - total_errors %d, last_error_total = %d\n", total_errors, last_error_total);
-    const std::string host(argc >=2? argv[1]:"tcp://127.0.0.1");
+    const std::string host(argc >=2 ? argv[1] : TEST_DEFAULT_HOST);
     std::cout << "# Host=" << host << std::endl;
                 std::cout << "# User=" << user << std::endl;
 

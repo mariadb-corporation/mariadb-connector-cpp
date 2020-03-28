@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -279,7 +280,7 @@ void TestsListener::summary()
 
 bool TestsListener::allTestsPassed()
 {
-  return theInstance().exceptions && !(theInstance().failed() == 0);
+  return (theInstance().exceptions || theInstance().failed() == 0);
 }
 
 void TestsListener::bailSuite(const String & reason)
