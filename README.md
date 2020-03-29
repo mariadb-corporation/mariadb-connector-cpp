@@ -22,15 +22,20 @@ reductions of methods, that do not make sense in C++
 
 To be able to use API, a program should include its definition in ConnCpp.h
 header
-
-\#include  <ConnCpp.h>
-
+```script
+#include  <ConnCpp.h>
+```
 To obtain driver instance:
-sql::Driveri\* driver= sql::mariadb::get_driver_instance();
-
+```script
+sql::Driver* driver= sql::mariadb::get_driver_instance();
+```
 To connect
-std::unique_ptr<Connection> conn(driver->connect(url, properties));
 
+```script
+sql::SQLString url("jdbc:mariadb://localhost:3306/db");
+sql::Properties properties({{"user", "roor"}, {"password", "someSecretWord"}});
+std::unique_ptr<Connection> conn(driver->connect(url, properties));
+```
 For URL syntax and options name you may find [here](https://mariadb.com/kb/en/about-mariadb-connector-j/)
 but not all options will have effect at the moment.
 Properties is map of strings, and is another way to pass optional parameters.
@@ -38,19 +43,32 @@ Properties is map of strings, and is another way to pass optional parameters.
 In addition to Connector/J URL style and JDBC connect method, Connector/C++ supports
 following connect methods:
 
-std::unique_ptr<Connection> conn(driver->connect(host, username, pwd));
-
+```script
+sql::SQLString user("root");
+sql::SQLString pwd("root");
+std::unique_ptr<sql::Connection> conn(driver->connect("tcp://localhost:3306/test", user, pwd));
+```
 and
 
-std::unique_ptr<Connection> conn(driver->connect(properties));
+```script
+sql::Properties properties;
+properties["hostName"]= "127.0.0.1";
+properties["userName"]= "root";
+properties["password"]= "root";
+std::unique_ptr<sql::Connection> conn(driver->connect(properties));
+```
 
 Host in former case is  (tcp|unix|pipe)://<host>[:port][/<db>]
 Properties in the latter case are the same, as in the first variant of the connect
 method, plus additionally supported
-  - hostName,
-  - pipe,
-  - socket,
+  - hostName
+  - pipe
+  - socket
   - schema
+  - userName(alias for user)
+  - password
+
+std::string variables can be passed, where parameters are expected to be sql::SQLString
 
 For further use one may refer to JDBC specs.
 
