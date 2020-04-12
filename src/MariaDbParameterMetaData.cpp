@@ -41,7 +41,6 @@ namespace mariadb
 
   uint32_t MariaDbParameterMetaData::getParameterCount()
   {
-    checkAvailable();
     return static_cast<uint32_t>(parametersInformation.size());
   }
 

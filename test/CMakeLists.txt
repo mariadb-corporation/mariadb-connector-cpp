@@ -82,6 +82,7 @@ ADD_SUBDIRECTORY(CJUnitTestsPort)
 ADD_SUBDIRECTORY(unit)
 
 ADD_TEST(compliance cjportedtests)
+ADD_TEST(test_parametermetadata parametermetadata)
 
 SET_TESTS_PROPERTIES(static_test driver_test compliance PROPERTIES TIMEOUT 120 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 

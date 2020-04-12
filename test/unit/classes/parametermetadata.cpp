@@ -84,7 +84,7 @@ void parametermetadata::getParameterCount()
   {
     pstmt.reset(con->prepareStatement("SELECT 1"));
     parameta = (pstmt->getParameterMetaData());
-    parameta->getParameterCount();
+    ASSERT_EQUALS(parameta->getParameterCount(), 0U);
     pstmt->close();
   }
   catch (sql::SQLException &e)
@@ -100,7 +100,7 @@ void parametermetadata::getParameterCount()
     pstmt->getParameterMetaData();
     FAIL("Closed connection not detected");
   }
-  catch (...)//sql::InvalidInstanceException&)
+  catch (sql::SQLException&)//sql::InvalidInstanceException&)
   {
   }
 

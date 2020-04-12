@@ -162,6 +162,10 @@ namespace sql
 
   ParameterMetaData* ServerSidePreparedStatement::getParameterMetaData()
   {
+    if (isClosed()) {
+      throw SQLException("The quesry has been already closed");
+    }
+
     return parameterMetaData.get();
   }
 

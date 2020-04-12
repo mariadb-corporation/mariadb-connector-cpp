@@ -178,6 +178,7 @@ ENDIF(WIN32)
 ADD_EXECUTABLE(test_parametermetadata ${test_parametermetadata_sources})
 SET_TARGET_PROPERTIES(test_parametermetadata PROPERTIES
           OUTPUT_NAME "parametermetadata"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
           LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
 TARGET_LINK_LIBRARIES(test_parametermetadata ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
