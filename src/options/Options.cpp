@@ -51,14 +51,14 @@ namespace mariadb
     OPTIONS_FIELD(password),
     OPTIONS_FIELD(trustServerCertificate),
     OPTIONS_FIELD(serverSslCert),
-    OPTIONS_FIELD(trustStore),
-    OPTIONS_FIELD(trustStoreType),
-    OPTIONS_FIELD(keyStoreType),
-    OPTIONS_FIELD(trustStorePassword),
-    OPTIONS_FIELD(keyStore),
-    OPTIONS_FIELD(keyStorePassword),
+    OPTIONS_FIELD(tlsKey),
+    OPTIONS_FIELD(tlsCRLPath),
+    OPTIONS_FIELD(tlsCRL),
+    OPTIONS_FIELD(tlsCert),
+    OPTIONS_FIELD(tlsCA),
+    OPTIONS_FIELD(tlsCAPath),
     OPTIONS_FIELD(keyPassword),
-    OPTIONS_FIELD(enabledSslProtocolSuites),
+    OPTIONS_FIELD(enabledTlsProtocolSuites),
     OPTIONS_FIELD(useFractionalSeconds),
     OPTIONS_FIELD(pinGlobalTxToPhysicalConnection),
     OPTIONS_FIELD(socketFactory),
@@ -80,8 +80,8 @@ namespace mariadb
     OPTIONS_FIELD(passwordCharacterEncoding),
     OPTIONS_FIELD(blankTableNameMeta),
     OPTIONS_FIELD(credentialType),
-    OPTIONS_FIELD(useSsl),
-    OPTIONS_FIELD(enabledSslCipherSuites),
+    OPTIONS_FIELD(useTls),
+    OPTIONS_FIELD(enabledTlsCipherSuites),
     OPTIONS_FIELD(sessionVariables),
     OPTIONS_FIELD(tinyInt1isBit),
     OPTIONS_FIELD(yearIsDateType),
@@ -114,7 +114,7 @@ namespace mariadb
     OPTIONS_FIELD(includeThreadDumpInDeadlockExceptions),
     OPTIONS_FIELD(servicePrincipalName),
     OPTIONS_FIELD(defaultFetchSize),
-    OPTIONS_FIELD(tlsSocketType),
+    OPTIONS_FIELD(tlsPeerFPList),
     OPTIONS_FIELD(log),
     OPTIONS_FIELD(profileSql),
     OPTIONS_FIELD(maxQuerySizeToLog),
@@ -138,7 +138,7 @@ namespace mariadb
     OPTIONS_FIELD(useResetConnection),
     OPTIONS_FIELD(useReadAheadInput),
     OPTIONS_FIELD(serverRsaPublicKeyFile),
-    OPTIONS_FIELD(allowPublicKeyRetrieval)
+    OPTIONS_FIELD(tlsPeerFP)
   };
 
 
@@ -160,7 +160,7 @@ namespace mariadb
   Options::Options():
         connectTimeout      (30000),
         useFractionalSeconds(true),
-        useSsl              (false),
+        useTls              (false),
         tcpNoDelay          (true),
         tcpKeepAlive        (true),
         tinyInt1isBit       (true),
@@ -300,7 +300,7 @@ namespace mariadb
     if (interactiveClient !=opt->interactiveClient) {
       return false;
     }
-    if (useSsl !=opt->useSsl) {
+    if (useTls !=opt->useTls) {
       return false;
     }
     if (tinyInt1isBit !=opt->tinyInt1isBit) {
@@ -426,27 +426,27 @@ namespace mariadb
     if (!(serverSslCert.compare(opt->serverSslCert) == 0)) {
       return false;
     }
-    if (!(trustStore.compare(opt->trustStore) == 0)) {
+    if (!(tlsKey.compare(opt->tlsKey) == 0)) {
       return false;
     }
-    if (!(trustStorePassword.compare(opt->trustStorePassword) == 0)) {
+    if (tlsCert.compare(opt->tlsCert) != 0) {
       return false;
     }
-    if (!(keyStore.compare(opt->keyStore) == 0)) {
+    if (!(tlsCA.compare(opt->tlsCA) == 0)) {
       return false;
     }
-    if (!(keyStorePassword.compare(opt->keyStorePassword) == 0)) {
+    if (!(tlsCAPath.compare(opt->tlsCAPath) == 0)) {
       return false;
     }
     if (!(keyPassword.compare(opt->keyPassword) == 0)) {
       return false;
     }
-    if (!enabledSslProtocolSuites.empty()) {
-      if (enabledSslProtocolSuites.compare(opt->enabledSslProtocolSuites) != 0) {
+    if (!enabledTlsProtocolSuites.empty()) {
+      if (enabledTlsProtocolSuites.compare(opt->enabledTlsProtocolSuites) != 0) {
         return false;
       }
     }
-    else if (!opt->enabledSslProtocolSuites.empty()) {
+    else if (!opt->enabledTlsProtocolSuites.empty()) {
       return false;
     }
     if (!(socketFactory.compare(opt->socketFactory) == 0)) {
@@ -484,7 +484,7 @@ namespace mariadb
     else if (!opt->passwordCharacterEncoding.empty()) {
       return false;
     }
-    if (!(enabledSslCipherSuites.compare(opt->enabledSslCipherSuites) == 0)) {
+    if (!(enabledTlsCipherSuites.compare(opt->enabledTlsCipherSuites) == 0)) {
       return false;
     }
     if (!(sessionVariables.compare(opt->sessionVariables) == 0)) {
@@ -533,7 +533,7 @@ namespace mariadb
     /*if (!(nonMappedOptions.compare(opt->nonMappedOptions) == 0)) {
       return false;
     }*/
-    if (!(tlsSocketType.compare(opt->tlsSocketType) == 0)) {
+    if (!(tlsPeerFPList.compare(opt->tlsPeerFPList) == 0)) {
       return false;
     }
     return minPoolSize == opt->minPoolSize;
@@ -546,13 +546,13 @@ namespace mariadb
     result= 31 *result + (!password.empty() ? password.hashCode() : 0);
     result= 31 *result + (trustServerCertificate ? 1 : 0);
     result= 31 *result + (!serverSslCert.empty() ? serverSslCert.hashCode() : 0);
-    result= 31 *result + (!trustStore.empty() ? trustStore.hashCode() : 0);
-    result= 31 *result + (!trustStorePassword.empty() ? trustStorePassword.hashCode() : 0);
-    result= 31 *result + (!keyStore.empty() ? keyStore.hashCode() : 0);
-    result= 31 *result + (!keyStorePassword.empty() ? keyStorePassword.hashCode() : 0);
+    result= 31 *result + (!tlsKey.empty() ? tlsKey.hashCode() : 0);
+    result= 31 *result + (!tlsCert.empty() ? tlsCert.hashCode() : 0);
+    result= 31 *result + (!tlsCA.empty() ? tlsCA.hashCode() : 0);
+    result= 31 *result + (!tlsCAPath.empty() ? tlsCAPath.hashCode() : 0);
     result= 31 *result + (!keyPassword.empty() ? keyPassword.hashCode() : 0);
     result =
-      31 *result + (!enabledSslProtocolSuites.empty() ? enabledSslProtocolSuites.hashCode() : 0);
+      31 *result + (!enabledTlsProtocolSuites.empty() ? enabledTlsProtocolSuites.hashCode() : 0);
     result= 31 *result + (useFractionalSeconds ? 1 : 0);
     result= 31 *result + (pinGlobalTxToPhysicalConnection ? 1 : 0);
     result= 31 *result + (!socketFactory.empty() ? socketFactory.hashCode() : 0);
@@ -572,8 +572,8 @@ namespace mariadb
     result= 31 *result + (useCompression ? 1 : 0);
     result= 31 *result + (interactiveClient ? 1 : 0);
     result= 31 *result + (!passwordCharacterEncoding.empty() ? passwordCharacterEncoding.hashCode() : 0);
-    result= 31 *result + (useSsl ? 1 : 0);
-    result= 31 *result + (!enabledSslCipherSuites.empty() ? enabledSslCipherSuites.hashCode() : 0);
+    result= 31 *result + (useTls ? 1 : 0);
+    result= 31 *result + (!enabledTlsCipherSuites.empty() ? enabledTlsCipherSuites.hashCode() : 0);
     result= 31 *result + (!sessionVariables.empty() ? sessionVariables.hashCode() : 0);
     result= 31 *result + (tinyInt1isBit ? 1 : 0);
     result= 31 *result + (yearIsDateType ? 1 : 0);
@@ -630,7 +630,7 @@ namespace mariadb
 
     result= 31 *result + (!nonMappedOptions.empty() ? hashProps(nonMappedOptions) : 0);
 
-    result= 31 *result + (!tlsSocketType.empty() ? tlsSocketType.hashCode() : 0);
+    result= 31 *result + (!tlsPeerFPList.empty() ? tlsPeerFPList.hashCode() : 0);
     return result;
   }
 

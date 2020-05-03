@@ -3029,6 +3029,12 @@ int run_tests(int argc, const char **argv)
 //		printf("# ");
 
     try {
+      if (!conn->isValid(10)) {
+        printf("\n# ERR: Connection is not valid at %s::%d\n", CPPCONN_FUNC, __LINE__);
+        printf("not ok\n");
+        return 1;
+      }
+      
       std::unique_ptr<sql::Statement> stmt(conn->createStatement());
       stmt->execute("SHOW ENGINES");
       {

@@ -48,6 +48,7 @@ get_connection(const std::string& host, const std::string& user, const std::stri
     connection_properties["hostName"] = host;
     connection_properties["userName"] = user;
     connection_properties["password"] = pass;
+
     return driver->connect(connection_properties);
   }
 }

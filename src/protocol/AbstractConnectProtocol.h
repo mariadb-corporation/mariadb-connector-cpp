@@ -99,8 +99,8 @@ namespace mariadb
     static void closeSocket(PacketInputStream* packetInputStream, PacketOutputStream* packetOutputStream, Socket* socket);
     static Socket createSocket(const SQLString& host, int32_t port, const Shared::Options& options);
     static int64_t initializeClientCapabilities(const Shared::Options& options, int64_t serverCapabilities, const SQLString& database);
-    static void enabledSslProtocolSuites(SSLSocket* sslSocket, const Shared::Options& options);
-    static void enabledSslCipherSuites(SSLSocket* sslSocket, const Shared::Options& options);
+    static void enabledTlsProtocolSuites(SSLSocket* sslSocket, const Shared::Options& options);
+    static void enabledTlsCipherSuites(SSLSocket* sslSocket, const Shared::Options& options);
 
   public:
     void close();

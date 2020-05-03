@@ -42,7 +42,7 @@ namespace mariadb
   int32_t ColumnNameMap::getIndex(const SQLString& name)
   {
     if (name.empty() == true) {
-      throw SQLException("Column name cannot be NULL");
+      throw SQLException("Column name cannot be empty");
     }
     SQLString lowerName(name);
 

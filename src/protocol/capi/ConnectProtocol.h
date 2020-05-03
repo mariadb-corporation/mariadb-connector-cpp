@@ -104,8 +104,8 @@ namespace capi
     void closeSocket();
     static MYSQL* createSocket(const SQLString& host, int32_t port, const Shared::Options& options);
     static int64_t initializeClientCapabilities(const Shared::Options& options, int64_t serverCapabilities, const SQLString& database);
-    static void enabledSslProtocolSuites(MYSQL* socket, const Shared::Options& options);
-    static void enabledSslCipherSuites(MYSQL* sslSocket, const Shared::Options& options);
+    static void enabledTlsProtocolSuites(MYSQL* socket, const Shared::Options& options);
+    static void enabledTlsCipherSuites(MYSQL* sslSocket, const Shared::Options& options);
 
   protected:
     int32_t realQuery(const SQLString& sql);

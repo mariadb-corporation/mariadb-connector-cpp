@@ -182,7 +182,7 @@ namespace capi
   }
 
   /**
-   * Return possible protocols : values of option enabledSslProtocolSuites is set, or default to
+   * Return possible protocols : values of option enabledTlsProtocolSuites is set, or default to
    * "TLSv1,TLSv1.1". MariaDB versions &ge; 10.0.15 and &ge; 5.5.41 supports TLSv1.2 if compiled
    * with openSSL (default). MySQL community versions &ge; 5.7.10 is compile with yaSSL, so max TLS
    * is TLSv1.1.
@@ -190,20 +190,21 @@ namespace capi
    * @param sslSocket current sslSocket
    * @throws SQLException if protocol isn't a supported protocol
    */
-  void ConnectProtocol::enabledSslProtocolSuites(MYSQL* socket, const Shared::Options& options)
+  void ConnectProtocol::enabledTlsProtocolSuites(MYSQL* socket, const Shared::Options& options)
   {
     static SQLString possibleProtocols= "TLSv1.1, TLSv1.2, TLSv1.3";
 
-    if (!options->enabledSslProtocolSuites.empty()) {
-      Tokens protocols= split(options->enabledSslProtocolSuites, "[,;\\s]+");
+    if (!options->enabledTlsProtocolSuites.empty()) {
+      Tokens protocols= split(options->enabledTlsProtocolSuites, "[,;\\s]+");
       for (const auto& protocol : *protocols){
         if (possibleProtocols.find_first_of(protocol) == std::string::npos){
           throw SQLException(
-              "Unsupported SSL protocol '"
+              "Unsupported TLS protocol '"
               +protocol
               +"'. Supported protocols : " + possibleProtocols);
         }
       }
+      mysql_optionsv(socket, MARIADB_OPT_TLS_VERSION, (void*)options->enabledTlsProtocolSuites.c_str());
     }
   }
 
@@ -213,11 +214,12 @@ namespace capi
    * @param sslSocket current ssl socket
    * @throws SQLException if a cipher isn't known
    */
-  void ConnectProtocol::enabledSslCipherSuites(MYSQL* sslSocket, const Shared::Options& options)
+  void ConnectProtocol::enabledTlsCipherSuites(MYSQL* sslSocket, const Shared::Options& options)
   {
-    if (!options->enabledSslCipherSuites.empty()){
+    if (!options->enabledTlsCipherSuites.empty()){
+#ifdef POSSIBLE_CIPHERS_DEFINED
       SQLString possibleCiphers;
-      Tokens ciphers(split(options->enabledSslCipherSuites, "[,;\\s]+"));
+      Tokens ciphers(split(options->enabledTlsCipherSuites, "[,;\\s]+"));
       for (const auto& cipher : *ciphers){
         if (!(possibleCiphers.find_first_of(cipher) != std::string::npos)){
           throw SQLException(
@@ -227,7 +229,8 @@ namespace capi
               );
         }
       }
-      //sslSocket->setEnabledCipherSuites(ciphers);
+#endif
+      mysql_optionsv(sslSocket, MYSQL_OPT_SSL_CIPHER, options->enabledTlsCipherSuites.c_str());
     }
   }
 
@@ -390,7 +393,7 @@ namespace capi
 
     try {
 
-      int8_t exchangeCharset= decideLanguage(/*greetingPacket.getServerLanguage()*/224 & 0xFF);
+      int8_t  exchangeCharset= decideLanguage(/*greetingPacket.getServerLanguage()*/224 & 0xFF);
       int64_t clientCapabilities= initializeClientCapabilities(options, serverCapabilities, database);
       exceptionFactory.reset(ExceptionFactory::of(serverThreadId, options));
 
@@ -401,6 +404,7 @@ namespace capi
           exchangeCharset);
 
       SQLString authenticationPluginType;
+
       if (credentialPlugin && !credentialPlugin->defaultAuthenticationPluginType().empty()){
         authenticationPluginType= credentialPlugin->defaultAuthenticationPluginType();
       }
@@ -498,27 +502,58 @@ namespace capi
       const Shared::Options& options,
       int64_t& clientCapabilities,
       int8_t exchangeCharset)
+  {
+    const unsigned int safeCApiTrue= 0x01010101;
+
+    if (options->useTls)
     {
-      if (options->useSsl)
-      {
-        clientCapabilities |=MariaDbServerCapabilities::SSL;
+      clientCapabilities |= MariaDbServerCapabilities::SSL;
+      mysql_optionsv(connection.get(), MYSQL_OPT_SSL_ENFORCE, (const char*)&safeCApiTrue);
+    }
 
-        //TODO: set libmariadb TLS options based of selected options
+    this->enabledTlsProtocolSuites(connection.get(), options);
+    this->enabledTlsCipherSuites(connection.get(), options);
 
-        enabledSslProtocolSuites(connection.get(), options);
-        enabledSslCipherSuites(connection.get(), options);
-
-        //sslSocket->setUseClientMode(true);
-        //sslSocket->startHandshake();
-
-
-        if (!options->disableSslHostnameVerification &&!options->trustServerCertificate){
-
-        }
-
-        assignStream(options);
+    if (!options->tlsKey.empty()) {
+      mysql_optionsv(connection.get(), MYSQL_OPT_SSL_KEY, options->tlsKey.c_str());
+      if (!options->keyPassword.empty()) {
+        mysql_optionsv(connection.get(), MARIADB_OPT_TLS_PASSPHRASE, options->keyPassword.c_str());
       }
     }
+
+    if (!options->tlsCert.empty()) {
+      mysql_optionsv(connection.get(), MYSQL_OPT_SSL_CERT, options->tlsCert.c_str());
+    }
+    if (!options->tlsCA.empty()) {
+      mysql_optionsv(connection.get(), MYSQL_OPT_SSL_CA, options->tlsCA.c_str());
+    }
+    if (!options->tlsCAPath.empty()) {
+      mysql_optionsv(connection.get(), MYSQL_OPT_SSL_CAPATH, options->tlsCAPath.c_str());
+    }
+    if (!options->tlsCRL.empty()) {
+      mysql_optionsv(connection.get(), MYSQL_OPT_SSL_CRL, options->tlsCRL.c_str());
+    }
+    if (!options->tlsCRLPath.empty()) {
+      mysql_optionsv(connection.get(), MYSQL_OPT_SSL_CRL, options->tlsCRLPath.c_str());
+    }
+    if (!options->tlsPeerFP.empty()) {
+      mysql_optionsv(connection.get(), MARIADB_OPT_TLS_PEER_FP, options->tlsPeerFP.c_str());
+    }
+
+
+    // This is not quite a TLS option, but still putting it here
+    if (!options->serverRsaPublicKeyFile.empty()) {
+      mysql_optionsv(connection.get(), MYSQL_SERVER_PUBLIC_KEY, (void*)options->serverRsaPublicKeyFile.c_str());
+    }
+    //sslSocket->setUseClientMode(true);
+    //sslSocket->startHandshake();
+
+    if (!options->disableSslHostnameVerification && !options->trustServerCertificate) {
+      mysql_optionsv(connection.get(), MYSQL_OPT_SSL_VERIFY_SERVER_CERT, (const char*)&safeCApiTrue);
+    }
+
+    assignStream(options);
+  }
 
   void ConnectProtocol::authenticationHandler(
     int8_t exchangeCharset,

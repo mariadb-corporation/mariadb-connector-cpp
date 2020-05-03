@@ -41,16 +41,19 @@ struct Options
 
   SQLString user;
   SQLString password;
+  /***** TLS options *****/
   bool      trustServerCertificate;
   SQLString serverSslCert;
-  SQLString trustStore;
-  SQLString trustStoreType;
-  SQLString keyStoreType;
-  SQLString trustStorePassword;
-  SQLString keyStore;
-  SQLString keyStorePassword;
+  SQLString tlsKey;
+  SQLString tlsCRLPath;
+  SQLString tlsCRL;
+  SQLString tlsCert;
+  SQLString tlsCA;
+  SQLString tlsCAPath;
   SQLString keyPassword;
-  SQLString enabledSslProtocolSuites;
+  SQLString enabledTlsProtocolSuites;
+  SQLString tlsPeerFPList;
+  /** TLS options - end **/
   bool      useFractionalSeconds;
   bool      pinGlobalTxToPhysicalConnection;
   SQLString socketFactory;
@@ -72,8 +75,8 @@ struct Options
   SQLString passwordCharacterEncoding;
   bool      blankTableNameMeta;
   SQLString credentialType;
-  bool      useSsl;
-  SQLString enabledSslCipherSuites;
+  bool      useTls;
+  SQLString enabledTlsCipherSuites;
   SQLString sessionVariables;
   bool      tinyInt1isBit;
   bool      yearIsDateType;
@@ -109,7 +112,6 @@ struct Options
 
   Properties nonMappedOptions;
 
-  SQLString tlsSocketType;
   bool      log;
   bool      profileSql;
   int32_t   maxQuerySizeToLog;
@@ -133,7 +135,7 @@ struct Options
   bool      useResetConnection;
   bool      useReadAheadInput;
   SQLString serverRsaPublicKeyFile;
-  bool      allowPublicKeyRetrieval;
+  SQLString tlsPeerFP;
 
   SQLString toString() const;
   bool      equals(Options* obj);

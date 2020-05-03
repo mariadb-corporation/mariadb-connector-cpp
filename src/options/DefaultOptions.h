@@ -44,6 +44,10 @@ class DefaultOptions
 
 public:
   const Value defaultValue;
+  static std::map<std::string, DefaultOptions*> OPTIONS_MAP;
+
+  /* These constructor makes use of [] operator on the OptionsMap possible */
+  DefaultOptions() {}
 
   DefaultOptions(const char * optionName, const char * implementationVersion, const char * description, bool required);
 

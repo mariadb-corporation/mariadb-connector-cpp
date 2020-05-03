@@ -32,8 +32,8 @@ namespace sql
   {
     static const int32_t SocketTimeoutDefault[]= {10000, 0, 0, 0, 0, 0};
     std::map<std::string, DefaultOptions> OptionsMap{
-      { "user", {"user", "0.9.0", "Database user name", false} },
-      {"password", {"password",  "0.9.0", "Password of the database user", false} },
+      { "user", {"user", "0.9.1", "Database user name", false} },
+      {"password", {"password",  "0.9.1", "Password of the database user", false} },
 
       /**
       * The connect timeout value, in milliseconds, or zero for no timeout. Default: 30000 (30 seconds)
@@ -41,45 +41,45 @@ namespace sql
       */
        {
          "connectTimeout", {"connectTimeout",
-         "0.9.0",
+         "0.9.1",
          "The connect timeout value, in milliseconds, or zero for no timeout.",
          false,
          (int32_t)30000,
          int32_t(0)}} ,
-       {"pipe", {"pipe",  "0.9.0", "On Windows, specify the named pipe name to connect", false}},
+       {"pipe", {"pipe",  "0.9.1", "On Windows, specify the named pipe name to connect", false}},
        {
          "localSocket", {"localSocket",
-         "0.9.0",
+         "0.9.1",
          "Permits connecting to the database via Unix domain socket, if the server allows it."
          " \nThe value is the path of Unix domain socket (i.e \"socket\" database parameter : "
          "select @@socket).",
          false}},
        {
          "sharedMemory", {"sharedMemory",
-         "0.9.0",
+         "0.9.1",
          "Permits connecting to the database via shared memory, if the server allows "
          "it. \nThe value is the base name of the shared memory.",
          false}},
        {
          "tcpNoDelay", {"tcpNoDelay",
-         "0.9.0",
+         "0.9.1",
          "Sets corresponding option on the connection socket.",
          false,
          true}},
        {
          "tcpAbortiveClose", {"tcpAbortiveClose",
-         "0.9.0",
+         "0.9.1",
          "Sets corresponding option on the connection socket.",
          false,
          false}},
        {
          "localSocketAddress", {"localSocketAddress",
-         "0.9.0",
+         "0.9.1",
          "Hostname or IP address to bind the connection socket to a local (UNIX domain) socket.",
          false}} ,
       {
         "socketTimeout", {"socketTimeout",
-        "0.9.0",
+        "0.9.1",
         "Defined the "
         "network socket timeout (SO_TIMEOUT) in milliseconds. Value of 0 disables this timeout. \n"
         "If the goal is to set a timeout for all queries, since MariaDB 10.1.1, the server has permitted a "
@@ -91,7 +91,7 @@ namespace sql
         int32_t(0)}},
       {
         "interactiveClient", {"interactiveClient",
-        "0.9.0",
+        "0.9.1",
         "Session timeout is defined by the wait_timeout "
         "server variable. Setting interactiveClient to true will tell the server to use the interactive_timeout "
         "server variable.",
@@ -99,76 +99,71 @@ namespace sql
         false}},
       {
         "dumpQueriesOnException", {"dumpQueriesOnException",
-        "0.9.0",
+        "0.9.1",
         "If set to 'true', an exception is thrown "
         "during query execution containing a query string.",
         false,
         false}},
       {
         "useOldAliasMetadataBehavior", {"useOldAliasMetadataBehavior",
-        "0.9.0",
+        "0.9.1",
         "Metadata ResultSetMetaData.getTableName() returns the physical table name. \"useOldAliasMetadataBehavior\""
         " permits activating the legacy code that sends the table alias if set.",
         false,
         false}},
       {
-        "allowLocalInfile", {"allowLocalInfile", "0.9.0", "Permit loading data from file", false, true}},
+        "allowLocalInfile", {"allowLocalInfile", "0.9.1", "Permit loading data from file", false, true}},
       {
         "sessionVariables", {"sessionVariables",
-        "0.9.0",
+        "0.9.1",
         "<var>=<value> pairs separated by comma, mysql session variables, "
         "set upon establishing successful connection.",
         false}},
       {
         "createDatabaseIfNotExist", {"createDatabaseIfNotExist",
-        "0.9.0",
+        "0.9.1",
         "the specified database in the url will be created if non-existent.",
         false,
         false}},
       {
         "serverTimezone", {"serverTimezone",
-        "0.9.0",
+        "0.9.1",
         "Defines the server time zone.\n"
         "to use only if the jre server has a different time implementation of the server.\n"
         "(best to have the same server time zone when possible).",
         false}},
       {
         "nullCatalogMeansCurrent", {"nullCatalogMeansCurrent",
-        "0.9.0",
+        "0.9.1",
         "DatabaseMetaData use current catalog if null.",
         false,
         true}},
       {
         "tinyInt1isBit", {"tinyInt1isBit",
-        "0.9.0",
+        "0.9.1",
         "Datatype mapping flag, handle Tiny as {boolean).",
         false,
         true}},
       {
-        "yearIsDateType", {"yearIsDateType", "0.9.0", "Year is date type, rather than numerical.", false, true}},
-      {
-        "useSsl", {"useSsl",
-        "0.9.0",
-        "Force SSL on connection. (legacy alias \"useSSL\")",
-        false,
-        false}},
+        "yearIsDateType", {"yearIsDateType", "0.9.1", "Year is date type, rather than numerical.", false, true}
+      },
       {
         "useCompression", {"useCompression",
-        "0.9.0",
+        "0.9.1",
         "Compresses the exchange with the database through gzip."
         " This permits better performance when the database is not in the same location.",
         false,
         false}},
       {
         "allowMultiQueries", {"allowMultiQueries",
-        "0.9.0",
+        "0.9.1",
         "permit multi-queries like insert into ab (i) "
         "values (1); insert into ab (i) values (2).",
         false,
         false}},
       {
         "rewriteBatchedStatements", {"rewriteBatchedStatements",
-        "0.9.0",
+        "0.9.1",
         "For insert queries, rewrite "
         "batchedStatement to execute in a single executeQuery.\n"
         "example:\n"
@@ -185,43 +180,44 @@ namespace sql
         false}},
       {
         "tcpKeepAlive", {"tcpKeepAlive",
-        "0.9.0",
+        "0.9.1",
         "Sets corresponding option on the connection socket.",
         false,
         true}},
       {
         "tcpRcvBuf", {"tcpRcvBuf",
-        "0.9.0",
+        "0.9.1",
         "set buffer size for TCP buffer (SO_RCVBUF).",
         false,
         (int32_t)0/*(int32_t)NULL*/,
         int32_t(0) }},
       {
         "tcpSndBuf", {"tcpSndBuf",
-        "0.9.0",
+        "0.9.1",
         "set buffer size for TCP buffer (SO_SNDBUF).",
         false,
         (int32_t)0,
         int32_t(0) } },
       {
         "socketFactory", {"socketFactory",
-        "0.9.0",
+        "0.9.1",
         "to use a custom socket factory, set it to the full name of the class that"
         " implements javax.net.SocketFactory.",
         false}},
       {
-        "pinGlobalTxToPhysicalConnection", {"pinGlobalTxToPhysicalConnection", "0.9.0", "", false, false}},
+        "pinGlobalTxToPhysicalConnection", {"pinGlobalTxToPhysicalConnection", "0.9.1", "", false, false}},
       {
         "trustServerCertificate", {"trustServerCertificate",
-        "0.9.0",
+        "0.9.2",
         "When using SSL, do not check server's certificate.",
         false,
-        false}},
+        true}
+      },
       {
         "serverSslCert", {"serverSslCert",
-        "0.9.0",
+        "0.9.2",
         "Permits providing server's certificate in DER form, or server's CA"
-        " certificate. The server will be added to trustStor. This permits a self-signed certificate to be trusted.\n"
+        " certificate. This permits a self-signed certificate to be trusted.\n"
         "Can be used in one of 3 forms : \n"
         "* serverSslCert=/path/to/cert.pem (full path to certificate)\n"
         "* serverSslCert=classpath:relative/cert.pem (relative to current classpath)\n"
@@ -229,7 +225,7 @@ namespace sql
         false}},
       {
         "useFractionalSeconds", {"useFractionalSeconds",
-        "0.9.0",
+        "0.9.1",
         "Correctly handle subsecond precision in"
         " timestamps (feature available with MariaDB 5.3 and later).\n"
         "May confuse 3rd party components (Hibernate).",
@@ -237,20 +233,20 @@ namespace sql
         true}},
       {
         "autoReconnect", {"autoReconnect",
-        "0.9.0",
+        "0.9.1",
         "Driver must recreateConnection after a failover.",
         false,
         false}},
       {
         "failOnReadOnly", {"failOnReadOnly",
-        "0.9.0",
+        "0.9.1",
         "After a master failover and no other master found,"
         " back on a read-only host ( throw exception if not).",
         false,
         false}},
       {
         "retriesAllDown", {"retriesAllDown",
-        "0.9.0",
+        "0.9.1",
         "When using loadbalancing, the number of times the driver should"
         " cycle through available hosts, attempting to connect.\n"
         "     * Between cycles, the driver will pause for 250ms if no servers are available.",
@@ -259,7 +255,7 @@ namespace sql
         int32_t(0) }},
       {
         "failoverLoopRetries", {"failoverLoopRetries",
-        "0.9.0",
+        "0.9.1",
         "When using failover, the number of times the driver"
         " should cycle silently through available hosts, attempting to connect.\n"
         "     * Between cycles, the driver will pause for 250ms if no servers are available.\n"
@@ -269,7 +265,7 @@ namespace sql
         int32_t(0) }},
       {
         "validConnectionTimeout", {"validConnectionTimeout",
-        "0.9.0",
+        "0.9.1",
         "When in multiple hosts, after this time in"
         " second without used, verification that the connections haven't been lost.\n"
         "     * When 0, no verification will be done. Defaults to 0 (120 before 1.5.8 version)",
@@ -278,20 +274,20 @@ namespace sql
         int32_t(0)}},
       {
         "loadBalanceBlacklistTimeout", {"loadBalanceBlacklistTimeout",
-        "0.9.0",
+        "0.9.1",
         "time in second a server is blacklisted after a connection failure.",
         false,
         (int32_t)50,
         int32_t(0)}},
       {
         "cachePrepStmts", {"cachePrepStmts",
-        "0.9.0",
+        "0.9.1",
         "enable/disable prepare Statement cache, default true.",
         false,
         true}},
       {
         "prepStmtCacheSize", {"prepStmtCacheSize",
-        "0.9.0",
+        "0.9.1",
         "This sets the number of prepared statements that the "
         "driver will cache per connection if \"cachePrepStmts\" is enabled.",
         false,
@@ -299,7 +295,7 @@ namespace sql
         int32_t(0)}},
       {
         "prepStmtCacheSqlLimit", {"prepStmtCacheSqlLimit",
-        "0.9.0",
+        "0.9.1",
         "This is the maximum length of a prepared SQL"
         " statement that the driver will cache  if \"cachePrepStmts\" is enabled.",
         false,
@@ -307,14 +303,14 @@ namespace sql
         int32_t(0)}},
       {
         "assureReadOnly", {"assureReadOnly",
-        "0.9.0",
+        "0.9.1",
         "If true, in high availability, and switching to a "
         "read-only host, assure that this host is in read-only mode by setting the session to read-only.",
         false,
         false}},
       {
         "useLegacyDatetimeCode", {"useLegacyDatetimeCode",
-        "0.9.0",
+        "0.9.1",
         "if true (default) store date/timestamps "
         "according to client time zone.\n"
         "if false, store all date/timestamps in DB according to server time zone, and time information (that is a"
@@ -324,7 +320,7 @@ namespace sql
         true}},
       {
         "maximizeMysqlCompatibility", {"maximizeMysqlCompatibility",
-        "0.9.0",
+        "0.9.1",
         "maximize MySQL compatibility.\n"
         "when using jdbc setDate(), will store date in client timezone, not in server timezone when "
         "useLegacyDatetimeCode = false.\n"
@@ -333,82 +329,123 @@ namespace sql
         false}},
       {
         "useServerPrepStmts", {"useServerPrepStmts",
-        "0.9.0",
+        "0.9.1",
         "useServerPrepStmts must prepared statements be"
         " prepared on server side, or just faked on client side.\n"
         "     * if rewriteBatchedStatements is set to true, this options will be set to false.",
         false,
         false}},
+/******************************* Tls parameters *******************************/
       {
-        "trustStore", {"trustStore",
-        "0.9.0",
-        "File path of the trustStore file (similar to java System property "
-        "\"javax.net.ssl.trustStore\"). (legacy alias trustCertificateKeyStoreUrl)\n"
-        "Use the specified file for trusted root certificates.\n"
-        "When set, overrides serverSslCert.",
+        "useTls", {"useTls",
+        "0.9.1",
+        "Force SSL on connection. (legacy aliases \"useSsl\", \"useSSL\")",
+        false,
+        false} },
+      {
+        "tlsKey", {"tlsKey",
+        "0.9.2",
+        "File path to a private key file to use for TLS. (alias sslKey is also supported)\n"
+        "It is required to use the absolute path, not a relative path.",
         false}},
       {
-        "trustStorePassword", {"trustStorePassword",
-        "0.9.0",
-        "Password for the trusted root certificate file"
-        " (similar to java System property \"javax.net.ssl.trustStorePassword\").\n"
-        "(legacy alias trustCertificateKeyStorePassword).",
+        "tlsCert", {"tlsCert",
+        "0.9.2",
+        "Path to the X509 certificate file"
+        ".\n"
+        "(alias sslCert).",
         false}},
       {
-        "keyStore", {"keyStore",
-        "0.9.0",
-        "File path of the keyStore file that contain client private key store and associate "
-        "certificates (similar to java System property \"javax.net.ssl.keyStore\", but ensure that only the "
-        "private key's entries are used).(legacy alias clientCertificateKeyStoreUrl).",
+        "tlsCA", {"tlsCA",
+        "0.9.2",
+        "A path to a PEM file that should contain one or more X509 certificates for trusted Certificate Authorities (CAs)."
+        "",
         false}},
       {
-        "keyStorePassword", {"keyStorePassword",
-        "0.9.0",
-        "Password for the client certificate keyStore (similar to java "
-        "System property \"javax.net.ssl.keyStorePassword\").(legacy alias clientCertificateKeyStorePassword)",
+        "tlsCAPath", {"tlsCAPath",
+        "0.9.2",
+        "A path to a directory that contains one or more PEM files that should each contain one X509 certificate for "
+        "a trusted Certificate Authority (CA) to use "
+        "",
         false}},
       {
         "keyPassword", {"keyPassword",
-        "0.9.0",
-        "Password for the private key in client certificate keyStore. (only "
-        "needed if private key password differ from keyStore password).",
+        "0.9.2",
+        "Password for the private key in client certificate tlsCA. (only "
+        "needed if private key password differ from tlsCA password).",
         false}},
       {
-        "enabledSslProtocolSuites", {"enabledSslProtocolSuites",
-        "0.9.0",
+        "enabledTlsProtocolSuites", {"enabledTlsProtocolSuites",
+        "0.9.2",
         "Force TLS/SSL protocol to a specific set of TLS "
         "versions (comma separated list). \n"
         "Example : \"TLSv1, TLSv1.1, TLSv1.2\"\n"
-        "(Alias \"enabledSSLProtocolSuites\" works too)",
+        "(Aliases: \"enabledSSLProtocolSuites\" \"enabledSslProtocolSuites\")",
         false}},
       {
-        "enabledSslCipherSuites", {"enabledSslCipherSuites",
-        "0.9.0",
+        "enabledTlsCipherSuites", {"enabledTlsCipherSuites",
+        "0.9.2",
         "Force TLS/SSL cipher (comma separated list).\n"
         "Example : \"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_DHE_DSS_WITH_AES_256_GCM_SHA384\"",
-        false}},
+        false}
+      },
+      {
+        "tlsCRL", {"tlsCRL",
+        "0.9.2",
+        "path to a PEM file that should contain one or more revoked X509 certificates",
+        false,
+        ""}
+      },
+      {
+        "tlsCRLPath", {"tlsCRLPath",
+        "0.9.2",
+        "A path to a directory that contains one or more PEM files that should each contain one revoked X509 certificate.\n"
+        "The directory specified by this option needs to be run through the openssl rehash command.\n"
+        " ",
+        false,
+        ""}
+      },
+      {
+        "serverRsaPublicKeyFile", {"serverRsaPublicKeyFile",
+        "0.9.2",
+        "the name of the file which contains the RSA public key of the database server. The format of this file must be in PEM format.\n"
+        "This option is used by the caching_sha2_password client authentication plugin.",
+        false,
+        ""} },
+      {
+        "tlsPeerFP", {"tlsPeerFP",
+        "0.9.2",
+        "The SHA1 fingerprint of a server certificate for validation during the TLS handshake.",
+        false,
+        ""}
+      },
+      {
+        "tlsPeerFPList", {"tlsPeerFPList", "0.9.2",
+        "A file containing one or more SHA1 fingerprints of server certificates for validation during the TLS handshake.", false, ""}
+      },
+/**************************** Tls parameters - end ******************************/
       {
         "continueBatchOnError", {"continueBatchOnError",
-        "0.9.0",
+        "0.9.1",
         "When executing batch queries, must batch continue on error.",
         false,
         true}},
       {
         "jdbcCompliantTruncation", {"jdbcCompliantTruncation",
-        "0.9.0",
+        "0.9.1",
         "Truncation error (\"Data truncated for"
         " column '%' at row %\", \"Out of range value for column '%' at row %\") will be thrown as error, and not as warning.",
         false,
         true}},
       {
         "cacheCallableStmts", {"cacheCallableStmts",
-        "0.9.0",
+        "0.9.1",
         "enable/disable callable Statement cache, default true.",
         false,
         true}},
       {
         "callableStmtCacheSize", {"callableStmtCacheSize",
-        "0.9.0",
+        "0.9.1",
         "This sets the number of callable statements "
         "that the driver will cache per VM if \"cacheCallableStmts\" is enabled.",
         false,
@@ -416,7 +453,7 @@ namespace sql
         int32_t(0)}},
       {
         "connectionAttributes", {"connectionAttributes",
-        "0.9.0",
+        "0.9.1",
         "When performance_schema is active, permit to send server "
         "some client information in a key;value pair format "
         "(example: connectionAttributes=key1:value1,key2,value2).\n"
@@ -426,7 +463,7 @@ namespace sql
         false}},
       {
         "useBatchMultiSend", {"useBatchMultiSend",
-        "0.9.0",
+        "0.9.1",
         "*Not compatible with aurora*\n"
         "Driver will can send queries by batch. \n"
         "If set to false, queries are sent one by one, waiting for the result before sending the next one. \n"
@@ -440,7 +477,7 @@ namespace sql
         false/*(bool*)NULL*/}},
       {
         "useBatchMultiSendNumber", {"useBatchMultiSendNumber",
-        "0.9.0",
+        "0.9.1",
         "When option useBatchMultiSend is active,"
         " indicate the maximum query send in a row before reading results.",
         false,
@@ -448,29 +485,29 @@ namespace sql
         int32_t(1)}},
       {
         "log", {"log",
-        "0.9.0",
+        "0.9.1",
         "Enable log information. \n"
         "require Slf4j version > 1.4 dependency.\n"
         "Log level correspond to Slf4j logging implementation",
         false,
         false}},
-      {"profileSql", {"profileSql", "0.9.0", "log query execution time.", false, false}},
-      {"maxQuerySizeToLog", {"maxQuerySizeToLog", "0.9.0", "Max query log size.", false, 1024, 0}},
+      {"profileSql", {"profileSql", "0.9.1", "log query execution time.", false, false}},
+      {"maxQuerySizeToLog", {"maxQuerySizeToLog", "0.9.1", "Max query log size.", false, 1024, 0}},
       {
         "slowQueryThresholdNanos", {"slowQueryThresholdNanos",
-        "0.9.0",
+        "0.9.1",
         "Will log query with execution time superior to this value (if defined )",
         0LL,
         false,
         0LL}},
       {
         "passwordCharacterEncoding", {"passwordCharacterEncoding",
-        "0.9.0",
+        "0.9.1",
         "Indicate password encoding charset. If not set, driver use platform's default charset.",
         false}},
       {
         "usePipelineAuth", {"usePipelineAuth",
-        "0.9.0",
+        "0.9.1",
         "*Not compatible with aurora*\n"
         "During connection, different queries are executed. When option is active those queries are send using"
         " pipeline (all queries are send, then only all results are reads), permitting faster connection "
@@ -479,7 +516,7 @@ namespace sql
         false/*(bool*)NULL*/}},
       {
         "enablePacketDebug", {"enablePacketDebug",
-        "0.9.0",
+        "0.9.1",
         "Driver will save the last 16 MariaDB packet "
         "exchanges (limited to first 1000 bytes). Hexadecimal value of those packets will be added to stacktrace"
         " when an IOException occur.\n"
@@ -488,7 +525,7 @@ namespace sql
         false}},
       {
         "disableSslHostnameVerification", {"disableSslHostnameVerification",
-        "0.9.0",
+        "0.9.1",
         "When using ssl, the driver "
         "checks the hostname against the server's identity as presented in the server's certificate (checking "
         "alternative names or the certificate CN) to prevent man-in-the-middle attacks. This option permits "
@@ -498,7 +535,7 @@ namespace sql
         false}},
       {
         "useBulkStmts", {"useBulkStmts",
-        "0.9.0",
+        "0.9.1",
         "Use dedicated COM_STMT_BULK_EXECUTE protocol for batch "
         "insert when possible. (batch without Statement.RETURN_GENERATED_KEYS and streams) to have faster batch. "
         "(significant only if server MariaDB >= 10.2.7)",
@@ -506,33 +543,33 @@ namespace sql
         false}},
       {
         "autocommit", {"autocommit",
-        "0.9.0",
+        "0.9.1",
         "Set default autocommit value on connection initialization",
         false,
         true}},
       {
         "pool", {"pool",
-        "0.9.0",
+        "0.9.1",
         "Use pool. This option is useful only if not using a DataSource object, but "
         "only a connection object.",
         false,
         false}},
       {
         "poolName", {"poolName",
-        "0.9.0",
+        "0.9.1",
         "Pool name that permits identifying threads. default: auto-generated as "
         "MariaDb-pool-<pool-index>",
         false}},
       {
         "maxPoolSize", {"maxPoolSize",
-        "0.9.0",
+        "0.9.1",
         "The maximum number of physical connections that the pool should contain.",
         false,
         (int32_t)8,
         int32_t(1) }},
       {
         "minPoolSize", {"minPoolSize",
-        "0.9.0",
+        "0.9.1",
         "When connections are removed due to not being used for "
         "longer than than \"maxIdleTime\", connections are closed and removed from the pool. \"minPoolSize\" "
         "indicates the number of physical connections the pool should keep available at all times. Should be less"
@@ -542,7 +579,7 @@ namespace sql
         int32_t(0)}},
       {
         "maxIdleTime", {"maxIdleTime",
-        "0.9.0",
+        "0.9.1",
         "The maximum amount of time in seconds"
         " that a connection can stay in the pool when not used. This value must always be below @wait_timeout"
         " value - 45s \n"
@@ -552,7 +589,7 @@ namespace sql
         Options::MIN_VALUE__MAX_IDLE_TIME}},
       {
         "poolValidMinDelay", {"poolValidMinDelay",
-        "0.9.0",
+        "0.9.1",
         "When asking a connection to pool, the pool will "
         "validate the connection state. \"poolValidMinDelay\" permits disabling this validation if the connection"
         " has been borrowed recently avoiding useless verifications in case of frequent reuse of connections. "
@@ -562,7 +599,7 @@ namespace sql
         int32_t(0)}},
       {
         "staticGlobal", {"staticGlobal",
-        "0.9.0",
+        "0.9.1",
         "Indicates the values of the global variables "
         "max_allowed_packet, wait_timeout, autocommit, auto_increment_increment, time_zone, system_time_zone and"
         " tx_isolation) won't be changed, permitting the pool to create new connections faster.",
@@ -570,7 +607,7 @@ namespace sql
         false}},
       {
         "useResetConnection", {"useResetConnection",
-        "0.9.0",
+        "0.9.1",
         "When a connection is closed() "
         "(given back to pool), the pool resets the connection state. Setting this option, the prepare command "
         "will be deleted, session variables changed will be reset, and user variables will be destroyed when the"
@@ -580,7 +617,7 @@ namespace sql
         false}},
       {
         "allowMasterDownConnection", {"allowMasterDownConnection",
-        "0.9.0",
+        "0.9.1",
         "When using master/slave configuration, "
         "permit to create connection when master is down. If no master is up, default connection is then a slave "
         "and Connection.isReadOnly() will then return true.",
@@ -588,7 +625,7 @@ namespace sql
         false}},
       {
         "galeraAllowedState", {"galeraAllowedState",
-        "0.9.0",
+        "0.9.1",
         "Usually, Connection.isValid just send an empty packet to "
         "server, and server send a small response to ensure connectivity. When this option is set, connector will"
         " ensure Galera server state \"wsrep_local_state\" correspond to allowed values (separated by comma). "
@@ -596,7 +633,7 @@ namespace sql
         false}},
       {
         "useAffectedRows", {"useAffectedRows",
-        "0.9.0",
+        "0.9.1",
         "If false (default), use \"found rows\" for the row "
         "count of statements. This corresponds to the JDBC standard.\n"
         "If true, use \"affected rows\" for the row count.\n"
@@ -605,85 +642,97 @@ namespace sql
         false}},
       {
         "includeInnodbStatusInDeadlockExceptions", {"includeInnodbStatusInDeadlockExceptions",
-        "0.9.0",
+        "0.9.1",
         "add \"SHOW ENGINE INNODB STATUS\" result to exception trace when having a deadlock exception",
         false,
         false}},
       {
         "includeThreadDumpInDeadlockExceptions", {"includeThreadDumpInDeadlockExceptions",
-        "0.9.0",
+        "0.9.1",
         "add thread dump to exception trace when having a deadlock exception",
         false,
         false}},
       {
         "useReadAheadInput", {"useReadAheadInput",
-        "0.9.0",
+        "0.9.1",
         "use a buffered inputSteam that read socket available data",
         false,
-        true}},
-      {
-        "keyStoreType", {"keyStoreType",
-        "0.9.0",
-        "indicate key store type (JKS/PKCS12). default is null, then using java default type",
-        false,
-        ""}},
-      {
-        "trustStoreType", {"trustStoreType",
-        "0.9.0",
-        "indicate trust store type (JKS/PKCS12). default is null, then using java default type",
-        false,
-        ""}},
+        true}
+      },
       {
         "servicePrincipalName", {"servicePrincipalName",
-        "0.9.0",
+        "0.9.1",
         "when using GSSAPI authentication, SPN (Service Principal Name) use the server SPN information. When set, "
         "connector will use this value, ignoring server information",
         false,
-        ""}},
+        ""}
+      },
+
       {
         "defaultFetchSize", {"defaultFetchSize",
-        "0.9.0",
+        "0.9.1",
         "The driver will call setFetchSize(n) with this value on all newly-created Statements",
         false,
         int32_t(0),
         int32_t(0) }},
       {
         "useMysqlMetadata", {"useMysqlMetadata",
-        "0.9.0",
+        "0.9.1",
         "force DatabaseMetadata.getDatabaseProductName() "
         "to return \"MySQL\" as database, not real database type",
         false,
         false}},
       {
         "blankTableNameMeta", {"blankTableNameMeta",
-        "0.9.0",
+        "0.9.1",
         "Resultset metadata getTableName always return blank. "
         "This option is mainly for ORACLE db compatibility",
         false,
         false}},
       {
         "credentialType", {"credentialType",
-        "0.9.0",
+        "0.9.1",
         "Indicate the credential plugin type to use. Plugin must be present in classpath",
         false,
-        ""}},
-      {
-        "serverRsaPublicKeyFile", {"serverRsaPublicKeyFile",
-        "0.9.0",
-        "Indicate path to MySQL server public key file",
-        false,
-        ""}},
-      {
-        "allowPublicKeyRetrieval", {"allowPublicKeyRetrieval",
-        "0.9.0",
-        "Permit to get MySQL server key retrieval",
-        false,
-        false}},
-      {"tlsSocketType", {"tlsSocketType", "0.9.0", "Indicate TLS socket type implementation", false, ""}}
+        ""}
+      }
     };
 
-//-------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------- Aliases ------------------------------------------------------------------------------------
+    bool addAliases(std::map<std::string, DefaultOptions*>& completeOptionsMap) {
+      for (auto& defaultOption : OptionsMap) {
+        completeOptionsMap.emplace(defaultOption.first, &defaultOption.second);
+      }
 
+      completeOptionsMap.emplace("createDB",                   &OptionsMap["createDatabaseIfNotExist"]);
+      completeOptionsMap.emplace("useSSL",                     &OptionsMap["useTls"]);
+      completeOptionsMap.emplace("useSsl",                     &OptionsMap["useTls"]);
+      completeOptionsMap.emplace("profileSQL",                 &OptionsMap["profileSql"]);
+      completeOptionsMap.emplace("enabledSSLCipherSuites",     &OptionsMap["enabledTlsCipherSuites"]);
+      completeOptionsMap.emplace("enabledSslCipherSuites",     &OptionsMap["enabledTlsCipherSuites"]);
+      completeOptionsMap.emplace("MARIADB_OPT_TLS_PASSPHRASE", &OptionsMap["keyPassword"]);
+      completeOptionsMap.emplace("sslCert",                    &OptionsMap["tlsCert"]);
+      completeOptionsMap.emplace("sslCA",                      &OptionsMap["tlsCA"]);
+      completeOptionsMap.emplace("tlsCa",                      &OptionsMap["tlsCA"]);
+      completeOptionsMap.emplace("tlsCaPath",                  &OptionsMap["tlsCAPath"]);
+      completeOptionsMap.emplace("sslCAPath",                  &OptionsMap["tlsCAPath"]);
+      completeOptionsMap.emplace("enabledSslProtocolSuites",   &OptionsMap["enabledTlsProtocolSuites"]);
+      completeOptionsMap.emplace("enabledSSLProtocolSuites",   &OptionsMap["enabledTlsProtocolSuites"]);
+      completeOptionsMap.emplace("sslCRL",                     &OptionsMap["tlsCRL"]);
+      completeOptionsMap.emplace("tlsCrl",                     &OptionsMap["tlsCRL"]);
+      completeOptionsMap.emplace("sslCRLPath",                 &OptionsMap["tlsCRLPath"]);
+      completeOptionsMap.emplace("tlsCrlPath",                 &OptionsMap["tlsCRLPath"]);
+      completeOptionsMap.emplace("tlsPeerFp",                  &OptionsMap["tlsPeerFP"]);
+      completeOptionsMap.emplace("tlsPeerFpList",              &OptionsMap["tlsPeerFPList"]);
+      completeOptionsMap.emplace("MARIADB_OPT_TLS_PEER_FP",    &OptionsMap["tlsPeerFP"]);
+      completeOptionsMap.emplace("MARIADB_OPT_SSL_FP_LIST",    &OptionsMap["tlsPeerFPList"]);
+      completeOptionsMap.emplace("rsaKey",                     &OptionsMap["serverRsaPublicKeyFile"]);
+      return true;
+    }
+
+    std::map<std::string, DefaultOptions*> DefaultOptions::OPTIONS_MAP;
+    static bool aliasesAdded= addAliases(DefaultOptions::OPTIONS_MAP);
+//-------------------------------------------------------------------------------------------------------------------------------------
     DefaultOptions::DefaultOptions(const char * optionName, const char * implementationVersion, const char* description, bool required)
       : optionName(optionName),  description(description), required(required), defaultValue(""), minValue (), maxValue()
     {
@@ -710,6 +759,7 @@ namespace sql
       maxValue()
     {
     }
+
     DefaultOptions::DefaultOptions(const char* optionName, const char* implementationVersion, const char* description,
         bool required, int32_t defaultValue, int32_t minValue) :
       optionName(optionName),
@@ -720,6 +770,7 @@ namespace sql
       maxValue(INT32_MAX)
     {
     }
+
     DefaultOptions::DefaultOptions(const char* optionName, const char* implementationVersion, const char* description,
         int64_t defaultValue, bool required, int64_t minValue) :
       optionName(optionName),
@@ -744,7 +795,7 @@ namespace sql
     }
 #endif
 
-    Shared::Options DefaultOptions::defaultValues(const enum HaMode haMode)
+    Shared::Options DefaultOptions::defaultValues(HaMode haMode)
     {
       Properties properties;
       return parse(haMode, emptyStr, properties);
@@ -756,7 +807,7 @@ namespace sql
      * @param pool is for pool
      * @return Options object initialized
      */
-    Shared::Options DefaultOptions::defaultValues(enum HaMode haMode, bool pool)
+    Shared::Options DefaultOptions::defaultValues(HaMode haMode, bool pool)
     {
       Properties properties;
       properties.insert({ "pool", pool ? "true" : "false" });
@@ -831,17 +882,17 @@ namespace sql
           const std::string& key= static_cast<const std::string&>(it.first);
           SQLString propertyValue(it.second);
 
-          auto cit= OptionsMap.find(key);
+          auto cit= OPTIONS_MAP.find(key);
 
-          if (cit != OptionsMap.end()/* && !propertyValue.empty()*/)
+          if (cit != OPTIONS_MAP.end()/* && !propertyValue.empty()*/)
           {
-            DefaultOptions &o= cit->second;
-            const ClassField<Options> field= Options::getField(o.optionName);
+            DefaultOptions *o= cit->second;
+            const ClassField<Options> field= Options::getField(o->optionName);
 
-            if (o.objType() == Value::VSTRING ){
+            if (o->objType() == Value::VSTRING ){
               field.set(options, propertyValue);
             }
-            else if (o.objType() == Value::VBOOL)
+            else if (o->objType() == Value::VBOOL)
             {
               if (propertyValue.toLowerCase().length() == 0
                 || propertyValue.compare("1") == 0
@@ -858,32 +909,32 @@ namespace sql
               {
                 throw IllegalArgumentException(
                     "Optional parameter "
-                    +o.optionName
+                    +o->optionName
                     +" must be bool (true/false or 0/1) was \""
                     +propertyValue
                     +"\"");
               }
             }
-            else if (o.objType() == Value::VINT32)
+            else if (o->objType() == Value::VINT32)
             {
               try {
                 int32_t value= std::stoi(propertyValue);
 
-                assert(!o.minValue.empty());
-                assert(!o.maxValue.empty());
-                int32_t minValue= o.minValue;
-                int32_t maxValue= o.maxValue;
+                assert(!o->minValue.empty());
+                assert(!o->maxValue.empty());
+                int32_t minValue= o->minValue;
+                int32_t maxValue= o->maxValue;
 
                 if (value < minValue
                     || maxValue != INT32_MAX && value > maxValue)
                 {
                   throw IllegalArgumentException(
                       "Optional parameter "
-                      +o.optionName
+                      +o->optionName
                       +" must be greater or equal to "
-                      + static_cast<const SQLString>(o.minValue)
+                      + static_cast<const SQLString>(o->minValue)
                       + (maxValue != INT32_MAX
-                        ?" and smaller than " + static_cast<const SQLString>(o.maxValue)
+                        ?" and smaller than " + static_cast<const SQLString>(o->maxValue)
                         :" ")
                       +", was \""
                       +propertyValue
@@ -896,33 +947,33 @@ namespace sql
               {
                 throw IllegalArgumentException(
                     "Optional parameter "
-                    + o.optionName
+                    + o->optionName
                     + " must be Integer, was \""
                     + propertyValue
                     + "\"");
               }
             }
-            else if (o.objType() == Value::VINT64)
+            else if (o->objType() == Value::VINT64)
             {
               try {
                 int64_t value= std::stoll(propertyValue);
 
-                assert(!o.minValue.empty());
-                assert(!o.maxValue.empty());
+                assert(!o->minValue.empty());
+                assert(!o->maxValue.empty());
 
-                int64_t minValue= o.minValue;
-                int64_t maxValue= o.maxValue;
+                int64_t minValue= o->minValue;
+                int64_t maxValue= o->maxValue;
 
                 if (value < minValue
                     || maxValue != INT64_MAX && value > maxValue)
                 {
                   throw IllegalArgumentException(
                       "Optional parameter "
-                      + o.optionName
+                      + o->optionName
                       + " must be greater or equal to "
-                      + static_cast<const SQLString>(o.minValue)
+                      + static_cast<const SQLString>(o->minValue)
                       + (maxValue !=INT64_MAX
-                        ? " and smaller than " + static_cast<const SQLString>(o.maxValue)
+                        ? " and smaller than " + static_cast<const SQLString>(o->maxValue)
                         : SQLString(" "))
                       + ", was \""
                       + propertyValue
@@ -934,7 +985,7 @@ namespace sql
               {
                 throw IllegalArgumentException(
                     "Optional parameter "
-                    +o.optionName
+                    +o->optionName
                     +" must be Long, was \""
                     +propertyValue
                     +"\"");
@@ -988,9 +1039,10 @@ namespace sql
       if (options->defaultFetchSize < 0){
         options->defaultFetchSize= 0;
       }
+
       if (credentialPlugin && credentialPlugin->mustUseSsl())
       {
-        options->useSsl= true;
+        options->useTls= true;
       }
 
       if (options->usePipelineAuth) {

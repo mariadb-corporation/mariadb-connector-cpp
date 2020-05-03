@@ -73,6 +73,10 @@ namespace mariadb
       }
       uri.append(cit->second);
       props.erase(cit);
+      if ((cit= props.find("port")) != props.end()) {
+        uri.append(':');
+        uri.append(cit->second);
+      }
     }
     else if ((cit= props.find("pipe")) != props.end())
     {
