@@ -83,7 +83,8 @@ ADD_SUBDIRECTORY(unit)
 
 ADD_TEST(compliance cjportedtests)
 ADD_TEST(test_parametermetadata parametermetadata)
+ADD_TEST(test_preparedstatement preparedstatement)
 
-SET_TESTS_PROPERTIES(static_test driver_test compliance PROPERTIES TIMEOUT 120 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+SET_TESTS_PROPERTIES(static_test driver_test compliance test_preparedstatement PROPERTIES TIMEOUT 120 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 MESSAGE(STATUS "Configuring test cases")

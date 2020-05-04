@@ -58,8 +58,10 @@ public:
   virtual void setLong(int32_t parameterIndex, int64_t value)=0;
   virtual void setInt64(int32_t parameterIndex, int64_t value)=0;
   virtual void setUInt64(int32_t parameterIndex, uint64_t value)=0;
+  virtual void setUInt(int32_t parameterIndex, uint32_t value)=0;
   virtual void setFloat(int32_t parameterIndex, float value)=0;
   virtual void setDouble(int32_t parameterIndex, double value)=0;
+  virtual void setBigInt(int32_t column, const SQLString& value)=0;
 
   virtual void setBlob(int32_t parameterIndex, std::istream* inputStream,const int64_t length)=0;
   virtual void setBlob(int32_t parameterIndex, std::istream* inputStream)=0;

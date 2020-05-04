@@ -160,6 +160,9 @@ public:
   Savepoint* setSavepoint(const SQLString& name);
   void releaseSavepoint(const Savepoint* savepoint);
 
+  sql::Connection* setClientOption(const SQLString& name, void* value);
+  sql::Connection* setClientOption(const SQLString& name, const SQLString& value);
+
   Clob* createClob();
   Blob* createBlob();
   NClob* createNClob();

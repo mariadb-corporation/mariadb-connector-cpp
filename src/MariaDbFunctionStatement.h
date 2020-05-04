@@ -162,9 +162,12 @@ public:
   void setLong(int32_t parameterIndex, int64_t value);
   void setInt64(int32_t parameterIndex, int64_t value) { setLong(parameterIndex, value); }
   void setUInt64(int32_t parameterIndex, uint64_t value);
+  void setUInt(int32_t parameterIndex, uint32_t value);
   void setFloat(int32_t parameterIndex, float value);
   void setDouble(int32_t parameterIndex, double value);
   void setDateTime(int32_t parameterIndex, const SQLString& dt);
+  void setBigInt(int32_t column, const SQLString& value);
+
   void setNull(const SQLString& parameterName, int32_t sqlType);
   void setNull(const SQLString& parameterName, int32_t sqlType, const SQLString& typeName);
   void setBoolean(const SQLString& parameterName, bool boolValue);
@@ -175,7 +178,6 @@ public:
   void setInt64(const SQLString& parameterName, int64_t longValue) { setLong(parameterName, longValue); }
   void setFloat(const SQLString& parameterName, float floatValue);
   void setDouble(const SQLString& parameterName, double doubleValue);
-
   void setString(const SQLString& parameterName, const SQLString& stringValue);
   void setBytes(const SQLString& parameterName, sql::bytes* bytes);
 

@@ -243,9 +243,11 @@ public:
   void setLong(int32_t parameterIndex, int64_t value);
   void setInt64(int32_t parameterIndex, int64_t value) { setLong(parameterIndex, value); }
   void setUInt64(int32_t parameterIdx, uint64_t longValue);
+  void setUInt(int32_t parameterIndex, uint32_t value);
   void setFloat(int32_t parameterIndex, float value);
   void setDouble(int32_t parameterIndex, double value);
   void setDateTime(int32_t parameterIndex, const SQLString& dt);
+  void setBigInt(int32_t parameterIndex, const SQLString& value);
 
   /* Forwarding to stmt to implement Statement's part of interface */
   int32_t executeUpdate(const SQLString& sql);

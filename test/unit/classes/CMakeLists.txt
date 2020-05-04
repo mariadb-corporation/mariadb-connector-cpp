@@ -94,6 +94,7 @@ ENDIF(WIN32)
 ADD_EXECUTABLE(test_resultsetmetadata ${test_resultsetmetadata_sources})
 SET_TARGET_PROPERTIES(test_resultsetmetadata PROPERTIES
           OUTPUT_NAME "resultsetmetadata"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
           LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
 TARGET_LINK_LIBRARIES(test_resultsetmetadata ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
@@ -115,6 +116,7 @@ ENDIF(WIN32)
 ADD_EXECUTABLE(test_resultset ${test_resultset_sources})
 SET_TARGET_PROPERTIES(test_resultset PROPERTIES
           OUTPUT_NAME "resultset"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
           LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
 TARGET_LINK_LIBRARIES(test_resultset ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
@@ -136,6 +138,7 @@ ENDIF(WIN32)
 ADD_EXECUTABLE(test_savepoint ${test_savepoint_sources})
 SET_TARGET_PROPERTIES(test_savepoint PROPERTIES
           OUTPUT_NAME "savepoint"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
           LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
 TARGET_LINK_LIBRARIES(test_savepoint ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
@@ -154,14 +157,15 @@ IF(WIN32)
   preparedstatementtest.h)
 ENDIF(WIN32)
 
-#ADD_EXECUTABLE(test_preparedstatement ${test_preparedstatement_sources})
-#SET_TARGET_PROPERTIES(test_preparedstatement PROPERTIES
-#          OUTPUT_NAME "preparedstatement"
-#          LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
-#          COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
-#TARGET_LINK_LIBRARIES(test_preparedstatement ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
-#
-#MESSAGE(STATUS "Configuring unit tests - preparedstatement")
+ADD_EXECUTABLE(test_preparedstatement ${test_preparedstatement_sources})
+SET_TARGET_PROPERTIES(test_preparedstatement PROPERTIES
+          OUTPUT_NAME "preparedstatement"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+          LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
+          COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
+TARGET_LINK_LIBRARIES(test_preparedstatement ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
+
+MESSAGE(STATUS "Configuring unit tests - preparedstatement")
 
 SET(test_parametermetadata_sources
   ../unit_fixture.cpp

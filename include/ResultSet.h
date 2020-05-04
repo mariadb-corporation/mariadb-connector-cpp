@@ -93,6 +93,8 @@ public:
   virtual SQLString getString(const SQLString& columnLabel)=0;
   virtual int32_t getInt(int32_t columnIndex)=0;
   virtual int32_t getInt(const SQLString& columnLabel)=0;
+  virtual uint32_t getUInt(int32_t columnIndex)=0;
+  virtual uint32_t getUInt(const SQLString& columnLabel)=0;
   virtual int64_t getLong(const SQLString& columnLabel)=0;
   virtual int64_t getLong(int32_t columnIndex)=0;
   /* getInt64 are aliases for getLong */

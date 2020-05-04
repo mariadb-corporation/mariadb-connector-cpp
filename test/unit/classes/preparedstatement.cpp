@@ -381,7 +381,7 @@ void preparedstatement::InsertSelectAllTypes()
         {
           std::unique_ptr<std::istream> blob_output_stream(res->getBlob(1));
           len=it->as_string.length();
-          boost::scoped_array<char> blob_out(new char[len]);
+          std::unique_ptr<char> blob_out(new char[len]);
           blob_output_stream->read(blob_out.get(), len);
           if (it->as_string.compare(0, blob_output_stream->gcount()
                                     , blob_out.get(), blob_output_stream->gcount()))
@@ -397,7 +397,7 @@ void preparedstatement::InsertSelectAllTypes()
         {
           std::unique_ptr<std::istream> blob_output_stream(res->getBlob("id"));
           len=it->as_string.length();
-          boost::scoped_array<char> blob_out(new char[len]);
+          std::unique_ptr<char> blob_out(new char[len]);
           blob_output_stream->read(blob_out.get(), len);
           if (it->as_string.compare(0, blob_output_stream->gcount()
                                     , blob_out.get(), blob_output_stream->gcount()))

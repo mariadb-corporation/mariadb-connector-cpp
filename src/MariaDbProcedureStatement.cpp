@@ -929,35 +929,46 @@ namespace mariadb
     stmt->setByte(nameToIndex(parameterName), byteValue);
   }
 
-  void MariaDbProcedureStatement::setShort(const SQLString& parameterName, int16_t shortValue)
-  {
+
+  void MariaDbProcedureStatement::setShort(const SQLString& parameterName, int16_t shortValue) {
     stmt->setShort(nameToIndex(parameterName), shortValue);
   }
 
-  void MariaDbProcedureStatement::setInt(const SQLString& parameterName, int32_t intValue)
-  {
+
+  void MariaDbProcedureStatement::setInt(const SQLString& parameterName, int32_t intValue) {
     stmt->setInt(nameToIndex(parameterName), intValue);
   }
 
-  void MariaDbProcedureStatement::setLong(const SQLString& parameterName, int64_t longValue)
-  {
+
+  void MariaDbProcedureStatement::setLong(const SQLString& parameterName, int64_t longValue) {
     stmt->setLong(nameToIndex(parameterName), longValue);
   }
 
-  void MariaDbProcedureStatement::setUInt64(int32_t parameterIdx, uint64_t uLongValue)
-  {
+
+  void MariaDbProcedureStatement::setUInt64(int32_t parameterIdx, uint64_t uLongValue) {
     stmt->setUInt64(parameterIdx, uLongValue);
   }
 
-  void MariaDbProcedureStatement::setFloat(const SQLString& parameterName, float floatValue)
-  {
+
+  void MariaDbProcedureStatement::setUInt(int32_t parameterIndex, uint32_t value) {
+    stmt->setUInt(parameterIndex, value);
+  }
+
+
+  void MariaDbProcedureStatement::setFloat(const SQLString& parameterName, float floatValue) {
     stmt->setFloat(nameToIndex(parameterName), floatValue);
   }
 
-  void MariaDbProcedureStatement::setDouble(const SQLString& parameterName, double doubleValue)
-  {
+
+  void MariaDbProcedureStatement::setDouble(const SQLString& parameterName, double doubleValue) {
     stmt->setDouble(nameToIndex(parameterName), doubleValue);
   }
+
+
+  void MariaDbProcedureStatement::setBigInt(int32_t parameterIndex, const SQLString& value) {
+    stmt->setBigInt(parameterIndex, value);
+  }
+
 
   void MariaDbProcedureStatement::setString(const SQLString& parameterName, const SQLString& stringValue)
   {

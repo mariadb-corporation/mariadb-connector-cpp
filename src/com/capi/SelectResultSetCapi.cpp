@@ -1011,6 +1011,20 @@ namespace capi
     return static_cast<uint64_t>(row->getInternalULong(columnsInformation[columnIndex -1].get()));
   }
 
+
+  uint32_t SelectResultSetCapi::getUInt(const SQLString& columnLabel)
+  {
+    return getUInt(findColumn(columnLabel));
+  }
+
+
+  uint32_t SelectResultSetCapi::getUInt(int32_t columnIndex)
+  {
+    checkObjectRange(columnIndex);
+    return static_cast<uint32_t>(row->getInternalULong(columnsInformation[columnIndex - 1].get()));
+  }
+
+
   /** {inheritDoc}. */
   float SelectResultSetCapi::getFloat(const SQLString& columnLabel) {
     return getFloat(findColumn(columnLabel));

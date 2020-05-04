@@ -1364,9 +1364,26 @@ namespace mariadb
     setParameter(parameterIndex, new LongParameter(value));
   }
 
+
   void BasePrepareStatement::setUInt64(int32_t parameterIndex, uint64_t value) {
     setParameter(parameterIndex, new ULongParameter(value));
   }
+
+
+  void BasePrepareStatement::setUInt(int32_t parameterIndex, uint32_t value) {
+    setParameter(parameterIndex, new ULongParameter(value));
+  }
+
+
+  void BasePrepareStatement::setBigInt(int32_t parameterIndex, const SQLString& str) {
+    /*if (str == NULL){
+      setNull(parameterIndex,ColumnType::VARCHAR);
+      return;
+    }*/
+
+    setParameter(parameterIndex, new StringParameter(str, noBackslashEscapes));
+  }
+
   /**
    * Sets the designated parameter to the given Java <code>float</code> value. The driver converts
    * this to an SQL <code>REAL</code> value when it sends it to the database.

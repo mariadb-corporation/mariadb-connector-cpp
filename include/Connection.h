@@ -97,6 +97,9 @@ public:
   virtual void setSchema(const SQLString& arg0)=0;
   virtual void reset()=0;
 
+  virtual Connection* setClientOption(const SQLString& name, void* value)=0;
+  virtual Connection* setClientOption(const SQLString& name, const SQLString& value)=0;
+
   virtual Clob* createClob()=0;
   virtual Blob* createBlob()=0;
   virtual NClob* createNClob()=0;

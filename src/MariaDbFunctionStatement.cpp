@@ -718,52 +718,82 @@ namespace mariadb
   void MariaDbFunctionStatement::setNull(int32_t parameterIndex, int32_t sqlType, const SQLString& typeName) {
     stmt->setNull(parameterIndex, sqlType, typeName);
   }
+
+
   void MariaDbFunctionStatement::setBlob(int32_t parameterIndex, std::istream* inputStream, const int64_t length) {
     stmt->setBlob(parameterIndex, inputStream, length);
   }
+
+
   void MariaDbFunctionStatement::setBlob(int32_t parameterIndex, std::istream* inputStream) {
     stmt->setBlob(parameterIndex, inputStream);
   }
 
+
   void MariaDbFunctionStatement::setBoolean(int32_t parameterIndex, bool value) {
     stmt->setBoolean(parameterIndex, value);
   }
+
+
   void MariaDbFunctionStatement::setByte(int32_t parameterIndex, int8_t byte) {
     stmt->setByte(parameterIndex, byte);
   }
+
+
   void MariaDbFunctionStatement::setShort(int32_t parameterIndex, int16_t value) {
     stmt->setShort(parameterIndex, value);
   }
+
+
   void MariaDbFunctionStatement::setString(int32_t parameterIndex, const SQLString& str) {
     stmt->setString(parameterIndex, str);
   }
+
+
   void MariaDbFunctionStatement::setBytes(int32_t parameterIndex, sql::bytes* bytes) {
     stmt->setBytes(parameterIndex, bytes);
   }
+
+
   void MariaDbFunctionStatement::setInt(int32_t column, int32_t value) {
     stmt->setInt(column, value);
   }
+
+
   void MariaDbFunctionStatement::setLong(int32_t parameterIndex, int64_t value) {
     stmt->setLong(parameterIndex, value);
   }
 
-  void MariaDbFunctionStatement::setUInt64(int32_t parameterIndex, uint64_t value)
-  {
+
+  void MariaDbFunctionStatement::setUInt64(int32_t parameterIndex, uint64_t value) {
     stmt->setUInt64(parameterIndex, value);
   }
+
+
+  void MariaDbFunctionStatement::setUInt(int32_t parameterIndex, uint32_t value) {
+    stmt->setUInt(parameterIndex, value);
+  }
+
 
   void MariaDbFunctionStatement::setFloat(int32_t parameterIndex, float value) {
     stmt->setFloat(parameterIndex, value);
   }
 
+
   void MariaDbFunctionStatement::setDouble(int32_t parameterIndex, double value) {
     stmt->setDouble(parameterIndex, value);
   }
 
-  void MariaDbFunctionStatement::setDateTime(int32_t parameterIndex, const SQLString & dt)
-  {
+
+  void MariaDbFunctionStatement::setDateTime(int32_t parameterIndex, const SQLString & dt) {
     stmt->setDateTime(parameterIndex, dt);
   }
+
+
+  void MariaDbFunctionStatement::setBigInt(int32_t parameterIndex, const SQLString& value) {
+    stmt->setBigInt(parameterIndex, value);
+  }
+
 
   void MariaDbFunctionStatement::setNull(const SQLString& parameterName, int32_t sqlType) {
     stmt->setNull(nameToIndex(parameterName), sqlType);

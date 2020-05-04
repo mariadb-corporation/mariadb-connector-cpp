@@ -1034,6 +1034,17 @@ namespace mariadb
     st->execute("RELEASE SAVEPOINT " + savepoint->toString());
   }
 
+
+  sql::Connection* MariaDbConnection::setClientOption(const SQLString& name, void* value) {
+    throw SQLFeatureNotImplementedException("setClientOption support is not implemented yet");
+  }
+
+
+  sql::Connection* MariaDbConnection::setClientOption(const SQLString& name, const SQLString& value) {
+    throw SQLFeatureNotImplementedException("setClientOption support is not implemented yet");
+  }
+
+
   /**
     * Constructs an object that implements the <code>Clob</code> interface. The object returned
     * initially contains no data. The <code>setAsciiStream</code>, <code>setCharacterStream</code>

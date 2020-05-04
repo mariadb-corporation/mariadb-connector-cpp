@@ -37,7 +37,7 @@ sql::Properties properties({{"user", "roor"}, {"password", "someSecretWord"}});
 std::unique_ptr<Connection> conn(driver->connect(url, properties));
 ```
 For URL syntax and options name you may find [here](https://mariadb.com/kb/en/about-mariadb-connector-j/)
-but not all options will have effect at the moment. Not supported are:
+but not all options will have effect at the moment. In particular, not supported are(list may be incomplete):
   - keyStore
   - keyStorePassword
   - trustStore

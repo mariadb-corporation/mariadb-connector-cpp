@@ -200,6 +200,8 @@ public:
   int64_t getInt64(int32_t columnIndex)           { return getLong(columnIndex); }
   uint64_t getUInt64(const SQLString& columnLabel);
   uint64_t getUInt64(int32_t columnIndex);
+  uint32_t getUInt(const SQLString& columnLabel);
+  uint32_t getUInt(int32_t columnIndex);
   float getFloat(const SQLString& columnLabel);
   float getFloat(int32_t columnIndex);
   long double getDouble(const SQLString& columnLabel);
