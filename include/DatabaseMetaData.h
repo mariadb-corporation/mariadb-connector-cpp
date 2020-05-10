@@ -156,6 +156,7 @@ public:
   virtual SQLString getDriverVersion()=0;
   virtual int32_t getDriverMajorVersion()=0;
   virtual int32_t getDriverMinorVersion()=0;
+  virtual int32_t getDriverPatchVersion()=0;
   virtual bool usesLocalFiles()=0;
   virtual bool usesLocalFilePerTable()=0;
   virtual bool supportsMixedCaseIdentifiers()=0;
@@ -311,7 +312,18 @@ public:
   virtual ResultSet* getFunctions(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& functionNamePattern)=0;
   virtual int64_t getMaxLogicalLobSize()=0;
   virtual bool supportsRefCursors()=0;
+
+  virtual bool supportsTypeConversion()=0;
+
   virtual ResultSet* getSchemaObjectTypes()=0;
+  virtual ResultSet* getSchemaObjects()=0;
+  virtual ResultSet* getSchemaObjects(const SQLString& c, const SQLString& s, const SQLString& t)=0;
+  virtual int32_t getCDBCMajorVersion()=0;
+  virtual int32_t getCDBCMinorVersion()=0;
+  virtual ResultSet* getSchemaCollation(const SQLString& c, const SQLString& s)=0;
+  virtual ResultSet* getSchemaCharset(const SQLString& c, const SQLString& s)=0;
+  virtual ResultSet* getTableCollation(const SQLString& c, const SQLString& s, const SQLString& t)=0;
+  virtual ResultSet* getTableCharset(const SQLString& c, const SQLString& s, const SQLString& t)=0;
 };
 }
 #endif

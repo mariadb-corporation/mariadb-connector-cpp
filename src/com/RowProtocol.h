@@ -116,7 +116,7 @@ public:
   void rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo);
 #endif
   virtual int32_t fetchNext()=0;
-  virtual void fetchAtPosition(int32_t rowPtr)=0;
+  virtual void installCursorAtPosition(int32_t rowPtr)=0;
 
   virtual Date getInternalDate(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr)=0;
   virtual std::unique_ptr<Time>  getInternalTime(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr)=0;

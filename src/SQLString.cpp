@@ -44,8 +44,8 @@ namespace sql
   {
   }*/
 
-
-  SQLString::SQLString(const char* str) : theString(str)
+  //TODO: not sure if it's not better to throw on null pointer
+  SQLString::SQLString(const char* str) : theString(str != nullptr ? str : "")
   {
   }
 
@@ -277,10 +277,16 @@ namespace sql
 
   SQLString & SQLString::operator=(const char * right)
   {
-    theString= right;
+    theString= (right != nullptr ? right : "");
     return *this;
   }
 
+
+  int SQLString::caseCompare(const SQLString& other) const
+  {
+    SQLString lcThis(theString), lsThat(other);
+    return lcThis.toLowerCase().compare(lsThat.toLowerCase());
+  }
 ////////////////////// Standalone util functions /////////////////////////////
 
 namespace mariadb
@@ -294,10 +300,18 @@ namespace mariadb
 
     while ((offset= theString.find_first_of(delimiter, prevOffset)) != std::string::npos)
     {
-      std::string tmp(it, it + offset - prevOffset);
+      std::string tmp(it, it + (offset - prevOffset));
       result->emplace_back(tmp);
       prevOffset= ++offset;
-      it+= offset;
+
+      if (it < theString.cend() - offset)
+      {
+        it += offset;
+      }
+      else
+      {
+        break;
+      }
     }
     
     std::string tmp(it, theString.cend());

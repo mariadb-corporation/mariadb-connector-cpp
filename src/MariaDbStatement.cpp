@@ -74,7 +74,8 @@ namespace mariadb
       warningsCleared(true),
       maxRows(0),
       maxFieldSize(0),
-      exceptionFactory(factory)
+      exceptionFactory(factory),
+      isTimedout(false)
   {
   }
 

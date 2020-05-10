@@ -75,14 +75,17 @@ namespace capi
       isEof(false),
       capiConnHandle(NULL),
       capiStmtHandle(spr->getStatementId()),
-      timeZone(nullptr)
+      timeZone(nullptr),
+      forceAlias(false)
     //      timeZone(protocol->getTimeZone(),
   {
     row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
 
     if (fetchSize == 0 || callableResult) {
       data.reserve(10);//= new char[10]; // This has to be array of arrays. Need to decide what to use for its representation
-      mysql_stmt_store_result(capiStmtHandle);
+      if (mysql_stmt_store_result(capiStmtHandle)) {
+        throwStmtError(capiStmtHandle);
+      }
       dataSize= static_cast<std::size_t>(mysql_stmt_num_rows(capiStmtHandle));
       streaming= false;
       resetVariables();
@@ -119,7 +122,9 @@ namespace capi
       isEof(false),
       capiConnHandle(capiConnHandle),
       capiStmtHandle(NULL),
-      timeZone(nullptr)
+      timeZone(nullptr),
+      forceAlias(false),
+      lastRowPointer(-1)
   {
     MYSQL_RES* textNativeResults= NULL;
     if (fetchSize == 0 || callableResult) {
@@ -189,7 +194,11 @@ namespace capi
       streaming(false),
       capiConnHandle(NULL),
       capiStmtHandle(NULL),
-      timeZone(nullptr)
+      timeZone(nullptr),
+      forceAlias(false),
+      lastRowPointer(-1),
+      eofDeprecated(false),
+      noBackslashEscapes(false)
   {
     if (protocol) {
       this->options= protocol->getOptions();
@@ -616,7 +625,7 @@ namespace capi
       row->resetRow(data[rowPointer]);
     }
     else {
-      row->fetchAtPosition(rowPointer);
+      row->installCursorAtPosition(rowPointer);
     }
     lastRowPointer= rowPointer;
   }
@@ -660,17 +669,20 @@ namespace capi
 
   bool SelectResultSetCapi::isAfterLast() {
     checkClose();
-    if (static_cast<uint32_t>(rowPointer) < dataSize) {
-
+    if (rowPointer < 0 || static_cast<std::size_t>(rowPointer) < dataSize) {
+      // has remaining results
       return false;
     }
     else {
-
-      if (streaming && !isEof) {
-
+      
+      if (streaming && !isEof)
+      {
+      // has to read more result to know if it's finished or not
+      // (next packet may be new data or an EOF packet indicating that there is no more data)
         std::lock_guard<std::mutex> localScopeLock(*lock);
         try {
-
+          // this time, fetch is added even for streaming forward type only to keep current pointer
+          // row.
           if (!isEof) {
             addStreamingValue();
           }
@@ -681,27 +693,29 @@ namespace capi
 
         return dataSize == rowPointer;
       }
-
+      // has read all data and pointer is after last result
+      // so result would have to always to be true,
+      // but when result contain no row at all jdbc say that must return false
       return dataSize >0 ||dataFetchTime >1;
     }
   }
 
   bool SelectResultSetCapi::isFirst() {
     checkClose();
-    return dataFetchTime == 1 &&rowPointer == 0 &&dataSize >0;
+    return /*dataFetchTime == 1 && */rowPointer == 0 && dataSize > 0;
   }
 
   bool SelectResultSetCapi::isLast() {
     checkClose();
-    if (static_cast<uint32_t>(rowPointer) < dataSize -1) {
+    if (static_cast<std::size_t>(rowPointer + 1) < dataSize) {
       return false;
     }
     else if (isEof) {
       return rowPointer == dataSize -1 && dataSize >0;
     }
     else {
-
-
+      // when streaming and not having read all results,
+      // must read next packet to know if next packet is an EOF packet or some additional data
       std::lock_guard<std::mutex> localScopeLock(*lock);
       try {
         if (!isEof) {
@@ -744,6 +758,7 @@ namespace capi
     }
 
     rowPointer= 0;
+    row->installCursorAtPosition(rowPointer);
     return dataSize >0;
   }
 
@@ -751,6 +766,7 @@ namespace capi
     checkClose();
     fetchRemaining();
     rowPointer= dataSize - 1;
+    row->installCursorAtPosition(rowPointer);
     return dataSize > 0;
   }
 
@@ -762,15 +778,15 @@ namespace capi
     return rowPointer +1;
   }
 
-  bool SelectResultSetCapi::absolute(int32_t row) {
+  bool SelectResultSetCapi::absolute(int32_t rowPos) {
     checkClose();
 
     if (streaming &&resultSetScrollType == TYPE_FORWARD_ONLY) {
       throw SQLException("Invalid operation for result set type TYPE_FORWARD_ONLY");
     }
 
-    if (static_cast<uint32_t>(row) >=0 && static_cast<uint32_t>(row) <= dataSize) {
-      rowPointer= row - 1;
+    if (static_cast<uint32_t>(rowPos) >=0 && static_cast<uint32_t>(rowPos) <= dataSize) {
+      rowPointer= rowPos - 1;
       return true;
     }
 
@@ -779,8 +795,9 @@ namespace capi
 
     if (row >= 0) {
 
-      if (static_cast<uint32_t>(row) <= dataSize) {
-        rowPointer= row -1;
+      if (static_cast<uint32_t>(rowPos) <= dataSize) {
+        rowPointer= rowPos - 1;
+        row->installCursorAtPosition(rowPointer);
         return true;
       }
 
@@ -790,9 +807,10 @@ namespace capi
     }
     else {
 
-      if (dataSize + row >=0) {
+      if (dataSize + rowPos >=0) {
 
-        rowPointer= dataSize +row;
+        rowPointer= dataSize + rowPos;
+        row->installCursorAtPosition(rowPointer);
         return true;
       }
 
@@ -800,6 +818,7 @@ namespace capi
       return false;
     }
   }
+
 
   bool SelectResultSetCapi::relative(int32_t rows) {
     checkClose();
@@ -817,6 +836,7 @@ namespace capi
     }
     else {
       rowPointer= newPos;
+      row->installCursorAtPosition(rowPointer);
       return true;
     }
   }

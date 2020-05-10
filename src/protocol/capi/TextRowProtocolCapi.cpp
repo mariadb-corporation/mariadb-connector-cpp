@@ -66,11 +66,15 @@ namespace capi
      length= lengthArr[newIndex];
      fieldBuf.wrap(rowData[index], length);
    }
-   else
+   else if (buf != nullptr)
    {
      this->lastValueNull= fieldBuf ? BIT_LAST_FIELD_NOT_NULL : BIT_LAST_FIELD_NULL;
      fieldBuf= (*buf)[index];
      length= static_cast<uint32_t>(fieldBuf.size());
+   }
+   else {
+     // TODO: we need some good assert above instead of this
+     throw std::runtime_error("Internal error in the TextRow class - data buffers are NULLs");
    }
  }
 
@@ -983,10 +987,10 @@ namespace capi
  }
 
 
- void TextRowProtocolCapi::fetchAtPosition(int32_t rowPtr)
+ void TextRowProtocolCapi::installCursorAtPosition(int32_t rowPtr)
  {
    mysql_data_seek(capiResults.get(), rowPtr);
-   fetchNext();
+   //fetchNext();
 
  }
 

@@ -38,24 +38,25 @@ IF(WIN32)
 
 ENDIF(WIN32)
 
-#SET(test_connection_sources
-#  ${test_common_sources}
-#  connection.cpp)
-#
-#IF(WIN32)
-#  SET(test_connection_sources
-#        ${test_connection_sources}
-#    connectiontest.h)
-#ENDIF(WIN32)
-#
-#ADD_EXECUTABLE(test_connection ${test_connection_sources})
-#SET_TARGET_PROPERTIES(test_connection PROPERTIES
-#          OUTPUT_NAME "connection"
-#          LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
-#          COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
-#TARGET_LINK_LIBRARIES(test_connection ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
-#
-#MESSAGE(STATUS "Configuring unit tests - connection")
+SET(test_connection_sources
+  ${test_common_sources}
+  connection.cpp)
+
+IF(WIN32)
+  SET(test_connection_sources
+        ${test_connection_sources}
+    connectiontest.h)
+ENDIF(WIN32)
+
+ADD_EXECUTABLE(test_connection ${test_connection_sources})
+SET_TARGET_PROPERTIES(test_connection PROPERTIES
+          OUTPUT_NAME "connection"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+          LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
+          COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
+TARGET_LINK_LIBRARIES(test_connection ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
+
+MESSAGE(STATUS "Configuring unit tests - connection")
 
 SET(test_databasemetadata_sources
   ../unit_fixture.cpp
@@ -69,14 +70,15 @@ IF(WIN32)
   connectionmetadata.h)
 ENDIF(WIN32)
 
-#ADD_EXECUTABLE(test_databasemetadata ${test_databasemetadata_sources})
-#SET_TARGET_PROPERTIES(test_databasemetadata PROPERTIES
-#          OUTPUT_NAME "databasemetadata"
-#          LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
-#          COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
-#TARGET_LINK_LIBRARIES(test_databasemetadata ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
-#
-#MESSAGE(STATUS "Configuring unit tests - databasemetadata")
+ADD_EXECUTABLE(test_databasemetadata ${test_databasemetadata_sources})
+SET_TARGET_PROPERTIES(test_databasemetadata PROPERTIES
+          OUTPUT_NAME "databasemetadata"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+          LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
+          COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
+TARGET_LINK_LIBRARIES(test_databasemetadata ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
+
+MESSAGE(STATUS "Configuring unit tests - databasemetadata")
 
 
 SET(test_resultsetmetadata_sources

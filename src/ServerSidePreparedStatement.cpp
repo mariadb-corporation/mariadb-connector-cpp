@@ -126,13 +126,42 @@ namespace sql
   void ServerSidePreparedStatement::setParameter(int32_t parameterIndex, ParameterHolder* holder)
   {
     // TODO: does it really has to be map? can be, actually
-    auto it= currentParameterHolder.find(parameterIndex - 1);
-    if (it == currentParameterHolder.end()) {
-      Shared::ParameterHolder paramHolder(holder);
-      currentParameterHolder.emplace(parameterIndex - 1, paramHolder);
+    if (parameterIndex > 0 && parameterIndex < serverPrepareResult->getParamCount() + 1) {
+      auto it= currentParameterHolder.find(parameterIndex - 1);
+      if (it == currentParameterHolder.end()) {
+        Shared::ParameterHolder paramHolder(holder);
+        currentParameterHolder.emplace(parameterIndex - 1, paramHolder);
+      }
+      else {
+        it->second.reset(holder);
+      }
     }
     else {
-      it->second.reset(holder);
+      SQLString error("Could not set parameter at position ");
+
+      error.append(std::to_string(parameterIndex)).append(" (values was ").append(holder->toString()).append(")\nQuery - conn:");
+
+      // A bit ugly - index validity is checked after parameter holder objects have been created.
+      delete holder;
+
+      error.append(std::to_string(getServerThreadId())).append(connection->getProtocol()->isMasterConnection() ? "(M)" : "(S)");
+      error.append(" - \"");
+
+      int32_t maxQuerySizeToLog= connection->getProtocol()->getOptions()->maxQuerySizeToLog;
+      if (maxQuerySizeToLog > 0) {
+        if (sql.size() < maxQuerySizeToLog) {
+          error.append(sql);
+        }
+        else {
+          error.append(sql.substr(0, maxQuerySizeToLog - 3) + "...");
+        }
+      }
+      else {
+        error.append(sql);
+      }
+      error.append(" - \"");
+      logger->error(error);
+      throw *ExceptionFactory::INSTANCE.create(error);
     }
   }
 

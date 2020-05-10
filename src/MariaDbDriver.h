@@ -35,7 +35,7 @@ namespace mariadb
     public:
       Connection* connect(const SQLString& url, Properties& props);
       Connection* connect(const SQLString& host, const SQLString& user, const SQLString& pwd);
-      Connection* connect(Properties& props);
+      Connection* connect(const Properties& props);
 
       bool acceptsURL(const SQLString& url);
       std::unique_ptr<std::vector<DriverPropertyInfo>> getPropertyInfo(SQLString& url, Properties& info);

@@ -33,6 +33,25 @@ namespace sql
 namespace mariadb
 {
   static MariaDbDriver theInstance;
+  static const Properties legacyPropKeyMapping{ {"userName", "user"},
+                                               {"socket",   "localSocket"} };
+  extern const SQLString mysqlTcp, mysqlSocket, mysqlPipe;
+
+  void mapLegacyProps(Properties& props)
+  {
+    auto it = props.begin();
+    while (it != props.end()) {
+      auto cit = legacyPropKeyMapping.find(it->first);
+      if (cit != legacyPropKeyMapping.end()) {
+        props.emplace(cit->second, it->second);
+        it = props.erase(it);
+      }
+      else {
+        ++it;
+      }
+    }
+  }
+
 
   MARIADB_EXPORTED Driver* get_driver_instance()
   {
@@ -55,16 +74,79 @@ namespace mariadb
   }
 
 
+  void normalizeLegacyUri(SQLString& url, Properties* prop= nullptr) {
+
+    //Making TCP default with legacy uri
+    if (url.find_first_of("://") == std::string::npos) {
+      url= "tcp://" + url;
+    }
+
+    if (prop != nullptr)
+    {
+      std::string key;
+      std::size_t offset;
+      
+      mapLegacyProps(*prop);
+
+      if (url.startsWith(mysqlTcp))
+      {
+        auto cit= prop->find("port");
+        if (cit != prop->end()) {
+          SQLString host(url.substr(mysqlTcp.length()));
+          size_t colon= host.find_first_of(':');
+          size_t schemaSlash= schemaSlash= host.find_first_of('/');
+          SQLString schema(schemaSlash != std::string::npos ? url.substr(schemaSlash + 1) : emptyStr);
+
+          if (colon != std::string::npos) {
+            host= host.substr(0, colon);
+          }
+          url= mysqlTcp + host + ":" + cit->second + "/" + schema;
+        }
+      }
+      else if (url.startsWith(mysqlPipe)) {
+        offset = mysqlPipe.length();
+        key = "pipe";
+      }
+      else if (url.startsWith(mysqlSocket)) {
+        key = "localSocket";
+        offset = mysqlSocket.length();
+      }
+      else {
+        return;
+      }
+
+      if (prop != nullptr) {
+        std::string name(url.substr(offset));
+        std::size_t slashPos = name.find_first_of('/');
+
+        if (slashPos != std::string::npos) {
+          name = name.substr(0, slashPos);
+        }
+
+        (*prop)[key] = name;
+        mapLegacyProps(*prop);
+      }
+    }
+  }
+
+
   Connection * MariaDbDriver::connect(const SQLString& host, const SQLString& user, const SQLString& pwd)
   {
     Properties props{ {"user", user}, {"password", pwd} };
-    return connect(host, props);
+    SQLString localCopy(host);
+
+    normalizeLegacyUri(localCopy);
+
+    return connect(localCopy, props);
   }
 
-  Connection * MariaDbDriver::connect(Properties & props)
+
+  Connection * MariaDbDriver::connect(const Properties &initProps)
   {
     SQLString uri;
+    Properties props(initProps);
     auto cit= props.find("hostName");
+    
 
     if (cit != props.end())
     {
@@ -73,10 +155,6 @@ namespace mariadb
       }
       uri.append(cit->second);
       props.erase(cit);
-      if ((cit= props.find("port")) != props.end()) {
-        uri.append(':');
-        uri.append(cit->second);
-      }
     }
     else if ((cit= props.find("pipe")) != props.end())
     {
@@ -101,6 +179,9 @@ namespace mariadb
       uri.append('/');
       uri.append(cit->second);
     }
+
+    mapLegacyProps(props);
+
     return connect(uri, props);
   }
 

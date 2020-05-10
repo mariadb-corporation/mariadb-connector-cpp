@@ -92,7 +92,12 @@ namespace mariadb
     metadata.reset(mysql_stmt_result_metadata(statementId));
 
     for (uint32_t i= 0; i < mysql_stmt_field_count(statementId); ++i) {
-      columns[i].reset(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata.get(), i)));
+      if (i >= columns.size()) {
+        columns.emplace_back(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata.get(), i)));
+      }
+      else {
+        columns[i].reset(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata.get(), i)));
+      }
     }
   }
 

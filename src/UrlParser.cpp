@@ -36,61 +36,21 @@ namespace mariadb
 
   const SQLString mysqlTcp("tcp://"), mysqlSocket("unix://"), mysqlPipe("pipe://");
 
-  static const Properties mysqlPropKeyMapping{ {"userName", "user"},
-                                               {"socket",   "localSocket"} };
 
-  void mapMySqlProps(Properties& props)
+  bool isLegacyUriFormat(const SQLString& url)
   {
-    auto it= props.begin();
-    while (it != props.end()) {
-      auto cit= mysqlPropKeyMapping.find(it->first);
-      if (cit != mysqlPropKeyMapping.end()) {
-        props.emplace(cit->second, it->second);
-        it= props.erase(it);
-      }
-      else {
-        ++it;
-      }
-    }
-  }
-
-  bool isMySqlCppUri(const SQLString& url, Properties* prop= nullptr)
-  {
-    std::string key;
-    std::size_t offset;
-
-    if (url.empty() || url.startsWith(mysqlTcp)) {
-      //name= localSocketAddress;
-      //offset= mysqlTcp.length();
-      if (prop != nullptr) {
-        mapMySqlProps(*prop);
-      }
+    if (url.empty() || url.startsWith(mysqlTcp))
+    {
       return true;
     }
     else if (url.startsWith(mysqlPipe)) {
-      offset= mysqlPipe.length();
-      key= "pipe";
+      return true;
     }
     else if (url.startsWith(mysqlSocket)) {
-      key= "localSocket";
-      offset= mysqlSocket.length();
-    }
-    else {
-      return false;
+      return true;
     }
 
-    if (prop != nullptr) {
-      std::string name(url.substr(offset));
-      std::size_t slashPos= name.find_first_of('/');
-
-      if (slashPos != std::string::npos) {
-        name= name.substr(0, slashPos);
-      }
-
-      (*prop)[key]= name;
-      mapMySqlProps(*prop);
-    }
-    return true;
+    return false;
   }
 
 
@@ -125,7 +85,7 @@ namespace mariadb
 
 
   bool UrlParser::acceptsUrl(const SQLString& url) {
-    return (url.startsWith("jdbc:mariadb:") || (url.startsWith("jdbc:mysql:") && !(url.find_first_of(DISABLE_MYSQL_URL) != std::string::npos)) || isMySqlCppUri(url));
+    return (url.startsWith("jdbc:mariadb:") || (url.startsWith("jdbc:mysql:") && !(url.find_first_of(DISABLE_MYSQL_URL) != std::string::npos)) || isLegacyUriFormat(url));
   }
 
 
@@ -139,7 +99,7 @@ namespace mariadb
   {
     if ((url.startsWith("jdbc:mariadb:")
       || url.startsWith("jdbc:mysql:") && url.find_first_of(DISABLE_MYSQL_URL) == std::string::npos)
-      || isMySqlCppUri(url, &prop))
+      || isLegacyUriFormat(url))
     {
       UrlParser *urlParser= new UrlParser();
 
@@ -196,7 +156,7 @@ namespace mariadb
     }
     catch (std::exception &i)
     {
-      throw std::runtime_error(std::string("error parsing url: ") + i.what());
+      throw SQLException(std::string("Error parsing url: ") + i.what());
     }
   }
 

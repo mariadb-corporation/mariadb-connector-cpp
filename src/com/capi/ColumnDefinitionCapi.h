@@ -54,6 +54,7 @@ public:
   SQLString getName() const;
   SQLString getOriginalName() const;
   int16_t getCharsetNumber() const;
+  SQLString getCollation() const;
   int64_t getLength() const;
   int64_t getPrecision() const;
   int32_t getDisplaySize() const;
@@ -68,6 +69,7 @@ public:
   bool isBlob() const;
   bool isZeroFill() const;
   bool isBinary() const;
+  bool isReadonly() const;
 };
 
 }

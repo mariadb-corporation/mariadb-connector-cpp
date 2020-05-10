@@ -46,6 +46,7 @@ public:
   virtual SQLString getName() const=0;
   virtual SQLString getOriginalName() const=0;
   virtual short getCharsetNumber() const=0;
+  virtual SQLString getCollation() const=0;
   virtual int64_t getLength() const=0;
   virtual int64_t getPrecision() const=0;
   virtual int32_t getDisplaySize() const=0;
@@ -60,6 +61,7 @@ public:
   virtual bool isBlob() const=0;
   virtual bool isZeroFill() const=0;
   virtual bool isBinary() const=0;
+  virtual bool isReadonly() const=0;
 };
 
 }

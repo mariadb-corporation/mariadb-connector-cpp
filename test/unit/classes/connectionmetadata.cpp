@@ -53,7 +53,7 @@ void connectionmetadata::getSchemata()
   std::stringstream msg;
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     /*ResultSet resdbm1(dbmeta->getSchemata());
     checkResultSetScrolling(resdbm1);
     ResultSet resdbm2(dbmeta->getSchemaObjects(con->getCatalog(), "", "schema"));
@@ -94,7 +94,7 @@ void connectionmetadata::getSchemaObjects()
 
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     ResultSet resdbm1(dbmeta->getSchemaObjects());
     checkResultSetScrolling(resdbm1);
     ResultSet resdbm2;
@@ -121,10 +121,10 @@ void connectionmetadata::getAttributes()
   std::stringstream msg;
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     res.reset(dbmeta->getAttributes(con->getCatalog(), con->getSchema(), "", ""));
     checkResultSetScrolling(res);
-    ResultSetMetaData * resmeta=res->getMetaData();
+    ResultSetMetaData resmeta(res->getMetaData());
     it=attributes.begin();
     for (i=1; i <= resmeta->getColumnCount(); i++)
     {
@@ -161,7 +161,7 @@ void connectionmetadata::getBestRowIdentifier()
   bool got_warning=false;
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
 
     logMsg("... looping over all kinds of column types");
@@ -184,7 +184,7 @@ void connectionmetadata::getBestRowIdentifier()
       res.reset(dbmeta->getBestRowIdentifier(con->getCatalog(), con->getSchema(), "test", 0, false));
       checkResultSetScrolling(res);
       ASSERT_EQUALS(true, res->next());
-      ASSERT_EQUALS(DatabaseMetaData::bestRowSession, res->getInt(1));
+      ASSERT_EQUALS(sql::DatabaseMetaData::bestRowSession, res->getInt(1));
       ASSERT_EQUALS(res->getInt(1), res->getInt("SCOPE"));
       ASSERT_EQUALS("id", res->getString(2));
       ASSERT_EQUALS(res->getInt(2), res->getInt("COLUMN_NAME"));
@@ -240,7 +240,7 @@ void connectionmetadata::getBestRowIdentifier()
       }
       ASSERT_EQUALS(res->getInt(7), res->getInt("DECIMAL_DIGITS"));
 
-      ASSERT_EQUALS(DatabaseMetaData::bestRowNotPseudo, res->getInt(8));
+      ASSERT_EQUALS(sql::DatabaseMetaData::bestRowNotPseudo, res->getInt(8));
       ASSERT_EQUALS(res->getInt(8), res->getInt("PSEUDO_COLUMN"));
 
       stmt->execute("DROP TABLE IF EXISTS test");
@@ -278,7 +278,7 @@ void connectionmetadata::getColumnPrivileges()
     stmt.reset(con->createStatement());
     stmt->execute("DROP TABLE IF EXISTS test");
     stmt->execute("CREATE TABLE test(col1 INT, col2 INT)");
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
 
     res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test", "id"));
     ASSERT_EQUALS(false, res->next());
@@ -364,7 +364,7 @@ void connectionmetadata::getColumns()
   bool got_todo_warning=false;
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
     bool isVer6=dbmeta->getDatabaseMajorVersion() == 6;
 
@@ -451,9 +451,9 @@ void connectionmetadata::getColumns()
         msg.str("");
         msg << "... \t\tWARNING - check NULLABLE for " << it->sqldef;
         msg << " - expecting nullable = " << it->nullable << " got " << res->getInt(11);
-        msg << " columnNoNull = " << DatabaseMetaData::columnNoNulls << ", ";
-        msg << " columnNullable = " << DatabaseMetaData::columnNullable << ", ";
-        msg << " columnNullableUnknown = " << DatabaseMetaData::columnNullableUnknown;
+        msg << " columnNoNull = " << sql::DatabaseMetaData::columnNoNulls << ", ";
+        msg << " columnNullable = " << sql::DatabaseMetaData::columnNullable << ", ";
+        msg << " columnNullableUnknown = " << sql::DatabaseMetaData::columnNullableUnknown;
         logMsg(msg.str());
         got_warning=true;
       }
@@ -497,9 +497,9 @@ void connectionmetadata::getColumns()
       ASSERT_EQUALS(2, res->getInt(17));
       ASSERT_EQUALS(res->getInt(17), res->getInt("ORDINAL_POSITION"));
 
-      if (((it->nullable == DatabaseMetaData::columnNoNulls) && (res->getString(18) != "NO")) ||
-          ((it->nullable == DatabaseMetaData::columnNullable) && (res->getString(18) != "YES")) ||
-          ((it->nullable == DatabaseMetaData::columnNullableUnknown) && (res->getString(18) != "")))
+      if (((it->nullable == sql::DatabaseMetaData::columnNoNulls) && (res->getString(18) != "NO")) ||
+          ((it->nullable == sql::DatabaseMetaData::columnNullable) && (res->getString(18) != "YES")) ||
+          ((it->nullable == sql::DatabaseMetaData::columnNullableUnknown) && (res->getString(18) != "")))
       {
         msg.str("");
         msg << "... \t\tWARNING - check IS_NULLABLE for " << it->sqldef;
@@ -544,7 +544,7 @@ void connectionmetadata::getColumns()
       con->getClientOption("metadataUseInfoSchema", output);
       ASSERT_EQUALS(input_value, output_value);
 
-      dbmeta=con->getMetaData();
+      dbmeta.reset(con->getMetaData());
       res.reset(dbmeta->getColumns(con->getCatalog(), "", "test", "%"));
       ASSERT(res->rowsCount() == 2);
 
@@ -555,7 +555,7 @@ void connectionmetadata::getColumns()
       con->getClientOption("metadataUseInfoSchema", output);
       ASSERT_EQUALS(input_value, output_value);
 
-      dbmeta=con->getMetaData();
+      dbmeta.reset(con->getMetaData());
       res.reset(dbmeta->getColumns(con->getCatalog(), "", "test", "%"));
       ASSERT(res->rowsCount() == 2);
     }
@@ -585,7 +585,7 @@ void connectionmetadata::getConnection()
   {
     stmt.reset(con->createStatement());
     stmt->execute("SET @this_is_my_connection_id=101");
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     same_con= dbmeta->getConnection();
     stmt.reset(same_con->createStatement());
     res.reset(stmt->executeQuery("SELECT @this_is_my_connection_id AS _connection_id"));
@@ -608,7 +608,7 @@ void connectionmetadata::getDatabaseVersions()
   std::stringstream prodversion;
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     ASSERT_GT(2, dbmeta->getDatabaseMajorVersion());
     ASSERT_LT(8, dbmeta->getDatabaseMajorVersion());
     ASSERT_LT(100, dbmeta->getDatabaseMinorVersion());
@@ -644,7 +644,7 @@ void connectionmetadata::getDriverVersions()
   std::stringstream prodversion;
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     ASSERT_GT(0, dbmeta->getDriverMajorVersion());
     ASSERT_LT(2, dbmeta->getDriverMajorVersion());
     ASSERT_LT(100, dbmeta->getDriverMinorVersion());
@@ -680,7 +680,7 @@ void connectionmetadata::getDefaultTransactionIsolation()
   int server_version;
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
 
     server_version=(10000 * dbmeta->getDatabaseMajorVersion())
             + (100 * dbmeta->getDriverMinorVersion())
@@ -709,7 +709,7 @@ void connectionmetadata::getExtraNameCharacters()
   logMsg("connectionmetadata::getExtraNameCharacters() - MySQL_ConnectionMetaData::getExtraNameCharacters()");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     ASSERT_EQUALS("#@", dbmeta->getExtraNameCharacters());
   }
   catch (sql::SQLException &e)
@@ -727,7 +727,7 @@ void connectionmetadata::getIdentifierQuoteString()
 
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
     try
     {
@@ -765,7 +765,7 @@ void connectionmetadata::getImportedKeys()
 
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
 
     stmt->execute("DROP TABLE IF EXISTS child");
@@ -841,7 +841,7 @@ void connectionmetadata::getExportedKeys()
 
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
 
     stmt->execute("DROP TABLE IF EXISTS child");
@@ -962,21 +962,21 @@ void connectionmetadata::checkForeignKey(Connection &mycon, ResultSet &myres)
   ASSERT_EQUALS(1, myres->getInt(9));
   ASSERT_EQUALS(myres->getInt(9), myres->getInt("KEY_SEQ"));
 
-  ASSERT_EQUALS((int64_t) DatabaseMetaData::importedKeyCascade, myres->getInt64(10));
+  ASSERT_EQUALS((int64_t) sql::DatabaseMetaData::importedKeyCascade, myres->getInt64(10));
   ASSERT_EQUALS(myres->getInt64(10), myres->getInt64("UPDATE_RULE"));
 
-  ASSERT(DatabaseMetaData::importedKeyNoAction != myres->getInt64(10));
-  ASSERT(DatabaseMetaData::importedKeySetNull != myres->getInt64(10));
-  ASSERT(DatabaseMetaData::importedKeySetDefault != myres->getInt64(10));
-  ASSERT(DatabaseMetaData::importedKeyRestrict != myres->getInt64(10));
+  ASSERT(sql::DatabaseMetaData::importedKeyNoAction != myres->getInt64(10));
+  ASSERT(sql::DatabaseMetaData::importedKeySetNull != myres->getInt64(10));
+  ASSERT(sql::DatabaseMetaData::importedKeySetDefault != myres->getInt64(10));
+  ASSERT(sql::DatabaseMetaData::importedKeyRestrict != myres->getInt64(10));
 
-  ASSERT_EQUALS((int64_t) DatabaseMetaData::importedKeyCascade, myres->getInt64(11));
+  ASSERT_EQUALS((int64_t) sql::DatabaseMetaData::importedKeyCascade, myres->getInt64(11));
   ASSERT_EQUALS(myres->getInt64(11), myres->getInt64("DELETE_RULE"));
 
-  ASSERT(DatabaseMetaData::importedKeyNoAction != myres->getInt64(11));
-  ASSERT(DatabaseMetaData::importedKeySetNull != myres->getInt64(11));
-  ASSERT(DatabaseMetaData::importedKeySetDefault != myres->getInt64(11));
-  ASSERT(DatabaseMetaData::importedKeyRestrict != myres->getInt64(11));
+  ASSERT(sql::DatabaseMetaData::importedKeyNoAction != myres->getInt64(11));
+  ASSERT(sql::DatabaseMetaData::importedKeySetNull != myres->getInt64(11));
+  ASSERT(sql::DatabaseMetaData::importedKeySetDefault != myres->getInt64(11));
+  ASSERT(sql::DatabaseMetaData::importedKeyRestrict != myres->getInt64(11));
 
   // InnoDB should give the FK a name
   ASSERT("" != myres->getString("FK_NAME"));
@@ -986,9 +986,9 @@ void connectionmetadata::checkForeignKey(Connection &mycon, ResultSet &myres)
   ASSERT_EQUALS("PRIMARY", myres->getString("PK_NAME"));
   ASSERT_EQUALS(myres->getString(13), myres->getString("PK_NAME"));
 
-  ASSERT_EQUALS((int64_t) DatabaseMetaData::importedKeyNotDeferrable, myres->getInt64(14));
-  ASSERT(DatabaseMetaData::importedKeyInitiallyDeferred != myres->getInt64(10));
-  ASSERT(DatabaseMetaData::importedKeyInitiallyImmediate != myres->getInt64(10));
+  ASSERT_EQUALS((int64_t) sql::DatabaseMetaData::importedKeyNotDeferrable, myres->getInt64(14));
+  ASSERT(sql::DatabaseMetaData::importedKeyInitiallyDeferred != myres->getInt64(10));
+  ASSERT(sql::DatabaseMetaData::importedKeyInitiallyImmediate != myres->getInt64(10));
 
   if (got_warning)
   {
@@ -1007,7 +1007,7 @@ void connectionmetadata::getIndexInfo()
   bool got_todo_warning=false;
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
     stmt->execute("DROP TABLE IF EXISTS test");
     stmt->execute("CREATE TABLE test(col1 INT NOT NULL, col2 INT NOT NULL, col3 INT NOT NULL, col4 INT, col5 INT, PRIMARY KEY(col1))");
@@ -1033,11 +1033,11 @@ void connectionmetadata::getIndexInfo()
     ASSERT_EQUALS(res->getString(5), res->getString("INDEX_QUALIFIER"));
     ASSERT_EQUALS("PRIMARY", res->getString(6));
     ASSERT_EQUALS(res->getString(6), res->getString("INDEX_NAME"));
-    ASSERT_EQUALS(DatabaseMetaData::tableIndexOther, res->getInt(7));
+    ASSERT_EQUALS(sql::DatabaseMetaData::tableIndexOther, res->getInt(7));
     ASSERT_EQUALS(res->getInt(7), res->getInt("TYPE"));
-    ASSERT(DatabaseMetaData::tableIndexStatistic != res->getInt(7));
-    ASSERT(DatabaseMetaData::tableIndexClustered != res->getInt(7));
-    ASSERT(DatabaseMetaData::tableIndexHashed != res->getInt(7));
+    ASSERT(sql::DatabaseMetaData::tableIndexStatistic != res->getInt(7));
+    ASSERT(sql::DatabaseMetaData::tableIndexClustered != res->getInt(7));
+    ASSERT(sql::DatabaseMetaData::tableIndexHashed != res->getInt(7));
     ASSERT_EQUALS(1, res->getInt(8));
     ASSERT_EQUALS(res->getInt(8), res->getInt("ORDINAL_POSITION"));
     ASSERT_EQUALS("col1", res->getString(9));
@@ -1098,21 +1098,21 @@ void connectionmetadata::getIndexInfo()
     stmt->execute("CREATE INDEX an_a_idx_col4 ON test(col4 DESC)");
     res.reset(dbmeta->getIndexInfo(con->getCatalog(), con->getSchema(), "test", false, false));
     ASSERT(res->next());
-    ASSERT_EQUALS(DatabaseMetaData::tableIndexOther, res->getInt(7));
+    ASSERT_EQUALS(sql::DatabaseMetaData::tableIndexOther, res->getInt(7));
     ASSERT_EQUALS("an_idx_col3", res->getString("INDEX_NAME"));
     ASSERT_EQUALS(false, res->getBoolean("NON_UNIQUE"));
     ASSERT(res->next());
     ASSERT_EQUALS("PRIMARY", res->getString("INDEX_NAME"));
     ASSERT_EQUALS(false, res->getBoolean("NON_UNIQUE"));
-    ASSERT_EQUALS(DatabaseMetaData::tableIndexOther, res->getInt(7));
+    ASSERT_EQUALS(sql::DatabaseMetaData::tableIndexOther, res->getInt(7));
     ASSERT(res->next());
     ASSERT_EQUALS("an_a_idx_col4", res->getString("INDEX_NAME"));
     ASSERT_EQUALS(true, res->getBoolean("NON_UNIQUE"));
-    ASSERT_EQUALS(DatabaseMetaData::tableIndexOther, res->getInt(7));
+    ASSERT_EQUALS(sql::DatabaseMetaData::tableIndexOther, res->getInt(7));
     ASSERT(res->next());
     ASSERT_EQUALS("idx_col2", res->getString("INDEX_NAME"));
     ASSERT_EQUALS(true, res->getBoolean("NON_UNIQUE"));
-    ASSERT_EQUALS(DatabaseMetaData::tableIndexOther, res->getInt(7));
+    ASSERT_EQUALS(sql::DatabaseMetaData::tableIndexOther, res->getInt(7));
     ASSERT(!res->next());
 
     //Was wrong on previous versions....
@@ -1152,7 +1152,7 @@ void connectionmetadata::getIndexInfo()
       // There is no order when using HASH
       ASSERT_EQUALS("", res->getString("ASC_OR_DESC"));
       ASSERT_EQUALS("col2", res->getString("COLUMN_NAME"));
-      ASSERT_EQUALS(DatabaseMetaData::tableIndexHashed, res->getInt("TYPE"));
+      ASSERT_EQUALS(sql::DatabaseMetaData::tableIndexHashed, res->getInt("TYPE"));
       ASSERT_EQUALS(true, res->getBoolean("NON_UNIQUE"));
       ASSERT(!res->next());
     }
@@ -1199,9 +1199,19 @@ void connectionmetadata::getLimitsAndStuff()
 
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
-    ASSERT_EQUALS(3, dbmeta->getCDBCMajorVersion());
-    ASSERT_EQUALS(0, dbmeta->getCDBCMinorVersion());
+    DatabaseMetaData  dbmeta(con->getMetaData());
+    try {
+      ASSERT_EQUALS(3, dbmeta->getCDBCMajorVersion());
+    }
+    catch (sql::SQLFeatureNotSupportedException& e) {
+      logMsg(e.getMessage());
+    }
+    try {
+      ASSERT_EQUALS(0, dbmeta->getCDBCMinorVersion());
+    }
+    catch (sql::SQLFeatureNotSupportedException & e) {
+      logMsg(e.getMessage());
+    }
     ASSERT_EQUALS(16777208, dbmeta->getMaxBinaryLiteralLength());
     ASSERT_EQUALS(32, dbmeta->getMaxCatalogNameLength());
     ASSERT_EQUALS(16777208, dbmeta->getMaxCharLiteralLength());
@@ -1247,8 +1257,8 @@ void connectionmetadata::getLimitsAndStuff()
     ASSERT_EQUALS(true, dbmeta->dataDefinitionCausesTransactionCommit());
     ASSERT_EQUALS(true, dbmeta->doesMaxRowSizeIncludeBlobs());
 
-    ASSERT_EQUALS(DatabaseMetaData::sqlStateSQL99, dbmeta->getSQLStateType());
-    ASSERT(DatabaseMetaData::sqlStateXOpen != dbmeta->getSQLStateType());
+    ASSERT_EQUALS(sql::DatabaseMetaData::sqlStateSQL99, dbmeta->getSQLStateType());
+    ASSERT(sql::DatabaseMetaData::sqlStateXOpen != dbmeta->getSQLStateType());
 
     ASSERT_EQUALS(funcs, dbmeta->getStringFunctions());
     ASSERT_EQUALS(sys_funcs, dbmeta->getSystemFunctions());
@@ -1406,7 +1416,7 @@ void connectionmetadata::getPrimaryKeys()
 
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
     stmt->execute("DROP TABLE IF EXISTS test");
     stmt->execute("CREATE TABLE test(col2 INT NOT NULL, col1 INT NOT NULL, PRIMARY KEY(col2, col1))");
@@ -1481,7 +1491,7 @@ void connectionmetadata::getProcedures()
   std::stringstream msg;
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
     try
     {
@@ -1525,9 +1535,9 @@ void connectionmetadata::getProcedures()
     ASSERT_EQUALS("", res->getString(6));
     ASSERT_EQUALS("", res->getString(7));
     ASSERT_EQUALS(res->getString("REMARKS"), res->getString(7));
-    ASSERT_EQUALS(DatabaseMetaData::procedureNoResult, res->getInt("PROCEDURE_TYPE"));
-    ASSERT(DatabaseMetaData::procedureReturnsResult != res->getInt(8));
-    ASSERT(DatabaseMetaData::procedureResultUnknown != res->getInt(8));
+    ASSERT_EQUALS(sql::DatabaseMetaData::procedureNoResult, res->getInt("PROCEDURE_TYPE"));
+    ASSERT(sql::DatabaseMetaData::procedureReturnsResult != res->getInt(8));
+    ASSERT(sql::DatabaseMetaData::procedureResultUnknown != res->getInt(8));
     ASSERT(!res->next());
   }
   catch (sql::SQLException &e)
@@ -1557,7 +1567,7 @@ void connectionmetadata::getProcedureColumns()
 
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
     try
     {
@@ -1606,11 +1616,11 @@ void connectionmetadata::getCatalogs()
   logMsg("connectionmetadata::getCatalogs() - MySQL_ConnectionMetaData::getCatalogs()");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     res.reset(dbmeta->getCatalogs());
     ASSERT(res->next());
     ASSERT(!res->next());
-    ResultSetMetaData * resmeta=res->getMetaData();
+    ResultSetMetaData resmeta(res->getMetaData());
     /* http://java.sun.com/j2se/1.4.2/docs/api/java/sql/DatabaseMetaData.html#getCatalogs() */
     ASSERT_EQUALS((unsigned int) 1, resmeta->getColumnCount());
     ASSERT_EQUALS("TABLE_CAT", resmeta->getColumnLabel(1));
@@ -1629,7 +1639,7 @@ void connectionmetadata::getCatalogSeparator()
   logMsg("connectionmetadata::getCatalogSeparator() - MySQL_ConnectionMetaData::getCatalogSeparator()");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     ASSERT_EQUALS("", dbmeta->getCatalogSeparator());
   }
   catch (sql::SQLException &e)
@@ -1646,7 +1656,7 @@ void connectionmetadata::getCatalogTerm()
   logMsg("connectionmetadata::getCatalogTerm() - MySQL_ConnectionMetaData::getCatalogTerm()");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     ASSERT_EQUALS("n/a", dbmeta->getCatalogTerm());
   }
   catch (sql::SQLException &e)
@@ -1663,7 +1673,7 @@ void connectionmetadata::getCrossReference()
   logMsg("connectionmetadata::getCrossReference() - MySQL_ConnectionMetaData::getCrossReference()");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
 
     stmt->execute("DROP TABLE IF EXISTS child");
@@ -1710,7 +1720,7 @@ void connectionmetadata::getProcedureTerm()
   logMsg("connectionmetadata::getProcedureTerm() - MySQL_ConnectionMetaData::getProcedureTerm");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     ASSERT_EQUALS("procedure", dbmeta->getProcedureTerm());
   }
   catch (sql::SQLException &e)
@@ -1727,7 +1737,7 @@ void connectionmetadata::getResultSetHoldability()
   logMsg("connectionmetadata::getResultSetHoldability() - MySQL_ConnectionMetaData::getResultSetHoldability()");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     ASSERT_EQUALS(sql::ResultSet::HOLD_CURSORS_OVER_COMMIT, dbmeta->getResultSetHoldability());
     ASSERT(sql::ResultSet::CLOSE_CURSORS_AT_COMMIT != dbmeta->getResultSetHoldability());
   }
@@ -1745,7 +1755,7 @@ void connectionmetadata::getSchemaTerm()
   logMsg("connectionmetadata::getSchemaTerm() - MySQL_ConnectionMetaData::getSchemaTerm()");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     ASSERT_EQUALS("database", dbmeta->getSchemaTerm());
   }
   catch (sql::SQLException &e)
@@ -1762,7 +1772,7 @@ void connectionmetadata::getSearchStringEscape()
   logMsg("connectionmetadata::getSearchStringEscape - MySQL_ConnectionMetaData::getSearchStringEscape()");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     ASSERT_EQUALS("\\", dbmeta->getSearchStringEscape());
   }
   catch (sql::SQLException &e)
@@ -1824,7 +1834,7 @@ void connectionmetadata::getSQLKeywords()
 
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     ASSERT_EQUALS(keywords, dbmeta->getSQLKeywords());
   }
   catch (sql::SQLException &e)
@@ -1841,14 +1851,14 @@ void connectionmetadata::getSuperTables()
   logMsg("connectionmetadata::getSuperTables - MySQL_ConnectionMetaData::getSuperTables()");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
     stmt->execute("DROP TABLE IF EXISTS test");
     stmt->execute("CREATE TABLE test(id INT)");
     res.reset(dbmeta->getSuperTables(con->getCatalog(), con->getSchema(), "test"));
     checkResultSetScrolling(res);
     ASSERT(!res->next());
-    ResultSetMetaData * resmeta=res->getMetaData();
+    ResultSetMetaData resmeta(res->getMetaData());
     ASSERT_EQUALS((unsigned int) 4, resmeta->getColumnCount());
     ASSERT_EQUALS("TABLE_CAT", resmeta->getColumnLabel(1));
     ASSERT_EQUALS("TABLE_SCHEM", resmeta->getColumnLabel(2));
@@ -1871,14 +1881,14 @@ void connectionmetadata::getSuperTypes()
   logMsg("connectionmetadata::getSuperTypes - MySQL_ConnectionMetaData::getSuperTypes()");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
     stmt->execute("DROP TABLE IF EXISTS test");
     stmt->execute("CREATE TABLE test(id INT)");
     res.reset(dbmeta->getSuperTypes(con->getCatalog(), con->getSchema(), "test"));
     checkResultSetScrolling(res);
     ASSERT(!res->next());
-    ResultSetMetaData * resmeta=res->getMetaData();
+    ResultSetMetaData resmeta(res->getMetaData());
     ASSERT_EQUALS((unsigned int) 6, resmeta->getColumnCount());
     ASSERT_EQUALS("TYPE_CAT", resmeta->getColumnLabel(1));
     ASSERT_EQUALS("TYPE_SCHEM", resmeta->getColumnLabel(2));
@@ -1904,7 +1914,7 @@ void connectionmetadata::classAttributes()
   TODO("Check if JDBC compliance requires certain values");
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
 
     ASSERT_EQUALS(0, dbmeta->attributeNoNulls);
     ASSERT_EQUALS(1, dbmeta->attributeNullable);
@@ -1994,7 +2004,7 @@ void connectionmetadata::getColumnsTypeConversions()
   bool got_warning;
   try
   {
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData  dbmeta(con->getMetaData());
     stmt.reset(con->createStatement());
 
     got_warning=false;
@@ -2186,7 +2196,7 @@ void connectionmetadata::bestIdUniqueNotNull()
   createSchemaObject("TABLE", "bestIdUniqueNull", "(id int, value varchar(25),"
                                                      "UNIQUE INDEX(id))");
 
-  DatabaseMetaData *dbmeta= con->getMetaData();
+  DatabaseMetaData dbmeta(con->getMetaData());
   res.reset(dbmeta->getBestRowIdentifier(con->getCatalog(), con->getSchema(), "bestIdUniqueNotNull", 0, false));
 
   ASSERT(res->next());
@@ -2203,8 +2213,8 @@ void connectionmetadata::getSchemaCollation()
   logMsg("connectionmetadata::getSchemaCollation - MySQL_ConnectionMetaData::getSchemaCollation()");
   try
   {
-  ResultSetMetaData * resmeta;
-  DatabaseMetaData * dbmeta=con->getMetaData();
+  ResultSetMetaData resmeta;
+  DatabaseMetaData  dbmeta(con->getMetaData());
 
   stmt.reset(con->createStatement());
   stmt->execute("DROP DATABASE IF EXISTS collationTestDatabase");
@@ -2213,7 +2223,7 @@ void connectionmetadata::getSchemaCollation()
   /* SchemaCollation */
   res.reset(dbmeta->getSchemaCollation(con->getCatalog(), "collationTestDatabase"));
   ASSERT(res->next());
-  resmeta=res->getMetaData();
+  resmeta.reset(res->getMetaData());
   ASSERT_EQUALS((unsigned int) 3, resmeta->getColumnCount());
   ASSERT_EQUALS("SCHEMA_CAT", resmeta->getColumnLabel(1));
   ASSERT_EQUALS("SCHEMA_NAME", resmeta->getColumnLabel(2));
@@ -2239,8 +2249,8 @@ void connectionmetadata::getSchemaCharset()
   logMsg("connectionmetadata::getSchemaCharset - MySQL_ConnectionMetaData::getSchemaCharset()");
   try
   {
-  ResultSetMetaData * resmeta;
-  DatabaseMetaData * dbmeta=con->getMetaData();
+  ResultSetMetaData resmeta;
+  DatabaseMetaData  dbmeta(con->getMetaData());
 
   stmt.reset(con->createStatement());
   stmt->execute("DROP DATABASE IF EXISTS charsetTestDatabase");
@@ -2249,7 +2259,7 @@ void connectionmetadata::getSchemaCharset()
   /* SchemaCharset */
   res.reset(dbmeta->getSchemaCharset(con->getCatalog(), "charsetTestDatabase"));
   ASSERT(res->next());
-  resmeta=res->getMetaData();
+  resmeta.reset(res->getMetaData());
   ASSERT_EQUALS((unsigned int) 3, resmeta->getColumnCount());
   ASSERT_EQUALS("SCHEMA_CAT", resmeta->getColumnLabel(1));
   ASSERT_EQUALS("SCHEMA_NAME", resmeta->getColumnLabel(2));
@@ -2275,8 +2285,8 @@ void connectionmetadata::getTableCollation()
   logMsg("connectionmetadata::getTableCollation - MySQL_ConnectionMetaData::getTableCollation()");
   try
   {
-  ResultSetMetaData * resmeta;
-  DatabaseMetaData * dbmeta=con->getMetaData();
+  ResultSetMetaData resmeta;
+  DatabaseMetaData  dbmeta(con->getMetaData());
 
   stmt.reset(con->createStatement());
   stmt->execute("DROP DATABASE IF EXISTS collationTestDatabase");
@@ -2289,7 +2299,7 @@ void connectionmetadata::getTableCollation()
   /* TableCollation */
   res.reset(dbmeta->getTableCollation(con->getCatalog(), "collationTestDatabase", "%collationTestTable%"));
   ASSERT(res->next());
-  resmeta=res->getMetaData();
+  resmeta.reset(res->getMetaData());
   ASSERT_EQUALS((unsigned int) 4, resmeta->getColumnCount());
   ASSERT_EQUALS("TABLE_CAT", resmeta->getColumnLabel(1));
   ASSERT_EQUALS("TABLE_SCHEMA", resmeta->getColumnLabel(2));
@@ -2322,8 +2332,8 @@ void connectionmetadata::getTableCharset()
   logMsg("connectionmetadata::getTableCharset - MySQL_ConnectionMetaData::getTableCharset()");
   try
   {
-  ResultSetMetaData * resmeta;
-  DatabaseMetaData * dbmeta=con->getMetaData();
+  ResultSetMetaData resmeta;
+  DatabaseMetaData  dbmeta(con->getMetaData());
 
   stmt.reset(con->createStatement());
   stmt->execute("DROP DATABASE IF EXISTS charsetTestDatabase");
@@ -2336,7 +2346,7 @@ void connectionmetadata::getTableCharset()
   /* TableCharset */
   res.reset(dbmeta->getTableCharset(con->getCatalog(), "charsetTestDatabase", "%charsetTestTable%"));
   ASSERT(res->next());
-  resmeta=res->getMetaData();
+  resmeta.reset(res->getMetaData());
   ASSERT_EQUALS((unsigned int) 4, resmeta->getColumnCount());
   ASSERT_EQUALS("TABLE_CAT", resmeta->getColumnLabel(1));
   ASSERT_EQUALS("TABLE_SCHEMA", resmeta->getColumnLabel(2));
@@ -2373,7 +2383,7 @@ void connectionmetadata::getTables()
 
   try
   {
-  DatabaseMetaData * dbmeta=con->getMetaData();
+  DatabaseMetaData  dbmeta(con->getMetaData());
   std::list< sql::SQLString > tableTypes;
 
   stmt.reset(con->createStatement());

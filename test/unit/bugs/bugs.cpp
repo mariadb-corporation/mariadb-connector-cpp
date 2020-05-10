@@ -507,7 +507,7 @@ void bugs::bug71606()
   Statement stmt2(con->createStatement());
   pstmt.reset(con->prepareStatement("SELECT 'a'"));
   ResultSet res2;
-  ResultSetMetaData *rsmd2;
+  ResultSetMetaData rsmd2;
 
   while (res->next())
   {
@@ -528,7 +528,7 @@ void bugs::bug71606()
     }
 
     res2.reset(pstmt->executeQuery());
-    rsmd2= res2->getMetaData();
+    rsmd2.reset(res2->getMetaData());
     rsmd2->isCaseSensitive(1);
   }
 }
@@ -543,7 +543,7 @@ void bugs::bug72700()
   {
     res.reset(stmt->getResultSet());
     checkResultSetScrolling(res);
-    ResultSetMetaData * meta=res->getMetaData();
+    ResultSetMetaData meta(res->getMetaData());
     ASSERT_EQUALS(meta->getColumnType(1), 15);
     ASSERT_EQUALS(meta->getColumnTypeName(1), "LONGTEXT");
   }
@@ -559,7 +559,7 @@ void bugs::bug72700()
   {
     res.reset(stmt->getResultSet());
     checkResultSetScrolling(res);
-    ResultSetMetaData * meta=res->getMetaData();
+    ResultSetMetaData meta(res->getMetaData());
     ASSERT_EQUALS(meta->getColumnType(1), 15);
     ASSERT_EQUALS(meta->getColumnTypeName(1), "TEXT");
   }

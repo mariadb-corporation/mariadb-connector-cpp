@@ -54,7 +54,7 @@ public:
   BigInteger getInternalBigInteger(ColumnDefinition* columnInfo);
 #endif
   int32_t fetchNext();
-  void fetchAtPosition(int32_t rowPtr);
+  void installCursorAtPosition(int32_t rowPtr);
 
   Date getInternalDate(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
   std::unique_ptr<Time> getInternalTime(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);

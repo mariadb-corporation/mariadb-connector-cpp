@@ -39,7 +39,6 @@ namespace mariadb
   class LogQueryTool;
 namespace capi
 {
-
   class QueryProtocol : public ConnectProtocol
   {
     typedef capi::ConnectProtocol super;

@@ -50,6 +50,14 @@ namespace capi
 
   const Shared::Logger QueryProtocol::logger= LoggerFactory::getLogger(typeid(QueryProtocol));
   const SQLString QueryProtocol::CHECK_GALERA_STATE_QUERY("show status like 'wsrep_local_state'");
+
+  void throwStmtError(MYSQL_STMT* stmt) {
+    SQLString err(mysql_stmt_error(stmt)), sqlState(mysql_stmt_sqlstate(stmt));
+    uint32_t errNo = mysql_stmt_errno(stmt);
+    // Actually, this can be a good idea to close the stmt right away
+    throw SQLException(err, sqlState, errNo);
+  }
+
   /**
    * Get a protocol instance.
    *
@@ -980,7 +988,9 @@ namespace capi
         }
       }
 
-      mysql_stmt_execute(serverPrepareResult->getStatementId());
+      if (mysql_stmt_execute(serverPrepareResult->getStatementId())) {
+        throwStmtError(serverPrepareResult->getStatementId());
+      }
       /*CURSOR_TYPE_NO_CURSOR);*/
       getResult(results.get(), serverPrepareResult);
 
@@ -1296,10 +1306,10 @@ namespace capi
         break;
       default:
         throw SQLException("Unsupported transaction isolation level");
-
-      executeQuery(query);
-      transactionIsolationLevel= level;
     }
+
+    executeQuery(query);
+    transactionIsolationLevel= level;
   }
 
 

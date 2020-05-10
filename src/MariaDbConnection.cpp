@@ -1045,6 +1045,14 @@ namespace mariadb
   }
 
 
+  void MariaDbConnection::getClientOption(const SQLString& n, void* v) {
+    throw SQLFeatureNotSupportedException("getClientOption is not supported");
+  }
+  
+
+  SQLString MariaDbConnection::getClientOption(const SQLString& n) {
+    throw SQLFeatureNotSupportedException("getClientOption is not supported");
+  }
   /**
     * Constructs an object that implements the <code>Clob</code> interface. The object returned
     * initially contains no data. The <code>setAsciiStream</code>, <code>setCharacterStream</code>
@@ -1121,6 +1129,10 @@ namespace mariadb
     }
   }
 
+
+  bool MariaDbConnection::isValid() {
+    return protocol->ping();
+  }
 
   void MariaDbConnection::checkClientClose(const SQLString& name)
   {
@@ -1686,6 +1698,14 @@ namespace mariadb
     }
     warningsCleared= true;
   }
+
+  bool MariaDbConnection::reconnect() {
+    checkClientReconnect("reconnect");
+    // checkClientReconnect would throw, if reconnect was not successful
+    return true;
+  }
+
+
   bool MariaDbConnection::includeDeadLockInfo() {
     return options->includeInnodbStatusInDeadlockExceptions;
   }

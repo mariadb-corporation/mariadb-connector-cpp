@@ -138,6 +138,13 @@ void TestSuite::runTest()
 
       TestsListener::setTestExecutionComment( msg );
     }
+    catch (sql::SQLFeatureNotSupportedException & e)
+    {
+      String msg( "SKIP relies on method " ); // or should it be TODO
+      msg= msg + e.what() + ", which is not supported at the moment.";
+
+      TestsListener::setTestExecutionComment( msg );
+    }
     catch ( std::exception & e )
     {
       result= trrThrown;

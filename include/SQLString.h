@@ -55,6 +55,7 @@ public:
 
   inline bool empty() const { return theString.empty(); }
   int compare(const SQLString& str) const;
+  int caseCompare(const SQLString& other) const;
   SQLString & append(const SQLString& addition);
   SQLString & append(const char * const addition);
   SQLString & append(char c);

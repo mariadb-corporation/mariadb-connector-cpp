@@ -23,6 +23,7 @@
 #include "BinRowProtocolCapi.h"
 
 #include "ColumnDefinition.h"
+#include "ExceptionFactory.h"
 
 namespace sql
 {
@@ -58,6 +59,9 @@ namespace capi
        bind.emplace_back();
 
        bind.back().buffer_type=   static_cast<enum_field_types>(columnInfo->getColumnType().getType());
+       if (bind.back().buffer_type == MYSQL_TYPE_VARCHAR) {
+         bind.back().buffer_type= MYSQL_TYPE_STRING;
+       }
        bind.back().buffer_length= static_cast<unsigned long>(columnInfo->getColumnType().binarySize() != 0 ?
                                                          columnInfo->getColumnType().binarySize() :
                                                          getLengthMaxFieldSize());
@@ -66,7 +70,9 @@ namespace capi
        bind.back().is_null=       &bind.back().is_null_value;
        bind.back().error=         &bind.back().error_value;
      }
-     mysql_stmt_bind_result(stmt, bind.data());
+     if (mysql_stmt_bind_result(stmt, bind.data())) {
+       throwStmtError(stmt);
+     }
   }
 
 
@@ -102,10 +108,10 @@ namespace capi
   }
 
 
-  void BinRowProtocolCapi::fetchAtPosition(int32_t rowPtr)
+  void BinRowProtocolCapi::installCursorAtPosition(int32_t rowPtr)
   {
     mysql_stmt_data_seek(stmt, rowPtr);
-    fetchNext();
+    //fetchNext();
   }
 
 

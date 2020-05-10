@@ -408,7 +408,7 @@ void unit_fixture::logDebug(const String & message)
 /* There is not really need to have it as a class method */
 int unit_fixture::getMySQLVersion(Connection & con)
 {
-  DatabaseMetaData * dbmeta=con->getMetaData();
+  DatabaseMetaData dbmeta(con->getMetaData());
   return dbmeta->getDatabaseMajorVersion() * 10000 + dbmeta->getDatabaseMinorVersion() * 1000 + dbmeta->getDatabasePatchVersion();
 }
 

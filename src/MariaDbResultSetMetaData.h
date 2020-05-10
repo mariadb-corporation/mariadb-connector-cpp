@@ -59,6 +59,8 @@ public:
   bool isWritable(uint32_t column);
   bool isDefinitelyWritable(uint32_t column);
   SQLString getColumnClassName(uint32_t column);
+  bool isZerofill(uint32_t column);
+  SQLString getColumnCollation(uint32_t column);
 
 private:
   const ColumnDefinition& getColumnDefinition(uint32_t column);

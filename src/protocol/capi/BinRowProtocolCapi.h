@@ -65,7 +65,7 @@ public:
   BigInteger getInternalBigInteger(ColumnDefinition* columnInfo);
 #endif
   int32_t fetchNext();
-  void fetchAtPosition(int32_t rowPtr);
+  void installCursorAtPosition(int32_t rowPtr);
 
   std::unique_ptr<SQLString> getInternalString(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
   Date getInternalDate(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);

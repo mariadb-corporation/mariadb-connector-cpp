@@ -38,7 +38,7 @@ public:
 
   virtual Connection* connect(const SQLString& url, Properties& props)=0;
   virtual Connection* connect(const SQLString& host, const SQLString& user, const SQLString& pwd)=0;
-  virtual Connection* connect(Properties& props)=0;
+  virtual Connection* connect(const Properties& props)=0;
   virtual bool acceptsURL(const SQLString& url)=0;
   virtual int getMajorVersion()=0;
   virtual int getMinorVersion()=0;

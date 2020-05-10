@@ -84,6 +84,8 @@ public:
   virtual void releaseSavepoint(const Savepoint* savepoint)=0;
 
   virtual bool isValid(int32_t timeout)=0;
+  virtual bool isValid()=0;
+
   virtual void setClientInfo(const SQLString& name,const SQLString& value)=0;
   virtual void setClientInfo(const Properties& properties)=0;
   virtual Properties getClientInfo()=0;
@@ -97,8 +99,12 @@ public:
   virtual void setSchema(const SQLString& arg0)=0;
   virtual void reset()=0;
 
+  virtual bool reconnect()=0;
+
   virtual Connection* setClientOption(const SQLString& name, void* value)=0;
   virtual Connection* setClientOption(const SQLString& name, const SQLString& value)=0;
+  virtual void getClientOption(const SQLString& n, void* v)=0;
+  virtual SQLString getClientOption(const SQLString& n)=0;
 
   virtual Clob* createClob()=0;
   virtual Blob* createBlob()=0;

@@ -28,6 +28,11 @@ namespace sql
 {
 namespace mariadb
 {
+namespace capi
+{
+#include "mysql.h"
+void throwStmtError(MYSQL_STMT* stmt);
+}
 
 class ExceptionFactory final  {
 

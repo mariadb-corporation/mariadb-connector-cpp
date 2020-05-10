@@ -162,6 +162,8 @@ public:
 
   sql::Connection* setClientOption(const SQLString& name, void* value);
   sql::Connection* setClientOption(const SQLString& name, const SQLString& value);
+  void getClientOption(const SQLString& n, void* v);
+  SQLString getClientOption(const SQLString& n);
 
   Clob* createClob();
   Blob* createBlob();
@@ -173,6 +175,7 @@ public:
 #endif
 
   bool isValid(int32_t timeout);
+  bool isValid();
 
 private:
   void checkClientClose(const SQLString& name);
@@ -210,6 +213,7 @@ public:
   bool canUseServerTimeout();
   void setDefaultTransactionIsolation(int32_t defaultTransactionIsolation);
   void reset();
+  bool reconnect();
   bool includeDeadLockInfo();
   bool includeThreadsTraces();
 };

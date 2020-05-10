@@ -85,12 +85,18 @@ namespace capi
     //TODO: Shouldn't be Socket be an interface, and wrap MYSQL handle in case of C API use?
 
     MYSQL* socket= mysql_init(NULL);
+    unsigned int inSeconds;
 
     // Is there similar option in the C API?
     //socket->setTcpNoDelay(options->tcpNoDelay);
 
+    if (options->connectTimeout) {
+      inSeconds= (options->connectTimeout + 999) / 1000;
+      mysql_optionsv(socket, MYSQL_OPT_CONNECT_TIMEOUT, (const char*)&inSeconds);
+    }
     if (options->socketTimeout){
-      mysql_optionsv(socket, MYSQL_OPT_CONNECT_TIMEOUT, (const char *)&options->socketTimeout);
+      inSeconds= (options->socketTimeout + 999) / 1000;
+      mysql_optionsv(socket, MYSQL_OPT_READ_TIMEOUT, (const char *)&inSeconds);
     }
     if (options->tcpKeepAlive){
       mysql_optionsv(socket, MYSQL_OPT_RECONNECT, &OptionSelected);
@@ -474,6 +480,7 @@ namespace capi
 
     if (this->options->socketTimeout > 0){
       this->socketTimeout= this->options->socketTimeout;
+      setTimeout(socketTimeout);
     }
     if ((serverCapabilities & MariaDbServerCapabilities::CLIENT_DEPRECATE_EOF)!=0){
       eofDeprecated= true;
@@ -1330,9 +1337,11 @@ namespace capi
 
   void ConnectProtocol::changeSocketSoTimeout(int32_t millis)
   {
-    this->socketTimeout= (millis + 999)/1000;
+    this->socketTimeout = millis;
+    // Making seconds out of millies, as MYSQL_OPT_READ_TIMEOUT needs seconds
+    millis= (millis + 999) / 1000;
     //socket->setSoTimeout(this->socketTimeout);
-    mysql_optionsv(connection.get(), MYSQL_OPT_READ_TIMEOUT, (void*)&this->socketTimeout);
+    mysql_optionsv(connection.get(), MYSQL_OPT_READ_TIMEOUT, (void*)&millis);
   }
 
   bool ConnectProtocol::isServerMariaDb()

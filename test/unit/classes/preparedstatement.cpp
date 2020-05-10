@@ -869,8 +869,8 @@ void preparedstatement::getMetaData()
   std::stringstream sql;
   std::vector<columndefinition>::iterator it;
   stmt.reset(con->createStatement());
-  ResultSetMetaData * meta_ps;
-  ResultSetMetaData * meta_st;
+  ResultSetMetaData meta_ps;
+  ResultSetMetaData meta_st;
   ResultSet res_st;
   bool got_warning=false;
   unsigned int i;
@@ -904,10 +904,10 @@ void preparedstatement::getMetaData()
 
       pstmt.reset(con->prepareStatement("SELECT id, dummy, NULL, -1.1234, 'Warum nicht...' FROM test"));
       res.reset(pstmt->executeQuery());
-      meta_ps=res->getMetaData();
+      meta_ps.reset(res->getMetaData());
 
       res_st.reset(stmt->executeQuery("SELECT id, dummy, NULL, -1.1234, 'Warum nicht...' FROM test"));
-      meta_st=res->getMetaData();
+      meta_st.reset(res->getMetaData());
 
       ASSERT_EQUALS(meta_ps->getColumnCount(), meta_st->getColumnCount());
 
@@ -1005,7 +1005,7 @@ void preparedstatement::callSP()
       return;
     }
 
-    DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData dbmeta(con->getMetaData());
     try
     {
       pstmt.reset(con->prepareStatement("CALL p(@version)"));
@@ -1185,7 +1185,7 @@ void preparedstatement::callSPWithPS()
 void preparedstatement::callSPMultiRes()
 {
   logMsg("preparedstatement::callSPMultiRes() - MySQL_PreparedStatement::*()");
-
+  //SKIP("Before fixed!!!");
   try
   {
     std::string sp_code("CREATE PROCEDURE p() BEGIN SELECT 1; SELECT 2; SELECT 3; END;");
@@ -1271,10 +1271,6 @@ void preparedstatement::crash()
 
   try
   {
-    int mysql_version=getMySQLVersion(con);
-    if ((mysql_version > 50000 && mysql_version < 50082) || (mysql_version > 51000 && mysql_version < 51035) || (mysql_version > 60000 && mysql_version < 60012))
-      SKIP("http://bugs.mysql.com/bug.php?id=43833 - Server crash");
-
     stmt.reset(con->createStatement());
     stmt->execute("DROP TABLE IF EXISTS test");
     stmt->execute("CREATE TABLE test(dummy TIMESTAMP, id VARCHAR(1))");
@@ -1392,7 +1388,7 @@ void preparedstatement::blob()
   logMsg("preparedstatement::blob() - MySQL_PreparedStatement::*");
 
   //TODO: Enable it after fixing
-  SKIP("Removed untill fixed");
+  //SKIP("Removed untill fixed");
 
   char blob_input[512];
   std::stringstream blob_input_stream;
@@ -1482,18 +1478,30 @@ void preparedstatement::blob()
     id=2;
     pstmt->setInt(1, id);
     pstmt->setBlob(2, &msg);
-    pstmt->execute();
-    pstmt.reset(con->prepareStatement("SELECT id, col1 FROM test WHERE id = 2"));
-    res.reset(pstmt->executeQuery());
-    ASSERT(res->next());
-    ASSERT_EQUALS(res->getInt(1), id);
-    ASSERT_GT((int) (res->getString(2).length()), (int) (msg.str().length()));
-    ASSERT(!res->next());
-    res->close();
+    try {
+      pstmt->execute();
+      pstmt.reset(con->prepareStatement("SELECT id, col1 FROM test WHERE id = 2"));
+      res.reset(pstmt->executeQuery());
+      ASSERT(res->next());
+      ASSERT_EQUALS(res->getInt(1), id);
+      ASSERT_GT((int)(res->getString(2).length()), (int)(msg.str().length()));
+      ASSERT(!res->next());
+      res->close();
 
-    msg << "- what has happened to the stream?";
-    logMsg(msg.str());
-
+      msg << "- what has happened to the stream?";
+      logMsg(msg.str());
+    }
+    catch (sql::SQLException & e) {
+      // If the server is in the strict mode, inserting too long data causes error
+      if (e.getErrorCode() == 1406 && e.getSQLState().compare("22001") == 0) {
+        logMsg("The server is in the strict mode - couldn't insert too long stream");
+      }
+      else {
+        logErr(e.what());
+        logErr("SQLState: " + std::string(e.getSQLState()));
+        fail(e.what(), __FILE__, __LINE__);
+      }
+    }
 
     pstmt.reset(con->prepareStatement("DROP TABLE IF EXISTS test"));
     pstmt->execute();

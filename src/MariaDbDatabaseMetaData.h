@@ -99,6 +99,7 @@ public:
   SQLString getDriverVersion();
   int32_t getDriverMajorVersion();
   int32_t getDriverMinorVersion();
+  int32_t getDriverPatchVersion();
   bool usesLocalFiles();
   bool usesLocalFilePerTable();
   bool supportsMixedCaseIdentifiers();
@@ -262,7 +263,19 @@ public:
   //public:  bool isWrapperFor(const Class<?>iface);
   int64_t getMaxLogicalLobSize();
   bool supportsRefCursors();
+
+  bool supportsTypeConversion();
+  /* Group of not supported methods */
   ResultSet* getSchemaObjectTypes();
+  ResultSet* getSchemaObjects(const SQLString& c, const SQLString& s, const SQLString& t);
+  ResultSet* getSchemaObjects();
+  int32_t getCDBCMajorVersion();
+  int32_t getCDBCMinorVersion();
+  ResultSet* getSchemaCollation(const SQLString& c, const SQLString& s);
+  ResultSet* getSchemaCharset(const SQLString& c, const SQLString& s);
+  ResultSet* getTableCollation(const SQLString& c, const SQLString& s, const SQLString& t);
+  ResultSet* getTableCharset(const SQLString& c, const SQLString& s, const SQLString& t);
+
 };
 
 }

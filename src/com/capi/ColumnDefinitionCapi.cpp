@@ -100,6 +100,12 @@ namespace capi
     return metadata->org_table;
   }
 
+
+  bool ColumnDefinitionCapi::isReadonly() const {
+    return (metadata->db == NULL || *metadata->db == NULL);
+  }
+
+
   SQLString ColumnDefinitionCapi::getName() const
   {
     return metadata->name;
@@ -113,6 +119,15 @@ namespace capi
     return metadata->charsetnr;
   }
 
+  SQLString ColumnDefinitionCapi::getCollation() const {
+    MARIADB_CHARSET_INFO *cs= mariadb_get_charset_by_nr(metadata->charsetnr);
+
+    if (cs != NULL) {
+      return cs->name;
+    }
+
+    return emptyStr;
+  }
   int64_t ColumnDefinitionCapi::getLength() const {
     return length;
   }

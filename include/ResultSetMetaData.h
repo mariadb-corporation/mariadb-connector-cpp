@@ -60,6 +60,8 @@ public:
   virtual bool isWritable(uint32_t column)=0;
   virtual bool isDefinitelyWritable(uint32_t column)=0;
   virtual SQLString getColumnClassName(uint32_t column)=0;
+  virtual bool isZerofill(uint32_t column)=0;
+  virtual SQLString getColumnCollation(uint32_t column)=0;
 };
 
 }

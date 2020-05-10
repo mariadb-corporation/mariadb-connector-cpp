@@ -34,10 +34,10 @@ namespace mariadb
     * @param options connection options
     * @param forceAlias force table and column name alias as original data
     */
-  MariaDbResultSetMetaData::MariaDbResultSetMetaData(const std::vector<Shared::ColumnDefinition>& fieldPackets, const Shared::Options& options, bool forceAlias)
-    : fieldPackets(fieldPackets)
-    , options(options)
-    , forceAlias(forceAlias)
+  MariaDbResultSetMetaData::MariaDbResultSetMetaData(const std::vector<Shared::ColumnDefinition>& _fieldPackets, const Shared::Options& _options, bool _forceAlias)
+    : fieldPackets(_fieldPackets)
+    , options(_options)
+    , forceAlias(_forceAlias)
   {
   }
 
@@ -83,6 +83,8 @@ namespace mariadb
     */
   bool MariaDbResultSetMetaData::isSearchable(uint32_t column)
   {
+    // Just to check that valid column index requested
+    getColumnDefinition(column);
     return true;
   }
 
@@ -94,6 +96,8 @@ namespace mariadb
     */
   bool MariaDbResultSetMetaData::isCurrency(uint32_t column)
   {
+    // Just to check that valid column index requested
+    getColumnDefinition(column);
     return false;
   }
 
@@ -179,7 +183,9 @@ namespace mariadb
     */
   SQLString MariaDbResultSetMetaData::getCatalogName(uint32_t column)
   {
-    return getColumnDefinition(column).getDatabase();
+    // Just to check that valid column index requested
+    getColumnDefinition(column);
+    return "";
   }
 
   /**
@@ -237,7 +243,7 @@ namespace mariadb
 
   SQLString MariaDbResultSetMetaData::getSchemaName(uint32_t column)
   {
-    return "";
+    return getColumnDefinition(column).getDatabase();
   }
 
   /**
@@ -320,7 +326,7 @@ namespace mariadb
     */
   bool MariaDbResultSetMetaData::isReadOnly(uint32_t column)
   {
-    return false;
+    return getColumnDefinition(column).isReadonly();
   }
 
   /**
@@ -368,9 +374,20 @@ namespace mariadb
     if (column >=1 &&column <= fieldPackets.size()) {
       return *fieldPackets[column -1];
     }
-    throw *ExceptionFactory::INSTANCE.create("No such column");
+    throw InvalidArgumentException("No such column", "42000");//*ExceptionFactory::INSTANCE.create("No such column");
   }
 
+
+  bool MariaDbResultSetMetaData::isZerofill(uint32_t column)
+  {
+    return getColumnDefinition(column).isZeroFill();
+  }
+
+
+  SQLString MariaDbResultSetMetaData::getColumnCollation(uint32_t column)
+  {
+    return getColumnDefinition(column).getCollation();
+  }
   /**
     * Returns true if this either implements the interface argument or is directly or indirectly a
     * wrapper for an object that does. Returns false otherwise. If this implements the interface then

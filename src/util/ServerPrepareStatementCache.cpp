@@ -84,9 +84,9 @@ namespace mariadb
   }
 
 
+  /* Calls have to be guarded*/
   ServerPrepareResult* ServerPrepareStatementCache::get(const SQLString& key)
   {
-    std::lock_guard<std::mutex> localScopeLock(lock);
 
     iterator cachedServerPrepareResult= cache.find(key);
 

@@ -43,6 +43,8 @@ namespace mariadb
   ExceptionFactory::ExceptionFactory(int64_t _threadId, Shared::Options _options)
     : threadId(_threadId)
     , options(_options)
+    , connection(nullptr)
+    , statement(nullptr)
   {
   }
 

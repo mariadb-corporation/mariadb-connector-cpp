@@ -30,7 +30,7 @@ namespace sql
 {
   namespace mariadb
   {
-    static const int32_t SocketTimeoutDefault[]= {10000, 0, 0, 0, 0, 0};
+    static const int32_t SocketTimeoutDefault[]= {30000, 0, 0, 0, 0, 0};
     std::map<std::string, DefaultOptions> OptionsMap{
       { "user", {"user", "0.9.1", "Database user name", false} },
       {"password", {"password",  "0.9.1", "Password of the database user", false} },
@@ -727,6 +727,7 @@ namespace sql
       completeOptionsMap.emplace("MARIADB_OPT_TLS_PEER_FP",    &OptionsMap["tlsPeerFP"]);
       completeOptionsMap.emplace("MARIADB_OPT_SSL_FP_LIST",    &OptionsMap["tlsPeerFPList"]);
       completeOptionsMap.emplace("rsaKey",                     &OptionsMap["serverRsaPublicKeyFile"]);
+      completeOptionsMap.emplace("OPT_READ_TIMEOUT",           &OptionsMap["socketTimeout"]);
       return true;
     }
 
