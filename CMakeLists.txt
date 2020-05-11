@@ -385,6 +385,10 @@ IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
   ENDIF()
   MESSAGE(STATUS "Running C/C cmake scripts")
   INCLUDE(${CMAKE_SOURCE_DIR}/cmake/connector_c.cmake)
+  INSTALL(FILES
+          $<TARGET_FILE:libmariadb>
+          DESTINATION ./${INSTALL_LIB_SUFFIX}/mariadb
+  	  COMPONENT ConCLib)
 ELSE()
   SET(USE_SYSTEM_INSTALLED_LIB TRUE)
   MESSAGE(STATUS "There is no Connector/C sub-project folder, linking against libmariadb installed on the system")
@@ -412,8 +416,7 @@ IF(NOT CMAKE_BUILD_TYPE)
 ENDIF()
 SET(CPACK_PACKAGE_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
 SET(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
-SET(CPACK_COMPONENTS_ALL ClientPlugins SharedLibraries CppLibs Documentation PublicApi)
-#SET(CPACK_COMPONENTS_ALL CppLibs Documentation)
+SET(CPACK_COMPONENTS_ALL ClientPlugins  CppLibs ConCLib Documentation PublicAPI)
 SET(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
 SET(LIBRARY_NAME "mariadbcpp")
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.def.in
@@ -472,7 +475,7 @@ ELSE()
   ENDIF()
   INSTALL(TARGETS
           ${LIBRARY_NAME} 
-          LIBRARY DESTINATION ./${INSTALL_LIB_SUFFIX}
+          LIBRARY DESTINATION ./${INSTALL_LIB_SUFFIX}/mariadb
           COMPONENT CppLibs)
   IF(NOT DEFINED INSTALL_DOC_DIR)
     SET(INSTALL_DOC_DIR "./share/doc/${CPACK_PACKAGE_NAME}/" CACHE STRING "Directory, where to install documentation(README)")
@@ -487,10 +490,6 @@ ELSE()
   MESSAGE(STATUS "Documetnation installed to ${INSTALL_DOC_DIR}")
   MESSAGE(STATUS "License file installed to ${INSTALL_LICENSE_DIR}")
   MESSAGE(STATUS "Public API header files installed to ${INSTALL_INCLUDE_DIR}")
-  #INSTALL(FILES
-  #        ${CMAKE_SOURCE_DIR}/
-  #        LIBRARY DESTINATION ./${INSTALL_LIB_SUFFIX}
-  #	  COMPONENT ConCLib)
   INSTALL(FILES
           ${CMAKE_SOURCE_DIR}/README
           DESTINATION
@@ -501,10 +500,7 @@ ELSE()
           DESTINATION
           ${INSTALL_LICENSE_DIR}
           COMPONENT Documentation)
-  INSTALL(DIRECTORY include
-          DESTINATION ${INSTALL_INCLUDE_DIR}
-          COMPONENT PublicApi)
-
+  ADD_SUBDIRECTORY(include)
 ENDIF()
 # Tests. Checking if we have them. May be not the case if we are building from source package
 IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")

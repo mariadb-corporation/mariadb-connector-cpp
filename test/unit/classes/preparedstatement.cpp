@@ -1185,7 +1185,8 @@ void preparedstatement::callSPWithPS()
 void preparedstatement::callSPMultiRes()
 {
   logMsg("preparedstatement::callSPMultiRes() - MySQL_PreparedStatement::*()");
-  //SKIP("Before fixed!!!");
+  //TODO
+  SKIP("Before fixed!!!");
   try
   {
     std::string sp_code("CREATE PROCEDURE p() BEGIN SELECT 1; SELECT 2; SELECT 3; END;");
