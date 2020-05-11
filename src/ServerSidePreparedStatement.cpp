@@ -431,14 +431,14 @@ namespace sql
       catch (SQLException&) {
       }
     }
-    connection->getProtocol()->reset();
-    if (connection
-      ||connection->pooledConnection
-      ||connection->pooledConnection->noStmtEventListeners()) {
+    if (connection == nullptr
+     || connection->pooledConnection == nullptr
+     || connection->pooledConnection->noStmtEventListeners()) {
+      connection= nullptr;
       return;
     }
     connection->pooledConnection->fireStatementClosed(this);
-    connection= NULL;
+    connection= nullptr;
   }
 
   int32_t ServerSidePreparedStatement::getParameterCount() const
