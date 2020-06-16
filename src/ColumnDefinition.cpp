@@ -43,8 +43,8 @@ namespace mariadb
 
     md.name= (char*)name.c_str();
     md.org_name= (char*)name.c_str();
-    md.name_length= name.length();
-    md.org_name_length= name.length();
+    md.name_length= static_cast<unsigned int>(name.length());
+    md.org_name_length= static_cast<unsigned int>(name.length());
 
     switch (_type.getSqlType()) {
     case Types::VARCHAR:

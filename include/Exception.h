@@ -243,8 +243,8 @@ class MARIADB_EXPORTED ParseException : public SQLException
   ParseException() {}
 
 public:
-  int32_t position;
-  ParseException(const SQLString& str, int32_t pos= 0) :
+  std::size_t position;
+  ParseException(const SQLString& str, std::size_t pos= 0) :
     SQLException(str), position(pos)
   {}
   virtual ~ParseException() {}

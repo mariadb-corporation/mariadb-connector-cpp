@@ -242,7 +242,7 @@ namespace mariadb
   }
 
 
-  BatchUpdateException MariaDbStatement::executeBatchExceptionEpilogue(SQLException& initialSqle, int32_t size)
+  BatchUpdateException MariaDbStatement::executeBatchExceptionEpilogue(SQLException& initialSqle, std::size_t size)
   {
     SQLException sqle(handleFailoverAndTimeout(initialSqle));
     std::unique_ptr<sql::Ints> ret;
@@ -1284,7 +1284,7 @@ namespace mariadb
       return results->getCmdInformation()->getUpdateCounts();// .data();
     }
     catch (SQLException& initialSqlEx){
-      throw executeBatchExceptionEpilogue(initialSqlEx,size);
+      throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }
 
     executeBatchEpilogue();
@@ -1310,7 +1310,7 @@ namespace mariadb
     }
     catch (SQLException& initialSqlEx)
     {
-      throw executeBatchExceptionEpilogue(initialSqlEx,size);
+      throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }/* TODO: something with the finally was once here */
 
     executeBatchEpilogue();

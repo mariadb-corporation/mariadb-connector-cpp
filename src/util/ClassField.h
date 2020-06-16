@@ -21,6 +21,7 @@
 #ifndef _CLASSFIELD_H_
 #define _CLASSFIELD_H_
 
+#include <stdexcept>
 #include "SQLString.h"
 #include "Value.h"
 

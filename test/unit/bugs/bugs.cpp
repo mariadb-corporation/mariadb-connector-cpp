@@ -458,7 +458,7 @@ void bugs::legacy_auth()
 
   sql::ConnectOptionsMap opts;
 
-  opts["useLegacyAuth"]=  false;
+  opts["useLegacyAuth"]=  "false";
   opts["userName"]=       sql::SQLString("ccpp_legacy_auth");
   opts["password"]=       sql::SQLString("foo");
   opts["schema"]=         sql::SQLString("test");

@@ -379,7 +379,7 @@ public:
 protected:
   void setRowPointer(int32_t pointer);
 public:
-  int32_t getDataSize();
+  std::size_t getDataSize();
   bool isBinaryEncoded();
   };
 

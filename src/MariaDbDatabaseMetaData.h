@@ -50,10 +50,10 @@ public:
 private:
 
   static SQLString columnTypeClause(Shared::Options& options);
-  static size_t skipWhite(const SQLString& part, int32_t startPos);
-  static int32_t parseIdentifier(const SQLString& part,int32_t startPos, Identifier &identifier);
-  static int32_t parseIdentifierList(const SQLString& part, int32_t startPos, std::vector<Identifier>& list);
-  static size_t skipKeyword(const SQLString& part, int32_t startPos, const SQLString& keyword);
+  static std::size_t skipWhite(const SQLString& part, std::size_t startPos);
+  static std::size_t parseIdentifier(const SQLString& part, std::size_t startPos, Identifier &identifier);
+  static std::size_t parseIdentifierList(const SQLString& part, std::size_t startPos, std::vector<Identifier>& list);
+  static std::size_t skipKeyword(const SQLString& part, std::size_t startPos, const SQLString& keyword);
   static int32_t getImportedKeyAction(const SQLString& actionKey);
   static ResultSet* getImportedKeys(const SQLString& tableDef, const SQLString& tableName, const SQLString& catalog,
                                    MariaDbConnection* connection);

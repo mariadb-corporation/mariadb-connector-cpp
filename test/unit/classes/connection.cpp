@@ -1967,7 +1967,7 @@ void connection::connectOptReconnect()
     }
 
     connection_properties.erase("OPT_RECONNECT");
-    connection_properties["OPT_RECONNECT"]=false;
+    connection_properties["OPT_RECONNECT"]= "false";
 
     created_objects.clear();
     con.reset(driver->connect(connection_properties));
@@ -2032,7 +2032,7 @@ void connection::connectOptReconnect()
 
 
     connection_properties.erase("OPT_RECONNECT");
-    connection_properties["OPT_RECONNECT"]=false;
+    connection_properties["OPT_RECONNECT"]= "false";
 
     created_objects.clear();
     con.reset(driver->connect(connection_properties));
@@ -2071,7 +2071,7 @@ void connection::connectOptReconnect()
     }
 
     connection_properties.erase("OPT_RECONNECT");
-    connection_properties["OPT_RECONNECT"]=false;
+    connection_properties["OPT_RECONNECT"]= "false";
 
     created_objects.clear();
     con.reset(driver->connect(connection_properties));
@@ -3019,19 +3019,19 @@ void connection::ssl_mode()
   stmt->execute("CREATE USER 'ssluser' IDENTIFIED BY 'sslpass' require SSL");
   stmt->execute("GRANT all on test.* to 'ssluser'");
 
-  connection_properties["hostName"]=url;
-  connection_properties["userName"]="ssluser";
-  connection_properties["password"]="sslpass";
+  connection_properties["hostName"]= url;
+  connection_properties["userName"]= "ssluser";
+  connection_properties["password"]= "sslpass";
 
-  connection_properties["useTls"] = "true";
+  connection_properties["useTls"]= "true";
 
   created_objects.clear();
   con.reset(driver->connect(connection_properties));
 
-  connection_properties["useTls"] = "false";
+  connection_properties["useTls"]= "false";
 
   //only to trigger setssl which changes SSL_MODE
-  connection_properties["sslCA"] = "invalid_path";
+  connection_properties["sslCA"]= "invalid_path";
 
   created_objects.clear();
 
@@ -3052,11 +3052,11 @@ void connection::tls_version()
 
   sql::ConnectOptionsMap connection_properties;
 
-  connection_properties["hostName"]=url;
-  connection_properties["userName"]=user;
-  connection_properties["password"]=passwd;
+  connection_properties["hostName"]= url;
+  connection_properties["userName"]= user;
+  connection_properties["password"]= passwd;
 
-  connection_properties["useTls"] = "false";
+  connection_properties["useTls"]= "false";
 
   created_objects.clear();
   con.reset(driver->connect(connection_properties));
@@ -3149,11 +3149,11 @@ void connection::cached_sha2_auth()
   stmt->execute("CREATE USER 'doomuser'@'%' IDENTIFIED WITH caching_sha2_password BY '!sha2user_pass';");
 
   sql::ConnectOptionsMap opts;
-  opts["hostName"] = url;
-  opts["userName"] = "doomuser";
-  opts["password"] = "!sha2user_pass";
-  opts["OPT_GET_SERVER_PUBLIC_KEY"] = false;
-  opts["useTls"] = "false";
+  opts["hostName"]= url;
+  opts["userName"]= "doomuser";
+  opts["password"]= "!sha2user_pass";
+  opts["OPT_GET_SERVER_PUBLIC_KEY"]= "false";
+  opts["useTls"]= "false";
 
   try {
 
@@ -3174,7 +3174,7 @@ void connection::cached_sha2_auth()
     logMsg(err.str());
   }
 
-  opts["OPT_GET_SERVER_PUBLIC_KEY"] = "true";
+  opts["OPT_GET_SERVER_PUBLIC_KEY"]= "true";
 
   // Now we can connect using unencrypted connection, since we now can ask for
   // the server public key
@@ -3182,7 +3182,7 @@ void connection::cached_sha2_auth()
 
   //Now using fast auth!
   con->close();
-  opts["OPT_GET_SERVER_PUBLIC_KEY"] = false;
+  opts["OPT_GET_SERVER_PUBLIC_KEY"]= "false";
   con.reset(driver->connect(opts));
 
   // Cleanup

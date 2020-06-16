@@ -1493,7 +1493,7 @@ namespace capi
   /** {inheritDoc}. */
   bool SelectResultSetCapi::getBoolean(int32_t index) {
     checkObjectRange(index);
-    return row->getInternalBoolean(columnsInformation[index -1].get());
+    return row->getInternalBoolean(columnsInformation[static_cast<std::size_t>(index) -1].get());
   }
 
   /** {inheritDoc}. */
@@ -1504,7 +1504,7 @@ namespace capi
   /** {inheritDoc}. */
   int8_t SelectResultSetCapi::getByte(int32_t index) {
     checkObjectRange(index);
-    return row->getInternalByte(columnsInformation[index -1].get());
+    return row->getInternalByte(columnsInformation[static_cast<std::size_t>(index) - 1].get());
   }
 
   /** {inheritDoc}. */
@@ -1515,7 +1515,7 @@ namespace capi
   /** {inheritDoc}. */
   short SelectResultSetCapi::getShort(int32_t index) {
     checkObjectRange(index);
-    return row->getInternalShort(columnsInformation[index -1].get());
+    return row->getInternalShort(columnsInformation[static_cast<std::size_t>(index) - 1].get());
   }
 
   /** {inheritDoc}. */
@@ -1976,7 +1976,7 @@ namespace capi
     rowPointer= pointer;
   }
 
-  int32_t SelectResultSetCapi::getDataSize() {
+  std::size_t SelectResultSetCapi::getDataSize() {
     return dataSize;
   }
 

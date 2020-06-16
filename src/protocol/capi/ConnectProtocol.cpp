@@ -1384,7 +1384,7 @@ namespace capi
 
   int32_t ConnectProtocol::realQuery(const SQLString& sql)
   {
-    return mysql_real_query(connection.get(), sql.c_str(), sql.length());
+    return mysql_real_query(connection.get(), sql.c_str(), static_cast<unsigned long>(sql.length()));
   }
 }
 }

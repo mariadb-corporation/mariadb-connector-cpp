@@ -136,7 +136,7 @@ public:
 protected:
   virtual void setRowPointer(int32_t pointer)=0;
 public:
-  virtual int32_t getDataSize()=0;
+  virtual std::size_t getDataSize()=0;
   virtual bool isBinaryEncoded()=0;
   };
 

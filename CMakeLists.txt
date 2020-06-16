@@ -17,7 +17,7 @@
 #   51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 # *************************************************************************************/
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 
 CMAKE_POLICY(SET CMP0048 NEW)
 

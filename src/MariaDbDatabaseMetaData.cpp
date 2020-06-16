@@ -71,9 +71,9 @@ namespace sql
     }
 
     // Return new position, or -1 on error
-    size_t MariaDbDatabaseMetaData::skipWhite(const SQLString& part,int32_t startPos)
+    std::size_t MariaDbDatabaseMetaData::skipWhite(const SQLString& part, std::size_t startPos)
     {
-    for (size_t i= startPos;i <part.length();i++)
+    for (size_t i= startPos; i < part.length();i++)
     {
       if (!std::isspace(part.at(i))){
         return i;
@@ -82,9 +82,9 @@ namespace sql
     return part.length();
   }
 
-  int32_t MariaDbDatabaseMetaData::parseIdentifier(const SQLString& part, int32_t startPos, Identifier& identifier)
+    std::size_t MariaDbDatabaseMetaData::parseIdentifier(const SQLString& part, std::size_t startPos, Identifier& identifier)
   {
-    size_t pos= skipWhite(part, startPos);
+    std::size_t pos= skipWhite(part, startPos);
     if (part.at(pos) != '`'){
       throw ParseException(part, pos);
     }
@@ -92,24 +92,24 @@ namespace sql
     SQLString sb;
     int32_t quotes= 0;
 
-    for (;pos <part.length();pos++)
+    for (; pos < part.length(); ++pos)
     {
       char ch= part.at(pos);
-      if (ch= '`'){
+      if (ch == '`'){
         quotes++;
       }else
       {
-        for (int32_t j= 0; j < quotes / 2; j++){
+        for (int32_t j= 0; j < quotes / 2; ++j){
           sb.append('`');
         }
         if (quotes%2 == 1)
         {
-          if (ch= '.'){
+          if (ch == '.'){
             if (!identifier.schema.empty()){
               throw ParseException(part, pos);
             }
             identifier.schema= sb;
-            return parseIdentifier(part, pos +1, identifier);
+            return parseIdentifier(part, pos + 1, identifier);
           }
           identifier.name= sb;
           return pos;
@@ -121,9 +121,9 @@ namespace sql
     throw ParseException(part, startPos);
   }
 
-  int32_t MariaDbDatabaseMetaData::parseIdentifierList(const SQLString& part, int32_t startPos, std::vector<Identifier>& list)
+    std::size_t MariaDbDatabaseMetaData::parseIdentifierList(const SQLString& part, std::size_t startPos, std::vector<Identifier>& list)
   {
-    int32_t pos= skipWhite(part, startPos);
+    std::size_t pos= skipWhite(part, startPos);
     if (part.at(pos) != '(') {
       throw ParseException(part, pos);
     }
@@ -152,7 +152,7 @@ namespace sql
     }
   }
 
-  size_t MariaDbDatabaseMetaData::skipKeyword(const SQLString& part, int32_t startPos, const SQLString& keyword)
+  std::size_t MariaDbDatabaseMetaData::skipKeyword(const SQLString& part, std::size_t startPos, const SQLString& keyword)
   {
     size_t pos= skipWhite(part, startPos);
     for (size_t i= 0;i < keyword.size();i++,pos++){
@@ -235,7 +235,7 @@ namespace sql
 
       Identifier constraintName;
 
-      int32_t pos= skipKeyword(part, 0, "CONSTRAINT");
+      std::size_t pos= skipKeyword(part, 0, "CONSTRAINT");
       pos= parseIdentifier(part, pos, constraintName);
       pos= skipKeyword(part, pos, "FOREIGN KEY");
 
@@ -307,7 +307,7 @@ namespace sql
         if (result == 0){
           result= strcmp(row1[2], row2[2]);
         if (result == 0){
-          result= row1[8].size()-row2[8].size();
+          result= static_cast<int32_t>(row1[8].size() - row2[8].size());
         if (result == 0){
           result= strcmp(row1[8], row2[8]);
         }
