@@ -36,7 +36,7 @@ namespace mariadb
     , queryParts(_queryParts)
     , isQueryMultiValuesRewritableFlag(isQueryMultiValuesRewritable)
     , isQueryMultipleRewritableFlag(isQueryMultipleRewritable)
-    , paramCount(queryParts.size() - (_rewriteType ? 3 : 1))
+    , paramCount(static_cast<uint32_t>(queryParts.size()) - (_rewriteType ? 3 : 1))
     , rewriteType(_rewriteType)
   {
   }
@@ -62,11 +62,11 @@ namespace mariadb
     bool endingSemicolon= false;
 
     bool singleQuotes= false;
-    int32_t lastParameterPosition= 0;
+    std::size_t lastParameterPosition= 0;
 
     const char* query= queryString.c_str();
-    size_t queryLength= queryString.length();
-    for (size_t i= 0; i <queryLength; i++) {
+    std::size_t queryLength= queryString.length();
+    for (std::size_t i= 0; i <queryLength; i++) {
 
       char car= query[i];
       if (state == LexState::Escape

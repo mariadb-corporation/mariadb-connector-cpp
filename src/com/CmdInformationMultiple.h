@@ -34,7 +34,7 @@ class CmdInformationMultiple  : public CmdInformation {
 
   std::vector<int64_t>insertIds;
   std::vector<int64_t>updateCounts;
-  int32_t expectedSize;
+  std::size_t expectedSize;
   int32_t autoIncrement;
   int64_t insertIdNumber ; /*0*/
   int32_t moreResultsIdx;
@@ -42,7 +42,7 @@ class CmdInformationMultiple  : public CmdInformation {
   bool rewritten;
 
 public:
-  CmdInformationMultiple(int32_t expectedSize,int32_t autoIncrement);
+  CmdInformationMultiple(std::size_t expectedSize,int32_t autoIncrement);
   void addErrorStat();
   void reset();
   void addResultSetStat();

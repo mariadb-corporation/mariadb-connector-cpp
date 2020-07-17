@@ -123,8 +123,8 @@ void BlobTest::tearDown()
 
     if ( asString )
     {
-      sql::SQLString str;
-      testBlobFile->readFile( static_cast<std::string&>(str) );
+      std::string str;
+      testBlobFile->readFile( str );
 
       pstmt->setString( 1, str );
       pstmt->execute();
@@ -144,7 +144,7 @@ void BlobTest::tearDown()
 }
 
 /* throws Exception */
-bool BlobTest::checkBlob(const String & retrBytes)
+bool BlobTest::checkBlob(const sql::SQLString & retrBytes)
 {
   bool passed=true;
 
@@ -256,7 +256,7 @@ void BlobTest::doRetrieval()
   TIMER_STOP("Blob Retrieval");
 
   TIMER_START("getString");
-  String s(rs->getString(1));
+  sql::SQLString s= rs->getString(1);
   TIMER_STOP("getString");
 
   TIMER_START("Blob Check 1");

@@ -146,7 +146,7 @@ namespace mariadb
   {
     static ClassField<Options> emptyField;
 
-    auto it= Field.find(static_cast<const std::string&>(fieldName));
+    auto it= Field.find(StringImp::get(fieldName));
 
     if (it != Field.end())
     {
@@ -217,7 +217,7 @@ namespace mariadb
           }
           }
         }
-        catch (std::invalid_argument& e) {
+        catch (std::invalid_argument& /*e*/) {
           SQLString msg("Could not load options defaults: field ");
           msg.append(it.first);
           msg.append(", type");

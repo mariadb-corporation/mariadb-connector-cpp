@@ -49,7 +49,7 @@ TestsRunner::TestsRunner()
 
 bool TestsRunner::runTests()
 {
-  TestSuiteNames.empty();
+  //TestSuiteNames.empty();
 
   TestSuiteFactory::theInstance().getTestsList( TestSuiteNames );
 

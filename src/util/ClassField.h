@@ -22,7 +22,7 @@
 #define _CLASSFIELD_H_
 
 #include <stdexcept>
-#include "SQLString.h"
+#include "StringImp.h"
 #include "Value.h"
 
 namespace sql

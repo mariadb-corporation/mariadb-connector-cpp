@@ -40,7 +40,7 @@ class ColumnDefinitionCapi : public sql::mariadb::ColumnDefinition
   static int32_t maxCharlen[];
   std::shared_ptr<MYSQL_FIELD> metadata;
   const ColumnType& type;
-  int64_t length;
+  uint32_t length;
   //SQLString db;
 
 public:
@@ -55,7 +55,7 @@ public:
   SQLString getOriginalName() const;
   int16_t getCharsetNumber() const;
   SQLString getCollation() const;
-  int64_t getLength() const;
+  uint32_t getLength() const;
   int64_t getPrecision() const;
   int32_t getDisplaySize() const;
   uint8_t getDecimals() const;

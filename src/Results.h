@@ -38,7 +38,7 @@ class Results  {
   MariaDbStatement* statement;
   int32_t fetchSize;
   bool batch;
-  int32_t expectedSize;
+  std::size_t expectedSize;
   Shared::CmdInformation cmdInformation;
   std::deque<Unique::SelectResultSet> executionResults;
   Unique::SelectResultSet resultSet;
@@ -59,7 +59,7 @@ public:
     MariaDbStatement* statement,
     int32_t fetchSize,
     bool batch,
-    int32_t expectedSize,
+    std::size_t expectedSize,
     bool binaryFormat,
     int32_t resultSetScrollType,
     int32_t resultSetConcurrency,
@@ -89,7 +89,7 @@ public:
   int32_t getFetchSize();
   MariaDbStatement* getStatement();
   bool isBatch();
-  int32_t getExpectedSize();
+  std::size_t getExpectedSize();
   bool isBinaryFormat();
   void removeFetchSize();
   int32_t getResultSetScrollType();

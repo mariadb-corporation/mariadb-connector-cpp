@@ -1069,8 +1069,8 @@ namespace mariadb
     stmt->setDateTime(parameterIndex, dt);
   }
 
-  int32_t MariaDbProcedureStatement::getMaxFieldSize() { return stmt->getMaxFieldSize(); }
-  void MariaDbProcedureStatement::setMaxFieldSize(int32_t max) { stmt->setMaxFieldSize(max); }
+  uint32_t MariaDbProcedureStatement::getMaxFieldSize() { return stmt->getMaxFieldSize(); }
+  void MariaDbProcedureStatement::setMaxFieldSize(uint32_t max) { stmt->setMaxFieldSize(max); }
   int32_t MariaDbProcedureStatement::getMaxRows() { return stmt->getMaxRows(); }
   void MariaDbProcedureStatement::setMaxRows(int32_t max) { stmt->setMaxRows(max); }
   int64_t MariaDbProcedureStatement::getLargeMaxRows() { return stmt->getLargeMaxRows(); }

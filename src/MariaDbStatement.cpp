@@ -323,7 +323,7 @@ namespace mariadb
   {
     std::smatch matcher;
     SQLString escapedVal("'");
-    std::string Value(val);
+    std::string Value(StringImp::get(val));
 
     while (std::regex_search(Value, matcher, escapePattern))
     {
@@ -359,7 +359,7 @@ namespace mariadb
         throw *exceptionFactory->raiseStatementError(connection, this)->create("Invalid name - containing u0000 character", "42000");;
       }
 
-      std::string result(identifier);
+      std::string result(StringImp::get(identifier));
       std::regex rx("^`.+`$");
 
       if (std::regex_search(result, rx))
@@ -382,7 +382,7 @@ namespace mariadb
    */
   bool MariaDbStatement::isSimpleIdentifier(const SQLString& identifier)
   {
-    return !identifier.empty() && std::regex_search(static_cast<const std::string&>(identifier), identifierPattern);
+    return !identifier.empty() && std::regex_search(StringImp::get(identifier), identifierPattern);
   }
 
   /**
@@ -733,7 +733,7 @@ namespace mariadb
    *     means there is no limit
    * @see #setMaxFieldSize
    */
-  int32_t MariaDbStatement::getMaxFieldSize(){
+  uint32_t MariaDbStatement::getMaxFieldSize(){
     return maxFieldSize;
   }
 
@@ -749,7 +749,7 @@ namespace mariadb
    * @param max the new column size limit in bytes; zero means there is no limit
    * @see #getMaxFieldSize
    */
-  void MariaDbStatement::setMaxFieldSize(int32_t max){
+  void MariaDbStatement::setMaxFieldSize(uint32_t max){
     maxFieldSize= max;
   }
 
@@ -1270,9 +1270,9 @@ namespace mariadb
   sql::Ints* MariaDbStatement::executeBatch()
   {
     checkClose();
-    int32_t size;
-    if (size= batchQueries.size() == 0)
-    {
+    std::size_t size= batchQueries.size();
+
+    if (size == 0) {
       return NULL;
     }
 
@@ -1294,10 +1294,9 @@ namespace mariadb
   sql::Longs* MariaDbStatement::executeLargeBatch()
   {
     checkClose();
-    size_t size;
+    std::size_t size= batchQueries.size();
 
-    if ((size= batchQueries.size()) == 0)
-{
+    if (size == 0) {
       return NULL;
     }
 
@@ -1322,7 +1321,7 @@ namespace mariadb
    * @param size expected result-set size
    * @throws SQLException throw exception if batch error occur
    */
-  void MariaDbStatement::internalBatchExecution(int32_t size)
+  void MariaDbStatement::internalBatchExecution(std::size_t size)
   {
     std::vector<Shared::ParameterHolder> dummy;
     executeQueryPrologue(true);

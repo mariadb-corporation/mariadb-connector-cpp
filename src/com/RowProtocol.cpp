@@ -80,7 +80,7 @@ namespace mariadb
     buf= &_buf;
   }
 
-  int32_t RowProtocol::getLengthMaxFieldSize()
+  uint32_t RowProtocol::getLengthMaxFieldSize()
   {
     return maxFieldSize != 0 && maxFieldSize < length ? maxFieldSize : length;
   }

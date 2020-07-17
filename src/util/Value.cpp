@@ -167,7 +167,7 @@ namespace mariadb
     case sql::mariadb::Value::VBOOL:
       return (isPtr ? *static_cast<bool*>(value.pv) : value.bv) ? 1 : 0;
     case sql::mariadb::Value::VSTRING:
-      return std::stoi(static_cast<std::string&>(isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv));
+      return std::stoi(StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv));
     }
     return 0;
   }
@@ -193,7 +193,7 @@ namespace mariadb
     case sql::mariadb::Value::VBOOL:
       return (isPtr ? *static_cast<bool*>(value.pv) : value.bv) ? 1 : 0;
     case sql::mariadb::Value::VSTRING:
-      return std::stoll(static_cast<std::string&>(isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv));
+      return std::stoll(StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv));
     }
     return 0;
   }
@@ -229,7 +229,7 @@ namespace mariadb
       }
       else
       {
-        return std::stoll(static_cast<std::string&>(str)) != 0;
+        return std::stoll(StringImp::get(str)) != 0;
       }
     }
     }
@@ -278,7 +278,7 @@ namespace mariadb
   {
     if (type == VSTRING)
     {
-      return isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv;
+      return StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv);
     }
 
     throw std::invalid_argument("Wrong lvalue type requested - the type is not string");

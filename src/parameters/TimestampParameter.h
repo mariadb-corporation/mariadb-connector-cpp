@@ -49,7 +49,7 @@ public:
   bool isNullData() const;
   bool isLongData();
   void* getValuePtr() { return const_cast<void*>(static_cast<const void*>(ts.c_str())); }
-  unsigned long getValueBinLen() const { return ts.length(); }
+  unsigned long getValueBinLen() const { return static_cast<unsigned long>(ts.length()); }
   };
 }
 }

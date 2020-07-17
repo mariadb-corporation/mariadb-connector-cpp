@@ -52,6 +52,21 @@ void assertTrue(const String & msg, bool expression,
   }
 }
 
+
+void assertTrue(const char* msg, bool expression,
+  const char* file, int line)
+{
+  if (!expression)
+  {
+    std::stringstream errmsg;
+    errmsg.str("");
+    errmsg << "assertTrue() failed in " << file << ", line #" << line;
+    errmsg << ": '" << msg << "'";
+    TestsListener::testHasFailed(errmsg.str());
+  }
+}
+
+
 void assertEquals(const char * expected, const char * result,
                   const char * file, int line)
 {
@@ -246,6 +261,62 @@ void assertEqualsEpsilon(const double & expected, const double & result
 
 void assertEquals(const String & expected, const String & result
                   , const char * file, int line)
+{
+  if (expected != result)
+  {
+    std::stringstream errmsg;
+    errmsg.str("");
+    errmsg << "assertEquals(std::string) failed in" << file << ", line #" << line;
+    errmsg << " expecting '" << expected << "' got '" << result << "'";
+    TestsListener::testHasFailed(errmsg.str());
+  }
+}
+
+
+void assertEquals(const String& expected, const char* result
+                  , const char* file, int line)
+{
+  if (expected != result)
+  {
+    std::stringstream errmsg;
+    errmsg.str("");
+    errmsg << "assertEquals(std::string) failed in" << file << ", line #" << line;
+    errmsg << " expecting '" << expected << "' got '" << result << "'";
+    TestsListener::testHasFailed(errmsg.str());
+  }
+}
+
+
+void assertEquals(const sql::SQLString& result, const String& expected
+                  , const char* file, int line)
+{
+  if (expected != result)
+  {
+    std::stringstream errmsg;
+    errmsg.str("");
+    errmsg << "assertEquals(std::string) failed in" << file << ", line #" << line;
+    errmsg << " expecting '" << expected << "' got '" << result << "'";
+    TestsListener::testHasFailed(errmsg.str());
+  }
+}
+
+
+void assertEquals(const sql::SQLString& expected, const char* result
+                  , const char* file, int line)
+{
+  if (expected != result)
+  {
+    std::stringstream errmsg;
+    errmsg.str("");
+    errmsg << "assertEquals(std::string) failed in" << file << ", line #" << line;
+    errmsg << " expecting '" << expected << "' got '" << result << "'";
+    TestsListener::testHasFailed(errmsg.str());
+  }
+}
+
+
+void assertEquals(const char* expected, const String& result
+                , const char* file, int line)
 {
   if (expected != result)
   {

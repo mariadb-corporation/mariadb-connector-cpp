@@ -297,11 +297,11 @@ public:
   virtual ResultSet* getAttributes(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& typeNamePattern, const SQLString& attributeNamePattern)=0;
   virtual bool supportsResultSetHoldability(int32_t holdability)=0;
   virtual int32_t getResultSetHoldability()=0;
-  virtual int32_t getDatabaseMajorVersion()=0;
-  virtual int32_t getDatabaseMinorVersion()=0;
-  virtual int32_t getDatabasePatchVersion()=0;
-  virtual int32_t getJDBCMajorVersion()=0;
-  virtual int32_t getJDBCMinorVersion()=0;
+  virtual uint32_t getDatabaseMajorVersion()=0;
+  virtual uint32_t getDatabaseMinorVersion()=0;
+  virtual uint32_t getDatabasePatchVersion()=0;
+  virtual uint32_t getJDBCMajorVersion()=0;
+  virtual uint32_t getJDBCMinorVersion()=0;
   virtual int32_t getSQLStateType()=0;
   virtual bool locatorsUpdateCopy()=0;
   virtual bool supportsStatementPooling()=0;
@@ -318,8 +318,8 @@ public:
   virtual ResultSet* getSchemaObjectTypes()=0;
   virtual ResultSet* getSchemaObjects()=0;
   virtual ResultSet* getSchemaObjects(const SQLString& c, const SQLString& s, const SQLString& t)=0;
-  virtual int32_t getCDBCMajorVersion()=0;
-  virtual int32_t getCDBCMinorVersion()=0;
+  virtual uint32_t getCDBCMajorVersion()=0;
+  virtual uint32_t getCDBCMinorVersion()=0;
   virtual ResultSet* getSchemaCollation(const SQLString& c, const SQLString& s)=0;
   virtual ResultSet* getSchemaCharset(const SQLString& c, const SQLString& s)=0;
   virtual ResultSet* getTableCollation(const SQLString& c, const SQLString& s, const SQLString& t)=0;

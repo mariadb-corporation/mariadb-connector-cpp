@@ -47,6 +47,8 @@ void fail(const char* reason, const char * file, int line);
 
 void assertTrue(const String & msg, bool expression
                 , const char * file, int line);
+void assertTrue(const char* msg, bool expression
+                , const char* file, int line);
 
 void assertEquals(const char * expected, const char * result
                   , const char * file, int line);
@@ -91,8 +93,21 @@ void assertEqualsEpsilon(const double & expected, const double & result
 void assertEquals(const String & expected, const String & result
                   , const char * file, int line);
 
-void assertTrueMessage(bool exp, const String & msg, const char * file
-                       , int line);
+void assertEquals(const String& expected, const char* result
+                  , const char* file, int line);
+// These are needed because blobs may contain \0, and const char* won't work for them
+void assertEquals(const sql::SQLString & result, const String& expected
+                  , const char* file, int line);
+void assertEquals(const sql::SQLString& expected, const char* result
+                  , const char* file, int line);
+void assertEquals(const sql::SQLString& expected, const char* result
+                  , const char* file, int line);
+// Needed to avoid ambiguity
+void assertEquals(const char* expected, const String& result
+                  , const char* file, int line);
+
+//void assertTrueMessage(bool exp, const String & msg, const char * file
+//                       , int line);
 
 void assertGreaterThan(int expected, unsigned int result
                        , const char * file, int line);

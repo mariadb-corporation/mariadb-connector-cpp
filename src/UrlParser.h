@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "options/Options.h"
-#include "SQLString.h"
+#include "StringImp.h"
 #include "HostAddress.h"
 #include "credential/CredentialPlugin.h"
 

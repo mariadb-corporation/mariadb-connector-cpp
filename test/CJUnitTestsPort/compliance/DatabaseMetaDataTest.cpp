@@ -728,7 +728,7 @@ void DatabaseMetaDataTest::testGetBestRowIdentifier7()
 void DatabaseMetaDataTest::testGetCatalogSeparator()
 {
   logMsg("Calling DatabaseMetaData.getCatalogSeparator");
-  String sRetValue=dbmd->getCatalogSeparator();
+  String sRetValue(dbmd->getCatalogSeparator());
   if (sRetValue.empty()) {
     logMsg("getCatalogSeparator is not supported");
   } else {
@@ -761,7 +761,7 @@ void DatabaseMetaDataTest::testGetCatalogSeparator()
 void DatabaseMetaDataTest::testGetCatalogTerm()
 {
   logMsg("Calling getCatalogTerm on DatabaseMetaData");
-  String sRetValue=dbmd->getCatalogTerm();
+  String sRetValue(dbmd->getCatalogTerm());
   if (sRetValue.empty()) {
     logMsg(
            "getCatalogTerm method does not returns the vendor's preferred term for catalog ");
@@ -1031,7 +1031,7 @@ void DatabaseMetaDataTest::testGetDatabaseProductName()
 {
 
   logMsg("Calling getDatabaseProductName on DatabaseMetaData");
-  String sRetValue=dbmd->getDatabaseProductName();
+  String sRetValue(dbmd->getDatabaseProductName());
   if (sRetValue.empty()) {
     logMsg(
            "getDatabaseProductName method does not returns database product name ");
@@ -1067,7 +1067,7 @@ void DatabaseMetaDataTest::testGetDatabaseProductVersion()
 {
 
   logMsg("Calling getDatabaseProductVersion on DatabaseMetaData");
-  String sRetValue=dbmd->getDatabaseProductVersion();
+  String sRetValue(dbmd->getDatabaseProductVersion());
   if (sRetValue.empty()) {
     logMsg(
            "getDatabaseProductVersion  method does not returns a database product version ");
@@ -1234,7 +1234,7 @@ void DatabaseMetaDataTest::testGetDriverName()
 {
 
   logMsg("Calling getDriverName on DatabaseMetaData");
-  String sRetValue=dbmd->getDriverName();
+  String sRetValue(dbmd->getDriverName());
   if (sRetValue.empty()) {
     logMsg(
            "getDriverName method does not returns a Driver Name ");
@@ -1271,7 +1271,7 @@ void DatabaseMetaDataTest::testGetDriverVersion()
 {
 
   logMsg("Calling getDriverVersion on DatabaseMetaData");
-  String sRetValue=dbmd->getDriverVersion();
+  String sRetValue(dbmd->getDriverVersion());
   if (sRetValue.empty()) {
     logMsg(
            "getDriverVersion method does not returns a Driver Version ");
@@ -1374,7 +1374,7 @@ void DatabaseMetaDataTest::testGetExtraNameCharacters()
 {
 
   logMsg("Calling getExtraNameCharacters on DatabaseMetaData");
-  String sRetValue=dbmd->getExtraNameCharacters();
+  String sRetValue(dbmd->getExtraNameCharacters());
   if (sRetValue.empty()) {
     logMsg(
            "getExtraNameCharacters method does not returns the string containing the extra characters ");
@@ -1412,7 +1412,7 @@ void DatabaseMetaDataTest::testGetIdentifierQuoteString()
 {
 
   logMsg("Calling getIdentifierQuoteString on DatabaseMetaData");
-  String sRetValue=dbmd->getIdentifierQuoteString();
+  String sRetValue(dbmd->getIdentifierQuoteString());
   if (sRetValue == "") {
     logMsg("The database does not support quoting identifiers");
   } else /*if (dynamic_cast<String>( sRetValue ) != NULL)*/
@@ -2517,7 +2517,7 @@ void DatabaseMetaDataTest::testGetNumericFunctions()
 {
 
   logMsg("Calling getNumericFunctions on DatabaseMetaData");
-  String sRetValue=dbmd->getNumericFunctions();
+  String sRetValue= dbmd->getNumericFunctions().c_str();
   if (sRetValue.empty()) {
     logMsg(
            "getNumericFunctions method does not returns the comma-separated list of math functions ");
@@ -2683,7 +2683,7 @@ void DatabaseMetaDataTest::testGetProcedureTerm()
 {
 
   logMsg("Calling getProcedureTerm on DatabaseMetaData");
-  String sRetValue=dbmd->getProcedureTerm();
+  String sRetValue(dbmd->getProcedureTerm().c_str());
   if (sRetValue.empty()) {
     logMsg(
            "getProcedureTerm method does not returns the vendor's preferred term for procedure ");
@@ -2818,7 +2818,7 @@ void DatabaseMetaDataTest::testGetSQLKeywords()
 {
 
   logMsg("Calling getSQLKeywords on DatabaseMetaData");
-  String sRetValue=dbmd->getSQLKeywords();
+  String sRetValue(dbmd->getSQLKeywords());
   if (sRetValue.empty()) {
     logMsg(
            "getSQLKeywords method does not returns the list of SQLKeywords ");
@@ -2852,7 +2852,7 @@ void DatabaseMetaDataTest::testGetSQLKeywords()
 void DatabaseMetaDataTest::testGetSchemaTerm()
 {
   logMsg("Calling getSchemaTerm on DatabaseMetaData");
-  String sRetValue=dbmd->getSchemaTerm();
+  String sRetValue(dbmd->getSchemaTerm());
   if (sRetValue.empty()) {
     logMsg(
            "getSchemaTerm method does not returns the vendor's preferred term for schema ");
@@ -2941,7 +2941,7 @@ void DatabaseMetaDataTest::testGetSearchStringEscape()
 {
 
   logMsg("Calling getSearchStringEscape on DatabaseMetaData");
-  String sRetValue=dbmd->getSearchStringEscape();
+  String sRetValue(dbmd->getSearchStringEscape());
   if (sRetValue.empty()) {
     logMsg(
            "getSearchStringEscape  method does not returns the string used to escape wildcard characters ");
@@ -2978,7 +2978,7 @@ void DatabaseMetaDataTest::testGetStringFunctions()
 {
 
   logMsg("Calling getStringFunctions on DatabaseMetaData");
-  String sRetValue=dbmd->getStringFunctions();
+  String sRetValue(dbmd->getStringFunctions());
   if (sRetValue.empty()) {
     logMsg(
            "getStringFunctions method does not returns the comma-separated list of string functions ");
@@ -3015,7 +3015,7 @@ void DatabaseMetaDataTest::testGetSystemFunctions()
 {
 
   logMsg("Calling getSystemFunctions on DatabaseMetaData");
-  String sRetValue=dbmd->getSystemFunctions();
+  String sRetValue(dbmd->getSystemFunctions());
   if (sRetValue.empty()) {
     logMsg(
            "getSystemFunctions methd does not returns the comma-separated list of system functions ");
@@ -3230,7 +3230,7 @@ void DatabaseMetaDataTest::testGetTimeDateFunctions()
 {
 
   logMsg("Calling getTimeDateFunctions on DatabaseMetaData");
-  String sRetValue=dbmd->getTimeDateFunctions();
+  String sRetValue(dbmd->getTimeDateFunctions());
   if (sRetValue.empty()) {
     logMsg(
            "getTimeDateFunctions method does not returns the comma-separated list of time and date functions ");
@@ -3546,7 +3546,7 @@ void DatabaseMetaDataTest::testGetUserName()
 {
 
   logMsg("Calling getUserName on DatabaseMetaData");
-  String sRetValue=dbmd->getUserName();
+  String sRetValue(dbmd->getUserName());
   if (sRetValue.empty()) {
     logMsg("getUserName method does not returns user name ");
   } else {

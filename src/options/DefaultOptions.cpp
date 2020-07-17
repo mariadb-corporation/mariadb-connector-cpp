@@ -880,7 +880,7 @@ namespace sql
       {
         for (auto& it : properties)
         {
-          const std::string& key= static_cast<const std::string&>(it.first);
+          const std::string& key= StringImp::get(it.first);
           SQLString propertyValue(it.second);
 
           auto cit= OPTIONS_MAP.find(key);
@@ -919,7 +919,7 @@ namespace sql
             else if (o->objType() == Value::VINT32)
             {
               try {
-                int32_t value= std::stoi(propertyValue);
+                int32_t value= std::stoi(StringImp::get(propertyValue));
 
                 assert(!o->minValue.empty());
                 assert(!o->maxValue.empty());
@@ -957,7 +957,7 @@ namespace sql
             else if (o->objType() == Value::VINT64)
             {
               try {
-                int64_t value= std::stoll(propertyValue);
+                int64_t value= std::stoll(StringImp::get(propertyValue));
 
                 assert(!o->minValue.empty());
                 assert(!o->maxValue.empty());

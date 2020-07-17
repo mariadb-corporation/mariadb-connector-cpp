@@ -21,7 +21,7 @@
 #ifndef _CHARSET_H_
 #define _CHARSET_H_
 
-#include "SQLString.h"
+#include "StringImp.h"
 
 namespace sql
 {

@@ -338,7 +338,7 @@ void resultsetmetadata::getColumnType()
         logMsg(it->sqldef);
         ASSERT_EQUALS(it->ctype, meta->getColumnType(1));
 
-        ASSERT_EQUALS(it->name, meta->getColumnTypeName(1));
+        ASSERT_EQUALS(it->name.c_str(), meta->getColumnTypeName(1));
 
         sql.str("");
         sql << "... OK, SQL:" << it->sqldef << " -> Type = " << it->name;

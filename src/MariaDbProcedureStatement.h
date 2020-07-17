@@ -261,8 +261,8 @@ public:
   ResultSet* executeQuery();
   ResultSet* executeQuery(const SQLString& sql);
 
-  int32_t getMaxFieldSize();
-  void setMaxFieldSize(int32_t max);
+  uint32_t getMaxFieldSize();
+  void setMaxFieldSize(uint32_t max);
   int32_t getMaxRows();
   void setMaxRows(int32_t max);
   int64_t getLargeMaxRows();

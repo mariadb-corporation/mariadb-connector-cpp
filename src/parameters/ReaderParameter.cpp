@@ -76,7 +76,7 @@ namespace mariadb
 
   uint32_t ReaderParameter::writeBinary(sql::bytes &buffer)
   {
-    uint32_t readMax= buffer.size(), readTotal= static_cast<uint32_t>(length);
+    std::streamsize readMax= buffer.size(), readTotal= static_cast<uint32_t>(length);
 
     if (readMax > readTotal)
     {

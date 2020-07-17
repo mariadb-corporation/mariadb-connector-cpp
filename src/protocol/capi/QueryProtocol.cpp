@@ -594,7 +594,7 @@ namespace capi
 
     mysql_stmt_attr_set(stmtId, STMT_ATTR_UPDATE_MAX_LENGTH, &updateMaxLength);
 
-    if (mysql_stmt_prepare(stmtId, sql.c_str(), sql.length()))
+    if (mysql_stmt_prepare(stmtId, sql.c_str(), static_cast<unsigned long>(sql.length())))
     {
       SQLString err(mysql_stmt_error(stmtId)), sqlState(mysql_stmt_sqlstate(stmtId));
       uint32_t errNo=  mysql_stmt_errno(stmtId);
@@ -713,15 +713,15 @@ namespace capi
   * @return current index
   * @throws IOException if connection fail
   */
-  size_t rewriteQuery(SQLString& pos,
+  std::size_t rewriteQuery(SQLString& pos,
     const std::vector<SQLString> &queryParts,
-    size_t currentIndex,
-    size_t paramCount,
+    std::size_t currentIndex,
+    std::size_t paramCount,
     std::vector<std::vector<Shared::ParameterHolder>> &parameterList,
     bool rewriteValues)
 
   {
-    size_t index= currentIndex;
+    std::size_t index= currentIndex;
     std::vector<Shared::ParameterHolder> &parameters= parameterList[index++];
 
     const SQLString &firstPart= queryParts[0];
@@ -732,9 +732,9 @@ namespace capi
       pos.append(firstPart);
       pos.append(secondPart);
 
-      int32_t staticLength= 1;
+      std::size_t staticLength= 1;
       for (auto& queryPart : queryParts) {
-        staticLength +=queryPart.length();
+        staticLength+= queryPart.length();
       }
 
       for (size_t i= 0; i < paramCount; i++) {
@@ -762,8 +762,8 @@ namespace capi
         if (knownParameterSize) {
 
 
-          if (checkRemainingSize(pos.length() + staticLength +parameterLength)) {
-            pos.append((int8_t)';');
+          if (checkRemainingSize(pos.length() + staticLength + parameterLength)) {
+            pos.append(';');
             pos.append(firstPart);
             pos.append(secondPart);
             for (size_t i= 0; i <paramCount; i++) {
@@ -872,8 +872,8 @@ namespace capi
   {
     cmdPrologue();
     //std::vector<ParameterHolder>::const_iterator parameters;
-    int32_t currentIndex= 0;
-    int32_t totalParameterList= parameterList.size();
+    std::size_t currentIndex= 0;
+    std::size_t totalParameterList= parameterList.size();
 
     try {
       SQLString sql;
@@ -889,7 +889,7 @@ namespace capi
               "Interrupted during batch",INTERRUPTED_EXCEPTION.getSqlState(),-1);
         }
 #endif
-      }while (currentIndex < totalParameterList);
+      } while (currentIndex < totalParameterList);
 
     }catch (SQLException& sqlEx){
       throw logQuery->exceptionWithQuery(sqlEx,prepareResult);
@@ -944,8 +944,8 @@ namespace capi
 
     stmt= serverPrepareResult->getStatementId();
 
-    size_t totalExecutionNumber= parametersList.size();
-    int parameterCount= serverPrepareResult->getParameters().size();
+    std::size_t totalExecutionNumber= parametersList.size();
+    //std::size_t parameterCount= serverPrepareResult->getParameters().size();
 
     for (auto& paramset : parametersList)
     {
@@ -974,7 +974,7 @@ namespace capi
 
       serverPrepareResult->bindParameters(parameters);
 
-      for (size_t i= 0;i < serverPrepareResult->getParameters().size();i++){
+      for (uint32_t i= 0;i < serverPrepareResult->getParameters().size();i++){
         if (parameters[i]->isLongData()){
           if (!ldBuffer)
           {
@@ -1039,7 +1039,7 @@ namespace capi
         lock->unlock();
         throw SQLException(
             "Could not deallocate query",
-            CONNECTION_EXCEPTION.getSqlState());
+            CONNECTION_EXCEPTION.getSqlState().c_str());
       }
       lock->unlock();
       return true;

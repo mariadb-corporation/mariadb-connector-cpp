@@ -48,7 +48,7 @@ public:
   bool isNullData() const;
   bool isLongData();
   void* getValuePtr() { return static_cast<void*>(bytes.arr); }
-  unsigned long getValueBinLen() const { return bytes.size(); }
+  unsigned long getValueBinLen() const { return static_cast<unsigned long>(bytes.size()); }
   };
 }
 }

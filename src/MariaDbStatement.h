@@ -77,7 +77,7 @@ private:
   Future<?>timerTaskFuture;
 #endif
   bool isTimedout;
-  int32_t maxFieldSize;
+  uint32_t maxFieldSize;
 
 public:
   MariaDbStatement(MariaDbConnection* connection, int32_t resultSetScrollType, int32_t resultSetConcurrency, Shared::ExceptionFactory& factory);
@@ -123,8 +123,8 @@ public:
   int64_t executeLargeUpdate(const SQLString& sql,int32_t* columnIndexes);
   int64_t executeLargeUpdate(const SQLString& sql,SQLString* columnNames);
   void close();
-  int32_t getMaxFieldSize();
-  void setMaxFieldSize(int32_t max);
+  uint32_t getMaxFieldSize();
+  void setMaxFieldSize(uint32_t max);
   int32_t getMaxRows();
   void setMaxRows(int32_t max);
   int64_t getLargeMaxRows();
@@ -165,7 +165,7 @@ public:
   sql::Longs* executeLargeBatch();
 
 private:
-  void internalBatchExecution(int32_t size);
+  void internalBatchExecution(std::size_t size);
 
 public:
   void closeOnCompletion();

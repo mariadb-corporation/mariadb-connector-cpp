@@ -198,7 +198,7 @@ namespace regression
 
     rs.reset( stmt->executeQuery("SELECT blobField FROM testBug5490") );
     rs->next();
-    String returned = rs->getString( 1 );
+    sql::SQLString returned= rs->getString( 1 );
 
     ASSERT_EQUALS( blobFileSize, static_cast<int>(returned.length()) );
 

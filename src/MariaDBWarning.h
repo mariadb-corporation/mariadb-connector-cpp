@@ -37,11 +37,11 @@ namespace sql
 
       void setNextWarning(const SQLWarning* nextWarning) {}
     public:
-      MariaDBWarning() {}
+      MariaDBWarning() : errorCode(0) {}
       virtual ~MariaDBWarning();
       MariaDBWarning(const MariaDBWarning&);
       MariaDBWarning(const SQLString& msg);
-      MariaDBWarning(const SQLString& msg, const SQLString& state, int32_t error= 0, const std::exception* e= NULL);
+      //MariaDBWarning(const SQLString& msg, const SQLString& state, int32_t error= 0, const std::exception* e= NULL);
       MariaDBWarning(const char* msg, const char* state= "", int32_t error= 0, const std::exception* e= NULL);
 
       SQLWarning* getNextWarning() const;

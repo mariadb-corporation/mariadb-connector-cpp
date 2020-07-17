@@ -67,8 +67,8 @@ public:
   virtual int64_t executeLargeUpdate(const SQLString& sql, SQLString* columnNames)=0;
 
   virtual void close()=0;
-  virtual int32_t getMaxFieldSize()=0;
-  virtual void setMaxFieldSize(int32_t max)=0;
+  virtual uint32_t getMaxFieldSize()=0;
+  virtual void setMaxFieldSize(uint32_t max)=0;
   virtual int32_t getMaxRows()=0;
   virtual void setMaxRows(int32_t max)=0;
   virtual int64_t getLargeMaxRows()=0;

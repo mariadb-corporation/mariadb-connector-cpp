@@ -388,12 +388,12 @@ unit_fixture::getConnection(sql::ConnectOptionsMap *additional_options)
   return driver->connect(connection_properties);
 }
 
-void unit_fixture::logMsg(const String & message)
+void unit_fixture::logMsg(const sql::SQLString & message)
 {
   TestsListener::messagesLog(message + "\n");
 }
 
-void unit_fixture::logErr(const String & message)
+void unit_fixture::logErr(const sql::SQLString & message)
 {
   TestsListener::errorsLog(message + "\n");
 }

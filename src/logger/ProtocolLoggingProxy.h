@@ -102,10 +102,10 @@ public:
   bool hasWarnings();
   int64_t getMaxRows();
   void setMaxRows(int64_t max);
-  int32_t getMajorServerVersion();
-  int32_t getMinorServerVersion();
-  int32_t getPatchServerVersion();
-  bool versionGreaterOrEqual(int32_t major, int32_t minor, int32_t patch) const;
+  uint32_t getMajorServerVersion();
+  uint32_t getMinorServerVersion();
+  uint32_t getPatchServerVersion();
+  bool versionGreaterOrEqual(uint32_t major, uint32_t minor, uint32_t patch) const;
   void setLocalInfileInputStream(std::istream& inputStream);
   int32_t getTimeout();
   void setTimeout(int32_t timeout);

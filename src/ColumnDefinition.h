@@ -47,7 +47,7 @@ public:
   virtual SQLString getOriginalName() const=0;
   virtual short getCharsetNumber() const=0;
   virtual SQLString getCollation() const=0;
-  virtual int64_t getLength() const=0;
+  virtual uint32_t getLength() const=0;
   virtual int64_t getPrecision() const=0;
   virtual int32_t getDisplaySize() const=0;
   virtual uint8_t getDecimals() const=0;

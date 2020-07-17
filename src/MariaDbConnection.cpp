@@ -408,7 +408,7 @@ namespace mariadb
     {
       SQLString sqlQuery= Utils::nativeSql(sql, protocol.get());
 
-      if (options->useServerPrepStmts && std::regex_search(static_cast<std::string&>(sqlQuery), PREPARABLE_STATEMENT_PATTERN))
+      if (options->useServerPrepStmts && std::regex_search(StringImp::get(sqlQuery), PREPARABLE_STATEMENT_PATTERN))
       {
         checkConnection();
         try {
@@ -471,7 +471,7 @@ namespace mariadb
     checkConnection();
     std::smatch matcher;
 
-    if (!std::regex_search(static_cast<const std::string&>(sql), matcher, CALLABLE_STATEMENT_PATTERN))
+    if (!std::regex_search(StringImp::get(sql), matcher, CALLABLE_STATEMENT_PATTERN))
     {
       throw SQLSyntaxErrorException(
         "invalid callable syntax. must be like {[?=]call <procedure/function name>[(?,?, ...)]}\n but was : "
@@ -1189,8 +1189,8 @@ namespace mariadb
     else
     {
       escapeQuery.append("'");
-      int32_t charsOffset= 0;
-      int32_t charsLength= value.length();
+      std::size_t charsOffset= 0;
+      std::size_t charsLength= value.length();
       char charValue;
 
       if (protocol->noBackslashEscapes())
@@ -1198,7 +1198,7 @@ namespace mariadb
         while (charsOffset < charsLength)
         {
           charValue= value.at(charsOffset);
-          if (charValue =='\'') {
+          if (charValue == '\'') {
             escapeQuery.append('\'');
           }
           escapeQuery.append(charValue);
@@ -1206,7 +1206,7 @@ namespace mariadb
         }
       }
       else {
-        while (charsOffset <charsLength) {
+        while (charsOffset < charsLength) {
           charValue= value.at(charsOffset);
           if (charValue =='\''||charValue =='\\'||charValue =='"'||charValue ==0) {
             escapeQuery.append('\\');

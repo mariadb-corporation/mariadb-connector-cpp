@@ -88,7 +88,7 @@ namespace mariadb
 
   void Utils::escapeData(const char* in, size_t len, bool noBackslashEscapes, SQLString& out)
   {
-    std::string &realOut= static_cast<std::string&>(out);
+    std::string &realOut= StringImp::get(out);
     out.reserve(out.length() + len + 64);
 
     //TODO: can be easily optimized
@@ -948,13 +948,13 @@ namespace mariadb
 
   bool Utils::isIPv4(const SQLString& ip)
   {
-    return std::regex_search(static_cast<const std::string&>(ip), IP_V4);
+    return std::regex_search(StringImp::get(ip), IP_V4);
   }
 
   bool Utils::isIPv6(const SQLString& ip)
   {
-    return std::regex_search(static_cast<const std::string&>(ip), IP_V6) ||
-           std::regex_search(static_cast<const std::string&>(ip), IP_V6_COMPRESSED);
+    return std::regex_search(StringImp::get(ip), IP_V6) ||
+           std::regex_search(StringImp::get(ip), IP_V6_COMPRESSED);
   }
 
   /**
@@ -1006,7 +1006,7 @@ namespace mariadb
           +fileName
           +"'").c_str(), std::regex_constants::ECMAScript | std::regex_constants::icase);
 
-    if (std::regex_search(static_cast<const std::string&>(sql), pattern))
+    if (std::regex_search(StringImp::get(sql), pattern))
     {
       return true;
     }
@@ -1016,7 +1016,7 @@ namespace mariadb
       pattern.assign("^(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*LOAD\\s+DATA\\s+((LOW_PRIORITY|CONCURRENT)\\s+)?LOCAL\\s+INFILE\\s+\\?",
         std::regex_constants::ECMAScript | std::regex_constants::icase);
 
-      if (std::regex_search(static_cast<const std::string&>(sql), pattern) && parameters.size() > 0)
+      if (std::regex_search(StringImp::get(sql), pattern) && parameters.size() > 0)
       {
         SQLString param(parameters[0]->toString());
         SQLString fn(fileName);

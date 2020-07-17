@@ -246,11 +246,11 @@ public:
   ResultSet* getAttributes(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& typeNamePattern, const SQLString& attributeNamePattern);
   bool supportsResultSetHoldability(int32_t holdability);
   int32_t getResultSetHoldability();
-  int32_t getDatabaseMajorVersion();
-  int32_t getDatabaseMinorVersion();
-  int32_t getDatabasePatchVersion();
-  int32_t getJDBCMajorVersion();
-  int32_t getJDBCMinorVersion();
+  uint32_t getDatabaseMajorVersion();
+  uint32_t getDatabaseMinorVersion();
+  uint32_t getDatabasePatchVersion();
+  uint32_t getJDBCMajorVersion();
+  uint32_t getJDBCMinorVersion();
   int32_t getSQLStateType();
   bool locatorsUpdateCopy();
   bool supportsStatementPooling();
@@ -269,8 +269,8 @@ public:
   ResultSet* getSchemaObjectTypes();
   ResultSet* getSchemaObjects(const SQLString& c, const SQLString& s, const SQLString& t);
   ResultSet* getSchemaObjects();
-  int32_t getCDBCMajorVersion();
-  int32_t getCDBCMinorVersion();
+  uint32_t getCDBCMajorVersion();
+  uint32_t getCDBCMinorVersion();
   ResultSet* getSchemaCollation(const SQLString& c, const SQLString& s);
   ResultSet* getSchemaCharset(const SQLString& c, const SQLString& s);
   ResultSet* getTableCollation(const SQLString& c, const SQLString& s, const SQLString& t);

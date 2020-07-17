@@ -92,9 +92,9 @@ namespace capi
     bool hostFailed;
     SQLString serverVersion;
     bool serverMariaDb;
-    int32_t majorVersion;
-    int32_t minorVersion;
-    int32_t patchVersion;
+    uint32_t majorVersion;
+    uint32_t minorVersion;
+    uint32_t patchVersion;
     TimeZone* timeZone;
 
   public:
@@ -209,10 +209,10 @@ namespace capi
     void parseVersion(const SQLString& serverVersion);
 
   public:
-    int32_t getMajorServerVersion();
-    int32_t getMinorServerVersion();
-    int32_t getPatchServerVersion();
-    bool versionGreaterOrEqual(int32_t major, int32_t minor, int32_t patch) const;
+    uint32_t getMajorServerVersion();
+    uint32_t getMinorServerVersion();
+    uint32_t getPatchServerVersion();
+    bool versionGreaterOrEqual(uint32_t major, uint32_t minor, uint32_t patch) const;
 
     bool getPinGlobalTxToPhysicalConnection() const;
     bool hasWarnings();

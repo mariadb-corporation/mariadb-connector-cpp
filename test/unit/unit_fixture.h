@@ -367,14 +367,14 @@ public:
    *
    * @param	message	Message to be included in the protocol
    */
-  void logMsg(const String & message);
+  void logMsg(const sql::SQLString & message);
 
   /**
    * Write error to test protocol
    *
    * @param	message Message to be included in the protocol
    */
-  void logErr(const String & message);
+  void logErr(const sql::SQLString & message);
 
   /**
    * Creates resources used by all tests.

@@ -23,7 +23,7 @@
 
 #include <memory>
 
-#include "SQLString.h"
+#include "StringImp.h"
 
 namespace sql
 {
@@ -34,7 +34,7 @@ namespace mariadb
 class Value final {
 
 public:
-  enum valueType
+  enum valueType : unsigned char
   {
     VNONE=0,
     VINT32,

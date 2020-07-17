@@ -27,32 +27,32 @@
 
 namespace sql
 {
-
-class MARIADB_EXPORTED SQLException : public std::runtime_error
+class /*MARIADB_EXPORTED*/ SQLException : public std::runtime_error
 {
   SQLString SqlState;
   int32_t ErrorCode;
   std::shared_ptr<std::exception> Cause;
 public:
   SQLException();
-public:
+
   SQLException& operator=(const SQLException &)=default;
   SQLException(const SQLException&)=default;
-  virtual ~SQLException();
-  SQLException(const SQLString& msg);
-  SQLException(const SQLString& msg, const SQLString& state, int32_t error= 0, const std::exception *e= NULL);
+  MARIADB_EXPORTED virtual ~SQLException();
+  MARIADB_EXPORTED SQLException(const SQLString& msg);
+  //SQLException(const SQLString& msg, const SQLString& state, int32_t error= 0, const std::exception *e= NULL);
   SQLException(const char* msg, const char* state, int32_t error=0, const std::exception *e= NULL);
-  SQLException* getNextException();
+  MARIADB_EXPORTED SQLException* getNextException();
   void setNextException(sql::SQLException& nextException);
-  virtual const SQLString& getSQLState();
-  virtual const char* getSQLStateCStr();
-  virtual int32_t getErrorCode();
-  virtual SQLString getMessage();
-  virtual std::exception* getCause() const;
+  MARIADB_EXPORTED SQLString getSQLState() { return SqlState.c_str(); }
+  MARIADB_EXPORTED const char* getSQLStateCStr() { return SqlState.c_str(); }
+  MARIADB_EXPORTED int32_t getErrorCode();
+  MARIADB_EXPORTED SQLString getMessage();
+  MARIADB_EXPORTED std::exception* getCause() const;
+  MARIADB_EXPORTED char const* what() const noexcept override { return std::runtime_error::what(); }
 };
 
 
-class MARIADB_EXPORTED SQLFeatureNotImplementedException: public SQLException
+class SQLFeatureNotImplementedException: public SQLException
 {
   void operator=(const SQLFeatureNotImplementedException&) {}
   SQLFeatureNotImplementedException() {}
@@ -66,7 +66,7 @@ public:
 
 typedef SQLFeatureNotImplementedException MethodNotImplementedException;
 
-class MARIADB_EXPORTED IllegalArgumentException : public SQLException
+class IllegalArgumentException : public SQLException
 {
   //IllegalArgumentException(const IllegalArgumentException&);
   void operator=(const IllegalArgumentException&);
@@ -80,7 +80,7 @@ public:
 
 typedef IllegalArgumentException InvalidArgumentException;
 
-class MARIADB_EXPORTED SQLFeatureNotSupportedException : public SQLException
+class SQLFeatureNotSupportedException : public SQLException
 {
   void operator=(const SQLFeatureNotSupportedException&) {}
   SQLFeatureNotSupportedException() {}
@@ -95,7 +95,7 @@ public:
 };
 
 
-class MARIADB_EXPORTED SQLTransientConnectionException : public SQLException
+class SQLTransientConnectionException : public SQLException
 {
   void operator=(const SQLTransientConnectionException&)=delete;
   SQLTransientConnectionException()=delete;
@@ -110,7 +110,7 @@ public:
 };
 
 
-class MARIADB_EXPORTED SQLNonTransientConnectionException : public SQLException
+class SQLNonTransientConnectionException : public SQLException
 {
   void operator=(const SQLNonTransientConnectionException&) {}
   SQLNonTransientConnectionException() {}
@@ -125,7 +125,7 @@ public:
 };
 
 
-class MARIADB_EXPORTED SQLTransientException : public SQLException
+class SQLTransientException : public SQLException
 {
   void operator=(const SQLTransientException&) {}
   SQLTransientException() {}
@@ -139,7 +139,7 @@ public:
   {}
 };
 
-class MARIADB_EXPORTED SQLSyntaxErrorException : public SQLException
+class SQLSyntaxErrorException : public SQLException
 {
   void operator=(const SQLSyntaxErrorException&) {}
   SQLSyntaxErrorException() {}
@@ -153,7 +153,7 @@ public:
   {}
 };
 
-class MARIADB_EXPORTED SQLTimeoutException : public SQLException
+class SQLTimeoutException : public SQLException
 {
   void operator=(const SQLTimeoutException&) {}
   SQLTimeoutException() {}
@@ -167,7 +167,7 @@ public:
 };
 
 
-class MARIADB_EXPORTED BatchUpdateException : public SQLException
+class BatchUpdateException : public SQLException
 {
   void operator=(const BatchUpdateException&) {}
   BatchUpdateException() {}
@@ -181,7 +181,7 @@ public:
 };
 
 
-class MARIADB_EXPORTED SQLDataException : public SQLException
+class SQLDataException : public SQLException
 {
   void operator=(const SQLDataException&) {}
   SQLDataException() {}
@@ -195,7 +195,7 @@ public:
 };
 
 
-class MARIADB_EXPORTED SQLIntegrityConstraintViolationException : public SQLException
+class SQLIntegrityConstraintViolationException : public SQLException
 {
   void operator=(const SQLIntegrityConstraintViolationException&) {}
   SQLIntegrityConstraintViolationException() {}
@@ -209,7 +209,7 @@ public:
 };
 
 
-class MARIADB_EXPORTED SQLInvalidAuthorizationSpecException : public SQLException
+class SQLInvalidAuthorizationSpecException : public SQLException
 {
   void operator=(const SQLInvalidAuthorizationSpecException&) {}
   SQLInvalidAuthorizationSpecException() {}
@@ -223,7 +223,7 @@ public:
 };
 
 
-class MARIADB_EXPORTED SQLTransactionRollbackException : public SQLException
+class SQLTransactionRollbackException : public SQLException
 {
   void operator=(const SQLTransactionRollbackException&) {}
   SQLTransactionRollbackException() {}
@@ -237,10 +237,10 @@ public:
 };
 
 
-class MARIADB_EXPORTED ParseException : public SQLException
+class ParseException : public SQLException
 {
   void operator=(const ParseException&) {}
-  ParseException() {}
+  ParseException() : position(0) {}
 
 public:
   std::size_t position;
@@ -250,7 +250,7 @@ public:
   virtual ~ParseException() {}
 };
 
-class MARIADB_EXPORTED MaxAllowedPacketException : public std::runtime_error {
+class MaxAllowedPacketException : public std::runtime_error {
 
   bool mustReconnect;
 

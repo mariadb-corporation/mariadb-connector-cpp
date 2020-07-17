@@ -101,7 +101,7 @@ void bugs::net_write_timeout39878()
 
   res->next();
 
-  uint32_t rowsCount = res->getUInt64(1);
+  uint64_t rowsCount = res->getUInt64(1);
 
   TestsListener::messagesLog() << "Now we have " << rowsCount << " rows in the table" << std::endl;
 
@@ -112,7 +112,7 @@ void bugs::net_write_timeout39878()
 
   TestsListener::messagesLog() << "ResultSetType: " << stmt->getResultSetType() << std::endl;
 
-  uint32_t rowsRead = 0;
+  uint64_t rowsRead = 0;
 
   try {
     while (res->next()) {
@@ -353,7 +353,7 @@ void bugs::expired_pwd()
   {
     c2.reset(getConnection(&opts));
   }
-  catch(sql::SQLException &e)
+  catch(sql::SQLException &/*e*/)
   {
     //// We can get here in case of old libmysql library
     //ASSERT_EQUALS(sql::mysql::deCL_CANT_HANDLE_EXP_PWD, e.getErrorCode());
@@ -802,7 +802,7 @@ void bugs::bug21066575()
         std::stringstream ss;
         ss << "id = " << res->getInt(1);
         ss << std::endl;
-        std::string out = res->getString(2);
+        std::string out(res->getString(2));
         ASSERT_EQUALS(1024000UL, static_cast<uint64_t>(out.length()));
         ss << "f1 = " << out;
         logMsg(ss.str().c_str());

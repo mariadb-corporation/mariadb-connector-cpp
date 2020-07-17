@@ -77,7 +77,7 @@ namespace mariadb
         }
       }
     }
-    this->credentialPlugin= CredentialPluginLoader::get(options->credentialType);
+    this->credentialPlugin= CredentialPluginLoader::get(StringImp::get(options->credentialType));
     DefaultOptions::postOptionProcess(options, credentialPlugin.get());
     setInitialUrl();
     loadMultiMasterValue();
@@ -166,7 +166,7 @@ namespace mariadb
   {
     if (!additionalParameters.empty())
     {
-      std::string temp= additionalParameters;
+      std::string temp(additionalParameters.c_str(), additionalParameters.length());
       std::smatch matcher;
 
       if (std::regex_search(temp, matcher, URL_PARAMETER))
@@ -183,7 +183,7 @@ namespace mariadb
       urlParser.database= "";
       urlParser.options= DefaultOptions::parse(urlParser.haMode, emptyStr, properties, urlParser.options);
     }
-    urlParser.credentialPlugin= CredentialPluginLoader::get(urlParser.options->credentialType);
+    urlParser.credentialPlugin= CredentialPluginLoader::get(StringImp::get(urlParser.options->credentialType));
     DefaultOptions::postOptionProcess(urlParser.options, urlParser.credentialPlugin.get());
 
     LoggerFactory::init(
@@ -209,7 +209,7 @@ namespace mariadb
       thirdColonPos= separator;
     }
     try {
-      std::string haModeString= url.substr(secondColonPos +1, thirdColonPos).toUpperCase();
+      std::string haModeString(StringImp::get(url.substr(secondColonPos +1, thirdColonPos).toUpperCase()));
       if (haModeString.compare("FAILOVER") == 0) {
         haModeString= "LOADBALANCE";
       }
@@ -303,8 +303,7 @@ namespace mariadb
     }
     for (auto hostAddress : addresses)
     {
-      std::string hostAddr= hostAddress.toString();
-      if (std::regex_search(hostAddr, AWS_PATTERN)) {
+      if (std::regex_search(StringImp::get(hostAddress.toString()), AWS_PATTERN)) {
         return true;
       }
     }

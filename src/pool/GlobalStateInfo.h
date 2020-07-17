@@ -20,7 +20,7 @@
 #ifndef _GLOBALSTATEINFO_H_
 #define _GLOBALSTATEINFO_H_
 #include <stdint.h>
-#include "SQLString.h"
+#include "StringImp.h"
 namespace sql
 {
 namespace mariadb

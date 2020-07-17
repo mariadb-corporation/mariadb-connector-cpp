@@ -64,6 +64,9 @@ namespace capi
     , connection(NULL, &mysql_close)
     , currentHost(localhost, 3306)
     , explicitClosed(false)
+    , majorVersion(0)
+    , minorVersion(0)
+    , patchVersion(0)
   {
     urlParser->auroraPipelineQuirks();
     if (options->cachePrepStmts && options->useServerPrepStmts){
@@ -626,9 +629,9 @@ namespace capi
           additionalData(serverData);
         }
 
-        size_t maxAllowedPacket= static_cast<size_t>(std::stoi(serverData["max_allowed_packet"]));
+        std::size_t maxAllowedPacket= static_cast<std::size_t>(std::stoi(StringImp::get(serverData["max_allowed_packet"])));
         mysql_optionsv(connection.get(), MYSQL_OPT_MAX_ALLOWED_PACKET, &maxAllowedPacket);
-        autoIncrementIncrement= std::stoi(serverData["auto_increment_increment"]);
+        autoIncrementIncrement= std::stoi(StringImp::get(serverData["auto_increment_increment"]));
         loadCalendar(serverData["time_zone"],serverData["system_time_zone"]);
 
       }else {
@@ -719,13 +722,13 @@ namespace capi
   void ConnectProtocol::sendCreateDatabaseIfNotExist(const SQLString& quotedDb)
   {
     SQLString query("CREATE DATABASE IF NOT EXISTS "+ quotedDb);
-    mysql_real_query(connection.get(), query.c_str(), query.length());
+    mysql_real_query(connection.get(), query.c_str(), static_cast<unsigned long>(query.length()));
   }
 
   void ConnectProtocol::sendUseDatabaseIfNotExist(const SQLString& quotedDb)
   {
     SQLString query("USE "+quotedDb);
-    mysql_real_query(connection.get(), query.c_str(), query.length());
+    mysql_real_query(connection.get(), query.c_str(), static_cast<unsigned long>(query.length()));
   }
 
   void ConnectProtocol::readPipelineAdditionalData(std::map<SQLString, SQLString>& serverData)
@@ -995,7 +998,7 @@ namespace capi
   void ConnectProtocol::sendPipelineCheckMaster()
   {
     if (urlParser->getHaMode() == HaMode::AURORA) {
-      mysql_real_query(connection.get(), IS_MASTER_QUERY.c_str(), IS_MASTER_QUERY.length());
+      mysql_real_query(connection.get(), IS_MASTER_QUERY.c_str(), static_cast<unsigned long>(IS_MASTER_QUERY.length()));
     }
   }
 
@@ -1181,17 +1184,17 @@ namespace capi
   }
 
 
-  int32_t ConnectProtocol::getMajorServerVersion()
+  uint32_t ConnectProtocol::getMajorServerVersion()
   {
     return majorVersion;
   }
 
-  int32_t ConnectProtocol::getMinorServerVersion()
+  uint32_t ConnectProtocol::getMinorServerVersion()
   {
     return minorVersion;
   }
 
-  int32_t ConnectProtocol::getPatchServerVersion()
+  uint32_t ConnectProtocol::getPatchServerVersion()
   {
     return patchVersion;
   }
@@ -1204,7 +1207,7 @@ namespace capi
    * @param patch patch version
    * @return true if version is greater than parameters
    */
-  bool ConnectProtocol::versionGreaterOrEqual(int32_t major, int32_t minor, int32_t patch) const
+  bool ConnectProtocol::versionGreaterOrEqual(uint32_t major, uint32_t minor, uint32_t patch) const
   {
     if (this->majorVersion > major) {
       return true;

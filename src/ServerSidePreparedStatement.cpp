@@ -117,7 +117,7 @@ namespace sql
 
   void ServerSidePreparedStatement::setMetaFromResult()
   {
-    parameterCount= serverPrepareResult->getParameters().size();
+    parameterCount= static_cast<int32_t>(serverPrepareResult->getParameters().size());
     metadata.reset(new MariaDbResultSetMetaData(serverPrepareResult->getColumns(), connection->getProtocol()->getUrlParser().getOptions(), false));
     // TODO: these transfer of the vector can be optimized for sure
     parameterMetaData.reset(new MariaDbParameterMetaData(serverPrepareResult->getParameters()));
@@ -206,8 +206,8 @@ namespace sql
   sql::Ints* ServerSidePreparedStatement::executeBatch()
   {
     stmt->checkClose();
-    int32_t queryParameterSize= queryParameters.size();
-    if (queryParameterSize ==0) {
+    int32_t queryParameterSize= static_cast<int32_t>(queryParameters.size());
+    if (queryParameterSize == 0) {
       return new sql::Ints();
     }
     executeBatchInternal(queryParameterSize);
@@ -217,8 +217,8 @@ namespace sql
   sql::Longs* ServerSidePreparedStatement::executeLargeBatch()
   {
     stmt->checkClose();
-    int32_t queryParameterSize= queryParameters.size();
-    if (queryParameterSize ==0) {
+    int32_t queryParameterSize= static_cast<int32_t>(queryParameters.size());
+    if (queryParameterSize == 0) {
       return new sql::Longs();
     }
     executeBatchInternal(queryParameterSize);

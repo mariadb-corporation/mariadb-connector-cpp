@@ -27,7 +27,7 @@ namespace mariadb
 {
 
   CallableStatementCacheKey::CallableStatementCacheKey(const SQLString& db, const SQLString& q) :
-    database(db), query(q)
+    database(db.c_str(), db.length()), query(q.c_str(), q.length())
   {
   }
 

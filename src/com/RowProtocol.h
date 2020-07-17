@@ -86,14 +86,12 @@ protected:
   uint32_t maxFieldSize;
   const Shared::Options options;
 
-
 public:
   int32_t lastValueNull;
   std::vector<sql::bytes>* buf;
   sql::bytes& fieldBuf;
   int32_t pos;
   uint32_t length;
-
 
 protected:
   int32_t index;
@@ -102,7 +100,7 @@ public:
   RowProtocol(int32_t maxFieldSize, Shared::Options options);
   void resetRow(std::vector<sql::bytes>& buf);
   virtual void setPosition(int32_t position)=0;
-  int32_t getLengthMaxFieldSize();
+  uint32_t getLengthMaxFieldSize();
   uint32_t getMaxFieldSize();
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED

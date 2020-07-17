@@ -36,7 +36,7 @@ namespace mariadb
     * @param expectedSize expected batch size.
     * @param autoIncrement connection auto increment value.
     */
-  CmdInformationBatch::CmdInformationBatch(int32_t _expectedSize, int32_t _autoIncrement)
+  CmdInformationBatch::CmdInformationBatch(std::size_t _expectedSize, int32_t _autoIncrement)
     : expectedSize(_expectedSize)
     , autoIncrement(_autoIncrement)
   {
@@ -102,7 +102,7 @@ namespace mariadb
     }
 
 
-    while (pos < ret->length) {
+    while (pos < ret->size()) {
       ret[pos++]= Statement::EXECUTE_FAILED;
     }
 
@@ -232,7 +232,7 @@ namespace mariadb
 
   int32_t CmdInformationBatch::getCurrentStatNumber()
   {
-    return updateCounts.size();
+    return static_cast<int32_t>(updateCounts.size());
   }
 
 

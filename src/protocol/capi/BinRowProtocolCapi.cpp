@@ -185,7 +185,7 @@ namespace capi
       return nullptr;
     default:
       if (getLengthMaxFieldSize() > 0) {
-        return new SQLString(std::string(asChar, getLengthMaxFieldSize()));
+        return new SQLString(asChar, getLengthMaxFieldSize());
       }
       return new SQLString(asChar);
     }
@@ -205,7 +205,7 @@ namespace capi
     const char* asChar= static_cast<char*>(bind[index].buffer);
     std::unique_ptr<SQLString> result(convertToString(asChar, columnInfo));
 
-    return result;
+    return std::move(result);
   }
 
   /**
@@ -374,7 +374,7 @@ namespace capi
       std::unique_ptr<BigDecimal> bigDecimal= getInternalBigDecimal(columnInfo);
       //rangeCheck("BigDecimal", static_cast<int64_t>(buf));
 
-      return std::stoll(*bigDecimal);
+      return std::stoll(StringImp::get(*bigDecimal));
     }
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:

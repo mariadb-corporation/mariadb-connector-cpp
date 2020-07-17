@@ -144,6 +144,7 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/protocol/capi/BinRowProtocolCapi.cpp
                    src/protocol/capi/TextRowProtocolCapi.cpp
                    src/ExceptionFactory.cpp
+                   src/StringImp.cpp
                    ####CPP####
                    )
 
@@ -288,6 +289,7 @@ IF(WIN32)
                    src/protocol/capi/BinRowProtocolCapi.h
                    src/protocol/capi/TextRowProtocolCapi.h
                    src/ExceptionFactory.h
+                   src/StringImp.h
                    ####H####
                        )
   SOURCE_GROUP(Logging REGULAR_EXPRESSION "/logger/")

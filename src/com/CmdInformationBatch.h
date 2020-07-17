@@ -34,14 +34,14 @@ class CmdInformationBatch : public CmdInformation {
 
   std::vector<int64_t>insertIds ; /*new ConcurrentLinkedQueue<>()*/
   std::vector<int64_t>updateCounts ; /*new ConcurrentLinkedQueue<>()*/
-  int32_t expectedSize;
+  std::size_t expectedSize;
   int32_t autoIncrement;
   int64_t insertIdNumber ; /*0*/
   bool hasException;
   bool rewritten;
 
 public:
-  CmdInformationBatch(int32_t expectedSize,int32_t autoIncrement);
+  CmdInformationBatch(std::size_t expectedSize,int32_t autoIncrement);
   void addErrorStat();
   void reset();
   void addResultSetStat();

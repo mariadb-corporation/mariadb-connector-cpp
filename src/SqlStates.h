@@ -23,7 +23,7 @@
 
 #include "Consts.h"
 
-#include "SQLString.h"
+#include "StringImp.h"
 
 namespace sql
 {

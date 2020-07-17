@@ -110,10 +110,10 @@ public:
   virtual bool hasWarnings()=0;
   virtual int64_t getMaxRows()=0;
   virtual void setMaxRows(int64_t max)=0;
-  virtual int32_t getMajorServerVersion()=0;
-  virtual int32_t getMinorServerVersion()=0;
-  virtual int32_t getPatchServerVersion()=0;
-  virtual bool versionGreaterOrEqual(int32_t major, int32_t minor, int32_t patch) const=0;
+  virtual uint32_t getMajorServerVersion()=0;
+  virtual uint32_t getMinorServerVersion()=0;
+  virtual uint32_t getPatchServerVersion()=0;
+  virtual bool versionGreaterOrEqual(uint32_t major, uint32_t minor, uint32_t patch) const=0;
   virtual void setLocalInfileInputStream(std::istream& inputStream)=0;
   virtual int32_t getTimeout()=0;
   virtual void setTimeout(int32_t timeout)=0;

@@ -57,7 +57,7 @@ namespace mariadb
       return res;
     }
 
-    int32_t length= value.length();
+    std::size_t length= value.length();
     if (length < 251)
     {
       sql::bytes buf(length + 1);
@@ -138,17 +138,18 @@ namespace mariadb
     int32_t remaining= 4;
     int32_t off= 0;
     do {
-      int32_t count= inputStream->read(header.data(), remaining).gcount();
+      int32_t count= static_cast<int32_t>(inputStream->read(header.data(), remaining).gcount());
 
-      if (count <0) {
-        throw /*EOFException*/SQLException(
+      // Cannot happen with std::streamsize count. Must be different condition(if any)
+      /*if (count < 0) {
+        throw SQLException(//EOFException
           "unexpected end of stream, read "
           + std::to_string(off)
           +" bytes from 4 (socket was closed by server)");
-      }
-      remaining -=count;
-      off +=count;
-    } while (remaining >0);
+      }*/
+      remaining-= count;
+      off+= count;
+    } while (remaining > 0);
 
     lastPacketLength= (header[0] &0xff)+((header[1] &0xff)<<8)+((header[2] &0xff)<<16);
     packetSeq= header[3];
@@ -168,18 +169,19 @@ namespace mariadb
     remaining= lastPacketLength;
     off= 0;
     do {
-      int32_t count= inputStream->read(rawBytes, remaining).gcount();
-      if (count <0) {
-        throw /*EOFException*/SQLException(
-          "unexpected end of stream, read "
-          + std::to_string(lastPacketLength -remaining)
-          + " bytes from "
-          + std::to_string(lastPacketLength)
-          + " (socket was closed by server)");
-      }
-      remaining -=count;
-      off +=count;
-    } while (remaining >0);
+      int32_t count= static_cast<int32_t>(inputStream->read(rawBytes, remaining).gcount());
+      // Same
+      //if (count < 0) {
+      //  throw /*EOFException*/SQLException(
+      //    "unexpected end of stream, read "
+      //    + std::to_string(lastPacketLength -remaining)
+      //    + " bytes from "
+      //    + std::to_string(lastPacketLength)
+      //    + " (socket was closed by server)");
+      //}
+      remaining-= count;
+      off+= count;
+    } while (remaining > 0);
 
     /*if (traceCache) {
       traceCache.put(
@@ -193,7 +195,7 @@ namespace mariadb
     if (logger->isTraceEnabled()) {
       logger->trace(
         "read: " + serverThreadLog +
-        Utils::hexdump(maxQuerySizeToLog -4, 0, lastPacketLength, header.data(), header.size()));//rawBytes));
+        Utils::hexdump(maxQuerySizeToLog -4, 0, lastPacketLength, header.data(), static_cast<int32_t>(header.size())));//rawBytes));
     }
 
     // ***************************************************
@@ -205,10 +207,11 @@ namespace mariadb
         remaining= 4;
         off= 0;
         do {
-          int32_t count= inputStream->read(header.data(), remaining).gcount();
-          if (count <0) {
-            throw /*EOFException*/SQLException("unexpected end of stream, read " + std::to_string(off) + " bytes from 4");
-          }
+          int32_t count= static_cast<int32_t>(inputStream->read(header.data(), remaining).gcount());
+          // Same
+          //if (count < 0) {
+          //  throw /*EOFException*/SQLException("unexpected end of stream, read " + std::to_string(off) + " bytes from 4");
+          //}
           remaining -=count;
           off +=count;
         } while (remaining >0);
@@ -216,7 +219,7 @@ namespace mariadb
         packetLength= (header[0] &0xff)+((header[1] &0xff)<<8)+((header[2] &0xff)<<16);
         packetSeq= header[3];
 
-        int32_t currentBufferLength= rawBytes.length;
+        int32_t currentBufferLength= static_cast<int32_t>(rawBytes.size());
         sql::bytes newRawBytes(currentBufferLength + packetLength);
         std::memcpy(newRawBytes, rawBytes, currentBufferLength);
         rawBytes= newRawBytes;
@@ -224,17 +227,18 @@ namespace mariadb
         remaining= packetLength;
         off= currentBufferLength;
         do {
-          int32_t count= inputStream->read(rawBytes, remaining).gcount();
-          if (count <0) {
-            throw /*EOFException*/SQLException(
+          int32_t count= static_cast<int32_t>(inputStream->read(rawBytes, remaining).gcount());
+          // Same
+          /*if (count < 0) {
+            throw SQLException(
               "unexpected end of stream, read "
               + std::to_string(packetLength - remaining)
               +" bytes from "
               + std::to_string(packetLength));
-          }
-          remaining -=count;
-          off +=count;
-        } while (remaining >0);
+          }*/
+          remaining-= count;
+          off+= count;
+        } while (remaining > 0);
 
 #ifdef WE_HAVE_TRACE_CACHE
         if (traceCache) {
@@ -249,7 +253,7 @@ namespace mariadb
         if (logger->isTraceEnabled()) {
           logger->trace(
             "read: " + serverThreadLog + Utils::hexdump(
-              maxQuerySizeToLog -4, currentBufferLength, packetLength, header.data(), header.size()));// rawBytes));
+              maxQuerySizeToLog -4, currentBufferLength, packetLength, header.data(), static_cast<int32_t>(header.size())));// rawBytes));
         }
 
         lastPacketLength +=packetLength;

@@ -24,7 +24,7 @@
 #include <vector>
 #include <memory>
 
-#include "SQLString.h"
+#include "StringImp.h"
 #include "logger/Logger.h"
 #include "Consts.h"
 

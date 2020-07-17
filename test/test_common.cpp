@@ -2895,7 +2895,7 @@ static void test_not_implemented_cs_resultset(std::unique_ptr<sql::Connection> &
     ++total_errors;
   }
   }
-  catch (sql::SQLFeatureNotImplementedException& e) {
+  catch (sql::SQLFeatureNotImplementedException& /*e*/) {
     LEAVE_FUNCTION();
     return;
   }

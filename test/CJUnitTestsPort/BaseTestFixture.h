@@ -76,7 +76,7 @@ private:
 
 public:
 
-  enum value_type
+  enum value_type : unsigned char
   {
     vtDouble=0, vtFloat, vtByte, vtLast
   };
@@ -128,7 +128,7 @@ struct TestFixtureCommon
                     , Properties & sqlProps
                     , Connection & conn);
 
-  static void logMsg(String message);
+  static void logMsg(sql::SQLString message);
 
   void logErr(String message);
 

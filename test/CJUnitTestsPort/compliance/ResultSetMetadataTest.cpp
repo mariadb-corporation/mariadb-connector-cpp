@@ -64,7 +64,7 @@ namespace compliance
 void ResultSetMetadataTest::testGetCatalogName()
 {
   logMsg("Calling getCatalogName on ResultSetMetadata");
-  String sRetValue=rsmd->getCatalogName(1);
+  String sRetValue(rsmd->getCatalogName(1));
 
   if (sRetValue.empty()) {
     logMsg("getCatalogName method does not return the column's table's catalog name");
@@ -230,7 +230,7 @@ void ResultSetMetadataTest::testGetColumnDisplaySize()
 void ResultSetMetadataTest::testGetColumnLabel()
 {
   logMsg("Calling getColumnLabel on ResultSetMetadata");
-  String sRetValue=rsmd->getColumnLabel(2);
+  String sRetValue(rsmd->getColumnLabel(2));
 
   //"getColumnLabel method does not returns the suggested column title");
 
@@ -266,7 +266,7 @@ void ResultSetMetadataTest::testGetColumnName()
 {
   logMsg("Calling getColumnName on ResultSetMetadata");
 
-  String sRetValue=rsmd->getColumnName(2);
+  String sRetValue(rsmd->getColumnName(2));
 
   logMsg(String("getColumnName method returns:  ") + sRetValue);
 
@@ -373,7 +373,7 @@ void ResultSetMetadataTest::testGetColumnType()
 void ResultSetMetadataTest::testGetColumnTypeName()
 {
   logMsg("Calling getColumnTypeName on ResultSetMetadata");
-  String sRetValue=rsmd->getColumnTypeName(1);
+  String sRetValue(rsmd->getColumnTypeName(1));
 
   logMsg(String("getColumnTypeName method returns:  ") + sRetValue);
 }
@@ -481,7 +481,7 @@ void ResultSetMetadataTest::testGetScale()
 void ResultSetMetadataTest::testGetSchemaName()
 {
   logMsg("Calling getSchemaName on ResultSetMetadata");
-  String sRetValue=rsmd->getSchemaName(2);
+  String sRetValue(rsmd->getSchemaName(2));
 
   logMsg(String("getSchemaName returns:  ") + sRetValue);
 }
@@ -514,7 +514,7 @@ void ResultSetMetadataTest::testGetSchemaName()
 void ResultSetMetadataTest::testGetTableName()
 {
   logMsg("Calling getTableName on ResultSetMetadata");
-  String sRetValue=rsmd->getTableName(1);
+  String sRetValue(rsmd->getTableName(1));
 
   logMsg(String("getTableName method returns:  ") + sRetValue);
 }

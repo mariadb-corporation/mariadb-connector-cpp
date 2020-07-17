@@ -120,7 +120,7 @@ String TestFixtureCommon::extractVal(const String & sTableName
   return retStr;
 }
 
-void TestFixtureCommon::logMsg(String message)
+void TestFixtureCommon::logMsg(sql::SQLString message)
 {
   TestsListener::messagesLog() << message << std::endl;
 }
@@ -776,7 +776,7 @@ sql::Connection * BaseTestFixture::getConnection()
   if (driver == NULL)
   {
     driver= sql::mariadb::get_driver_instance();
-    logMsg(String(_T("Done: loaded ")) + driver->getName());
+    logMsg(String(_T("Done: loaded ")) + driver->getName().c_str());
   }
 
   if (host.length() == 0)

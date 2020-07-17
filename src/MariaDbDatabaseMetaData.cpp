@@ -48,7 +48,8 @@ namespace sql
      */
     MariaDbDatabaseMetaData::MariaDbDatabaseMetaData(Connection* connection, const UrlParser& urlParser)
       : connection(dynamic_cast<MariaDbConnection*>(connection)),
-        urlParser(urlParser)
+        urlParser(urlParser),
+        datePrecisionColumnExist(false)
     {
     }
 
@@ -147,7 +148,7 @@ namespace sql
         pos++;
         break;
       default:
-        throw ParseException(std::string(static_cast<const std::string&>(part), startPos, part.length() - startPos), startPos);
+        throw ParseException(std::string(StringImp::get(part), startPos, part.length() - startPos), startPos);
       }
     }
   }
@@ -674,7 +675,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       SQLString escapedType(type.compare("TABLE") == 0 ? "'BASE TABLE'" : escapeQuote(type).c_str());
       sql.append(type).append(",");
     }
-    static_cast<std::string&>(sql)[sql.length()-1]= ')';
+    StringImp::get(sql)[sql.length()-1]= ')';
   }
   sql.append(" ORDER BY TABLE_TYPE, TABLE_SCHEMA, TABLE_NAME");
 
@@ -3657,24 +3658,24 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
     return ResultSet::HOLD_CURSORS_OVER_COMMIT;
   }
 
-  int32_t MariaDbDatabaseMetaData::getDatabaseMajorVersion(){
+  uint32_t MariaDbDatabaseMetaData::getDatabaseMajorVersion(){
     return connection->getProtocol()->getMajorServerVersion();
   }
 
-  int32_t MariaDbDatabaseMetaData::getDatabaseMinorVersion(){
+  uint32_t MariaDbDatabaseMetaData::getDatabaseMinorVersion(){
     return connection->getProtocol()->getMinorServerVersion();
   }
 
-  int32_t MariaDbDatabaseMetaData::getDatabasePatchVersion(){
+  uint32_t MariaDbDatabaseMetaData::getDatabasePatchVersion(){
     return connection->getProtocol()->getPatchServerVersion();
   }
 
 
-  int32_t MariaDbDatabaseMetaData::getJDBCMajorVersion(){
+  uint32_t MariaDbDatabaseMetaData::getJDBCMajorVersion(){
     return 4;
   }
 
-  int32_t MariaDbDatabaseMetaData::getJDBCMinorVersion(){
+  uint32_t MariaDbDatabaseMetaData::getJDBCMinorVersion(){
     return 2;
   }
 
@@ -3875,10 +3876,10 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   ResultSet* MariaDbDatabaseMetaData::getSchemaObjects() {
     throw SQLFeatureNotImplementedException("getSchemaObjects is not implemented");
   }
-  int32_t MariaDbDatabaseMetaData::getCDBCMajorVersion() {
+  uint32_t MariaDbDatabaseMetaData::getCDBCMajorVersion() {
     throw SQLFeatureNotSupportedException("getCDBCMajorVersion is not supported");
   }
-  int32_t MariaDbDatabaseMetaData::getCDBCMinorVersion() {
+  uint32_t MariaDbDatabaseMetaData::getCDBCMinorVersion() {
     throw SQLFeatureNotSupportedException("getCDBCMinorVersion is not supported");
   }
   ResultSet* MariaDbDatabaseMetaData::getSchemaCollation(const SQLString& c, const SQLString& s) {

@@ -84,7 +84,7 @@ namespace mariadb
     if (prop != nullptr)
     {
       std::string key;
-      std::size_t offset;
+      std::size_t offset= 0;
       
       mapLegacyProps(*prop);
 
@@ -116,7 +116,7 @@ namespace mariadb
       }
 
       if (prop != nullptr) {
-        std::string name(url.substr(offset));
+        std::string name(StringImp::get(url.substr(offset)));
         std::size_t slashPos = name.find_first_of('/');
 
         if (slashPos != std::string::npos) {
@@ -228,12 +228,12 @@ namespace mariadb
   }
 
 
-  int32_t MariaDbDriver::getMajorVersion() {
+  uint32_t MariaDbDriver::getMajorVersion() {
     return Version::majorVersion;
   }
 
 
-  int32_t MariaDbDriver::getMinorVersion() {
+  uint32_t MariaDbDriver::getMinorVersion() {
     return Version::minorVersion;
   }
 

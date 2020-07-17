@@ -179,8 +179,8 @@ public:
   bool execute(const SQLString& sql, int32_t* columnIndexes)      { return stmt->executeUpdate(sql, columnIndexes); }
   bool execute(const SQLString& sql, const SQLString* columnNames){ return stmt->executeUpdate(sql, columnNames); }
   ResultSet* executeQuery(const SQLString& sql) { return executeQuery(sql); }
-  int32_t getMaxFieldSize()         { return stmt->getMaxFieldSize(); }
-  void setMaxFieldSize(int32_t max) { stmt->setMaxFieldSize(max); }
+  uint32_t getMaxFieldSize()         { return stmt->getMaxFieldSize(); }
+  void setMaxFieldSize(uint32_t max) { stmt->setMaxFieldSize(max); }
   int32_t getMaxRows()              { return stmt->getMaxRows(); }
   void setMaxRows(int32_t max)      { stmt->setMaxRows(max); }
   int64_t getLargeMaxRows()         { return stmt->getLargeMaxRows(); }

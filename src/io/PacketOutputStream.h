@@ -23,7 +23,7 @@
 
 #include <istream>
 
-#include "SQLString.h"
+#include "StringImp.h"
 
 namespace sql
 {

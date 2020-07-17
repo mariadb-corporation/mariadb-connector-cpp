@@ -39,8 +39,8 @@ namespace mariadb
 
       bool acceptsURL(const SQLString& url);
       std::unique_ptr<std::vector<DriverPropertyInfo>> getPropertyInfo(SQLString& url, Properties& info);
-      int32_t getMajorVersion();
-      int32_t getMinorVersion();
+      uint32_t getMajorVersion();
+      uint32_t getMinorVersion();
       bool jdbcCompliant();
       const SQLString& getName();
       Logger* getParentLogger();

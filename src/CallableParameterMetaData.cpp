@@ -220,7 +220,7 @@ namespace mariadb
     }
 
     std::smatch matcher;
-    if (!std::regex_search(static_cast<const std::string&>(functionReturn), matcher, RETURN_PATTERN)) {
+    if (!std::regex_search(StringImp::get(functionReturn), matcher, RETURN_PATTERN)) {
       throw SQLException("can not parse return value definition :"+functionReturn);
     }
     CallParameter& callParameter= params[0];
@@ -234,7 +234,7 @@ namespace mariadb
       scale= replace(scale, "(", "");
       scale= replace(scale, ")", "");
       scale= replace(scale, " ", "");
-      callParameter.setScale(std::stoi(scale));
+      callParameter.setScale(std::stoi(StringImp::get(scale)));
     }
   }
 
@@ -247,7 +247,7 @@ namespace mariadb
     }
 
     std::smatch matcher2;
-    std::string pList(static_cast<const std::string&>(paramList));
+    std::string pList(StringImp::get(paramList));
 
     while (std::regex_search(pList, matcher2, PARAMETER_PATTERN))
     {
@@ -289,7 +289,7 @@ namespace mariadb
         if ((scale.find_first_of(",") != std::string::npos)) {
           scale= scale.substr(0, scale.find_first_of(","));
         }
-        callParameter.setScale(std::stoi(scale));
+        callParameter.setScale(std::stoi(StringImp::get(scale)));
       }
       params.push_back(callParameter);
       pList= matcher2.suffix();

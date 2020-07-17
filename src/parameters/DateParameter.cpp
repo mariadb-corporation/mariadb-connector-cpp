@@ -92,17 +92,17 @@ namespace mariadb
     auto cit= d->begin();
     if (cit != d->end())
     {
-      year= static_cast<int16_t>(std::stoi(*cit));
+      year= static_cast<int16_t>(std::stoi(StringImp::get(*cit)));
     }
     ++cit;
     if (cit != d->end())
     {
-      month= static_cast<uint8_t>(std::stoi(*cit));
+      month= static_cast<uint8_t>(std::stoi(StringImp::get(*cit)));
     }
     ++cit;
     if (cit != d->end())
     {
-      day= static_cast<uint8_t>(std::stoi(*cit));
+      day= static_cast<uint8_t>(std::stoi(StringImp::get(*cit)));
     }
     pos.write(7);
     pos.writeShort(year);//calendar->get(Calendar.YEAR));)

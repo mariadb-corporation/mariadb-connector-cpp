@@ -151,12 +151,12 @@ namespace mariadb
     std::vector<std::vector<sql::bytes>>& data,
     Protocol* protocol)
   {
-    int32_t columnNameLength= columnNames.size();
+    std::size_t columnNameLength= columnNames.size();
 
     std::vector<Shared::ColumnDefinition> columns;
     columns.reserve(columnTypes.size());
 
-    for (int32_t i= 0; i <columnNameLength; i++) {
+    for (std::size_t i= 0; i <columnNameLength; i++) {
       columns.emplace_back(ColumnDefinition::create(columnNames[i], columnTypes[i]));
     }
 

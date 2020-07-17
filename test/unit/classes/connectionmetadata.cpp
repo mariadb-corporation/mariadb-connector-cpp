@@ -395,7 +395,7 @@ void connectionmetadata::getColumns()
       if (con->getCatalog() != "" && res->getString(1) != "" && con->getCatalog() != res->getString("TABLE_CAT"))
       {
         got_todo_warning=true;
-        msg.str();
+        msg.str("");
         msg << "...\t\tWARNING - expecting TABLE_CAT = '" << con->getCatalog() << "'";
         msg << " got '" << res->getString("TABLE_CAT") << "'";
         logMsg(msg.str());

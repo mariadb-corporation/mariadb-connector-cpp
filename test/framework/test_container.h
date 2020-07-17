@@ -48,7 +48,7 @@ namespace testsuite
 
     class StorableTest
       {
-        StorableTest(){}
+        StorableTest() : test(nullptr) {}
         StorableTest(const StorableTest&)=delete;
         StorableTest& operator=(const StorableTest&) = delete;
 

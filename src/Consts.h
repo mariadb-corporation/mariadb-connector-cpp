@@ -32,7 +32,7 @@
 #include <stdexcept>
 #include <cstring>
 
-#include "SQLString.h"
+#include "StringImp.h"
 #include "Version.h"
 #include "util/ServerStatus.h"
 
@@ -53,8 +53,6 @@
 #define CLASS_FIELD(_CLASS, _FIELD) {#_FIELD, &_CLASS::_FIELD}
 #define INSTANCEOF(OBJ, CLASSNAME) (OBJ != nullptr && dynamic_cast<CLASSNAME>(OBJ) != NULL)
 
-#pragma warning(disable:4275)
-#pragma warning(disable:4251)
 
 namespace sql
 {
@@ -203,7 +201,7 @@ template <class T> void CArray<T>::reserve(std::size_t size)
   {
     if (length > 0)
     {
-      if (length < size)
+      if (static_cast<std::size_t>(length) < size)
       {
         delete[] arr;
 

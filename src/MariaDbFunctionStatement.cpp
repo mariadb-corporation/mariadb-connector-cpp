@@ -410,7 +410,7 @@ namespace mariadb
 #endif
 
   /******************** Calls forwarding to CSPS *********************/
-  int32_t MariaDbFunctionStatement::getMaxFieldSize() {
+  uint32_t MariaDbFunctionStatement::getMaxFieldSize() {
     return stmt->getMaxFieldSize();
   }
 
@@ -496,7 +496,7 @@ namespace mariadb
   }
 
 
-  void MariaDbFunctionStatement::setMaxFieldSize(int32_t max)
+  void MariaDbFunctionStatement::setMaxFieldSize(uint32_t max)
   {
     stmt->setMaxFieldSize(max);
   }

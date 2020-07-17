@@ -2980,7 +2980,7 @@ void connection::ssl_mode()
 
   res->next();
 
-  std::string tls_versions = res->getString(2);
+  std::string tls_versions(res->getString(2));
 
   std::cout << "TLS VERSIONS: " <<tls_versions << std::endl;
 
@@ -3067,7 +3067,7 @@ void connection::tls_version()
 
   res->next();
 
-  std::string tls_available = res->getString(2);
+  std::string tls_available(res->getString(2));
 
   std::cout << "TLS VERSIONS: " <<tls_available << std::endl;
 

@@ -71,7 +71,7 @@ namespace sql
       if (haMode == HaMode::AURORA) {
         std::regex clusterPattern("(.+)\\.cluster-([a-z0-9]+\\.[a-z0-9\\-]+\\.rds\\.amazonaws\\.com)",
           std::regex_constants::ECMAScript | std::regex_constants::icase);
-        if (!std::regex_search(static_cast<std::string&>(spec), clusterPattern)) {
+        if (!std::regex_search(StringImp::get(spec), clusterPattern)) {
           logger->warn("Aurora recommended connection URL must only use cluster end-point like "
             "\"jdbc:mariadb:aurora://xx.cluster-yy.zz.rds.amazonaws.com\". "
             "Using end-point permit auto-discovery of new replicas");
@@ -129,7 +129,7 @@ namespace sql
     int32_t HostAddress::getPort(const SQLString& portString)
     {
       try {
-        return std::stoi(portString);
+        return std::stoi(StringImp::get(portString));
       }
       catch (std::invalid_argument &) {
         throw IllegalArgumentException("Incorrect port value : " + portString);
@@ -145,7 +145,7 @@ namespace sql
       for (size_t i= 1; i <array->size(); i++)
       {
         SQLString str((*array)[i]);
-        std::regex_replace(static_cast<std::string&>(str), std::regex("[\\(\\)]"), "");
+        str= std::regex_replace(StringImp::get(str), std::regex("[\\(\\)]"), "");
         Tokens token= split(str.trim(), "=");
 
         if (token->size() != 2) {
@@ -157,7 +157,7 @@ namespace sql
 
         if ((key.compare("host") == 0))
         {
-          result->host= std::regex_replace(static_cast<std::string&>(value), std::regex("[\\[\\]]"), "");
+          result->host= std::regex_replace(StringImp::get(value), std::regex("[\\[\\]]"), "");
         }
         else if ((key.compare("port") == 0)) {
           result->port= getPort(value);

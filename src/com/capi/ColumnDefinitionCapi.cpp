@@ -128,7 +128,7 @@ namespace capi
 
     return emptyStr;
   }
-  int64_t ColumnDefinitionCapi::getLength() const {
+  uint32_t ColumnDefinitionCapi::getLength() const {
     return length;
   }
 

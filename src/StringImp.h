@@ -17,45 +17,41 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
+#ifndef _STRINGIMP_H_
+#define _STRINGIMP_H_
 
-#ifndef _DATEPARAMETER_H_
-#define _DATEPARAMETER_H_
+#include <string>
 
-#include "Consts.h"
-
-#include "ParameterHolder.h"
+#include "SQLString.h"
 
 namespace sql
 {
-class TimeZone;
-
-namespace mariadb
+class StringImp
 {
-class DateParameter  : public ParameterHolder {
-
-  Date date;
-  //const TimeZone timeZone;
-  const Shared::Options options;
+  std::string realStr;
 
 public:
-  DateParameter( const Date&date, TimeZone* timeZone, Shared::Options& options);
-  void writeTo(PacketOutputStream& os);
-  void writeTo(SQLString& os);
+  static std::string& get(SQLString& str);
+  static const std::string& get(const SQLString& str);
 
-private:
-  const char * dateByteFormat();
+  /*StringImp(const StringImp&);
+  StringImp(const std::string&);*/
+  StringImp(const char* str);
+  StringImp(const char* str, std::size_t count);
+  StringImp()=default; //or delete?
+  ~StringImp()=default;
 
-public:
-  int64_t getApproximateTextProtocolLength();
-  void writeBinary(PacketOutputStream& pos);
-  uint32_t writeBinary(sql::bytes& buffer);
-  const ColumnType& getColumnType() const;
-  SQLString toString();
-  bool isNullData() const;
-  bool isLongData();
-  void* getValuePtr() { return const_cast<void*>(static_cast<const void*>(date.c_str())); }
-  unsigned long getValueBinLen() const { return static_cast<unsigned long>(date.length()); }
-  };
-}
+  std::string* operator ->() { return &realStr; }
+
+  std::string& get() { return realStr; }
+  //StringImp& operator=(const StringImp&);
+  //operator std::string&() { return theString; }
+  //operator const std::string&() const { return theString; }
+  ////operator const char*() const { return theString.c_str(); }
+  //StringImp& operator=(const char * right);
+  //bool operator <(const StringImp&) const;
+
+};
+
 }
 #endif

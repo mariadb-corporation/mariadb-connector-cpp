@@ -40,8 +40,8 @@ public:
   virtual Connection* connect(const SQLString& host, const SQLString& user, const SQLString& pwd)=0;
   virtual Connection* connect(const Properties& props)=0;
   virtual bool acceptsURL(const SQLString& url)=0;
-  virtual int getMajorVersion()=0;
-  virtual int getMinorVersion()=0;
+  virtual uint32_t getMajorVersion()=0;
+  virtual uint32_t getMinorVersion()=0;
   virtual bool jdbcCompliant()=0;
   //Not in the classic API
   virtual const SQLString& getName()=0;

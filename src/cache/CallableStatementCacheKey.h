@@ -21,7 +21,7 @@
 #ifndef _CALLABLESTATEMENTCACHEKEY_H_
 #define _CALLABLESTATEMENTCACHEKEY_H_
 
-#include "SQLString.h"
+#include "StringImp.h"
 
 namespace sql
 {

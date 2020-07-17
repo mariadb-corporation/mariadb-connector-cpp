@@ -64,7 +64,7 @@ namespace capi
       noBackslashEscapes(protocol->noBackslashEscapes()),
       columnsInformation(spr->getColumns()),
       columnNameMap(new ColumnNameMap(columnsInformation)),
-      columnInformationLength(columnsInformation.size()),
+      columnInformationLength(static_cast<int32_t>(columnsInformation.size())),
       fetchSize(results->getFetchSize()),
       dataSize(0),
       resultSetScrollType(results->getResultSetScrollType()),
@@ -155,7 +155,7 @@ namespace capi
     row.reset(new capi::TextRowProtocolCapi(results->getMaxFieldSize(), options, textNativeResults));
 
     columnNameMap.reset(new ColumnNameMap(columnsInformation));
-    columnInformationLength= columnsInformation.size();
+    columnInformationLength= static_cast<int32_t>(columnsInformation.size());
 
     if (streaming) {
       nextStreamingValue();
@@ -184,7 +184,7 @@ namespace capi
       isClosedFlag(false),
       columnsInformation(columnInformation),
       columnNameMap(new ColumnNameMap(columnsInformation)),
-      columnInformationLength(columnInformation.size()),
+      columnInformationLength(static_cast<int32_t>(columnInformation.size())),
       isEof(true),
       fetchSize(0),
       resultSetScrollType(resultSetScrollType),
@@ -465,7 +465,7 @@ namespace capi
       growDataArray();
     }
     data[dataSize]= rawData;
-    rowPointer= dataSize;
+    rowPointer= static_cast<int32_t>(dataSize);
     dataSize++;
   }
 
@@ -502,7 +502,7 @@ namespace capi
 
   /** Grow data array. */
   void SelectResultSetCapi::growDataArray() {
-    int32_t newCapacity= data.size() + (data.size() >>1);
+    int32_t newCapacity= static_cast<int32_t>(data.size() + (data.size() >>1));
 
     if (newCapacity - MAX_ARRAY_SIZE > 0) {
       newCapacity= MAX_ARRAY_SIZE;
@@ -605,16 +605,16 @@ namespace capi
         if (resultSetScrollType == TYPE_FORWARD_ONLY) {
 
           rowPointer= 0;
-          return dataSize >0;
+          return dataSize > 0;
         }
         else {
           rowPointer++;
-          return dataSize > static_cast<uint32_t>(rowPointer);
+          return dataSize > static_cast<std::size_t>(rowPointer);
         }
       }
 
 
-      rowPointer= dataSize;
+      rowPointer= static_cast<int32_t>(dataSize);
       return false;
     }
   }
@@ -747,7 +747,7 @@ namespace capi
   void SelectResultSetCapi::afterLast() {
     checkClose();
     fetchRemaining();
-    rowPointer= dataSize;
+    rowPointer= static_cast<int32_t>(dataSize);
   }
 
   bool SelectResultSetCapi::first() {
@@ -765,7 +765,7 @@ namespace capi
   bool SelectResultSetCapi::last() {
     checkClose();
     fetchRemaining();
-    rowPointer= dataSize - 1;
+    rowPointer= static_cast<int32_t>(dataSize) - 1;
     row->installCursorAtPosition(rowPointer);
     return dataSize > 0;
   }
@@ -801,15 +801,15 @@ namespace capi
         return true;
       }
 
-      rowPointer= dataSize;
+      rowPointer= static_cast<int32_t>(dataSize);
       return false;
 
     }
     else {
 
-      if (dataSize + rowPos >=0) {
+      if (dataSize + rowPos >= 0) {
 
-        rowPointer= dataSize + rowPos;
+        rowPointer= static_cast<int32_t>(dataSize + rowPos);
         row->installCursorAtPosition(rowPointer);
         return true;
       }
@@ -830,8 +830,8 @@ namespace capi
       rowPointer= -1;
       return false;
     }
-    else if (static_cast<uint32_t>(newPos) >=dataSize) {
-      rowPointer= dataSize;
+    else if (static_cast<uint32_t>(newPos) >= dataSize) {
+      rowPointer= static_cast<int32_t>(dataSize);
       return false;
     }
     else {
@@ -956,7 +956,7 @@ namespace capi
     std::unique_ptr<SQLString> res= row->getInternalString(columnsInformation[columnIndex -1].get());
 
     if (res) {
-      return *res;
+      return std::move(*res);
     }
     else {
       return emptyStr;

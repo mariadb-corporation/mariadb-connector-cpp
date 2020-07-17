@@ -373,26 +373,26 @@ namespace mariadb
 	}
 
 
-  int32_t ProtocolLoggingProxy::getMajorServerVersion()
+  uint32_t ProtocolLoggingProxy::getMajorServerVersion()
 	{
 		/* Add here logging if needed */
 	  return protocol->getMajorServerVersion();
 	}
 
 
-  int32_t ProtocolLoggingProxy::getMinorServerVersion()
+  uint32_t ProtocolLoggingProxy::getMinorServerVersion()
 	{
 		/* Add here logging if needed */
 	  return protocol->getMinorServerVersion();
 	}
 
-  int32_t ProtocolLoggingProxy::getPatchServerVersion()
+  uint32_t ProtocolLoggingProxy::getPatchServerVersion()
 	{
 	  return protocol->getPatchServerVersion();
 	}
 
 
-  bool ProtocolLoggingProxy::versionGreaterOrEqual(int32_t major, int32_t minor, int32_t patch) const
+  bool ProtocolLoggingProxy::versionGreaterOrEqual(uint32_t major, uint32_t minor, uint32_t patch) const
 	{
 		/* Add here logging if needed */
 	  return protocol->versionGreaterOrEqual(major, minor, patch);

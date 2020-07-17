@@ -25,7 +25,7 @@
 
 #include "jdbccompat.h"
 #include "util/Value.h"
-#include "SQLString.h"
+#include "StringImp.h"
 #include "Options.h"
 #include "credential/CredentialPlugin.h"
 
@@ -47,7 +47,7 @@ public:
   static std::map<std::string, DefaultOptions*> OPTIONS_MAP;
 
   /* These constructor makes use of [] operator on the OptionsMap possible */
-  DefaultOptions() {}
+  DefaultOptions() : required(false) {}
 
   DefaultOptions(const char * optionName, const char * implementationVersion, const char * description, bool required);
 

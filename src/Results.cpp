@@ -72,7 +72,7 @@ namespace mariadb
       MariaDbStatement* statement,
       int32_t fetchSize,
       bool batch,
-      int32_t expectedSize,
+      std::size_t expectedSize,
       bool binaryFormat,
       int32_t resultSetScrollType,
       int32_t resultSetConcurrency,
@@ -108,11 +108,11 @@ namespace mariadb
   void Results::addStats(int64_t updateCount,int64_t insertId,bool moreResultAvailable){
     if (!cmdInformation){
       if (batch){
-        cmdInformation.reset(new CmdInformationBatch(expectedSize,autoIncrement));
+        cmdInformation.reset(new CmdInformationBatch(expectedSize, autoIncrement));
       }else if (moreResultAvailable){
-        cmdInformation.reset(new CmdInformationMultiple(expectedSize,autoIncrement));
+        cmdInformation.reset(new CmdInformationMultiple(expectedSize, autoIncrement));
       }else {
-        cmdInformation.reset(new CmdInformationSingle(insertId,updateCount,autoIncrement));
+        cmdInformation.reset(new CmdInformationSingle(insertId, updateCount, autoIncrement));
         return;
       }
     }
@@ -127,11 +127,11 @@ namespace mariadb
   void Results::addStatsError(bool moreResultAvailable){
     if (!cmdInformation){
       if (batch){
-        cmdInformation.reset(new CmdInformationBatch(expectedSize,autoIncrement));
+        cmdInformation.reset(new CmdInformationBatch(expectedSize, autoIncrement));
       }else if (moreResultAvailable){
-        cmdInformation.reset(new CmdInformationMultiple(expectedSize,autoIncrement));
+        cmdInformation.reset(new CmdInformationMultiple(expectedSize, autoIncrement));
       }else {
-        cmdInformation.reset(new CmdInformationSingle(0,Statement::EXECUTE_FAILED,autoIncrement));
+        cmdInformation.reset(new CmdInformationSingle(0, Statement::EXECUTE_FAILED, autoIncrement));
         return;
       }
     }
@@ -161,11 +161,11 @@ namespace mariadb
 
     if (!cmdInformation){
       if (batch){
-        cmdInformation.reset(new CmdInformationBatch(expectedSize,autoIncrement));
+        cmdInformation.reset(new CmdInformationBatch(expectedSize, autoIncrement));
       }else if (moreResultAvailable){
-        cmdInformation.reset(new CmdInformationMultiple(expectedSize,autoIncrement));
+        cmdInformation.reset(new CmdInformationMultiple(expectedSize, autoIncrement));
       }else {
-        cmdInformation.reset(new CmdInformationSingle(0,-1,autoIncrement));
+        cmdInformation.reset(new CmdInformationSingle(0, -1, autoIncrement));
         return;
       }
     }
@@ -363,7 +363,7 @@ namespace mariadb
     return batch;
   }
 
-  int32_t Results::getExpectedSize(){
+  std::size_t Results::getExpectedSize(){
     return expectedSize;
   }
 

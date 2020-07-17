@@ -51,10 +51,10 @@ namespace mariadb
       return *parametersInformation[param - 1];
     }
     throw SQLException(
-      "Parameter metadata out of range : param was "
+      ("Parameter metadata out of range : param was "
       + std::to_string(param)
       +" and must be 1 <= param <="
-      + std::to_string(parametersInformation.size()),
+      + std::to_string(parametersInformation.size())).c_str(),
       "07009");
   }
 

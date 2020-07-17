@@ -111,7 +111,7 @@ namespace mariadb
   bool CmdInformationSingle::isDuplicateKeyUpdate(const SQLString& sql)
   {
     std::regex dupKeyUpdate("(?i).*ON\\s+DUPLICATE\\s+KEY\\s+UPDATE.*");
-    return std::regex_match(static_cast<const std::string&>(sql), dupKeyUpdate);
+    return std::regex_match(StringImp::get(sql), dupKeyUpdate);
   }
 
   ResultSet* CmdInformationSingle::getBatchGeneratedKeys(Protocol* protocol)

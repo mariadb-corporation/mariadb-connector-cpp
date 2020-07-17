@@ -5,7 +5,7 @@
   </a>
 </p>
 
-This is a alpha release of the MariaDB Connector/C++.
+This is a beta release of the MariaDB Connector/C++.
 
 MariaDB Connector/C++ is released under version 2.1 of the
 GNU Lesser Public License.

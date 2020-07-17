@@ -69,7 +69,7 @@ namespace simple
 
 
     /* throws std::exception * */
-    bool checkBlob( const String & retrBytes );
+    bool checkBlob( const sql::SQLString & retrBytes );
 
 
     /* throws std::exception * */

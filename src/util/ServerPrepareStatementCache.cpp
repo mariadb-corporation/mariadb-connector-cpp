@@ -70,15 +70,14 @@ namespace mariadb
   {
     std::lock_guard<std::mutex> localScopeLock(lock);
 
-    iterator cachedServerPrepareResult= cache.find(key);
-
+    iterator cachedServerPrepareResult= cache.find(StringImp::get(key));
 
     if (cachedServerPrepareResult != cache.end() && cachedServerPrepareResult->second->incrementShareCounter()){
       return cachedServerPrepareResult->second;
     }
 
     result->setAddToCache();
-    cache.emplace(key, result);
+    cache.emplace(StringImp::get(key), result);
 
     return nullptr;
   }
@@ -88,7 +87,7 @@ namespace mariadb
   ServerPrepareResult* ServerPrepareStatementCache::get(const SQLString& key)
   {
 
-    iterator cachedServerPrepareResult= cache.find(key);
+    iterator cachedServerPrepareResult= cache.find(StringImp::get(key));
 
     if (cachedServerPrepareResult != cache.end() && cachedServerPrepareResult->second->incrementShareCounter()){
       return cachedServerPrepareResult->second;
