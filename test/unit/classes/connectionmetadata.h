@@ -82,9 +82,7 @@ public:
     TEST_CASE(getPrimaryKeys);
     TEST_CASE(getProcedures);
 
-#ifdef INCLUDE_NOT_IMPLEMENTED_METHODS
     TEST_CASE(getProcedureColumns);
-#endif
 
     TEST_CASE(getProcedureTerm);
     TEST_CASE(getResultSetHoldability);
@@ -107,6 +105,7 @@ public:
   TEST_CASE(getTableCollation);
   TEST_CASE(getTableCharset);
   TEST_CASE(getTables);
+  TEST_CASE(bugCpp25);
   }
 
   /**
@@ -282,8 +281,6 @@ public:
    */
   void getProcedures();
 
-
-#ifdef INCLUDE_NOT_IMPLEMENTED_METHODS
   /**
    * Test for DatabaseMetaData:getProcedureColumns()
    *
@@ -291,8 +288,6 @@ public:
    * JDBC compliance tests should take care that it does what its supposed to do
    */
   void getProcedureColumns();
-#endif
-
 
   /**
    * Test for DatabaseMetaData:getProcedureTerm()
@@ -392,6 +387,10 @@ public:
    */
   void getTables();
 
+  /**
+   * Test of server version
+   */
+  void bugCpp25();
 };
 
 REGISTER_FIXTURE(connectionmetadata);

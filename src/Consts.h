@@ -35,6 +35,7 @@
 #include "StringImp.h"
 #include "Version.h"
 #include "util/ServerStatus.h"
+#include "util/String.h"
 
 #include "ResultSet.h"
 #include "CallableStatement.h"
@@ -295,17 +296,6 @@ namespace mariadb
   extern const char ZERO_BYTE;
   extern const char BACKSLASH;
 
-  typedef std::unique_ptr<std::vector<SQLString>> Tokens;
-
-  SQLString replace(const SQLString& str, const SQLString& needle, const SQLString& subst);
-  SQLString& replace(SQLString& str, const SQLString& needle, const SQLString &subst);
-
-  SQLString replaceAll(const SQLString& str, const SQLString& needle, const SQLString& subst);
-  SQLString& replaceAll(SQLString& str, const SQLString& needle, const SQLString& subst);
-
-  bool equalsIgnoreCase(const SQLString& str1, const SQLString& str2);
-
-  Tokens split(const SQLString& str, const SQLString& delimiter);
 
   struct ParameterConstant
   {

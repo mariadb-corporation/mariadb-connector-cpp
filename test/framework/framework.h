@@ -41,6 +41,8 @@
 #include "test_factory.h"
 #include "test_timer.h"
 
+#include "util/String.h"
+
 #ifdef _WIN32
 
 #include <windows.h>

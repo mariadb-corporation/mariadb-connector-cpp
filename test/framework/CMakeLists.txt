@@ -51,6 +51,9 @@ SET(testframework_sources
   ../common/file.cpp
   start_options.cpp
   test_filter.cpp
+  # Connector's string utils to use for testing
+  ../../src/util/String.cpp
+  ../../src/StringImp.cpp
   )
 
 # It's convinient for VS users to have headers as part of project
@@ -72,6 +75,7 @@ IF(WIN32)
     test_filter.h
     ../common/stringutils.h
     ../common/file.h
+    ../../src/util/String.h
     )
 ENDIF(WIN32)
 

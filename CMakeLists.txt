@@ -67,6 +67,7 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
 
                    src/util/Value.cpp
                    src/util/Utils.cpp
+                   src/util/String.cpp
 
                    src/logger/NoLogger.cpp
                    src/logger/LoggerFactory.cpp
@@ -188,6 +189,7 @@ IF(WIN32)
                    src/util/ClassField.h
                    src/util/Utils.h
                    src/util/StateChange.h
+                   src/util/String.h
 
                    src/logger/NoLogger.h
                    src/logger/LoggerFactory.h

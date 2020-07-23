@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -103,6 +104,10 @@ void connectionmetadata::getSchemaObjects()
       resdbm2.reset(dbmeta->getSchemaObjects(con->getCatalog(), "", resdbm1->getString(1)));
       checkResultSetScrolling(resdbm2);
     }
+  }
+  catch (sql::MethodNotImplementedException& /*e*/)
+  {
+    SKIP("Method has not been implemented");
   }
   catch (sql::SQLException &e)
   {
@@ -1556,8 +1561,6 @@ void connectionmetadata::getProcedures()
 }
 
 
-#ifdef INCLUDE_NOT_IMPLEMENTED_METHODS
-
 void connectionmetadata::getProcedureColumns()
 {
   logMsg("connectionmetadata::getProcedureColumns() - MySQL_ConnectionMetaData::getProcedureColumns()");
@@ -1609,7 +1612,7 @@ void connectionmetadata::getProcedureColumns()
     fail(e.what(), __FILE__, __LINE__);
   }
 }
-#endif
+
 
 void connectionmetadata::getCatalogs()
 {
@@ -1788,49 +1791,18 @@ void connectionmetadata::getSQLKeywords()
 {
   logMsg("connectionmetadata::getSQLKeywords - MySQL_ConnectionMetaData::getSQLKeywords()");
   std::string keywords(
-                       "ACCESSIBLE, ADD, ALL,"\
-    "ALTER, ANALYZE, AND, AS, ASC, ASENSITIVE, BEFORE,"\
-    "BETWEEN, BIGINT, BINARY, BLOB, BOTH, BY, CALL,"\
-    "CASCADE, CASE, CHANGE, CHAR, CHARACTER, CHECK,"\
-    "COLLATE, COLUMN, CONDITION, CONNECTION, CONSTRAINT,"\
-    "CONTINUE, CONVERT, CREATE, CROSS, CURRENT_DATE,"\
-    "CURRENT_TIME, CURRENT_TIMESTAMP, CURRENT_USER, CURSOR,"\
-    "DATABASE, DATABASES, DAY_HOUR, DAY_MICROSECOND,"\
-    "DAY_MINUTE, DAY_SECOND, DEC, DECIMAL, DECLARE,"\
-    "DEFAULT, DELAYED, DELETE, DESC, DESCRIBE,"\
-    "DETERMINISTIC, DISTINCT, DISTINCTROW, DIV, DOUBLE,"\
-    "DROP, DUAL, EACH, ELSE, ELSEIF, ENCLOSED,"\
-    "ESCAPED, EXISTS, EXIT, EXPLAIN, FALSE, FETCH,"\
-    "FLOAT, FLOAT4, FLOAT8, FOR, FORCE, FOREIGN, FROM,"\
-    "FULLTEXT, GRANT, GROUP, HAVING, HIGH_PRIORITY,"\
-    "HOUR_MICROSECOND, HOUR_MINUTE, HOUR_SECOND, IF,"\
-    "IGNORE, IN, INDEX, INFILE, INNER, INOUT,"\
-    "INSENSITIVE, INSERT, INT, INT1, INT2, INT3, INT4,"\
-    "INT8, INTEGER, INTERVAL, INTO, IS, ITERATE, JOIN,"\
-    "KEY, KEYS, KILL, LEADING, LEAVE, LEFT, LIKE,"\
-    "LOCALTIMESTAMP, LOCK, LONG, LONGBLOB, LONGTEXT,"\
-    "LOOP, LOW_PRIORITY, MATCH, MEDIUMBLOB, MEDIUMINT,"\
-    "MEDIUMTEXT, MIDDLEINT, MINUTE_MICROSECOND,"\
-    "MINUTE_SECOND, MOD, MODIFIES, NATURAL, NOT,"\
-    "NO_WRITE_TO_BINLOG, NULL, NUMERIC, ON, OPTIMIZE,"\
-    "OPTION, OPTIONALLY, OR, ORDER, OUT, OUTER,"\
-    "OUTFILE, PRECISION, PRIMARY, PROCEDURE, PURGE,"\
-    "RANGE, READ, READS, READ_ONLY, READ_WRITE, REAL,"\
-    "REFERENCES, REGEXP, RELEASE, RENAME, REPEAT,"\
-    "REPLACE, REQUIRE, RESTRICT, RETURN, REVOKE, RIGHT,"\
-    "RLIKE, SCHEMA, SCHEMAS, SECOND_MICROSECOND, SELECT,"\
-    "SENSITIVE, SEPARATOR, SET, SHOW, SMALLINT, SPATIAL,"\
-    "SPECIFIC, SQL, SQLEXCEPTION, SQLSTATE, SQLWARNING,"\
-    "SQL_BIG_RESULT, SQL_CALC_FOUND_ROWS, SQL_SMALL_RESULT,"\
-    "SSL, STARTING, STRAIGHT_JOIN, TABLE, TERMINATED,"\
-    "THEN, TINYBLOB, TINYINT, TINYTEXT, TO, TRAILING,"\
-    "TRIGGER, TRUE, UNDO, UNION, UNIQUE, UNLOCK,"\
-    "UNSIGNED, UPDATE, USAGE, USE, USING, UTC_DATE,"\
-    "UTC_TIME, UTC_TIMESTAMP, VALUES, VARBINARY, VARCHAR,"\
-    "VARCHARACTER, VARYING, WHEN, WHERE, WHILE, WITH,"\
-    "WRITE, X509, XOR, YEAR_MONTH, ZEROFILL" \
-    "GENERAL, IGNORE_SERVER_IDS, MASTER_HEARTBEAT_PERIOD," \
-    "MAXVALUE, RESIGNAL, SIGNAL, SLOW");
+    "ACCESSIBLE,ANALYZE,ASENSITIVE,BEFORE,BIGINT,BINARY,BLOB,CALL,CHANGE,CONDITION,DATABASE,DATABASES,"
+    "DAY_HOUR,DAY_MICROSECOND,DAY_MINUTE,DAY_SECOND,DELAYED,DETERMINISTIC,DISTINCTROW,DIV,DUAL,EACH,"
+    "ELSEIF,ENCLOSED,ESCAPED,EXIT,EXPLAIN,FLOAT4,FLOAT8,FORCE,FULLTEXT,GENERAL,HIGH_PRIORITY,"
+    "HOUR_MICROSECOND,HOUR_MINUTE,HOUR_SECOND,IF,IGNORE,IGNORE_SERVER_IDS,INDEX,INFILE,INOUT,INT1,INT2,"
+    "INT3,INT4,INT8,ITERATE,KEY,KEYS,KILL,LEAVE,LIMIT,LINEAR,LINES,LOAD,LOCALTIME,LOCALTIMESTAMP,LOCK,"
+    "LONG,LONGBLOB,LONGTEXT,LOOP,LOW_PRIORITY,MASTER_HEARTBEAT_PERIOD,MASTER_SSL_VERIFY_SERVER_CERT,"
+    "MAXVALUE,MEDIUMBLOB,MEDIUMINT,MEDIUMTEXT,MIDDLEINT,MINUTE_MICROSECOND,MINUTE_SECOND,MOD,MODIFIES,"
+    "NO_WRITE_TO_BINLOG,OPTIMIZE,OPTIONALLY,OUT,OUTFILE,PURGE,RANGE,READ_WRITE,READS,REGEXP,RELEASE,"
+    "RENAME,REPEAT,REPLACE,REQUIRE,RESIGNAL,RESTRICT,RETURN,RLIKE,SCHEMAS,SECOND_MICROSECOND,SENSITIVE,"
+    "SEPARATOR,SHOW,SIGNAL,SLOW,SPATIAL,SPECIFIC,SQL_BIG_RESULT,SQL_CALC_FOUND_ROWS,SQL_SMALL_RESULT,"
+    "SQLEXCEPTION,SSL,STARTING,STRAIGHT_JOIN,TERMINATED,TINYBLOB,TINYINT,TINYTEXT,TRIGGER,UNDO,UNLOCK,"
+    "UNSIGNED,USE,UTC_DATE,UTC_TIME,UTC_TIMESTAMP,VARBINARY,VARCHARACTER,WHILE,XOR,YEAR_MONTH,ZEROFILL");
 
   try
   {
@@ -2422,6 +2394,40 @@ void connectionmetadata::getTables()
   }
 }
 
+
+void connectionmetadata::bugCpp25()
+{
+  logMsg("bugs::bugCpp25");
+  DatabaseMetaData dbmeta(con->getMetaData());
+  uint32_t major = dbmeta->getDatabaseMajorVersion(), minor = dbmeta->getDatabaseMinorVersion(), patch = dbmeta->getDatabasePatchVersion();
+  logMsg("Server version from metadata object: " + std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch));
+  ASSERT(major > 2 && major < 100);
+
+  res.reset(stmt->executeQuery("SELECT version()"));
+  res->next();
+  sql::SQLString verFromServer = res->getString(1);
+  logMsg("Server version from SQL query: " + verFromServer);
+
+  // More to test connector's split
+  sql::mariadb::Tokens verParts(sql::mariadb::split(verFromServer, "."));
+
+  ASSERT_EQUALS(3ULL, verParts->size());
+  ASSERT_EQUALS(major, std::stoul((*verParts)[0].c_str()));
+  ASSERT_EQUALS(minor, std::stoul((*verParts)[1].c_str()));
+
+  std::size_t dashPos = (*verParts)[2].find_first_of("-");
+  ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? (*verParts)[2].c_str() : (*verParts)[2].substr(0, dashPos).c_str()));
+
+  // And even some more testing of the internal split
+  sql::mariadb::Tokens csv(sql::mariadb::split("575,1,,22,,", ","));
+  ASSERT_EQUALS(6ULL, csv->size());
+  ASSERT_EQUALS("575", (*csv)[0]);
+  ASSERT_EQUALS("1", (*csv)[1]);
+  ASSERT_EQUALS("", (*csv)[2]);
+  ASSERT_EQUALS("22", (*csv)[3]);
+  ASSERT_EQUALS("", (*csv)[4]);
+  ASSERT_EQUALS("", (*csv)[5]);
+}
 
 } /* namespace connectionmetadata */
 } /* namespace testsuite */

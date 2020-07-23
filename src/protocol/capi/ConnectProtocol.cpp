@@ -464,6 +464,7 @@ namespace capi
     this->serverThreadId= mysql_thread_id(connection.get());
 
     this->serverVersion= mysql_get_server_info(connection.get());// mysql_get_server_version(connection);
+    parseVersion(serverVersion);
 
     if (serverVersion.startsWith(MARIADB_RPL_HACK_PREFIX)) {
       serverMariaDb = true;
