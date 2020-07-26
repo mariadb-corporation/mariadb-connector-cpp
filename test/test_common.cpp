@@ -1671,6 +1671,13 @@ static void test_prep_statement_0(std::unique_ptr<sql::Connection> & conn)
       stmt->setString(3, "Здрасти МySQL");
       stmt->setDateTime(4, "2006-11-10 16:17:18");
       stmt->execute();
+      std::unique_ptr<sql::ResultSet> rset(stmt->getResultSet());
+      ensure("No result set", rset);
+      ensure("Result set is empty", rset->next() != false);
+      ensure("Incorrect value for col 1", rset->getInt(1) == 1);
+      ensure("Incorrect value for col 2", rset->getDouble(2) == 2.25);
+      ensure("Incorrect value for col 3", rset->getString(3).compare("Здрасти МySQL") == 0);
+      ensure("Incorrect value for col 4", rset->getString(4).compare("2006-11-10 16:17:18") == 0);
     } catch (sql::SQLException &e) {
       printf("\n# ERR: Caught sql::SQLException at %s::%d  [%s] (%d/%s)\n", CPPCONN_FUNC, __LINE__, e.what(), e.getErrorCode(), e.getSQLStateCStr());
       printf("# ");

@@ -48,7 +48,7 @@ public:
   SQLString toString();
   bool isNullData() const;
   bool isLongData();
-  void* getValuePtr() { return const_cast<void*>(static_cast<const void*>(ts.c_str())); }
+  void* getValuePtr();
   unsigned long getValueBinLen() const { return static_cast<unsigned long>(ts.length()); }
   };
 }

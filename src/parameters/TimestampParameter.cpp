@@ -134,5 +134,12 @@ namespace mariadb
   {
     return false;
   }
+
+  void* TimestampParameter::getValuePtr()
+  {
+    return const_cast<void*>(static_cast<const void*>(ts.c_str()));
+  }
+
+
 }
 }

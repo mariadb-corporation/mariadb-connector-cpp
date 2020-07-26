@@ -567,7 +567,8 @@ namespace mariadb
       return;
     }
 
-    setParameter(parameterIndex, new TimestampParameter(dt, nullptr, useFractionalSeconds));
+    //setParameter(parameterIndex, new TimestampParameter(dt, nullptr, useFractionalSeconds));
+    setParameter(parameterIndex, new StringParameter(dt, false));
   }
 
   /**

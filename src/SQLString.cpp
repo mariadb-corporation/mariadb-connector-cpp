@@ -21,10 +21,8 @@
 #include <algorithm>
 #include <cctype>
 #include <functional>
-#include <regex>
-#include <string>
+#include <iostream>
 
-#include "Consts.h"
 #include "StringImp.h"
 
 namespace sql
