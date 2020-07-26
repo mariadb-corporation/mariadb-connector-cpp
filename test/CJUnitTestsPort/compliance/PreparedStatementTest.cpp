@@ -79,13 +79,13 @@ void PreparedStatementTest::testGetMetaData()
      */
     //rsmdPrep= pstmt->getMetaData();
     res.reset(pstmt->executeQuery());
-    rsmdPrep=res->getMetaData();
+    rsmdPrep.reset(res->getMetaData());
 
     logMsg(String("Executing Query : ") + sPrepStmt);
 
     rs.reset(stmt->executeQuery(sPrepStmt));
     logMsg("Getting MetaData from ResultSet");
-    rsmd=rs->getMetaData();
+    rsmd.reset(rs->getMetaData());
 
     if (rsmdPrep->getColumnCount() == rsmd->getColumnCount())
       logMsg("Call to getMetaData Method is Passed");
@@ -3466,7 +3466,7 @@ void PreparedStatementTest::setUp()
 {
   super::setUp();
 
-  dbmd=conn->getMetaData();
+  dbmd.reset(conn->getMetaData());
 }
 
 }

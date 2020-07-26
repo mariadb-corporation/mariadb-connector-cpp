@@ -846,10 +846,10 @@ void BaseTestFixture::tearDown()
 
 bool BaseTestFixture::versionMeetsMinimum(unsigned int major, unsigned int minor, unsigned int subminor)
 {
-
-  return ( conn->getMetaData()->getDatabaseMajorVersion() >= major
-        && conn->getMetaData()->getDatabaseMinorVersion() >= minor
-        && conn->getMetaData()->getDatabasePatchVersion() >= subminor );
+  DatabaseMetaData md(conn->getMetaData());
+  return ( md->getDatabaseMajorVersion() >= major
+        && md->getDatabaseMinorVersion() >= minor
+        && md->getDatabasePatchVersion() >= subminor );
 
   /*(dynamic_cast<sql::mysql::MySQL_Connection*> (this->conn))->versionMeetsMinimum(
   major, minor, subminor);*/
@@ -897,8 +897,9 @@ possibleFiles[i].delete();
 
 void BaseTestFixture::assertResultSetsEqual(ResultSet & control, ResultSet & test)
 {
-  int controlNumCols=control->getMetaData()->getColumnCount();
-  int testNumCols=test->getMetaData()->getColumnCount();
+  std::unique_ptr<sql::ResultSetMetaData> mdc(control->getMetaData()), mdt(test->getMetaData());
+  int controlNumCols= mdc->getColumnCount();
+  int testNumCols= mdt->getColumnCount();
 
   ASSERT_EQUALS(controlNumCols, testNumCols);
 

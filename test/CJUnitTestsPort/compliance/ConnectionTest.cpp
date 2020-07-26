@@ -512,7 +512,7 @@ void ConnectionTest::testNativeSQL()
 void ConnectionTest::setUp()
 {
   super::setUp();
-  dbmd= conn->getMetaData();
+  dbmd.reset(conn->getMetaData());
 }
 
 }

@@ -64,8 +64,8 @@ typedef std::unique_ptr<sql::PreparedStatement> PreparedStatement;
 typedef std::unique_ptr<sql::Statement> Statement;
 typedef std::unique_ptr<sql::ResultSet> ResultSet;
 typedef sql::Driver Driver;
-typedef sql::ResultSetMetaData * ResultSetMetaData;
-typedef sql::DatabaseMetaData * DatabaseMetaData;
+typedef std::unique_ptr<sql::ResultSetMetaData> ResultSetMetaData;
+typedef std::unique_ptr<sql::DatabaseMetaData> DatabaseMetaData;
 
 
 class value_object

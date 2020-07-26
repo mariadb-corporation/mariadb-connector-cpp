@@ -57,7 +57,7 @@ namespace regression
   {
     super::setUp();
 
-    dbmd= conn->getMetaData();
+    dbmd.reset(conn->getMetaData());
   }
 }
 }

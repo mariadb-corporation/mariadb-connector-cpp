@@ -232,7 +232,7 @@ void statement::callSP()
       return;
     }
 
-    sql::DatabaseMetaData * dbmeta=con->getMetaData();
+    DatabaseMetaData dbmeta(con->getMetaData());
 
     ASSERT(!stmt->execute("DROP TABLE IF EXISTS test"));
     ASSERT(!stmt->execute("CREATE TABLE test(id INT)"));

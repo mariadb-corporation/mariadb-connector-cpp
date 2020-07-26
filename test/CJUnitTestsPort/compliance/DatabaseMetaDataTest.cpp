@@ -9380,7 +9380,7 @@ void DatabaseMetaDataTest::setUp()
     FAIL("Invalid Foreign table");
   }
   sSchemaName="";
-  dbmd= conn->getMetaData();
+  dbmd.reset(conn->getMetaData());
 }
 
 /* A private method to compare the Column Names & No of Columns Specific to the test */
