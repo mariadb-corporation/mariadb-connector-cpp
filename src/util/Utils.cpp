@@ -129,10 +129,11 @@ namespace mariadb
     * @throws NoSuchAlgorithmException if SHA1 is not available on the platform we are using
     * @throws UnsupportedEncodingException if passwordCharacterEncoding is not a valid charset name
     */
-  static char* encryptPassword( const SQLString&& password,const char* seed, SQLString& passwordCharacterEncoding)
+  static const char* encryptPassword( const SQLString&& password, const char* seed, SQLString& passwordCharacterEncoding)
   {
+    // Should probably return SQLString once we really implement it
     if (password.empty()){
-      return "";
+      return emptyStr.c_str();
     }
 #ifdef WE_HAVE_MESSAGEDIGEST_CLASS_OR_WANT_TO_SOMEHOW_REWRITE_IT_ANYWAY
     const MessageDigest messageDigest= MessageDigest::getInstance("SHA-1");
@@ -159,7 +160,7 @@ namespace mariadb
     }
    return returnBytes;
 #else
-    return "";
+    return emptyStr.c_str();
 #endif
   }
 

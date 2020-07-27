@@ -102,7 +102,7 @@ namespace capi
 
 
   bool ColumnDefinitionCapi::isReadonly() const {
-    return (metadata->db == NULL || *metadata->db == NULL);
+    return (metadata->db == nullptr || *(metadata->db) == '\0');
   }
 
 

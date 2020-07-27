@@ -58,7 +58,7 @@ public:
 
   static SQLString escapeString(const SQLString& value, bool noBackslashEscapes);
   static void escapeData(const char* in, size_t len, bool noBackslashEscapes, SQLString& out);
-  static char* encryptPassword(const SQLString&& password, const char* seed, SQLString& passwordCharacterEncoding);
+  static const char* encryptPassword(const SQLString&& password, const char* seed, SQLString& passwordCharacterEncoding);
 #ifdef THIS_FUNCTION_MAKES_SENSE
   static char* copyWithLength(char* orig,int32_t length);
   static char* copyRange(char* orig,int32_t from,int32_t to);
