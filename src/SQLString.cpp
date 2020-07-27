@@ -17,11 +17,12 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
-
 #include <algorithm>
 #include <cctype>
 #include <functional>
 #include <iostream>
+
+#include "string.h"
 
 #include "StringImp.h"
 

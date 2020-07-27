@@ -251,13 +251,13 @@ protected:
    * List of all column types known by MySQL
    *
    */
-  std::vector< columndefinition > columns;
+  static std::vector< columndefinition > columns;
 
   /**
    * List of all columns which getAttribute() should deliver
    *
    */
-  std::vector< udtattribute > attributes;
+  static std::vector< udtattribute > attributes;
 
 
   /**

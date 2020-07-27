@@ -2399,7 +2399,7 @@ void connectionmetadata::bugCpp25()
 {
   logMsg("bugs::bugCpp25");
   DatabaseMetaData dbmeta(con->getMetaData());
-  uint32_t major = dbmeta->getDatabaseMajorVersion(), minor = dbmeta->getDatabaseMinorVersion(), patch = dbmeta->getDatabasePatchVersion();
+  uint64_t major = dbmeta->getDatabaseMajorVersion(), minor = dbmeta->getDatabaseMinorVersion(), patch = dbmeta->getDatabasePatchVersion();
   logMsg("Server version from metadata object: " + std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch));
   ASSERT(major > 2 && major < 100);
 
