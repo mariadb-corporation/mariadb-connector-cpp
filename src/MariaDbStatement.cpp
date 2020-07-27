@@ -296,6 +296,7 @@ namespace mariadb
       protocol->executeQuery(protocol->isMasterConnection(), results, getTimeoutSql(Utils::nativeSql(sql,protocol)));
 
       results->commandEnd();
+      executeEpilogue();
       return results->getResultSet() != nullptr;
     }
     catch (SQLException& exception)
@@ -306,10 +307,11 @@ namespace mariadb
         localScopeLock.unlock();
         throw protocol->handleIoException(exception);
       }
+      executeEpilogue();
       localScopeLock.unlock();
       throw executeExceptionEpilogue(exception);
     }
-    executeEpilogue();
+    return false;
   }
 
   /**
@@ -439,16 +441,16 @@ namespace mariadb
           &charset);
 
       results->commandEnd();
-
+      executeEpilogue();
       return results->releaseResultSet();
 
     }
     catch (SQLException& exception){
-      throw executeExceptionEpilogue(exception);
-    }/* TODO: something with the finally was once here */ {
       executeEpilogue();
-      lock->unlock();
+      throw executeExceptionEpilogue(exception);
     }
+    //To please compilers etc
+    return false;
   }
 
   /**
@@ -1280,14 +1282,16 @@ namespace mariadb
     try
     {
       internalBatchExecution(size);
+      executeBatchEpilogue();
       /* TODO maybe internally we should still exchange data in vectors, and give application wrapped C array?, and also receive vector by ref ? */
       return results->getCmdInformation()->getUpdateCounts();// .data();
     }
     catch (SQLException& initialSqlEx){
+      executeBatchEpilogue();
       throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }
-
-    executeBatchEpilogue();
+    //To please compilers etc
+    return false;
   }
 
 
@@ -1304,15 +1308,17 @@ namespace mariadb
     try
     {
       internalBatchExecution(size);
+      executeBatchEpilogue();
       return results->getCmdInformation()->getLargeUpdateCounts();
 
     }
     catch (SQLException& initialSqlEx)
     {
+      executeBatchEpilogue();
       throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }/* TODO: something with the finally was once here */
-
-    executeBatchEpilogue();
+    //To please compilers etc
+    return false;
   }
 
   /**

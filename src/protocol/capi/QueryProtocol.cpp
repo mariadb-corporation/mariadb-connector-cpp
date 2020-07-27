@@ -425,6 +425,10 @@ namespace capi
         throw exception;
       }
       results->setRewritten(true);
+      
+      if (!serverPrepareResult && tmpServerPrepareResult){
+      releasePrepareStatement(tmpServerPrepareResult);
+      }
       return true;
 
     }catch (std::runtime_error& e){
@@ -433,10 +437,8 @@ namespace capi
       }
       throw handleIoException(e);
     }
-
-    if (!serverPrepareResult && tmpServerPrepareResult){
-      releasePrepareStatement(tmpServerPrepareResult);
-    }
+    //To please compilers etc
+    return false;
   }
 
   void QueryProtocol::initializeBatchReader()

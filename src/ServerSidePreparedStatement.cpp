@@ -403,13 +403,16 @@ namespace sql
         mustExecuteOnMaster, serverPrepareResult, stmt->getInternalResults(), parameterHolders);
 
       stmt->getInternalResults()->commandEnd();
+      stmt->executeEpilogue();
       return stmt->getInternalResults()->getResultSet() != nullptr;
 
     }
     catch (SQLException& exception) {
+      stmt->executeEpilogue();
       throw stmt->executeExceptionEpilogue(exception);
     }
-    stmt->executeEpilogue();
+    //To please compilers etc
+    return false;
   }
 
   void ServerSidePreparedStatement::close()
