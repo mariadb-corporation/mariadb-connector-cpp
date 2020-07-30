@@ -98,6 +98,28 @@ ENDIF(CMAKE_COMPILER_IS_GNUCC AND MYSQLCPPCONN_GCOV_ENABLE)
 
 MESSAGE(STATUS "Configuring unit tests")
 
+SET(test_common_src
+  unit_fixture.cpp
+  main.cpp)
+
+IF(WIN32)
+  SET(test_common_src
+    ${test_common_src}
+    unit_fixture.h)
+
+ENDIF(WIN32)
+
+IF(TRUE)#NOT WIN32)
+  # CREATE OBJECT LIBRARY 
+  ADD_LIBRARY(classes_test_obj OBJECT ${test_common_src})
+  IF(UNIX)
+    #SET_TARGET_PROPERTIES(classes_test_obj PROPERTIES COMPILE_FLAGS "${CMAKE_SHARED_LIBRARY_C_FLAGS}")
+  ENDIF()
+  SET (test_common_sources $<TARGET_OBJECTS:classes_test_obj>)
+ELSE()
+  SET (test_common_sources ${test_common_src})
+ENDIF()
+
 ADD_SUBDIRECTORY(example/)
 ADD_SUBDIRECTORY(classes/)
 ADD_SUBDIRECTORY(performance/)

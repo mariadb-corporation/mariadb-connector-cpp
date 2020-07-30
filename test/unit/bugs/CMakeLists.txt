@@ -28,15 +28,13 @@
 
 
 SET(bugs_sources
-  ../unit_fixture.cpp
-  ../main.cpp
+  ${test_common_sources}
   bugs.cpp)
 
 IF(WIN32)
   SET(bugs_sources
-        ${bugs_sources}
-  bugs.h
-  ../unit_fixture.h)
+      ${bugs_sources}
+      bugs.h)
 
 ENDIF(WIN32)
 

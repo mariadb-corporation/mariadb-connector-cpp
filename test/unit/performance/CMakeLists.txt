@@ -28,15 +28,13 @@
 
 
 SET(perf_statement_sources
-  ../unit_fixture.cpp
-  ../main.cpp
-  perf_statement.cpp)
+    ${test_common_sources}
+    perf_statement.cpp)
 
 IF(WIN32)
   SET(perf_statement_sources
-        ${perf_statement_sources}
-  ../unit_fixture.h
-  perf_statement.h)
+      ${perf_statement_sources}
+      perf_statement.h)
 ENDIF(WIN32)
 
 ADD_EXECUTABLE(perf_statement ${perf_statement_sources})

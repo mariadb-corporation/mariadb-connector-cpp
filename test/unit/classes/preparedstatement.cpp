@@ -1103,13 +1103,9 @@ void preparedstatement::callSPWithPS()
 {
   logMsg("preparedstatement::callSPWithPS() - MySQL_PreparedStatement::*()");
 
+  SKIP("Before fixed");
   try
   {
-
-    int mysql_version=getMySQLVersion(con);
-    if (mysql_version < 60000)
-      SKIP("http://bugs.mysql.com/bug.php?id=44495 - Server crash");
-
     std::string sp_code("CREATE PROCEDURE p(IN val VARCHAR(25)) BEGIN SET @sql = CONCAT('SELECT \"', val, '\"'); PREPARE stmt FROM @sql; EXECUTE stmt; DROP PREPARE stmt; END;");
     if (!createSP(sp_code))
     {

@@ -27,17 +27,6 @@
 # along with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
-SET(test_common_sources
-  ../unit_fixture.cpp
-  ../main.cpp)
-
-IF(WIN32)
-  SET(test_common_sources
-    ${test_common_sources}
-    ../unit_fixture.h)
-
-ENDIF(WIN32)
-
 SET(test_connection_sources
   ${test_common_sources}
   connection.cpp)
@@ -59,15 +48,13 @@ TARGET_LINK_LIBRARIES(test_connection ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} t
 MESSAGE(STATUS "Configuring unit tests - connection")
 
 SET(test_databasemetadata_sources
-  ../unit_fixture.cpp
-  ../main.cpp
+  ${test_common_sources}
   connectionmetadata.cpp)
 
 IF(WIN32)
   SET(test_databasemetadata_sources
-        ${test_databasemetadata_sources}
-  ../unit_fixture.h
-  connectionmetadata.h)
+      ${test_databasemetadata_sources}
+      connectionmetadata.h)
 ENDIF(WIN32)
 
 ADD_EXECUTABLE(test_databasemetadata ${test_databasemetadata_sources})
@@ -82,15 +69,13 @@ MESSAGE(STATUS "Configuring unit tests - databasemetadata")
 
 
 SET(test_resultsetmetadata_sources
-  ../unit_fixture.cpp
-  ../main.cpp
+  ${test_common_sources}
   resultsetmetadata.cpp)
 
 IF(WIN32)
   SET(test_resultsetmetadata_sources
-        ${test_resultsetmetadata_sources}
-  ../unit_fixture.h
-  resultsetmetadatatest.h)
+      ${test_resultsetmetadata_sources}
+      resultsetmetadatatest.h)
 ENDIF(WIN32)
 
 ADD_EXECUTABLE(test_resultsetmetadata ${test_resultsetmetadata_sources})
@@ -104,15 +89,13 @@ TARGET_LINK_LIBRARIES(test_resultsetmetadata ${LIBRARY_NAME} ${PLATFORM_DEPENDEN
 MESSAGE(STATUS "Configuring unit tests - resultsetmetadata")
 
 SET(test_resultset_sources
-  ../unit_fixture.cpp
-  ../main.cpp
+  ${test_common_sources}
   resultset.cpp)
 
 IF(WIN32)
   SET(test_resultset_sources
-        ${test_resultset_sources}
-  ../unit_fixture.h
-  resultsettest.h)
+      ${test_resultset_sources}
+      resultsettest.h)
 ENDIF(WIN32)
 
 ADD_EXECUTABLE(test_resultset ${test_resultset_sources})
@@ -126,15 +109,13 @@ TARGET_LINK_LIBRARIES(test_resultset ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} te
 MESSAGE(STATUS "Configuring unit tests - resultset")
 
 SET(test_savepoint_sources
-  ../unit_fixture.cpp
-  ../main.cpp
+  ${test_common_sources}
   savepoint.cpp)
 
 IF(WIN32)
   SET(test_savepoint_sources
-        ${test_savepoint_sources}
-  ../unit_fixture.h
-  savepointtest.h)
+      ${test_savepoint_sources}
+      savepointtest.h)
 ENDIF(WIN32)
 
 ADD_EXECUTABLE(test_savepoint ${test_savepoint_sources})
@@ -148,15 +129,13 @@ TARGET_LINK_LIBRARIES(test_savepoint ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} te
 MESSAGE(STATUS "Configuring unit tests - savepoint")
 
 SET(test_preparedstatement_sources
-  ../unit_fixture.cpp
-  ../main.cpp
+  ${test_common_sources}
   preparedstatement.cpp)
 
 IF(WIN32)
   SET(test_preparedstatement_sources
-        ${test_preparedstatement_sources}
-  ../unit_fixture.h
-  preparedstatementtest.h)
+      ${test_preparedstatement_sources}
+      preparedstatementtest.h)
 ENDIF(WIN32)
 
 ADD_EXECUTABLE(test_preparedstatement ${test_preparedstatement_sources})
@@ -170,15 +149,13 @@ TARGET_LINK_LIBRARIES(test_preparedstatement ${LIBRARY_NAME} ${PLATFORM_DEPENDEN
 MESSAGE(STATUS "Configuring unit tests - preparedstatement")
 
 SET(test_parametermetadata_sources
-  ../unit_fixture.cpp
-  ../main.cpp
+  ${test_common_sources}
   parametermetadata.cpp)
 
 IF(WIN32)
   SET(test_parametermetadata_sources
-        ${test_parametermetadata_sources}
-  ../unit_fixture.h
-  parametermetadatatest.h)
+      ${test_parametermetadata_sources}
+      parametermetadatatest.h)
 ENDIF(WIN32)
 
 ADD_EXECUTABLE(test_parametermetadata ${test_parametermetadata_sources})
@@ -192,15 +169,13 @@ TARGET_LINK_LIBRARIES(test_parametermetadata ${LIBRARY_NAME} ${PLATFORM_DEPENDEN
 MESSAGE(STATUS "Configuring unit tests - parametermetadata")
 
 SET(test_art_resultset_sources
-  ../unit_fixture.cpp
-  ../main.cpp
+  ${test_common_sources}
   art_resultset.cpp)
 
 IF(WIN32)
   SET(test_art_resultset_sources
-        ${test_art_resultset_sources}
-  ../unit_fixture.h
-  art_resultset.h)
+      ${test_art_resultset_sources}
+      art_resultset.h)
 
   ADD_DEFINITIONS("-DCPPCONN_PUBLIC_FUNC=")
 ENDIF(WIN32)
@@ -215,15 +190,13 @@ ENDIF(WIN32)
 #MESSAGE(STATUS "Configuring unit tests - art_resultset")
 
 SET(test_statement_sources
-  ../unit_fixture.cpp
-  ../main.cpp
+  ${test_common_sources}
   statement.cpp)
 
 IF(WIN32)
   SET(test_statement_sources
-        ${test_statement_sources}
-  ../unit_fixture.h
-  statementtest.h)
+      ${test_statement_sources}
+      statementtest.h)
 ENDIF(WIN32)
 
 ADD_EXECUTABLE(test_statement ${test_statement_sources})
@@ -259,14 +232,12 @@ ENDIF(WIN32)
 
 
 SET(test_variant_sources
-  ../unit_fixture.cpp
-  ../main.cpp
+  ${test_common_sources}
   variant.cpp)
 
 IF(WIN32)
   SET(test_variant_sources
     ${test_variant_sources}
-    ../unit_fixture.h
     variant.h)
 ENDIF(WIN32)
 
