@@ -39,6 +39,8 @@ matrix:
     - os: linux
       compiler: clang
       env: DB=mariadb:10.4
+    - os: linux
+      env: SKYSQL=true PACKET=8M
   include:
     - os: linux
       env: DB=build
@@ -73,6 +75,8 @@ matrix:
       env: DB=mysql:5.6
     - os: linux
       env: DB=mysql:5.7
+    - os: linux
+      env: SKYSQL=true PACKET=8M
 
 script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$DB" = "build" ] ; then .travis/build/build.sh; fi

@@ -29,11 +29,11 @@
 
 #Use Options to configure default test server params
 
-SET(TEST_DEFAULT_HOST   "tcp://localhost:3306"  CACHE STRING "Defines Unit Tests default server" )
-SET(TEST_DEFAULT_DB     "test"                  CACHE STRING "Defines Unit Tests default Database" )
-SET(TEST_DEFAULT_LOGIN  "root"                  CACHE STRING "Defines Unit Tests default login user" )
-SET(TEST_DEFAULT_PASSWD "root"                  CACHE STRING "Defines Unit Tests default login user password" )
-
+SET_VALUE(TEST_DEFAULT_HOST   "tcp://localhost:3306" "Defines Unit Tests default server")
+SET_VALUE(TEST_SCHEMA         "test"                 "Defines Unit Tests default Database")
+SET_VALUE(TEST_UID            "root"                 "Defines Unit Tests default login user")
+SET_VALUE(TEST_PASSWORD       "root"                 "Defines Unit Tests default login user password")
+SET_VALUE(TEST_USETLS         "false"                "Defines useTls option value to use in tests")
 
 configure_file(tests_config.h.in
                ${CMAKE_BINARY_DIR}/test/tests_config.h)
@@ -86,6 +86,8 @@ ADD_TEST(test_parametermetadata parametermetadata)
 ADD_TEST(test_preparedstatement preparedstatement)
 ADD_TEST(test_resultsetmetadata resultsetmetadata)
 
-SET_TESTS_PROPERTIES(static_test driver_test compliance test_preparedstatement PROPERTIES TIMEOUT 120 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+SET_TESTS_PROPERTIES(static_test driver_test test_preparedstatement PROPERTIES TIMEOUT 120 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+# With remote SkySQL server, compliance tend to timeout
+SET_TESTS_PROPERTIES(compliance PROPERTIES TIMEOUT 420 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 MESSAGE(STATUS "Configuring test cases")

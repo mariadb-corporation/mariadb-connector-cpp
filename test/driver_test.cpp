@@ -31,6 +31,8 @@
 
 #include "ConnCpp.h"
 
+#include "tests_config.h"
+
 #include <string>
 #include <iostream>
 #include <system_error>
@@ -43,20 +45,22 @@ static sql::Driver * driver = nullptr;
 
 /* {{{	*/
 static sql::Connection *
-get_connection(const std::string & host, const std::string & user, const std::string & pass)
+get_connection(const std::string & host, const std::string & user, const std::string & pass, bool useTls=TEST_USETLS)
 {
   try {
     /* There will be concurrency problem if we had threads, but don't have, then it's ok */
     if (!driver) {
       driver = sql::mariadb::get_driver_instance();
     }
-    if (loops % 2) {
+    if (loops % 2 && !useTls) {
       return driver->connect(host, user, pass);
     } else {
       sql::ConnectOptionsMap connection_properties;
-      connection_properties["hostName"] = host;
-      connection_properties["userName"] = user;
-      connection_properties["password"] = pass;
+      connection_properties["hostName"]= host;
+      connection_properties["userName"]= user;
+      connection_properties["password"]= pass;
+      connection_properties["useTls"]=   useTls ? "true" : "false";
+
       return driver->connect(connection_properties);
     }
   } catch (sql::SQLException &e) {

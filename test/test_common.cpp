@@ -3000,6 +3000,7 @@ int run_tests(int argc, const char **argv)
   const std::string user(argc >=3 ? argv[2] : TEST_DEFAULT_LOGIN);
   const std::string pass(argc >=4 ? argv[3] : TEST_DEFAULT_PASSWD);
   const std::string database(argc >=5 ? argv[4] : TEST_DEFAULT_DB);
+  const bool useTls= TEST_USETLS;
 
   for (i = 0 ; i < loops; ++i) {
     last_error_total = total_errors;
@@ -3019,7 +3020,7 @@ int run_tests(int argc, const char **argv)
     printf("# ");
 
     try {
-      conn.reset(get_connection(host, user, pass));
+      conn.reset(get_connection(host, user, pass, useTls));
     } catch (sql::SQLException &e) {
       printf("\n# ERR: Caught sql::SQLException at %s::%d  [%s] (%d/%s)\n", CPPCONN_FUNC, __LINE__, e.what(), e.getErrorCode(), e.getSQLStateCStr());
       printf("not ok\n");

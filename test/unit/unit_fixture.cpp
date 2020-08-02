@@ -277,10 +277,11 @@ res(nullptr)
 
 void unit_fixture::init()
 {
-  url=TestsRunner::theInstance().getStartOptions()->getString("dbUrl");
-  user=TestsRunner::theInstance().getStartOptions()->getString("dbUser");
-  passwd=TestsRunner::theInstance().getStartOptions()->getString("dbPasswd");
-  db=TestsRunner::theInstance().getStartOptions()->getString("dbSchema");
+  url= TestsRunner::theInstance().getStartOptions()->getString("dbUrl");
+  user= TestsRunner::theInstance().getStartOptions()->getString("dbUser");
+  passwd= TestsRunner::theInstance().getStartOptions()->getString("dbPasswd");
+  db= TestsRunner::theInstance().getStartOptions()->getString("dbSchema");
+  useTls= TestsRunner::theInstance().getStartOptions()->getBool("useTls");
 }
 
 
@@ -378,6 +379,8 @@ unit_fixture::getConnection(sql::ConnectOptionsMap *additional_options)
   connection_properties["hostName"]=url;
   connection_properties["userName"]=user;
   connection_properties["password"]=passwd;
+
+  connection_properties["useTls"]= useTls ? "true" : "false";
 
   bool bval= !TestsRunner::getStartOptions()->getBool("dont-use-is");
   connection_properties["metadataUseInfoSchema"]= bval ? "1" : "0";

@@ -44,6 +44,7 @@ static const String defaultHost=    _T(TEST_DEFAULT_HOST);
 static const String defaultDb=      _T(TEST_DEFAULT_DB);
 static const String defaultLogin=   _T(TEST_DEFAULT_LOGIN);
 static const String defaultPasswd=  _T(TEST_DEFAULT_PASSWD);
+static bool defaultUseTls = TEST_USETLS;
 
 int TestFixtureCommon::instanceCount=1;
 
@@ -58,7 +59,7 @@ int TestFixtureCommon::propsLoaded=resources::LoadProperties("sql.properties",
                                                              sqlProps,
                                                              possiblePropertiesLocations);
 
-Driver * TestFixtureCommon::driver=NULL;
+Driver * TestFixtureCommon::driver= NULL;
 
 TestFixtureCommon::TestFixtureCommon()
 {
@@ -790,7 +791,14 @@ sql::Connection * BaseTestFixture::getConnection()
     }
   }
 
-  return driver->connect(host, /*port,*/ login, passwd);
+  sql::Properties connection_properties;
+  connection_properties["hostName"]= host;
+  connection_properties["userName"]= login;
+  connection_properties["password"]= passwd;
+
+  connection_properties["useTls"]= defaultUseTls ? "true" : "false";
+
+  return driver->connect(connection_properties);// host, /*port,*/ login, passwd);
 }
 
 

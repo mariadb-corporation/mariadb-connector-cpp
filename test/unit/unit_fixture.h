@@ -226,6 +226,7 @@ protected:
    */
   String passwd;
 
+  bool useTls;
   /**
    * Database connection, initiated during setUp() and cleaned up in tearDown()
    *

@@ -55,6 +55,8 @@ int main(int argc, char** argv)
 
   std::map<String, bool> defaultBoolValues;
 
+  defaultBoolValues["useTls"]= TEST_USETLS;
+
   testsuite::StartOptions options( unnamedStartParams, & defaultStringValues
     , & defaultBoolValues );
 
