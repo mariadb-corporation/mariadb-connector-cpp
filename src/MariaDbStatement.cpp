@@ -75,7 +75,8 @@ namespace mariadb
       maxRows(0),
       maxFieldSize(0),
       exceptionFactory(factory),
-      isTimedout(false)
+      isTimedout(false),
+      queryTimeout(0)
   {
   }
 
@@ -401,7 +402,7 @@ namespace mariadb
 
   SQLString MariaDbStatement::getTimeoutSql(const SQLString& sql)
   {
-    if (queryTimeout != 0 && canUseServerTimeout){
+    if (queryTimeout > 0 && canUseServerTimeout){
       return "SET STATEMENT max_statement_time="+ std::to_string(queryTimeout) +" FOR "+ sql;
     }
     return sql;
@@ -836,7 +837,7 @@ namespace mariadb
    * @see #getQueryTimeout
    */
   void MariaDbStatement::setQueryTimeout(int32_t seconds) {
-    if (seconds <0){
+    if (seconds < 0){
       throw *exceptionFactory->raiseStatementError(connection, this)->create(
         "Query timeout value cannot be negative : asked for " + std::to_string(seconds));
     }

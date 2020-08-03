@@ -3135,7 +3135,8 @@ void connection::cached_sha2_auth()
 
   logMsg("connection::auth - MYSQL_OPT_GET_SERVER_PUBLIC_KEY");
 
-  if (getMySQLVersion(con) < 80000)
+  int serverVersion= getMySQLVersion(con);
+  if (serverVersion < 80000 || serverVersion > 100000)
   {
     SKIP("Server doesn't support caching_sha2_password");
     return;
