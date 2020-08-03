@@ -269,7 +269,8 @@ unit_fixture::unit_fixture(const String & name)
 con(nullptr),
 pstmt(nullptr),
 stmt(nullptr),
-res(nullptr)
+res(nullptr),
+useTls(false)
 {
   init();
 }

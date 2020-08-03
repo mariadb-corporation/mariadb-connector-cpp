@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <fstream>
 #include "Connection.h"
-//#include <driver/mysql_connection.h>
+
 #include "Exception.h"
 //#include <cppconn/version_info.h>
 
@@ -3189,6 +3189,16 @@ void connection::cached_sha2_auth()
   con.reset(getConnection());
   stmt.reset(con->createStatement());
   stmt->execute("DROP USER 'doomuser'@'%';");
+}
+
+void connection::bugConCpp21()
+{
+  sql::Properties p;
+
+  p["user"] = user;
+
+  con.reset(driver->connect(url + "?user=wronguser&password=" + passwd, p));
+  ASSERT(con.get() != nullptr);
 }
 
 

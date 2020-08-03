@@ -85,6 +85,7 @@ public:
   TEST_CASE(ssl_mode);
   TEST_CASE(tls_version);
   TEST_CASE(cached_sha2_auth);
+  TEST_CASE(bugConCpp21);
   }
 
   /**
@@ -260,7 +261,10 @@ public:
    */
   void cached_sha2_auth();
 
-
+  /*
+   * URL overrides properties instead of the opposite
+   */
+  void bugConCpp21();
 };
 
 
