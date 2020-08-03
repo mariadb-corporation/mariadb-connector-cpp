@@ -3195,10 +3195,14 @@ void connection::bugConCpp21()
 {
   sql::Properties p;
 
-  p["user"] = user;
+  p["user"]=   user;
 
-  con.reset(driver->connect(url + "?user=wronguser&password=" + passwd, p));
+  con.reset(driver->connect(url + "?user=wronguser&password=" + passwd + "&useTls=true", p));
   ASSERT(con.get() != nullptr);
+  stmt.reset(con->createStatement());
+  res.reset(stmt->executeQuery("SHOW STATUS LIKE 'Ssl_cipher'"));
+  ASSERT(res->next());
+  logMsg("Connection cipher:" + res->getString(2));
 }
 
 

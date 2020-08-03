@@ -101,7 +101,7 @@ namespace mariadb
         sqlException.getMessage()
         +"\nQuery is: "
         + subQuery(sql)
-        +"\njava thread: "
+        +"\nThread: "
         + str.str(),
         sqlException.getSQLState(),
         sqlException.getErrorCode(),
@@ -211,14 +211,14 @@ namespace mariadb
           +"\nQuery is: "
           +sql.substr(0, options->maxQuerySizeToLog -3)
           +"..."
-          "\njava thread: "
+          "\nThread: "
           +str.str();
       }
       else {
         return message
           +"\nQuery is: "
           +sql
-          +"\njava thread: "
+          +"\nThread: "
           +str.str();
       }
     }
