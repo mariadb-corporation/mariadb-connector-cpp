@@ -453,7 +453,7 @@ namespace sql
       + std::to_string(Types::VARCHAR)
       +" WHEN 'float' THEN "
       + std::to_string(Types::REAL)
-      +" WHEN 'int32_t' THEN IF( "
+      +" WHEN 'int' THEN IF( "
       +fullTypeColumnName
       +" like '%unsigned%', "
       + std::to_string(Types::INTEGER)
@@ -1074,15 +1074,15 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
 
     SQLString sql =
       "SELECT "
-      + std::to_string(DatabaseMetaData::bestRowUnknown)
+      + std::to_string(DatabaseMetaData::bestRowSession)
       +" SCOPE, COLUMN_NAME,"
       + dataTypeClause("COLUMN_TYPE")
       +" DATA_TYPE, DATA_TYPE TYPE_NAME,"
       " IF(NUMERIC_PRECISION IS NULL, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION) COLUMN_SIZE, 0 BUFFER_LENGTH,"
       " NUMERIC_SCALE DECIMAL_DIGITS,"
-      " 1 PSEUDO_COLUMN"
+      " if(IS_GENERATED='NEVER'," + std::to_string(DatabaseMetaData::bestRowNotPseudo) + "," + std::to_string(DatabaseMetaData::bestRowPseudo) + ") PSEUDO_COLUMN"
       " FROM INFORMATION_SCHEMA.COLUMNS"
-      " WHERE COLUMN_KEY IN('PRI', 'MUL', 'UNI')"
+      " WHERE COLUMN_KEY IN('PRI', 'UNI')"
       " AND "
       +catalogCond("TABLE_SCHEMA",catalog)
       +" AND TABLE_NAME = "
@@ -2281,7 +2281,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   }
 
   ResultSet* MariaDbDatabaseMetaData::getCatalogs() {
-    return executeQuery("SELECT '' TABLE_CAT, '' TABLE_catalog  FROM DUAL WHERE 1=0");
+    return executeQuery("SELECT '' TABLE_CAT FROM DUAL WHERE 1=0");
   }
 
   ResultSet* MariaDbDatabaseMetaData::getTableTypes() {

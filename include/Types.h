@@ -34,7 +34,7 @@ namespace sql
     CHAR,
     CLOB,
     DATALINK,
-    DATE,
+    DATE, //10
     DECIMAL,
     DISTINCT,
     DOUBLE,
@@ -44,7 +44,7 @@ namespace sql
     LONGNVARCHAR,
     LONGVARBINARY,
     LONGVARCHAR,
-    NCHAR,
+    NCHAR, //20
     NCLOB,
     _NULL,
     SQLNULL= _NULL,
@@ -55,7 +55,7 @@ namespace sql
     REF,
     REF_CURSOR,
     ROWID,
-    SMALLINT,
+    SMALLINT, //30
     _SQLXML, // Clash with class name
     STRUCT,
     TIME,

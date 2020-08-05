@@ -32,7 +32,7 @@ class ResultSetMetaData
 
 public:
   enum {
-    columnNoNulls,
+    columnNoNulls= 0,
     columnNullable,
     columnNullableUnknown
   };

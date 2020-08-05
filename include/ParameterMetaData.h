@@ -33,13 +33,13 @@ class ParameterMetaData
 
 public:
   enum {
+    parameterModeUnknown= 0,
     parameterModeIn,
     parameterModeInOut,
-    parameterModeOut,
-    parameterModeUnknown
+    parameterModeOut= 4
   };
   enum {
-    parameterNoNulls,
+    parameterNoNulls= 0,
     parameterNullable,
     parameterNullableUnknown,
   };

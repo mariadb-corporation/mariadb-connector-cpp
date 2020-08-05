@@ -33,100 +33,114 @@ class MARIADB_EXPORTED DatabaseMetaData
 public:
   enum
   {
-    attributeNoNulls,
+    attributeNoNulls= 0,
     attributeNullable,
     attributeNullableUnknown
   };
   enum
   {
+    bestRowUnknown= 0,
     bestRowNotPseudo,
-    bestRowPseudo,
-    bestRowSession,
-    bestRowTemporary,
-    bestRowTransaction,
-    bestRowUnknown
+    bestRowPseudo
   };
   enum
   {
-    columnNoNulls,
+    bestRowTemporary= 0,
+    bestRowTransaction,
+    bestRowSession
+  };
+  enum
+  {
+    columnNoNulls= 0,
     columnNullable,
     columnNullableUnknown
   };
   enum
   {
+    functionColumnUnknown= 0,
     functionColumnIn,
     functionColumnInOut,
     functionColumnOut,
-    functionColumnResult,
-    functionColumnUnknown
+    functionReturn= 4,
+    functionColumnResult= 5
+    
   };
   enum
   {
-    functionNoNulls,
-    functionNoTable,
+    functionNoNulls = 0,
     functionNullable,
-    functionNullableUnknown,
-    functionResultUnknown,
-    functionReturn,
-    functionReturnsTable
+    functionNullableUnknown
   };
   enum
   {
-    importedKeyCascade,
-    importedKeyInitiallyDeferred,
-    importedKeyInitiallyImmediate,
-    importedKeyNoAction,
-    importedKeyNotDeferrable,
+    functionResultUnknown= 0,
+    functionNoTable,
+    functionReturnsTable,
+  };
+  enum
+  {
+    importedKeyCascade= 0,
     importedKeyRestrict,
+    importedKeySetNull,
+    importedKeyNoAction,
     importedKeySetDefault,
-    importedKeySetNull
+    
+    importedKeyInitiallyDeferred= 5,
+    importedKeyInitiallyImmediate,
+    importedKeyNotDeferrable
   };
   enum
   {
+    procedureColumnUnknown= 0,
     procedureColumnIn,
     procedureColumnInOut,
-    procedureColumnOut,
     procedureColumnResult,
-    procedureColumnReturn,
-    procedureColumnUnknown
+    procedureColumnOut,
+    procedureColumnReturn
   };
   enum
   {
-    procedureNoNulls,
-    procedureNoResult,
+    procedureNoNulls= 0,
     procedureNullable,
-    procedureNullableUnknown,
-    procedureResultUnknown,
+    procedureNullableUnknown
+  };
+  enum
+  {
+    procedureResultUnknown= 0,
+    procedureNoResult,
     procedureReturnsResult
   };
   enum
   {
+    sqlStateXOpen= 1,
     sqlStateSQL,
-    sqlStateSQL99,
-    sqlStateXOpen
+    sqlStateSQL99= 2
   };
   enum
   {
+    tableIndexStatistic= 0,
     tableIndexClustered,
     tableIndexHashed,
-    tableIndexOther,
-    tableIndexStatistic
+    tableIndexOther
   };
   enum
   {
-    typeNoNulls,
+    typeNoNulls= 0,
     typeNullable,
-    typeNullableUnknown,
-    typePredBasic,
+    typeNullableUnknown
+  };
+  enum
+  {
+    typePredNone= 0,
     typePredChar,
-    typePredNone,
+    typePredBasic,
     typeSearchable
   };
   enum
   {
+    versionColumnUnknown= 0,
     versionColumnNotPseudo,
-    versionColumnPseudo,
-    versionColumnUnknown
+    versionColumnPseudo
   };
 
   DatabaseMetaData() {}

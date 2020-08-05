@@ -34,16 +34,16 @@ class MARIADB_EXPORTED Statement {
   void operator=(Statement &);
 public:
   enum {
-    CLOSE_ALL_RESULTS=0,
-    CLOSE_CURRENT_RESULT,
-    KEEP_CURRENT_RESULT
+    CLOSE_CURRENT_RESULT= 1,
+    KEEP_CURRENT_RESULT,
+    CLOSE_ALL_RESULTS
   };
   enum {
-    SUCCESS_NO_INFO=0,
-    EXECUTE_FAILED
+    EXECUTE_FAILED= -3,
+    SUCCESS_NO_INFO= -2
   };
   enum {
-    RETURN_GENERATED_KEYS=0,
+    RETURN_GENERATED_KEYS= 1,
     NO_GENERATED_KEYS
   };
   Statement() {}
