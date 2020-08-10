@@ -2731,8 +2731,9 @@ void DatabaseMetaDataTest::testGetProcedures()
   sColumnNames.push_back("RESERVED1");
   sColumnNames.push_back("RESERVED2");
   sColumnNames.push_back("RESERVED3");
-  sColumnNames.push_back("PROCEDURE_TYPE");
   sColumnNames.push_back("REMARKS");
+  sColumnNames.push_back("PROCEDURE_TYPE");
+  
   
 
   bool  statusColumnCount=  true;

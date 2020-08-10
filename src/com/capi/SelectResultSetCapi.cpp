@@ -582,11 +582,15 @@ namespace capi
     lastRowPointer= rowPointer;
   }
 
-  bool SelectResultSetCapi::next() {
+  bool SelectResultSetCapi::next()
+  {
     if (isClosedFlag) {
       throw SQLException("Operation not permit on a closed resultSet", "HY000");
     }
     if (rowPointer < static_cast<int32_t>(dataSize) - 1) {
+      if (rowPointer != lastRowPointer) {
+        resetRow();
+      }
       fetchNext();
       return true;
     }
@@ -619,6 +623,7 @@ namespace capi
     }
   }
 
+
   void SelectResultSetCapi::resetRow()
   {
     if (data.size() > 0) {
@@ -629,6 +634,7 @@ namespace capi
     }
     lastRowPointer= rowPointer;
   }
+
 
   void SelectResultSetCapi::checkObjectRange(int32_t position) {
     if (rowPointer < 0) {
@@ -758,38 +764,39 @@ namespace capi
     }
 
     rowPointer= 0;
-    row->installCursorAtPosition(rowPointer);
-    return dataSize >0;
+    //row->installCursorAtPosition(rowPointer);
+    //lastRowPointer = -1;
+    return dataSize > 0;
   }
 
   bool SelectResultSetCapi::last() {
     checkClose();
     fetchRemaining();
     rowPointer= static_cast<int32_t>(dataSize) - 1;
-    row->installCursorAtPosition(rowPointer);
+    //row->installCursorAtPosition(rowPointer);
+    //lastRowPointer = -1;
     return dataSize > 0;
   }
 
   int32_t SelectResultSetCapi::getRow() {
     checkClose();
-    if (streaming &&resultSetScrollType == TYPE_FORWARD_ONLY) {
+    if (streaming && resultSetScrollType == TYPE_FORWARD_ONLY) {
       return 0;
     }
-    return rowPointer +1;
+    return rowPointer + 1;
   }
 
   bool SelectResultSetCapi::absolute(int32_t rowPos) {
     checkClose();
 
-    if (streaming &&resultSetScrollType == TYPE_FORWARD_ONLY) {
+    if (streaming && resultSetScrollType == TYPE_FORWARD_ONLY) {
       throw SQLException("Invalid operation for result set type TYPE_FORWARD_ONLY");
     }
 
-    if (static_cast<uint32_t>(rowPos) >=0 && static_cast<uint32_t>(rowPos) <= dataSize) {
+    if (static_cast<uint32_t>(rowPos) >= 0 && static_cast<uint32_t>(rowPos) <= dataSize) {
       rowPointer= rowPos - 1;
       return true;
     }
-
 
     fetchRemaining();
 

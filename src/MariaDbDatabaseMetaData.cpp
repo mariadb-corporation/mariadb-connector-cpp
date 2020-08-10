@@ -20,6 +20,7 @@
 
 #include <cctype>
 #include <algorithm>
+#include <sstream>
 
 #include "ResultSet.h"
 
@@ -389,26 +390,26 @@ namespace sql
   ResultSet* MariaDbDatabaseMetaData::getImportedKeys(const SQLString& catalog, const SQLString& schema, const SQLString& table)  {
 
 
-    SQLString database= catalog;
+    SQLString database(schema);
 
 
     if (table.empty() == true){
       throw SQLException("'table' parameter in getImportedKeys cannot be NULL");
     }
 
-    if (database.empty() == true &&connection->nullCatalogMeansCurrent){
+    if (database.empty() == true && connection->nullCatalogMeansCurrent){
 
       return getImportedKeysUsingInformationSchema("",table);
     }
 
     if (database.empty() == true){
-      return getImportedKeysUsingInformationSchema(NULL,table);
+      return getImportedKeysUsingInformationSchema(""/*NULL*/, table);
     }
 
     if (database.empty()){
       database= connection->getCatalog();
-      if (database.empty() == true ||database.empty()){
-        return getImportedKeysUsingInformationSchema(database,table);
+      if (database.empty() == true/* || database.empty()*/){
+        return getImportedKeysUsingInformationSchema(database, table);
       }
     }
 
@@ -553,6 +554,7 @@ SQLString MariaDbDatabaseMetaData::catalogCond(const SQLString& columnName, cons
   return "(" + columnName + " = " + escapeQuote(catalog) + ")";
 }
 
+
 // table name)
 SQLString MariaDbDatabaseMetaData::patternCond(const SQLString& columnName, const SQLString& tableName)
 {
@@ -564,6 +566,17 @@ SQLString MariaDbDatabaseMetaData::patternCond(const SQLString& columnName, cons
 
   return "("+columnName +" "+predicate +" '" + Utils::escapeString(tableName,true)+"')";
 }
+
+
+/* We can't pass NULL, "" should mean "no schema" */
+SQLString schemaPatternCond(const SQLString& columnName, const SQLString& schemaName)
+{
+  SQLString predicate =
+    (schemaName.find_first_of('%') == std::string::npos && schemaName.find_first_of('_') == std::string::npos) ? "=" : "LIKE";
+
+  return "(" + columnName + " " + predicate + " '" + Utils::escapeString(schemaName, true) + "')";
+}
+
 
 /**
  * Retrieves a description of the given table's primary key columns. They are ordered by
@@ -596,19 +609,16 @@ ResultSet* MariaDbDatabaseMetaData::getPrimaryKeys(const SQLString& catalog, con
 
 
   SQLString sql =
-    "SELECT A.TABLE_SCHEMA TABLE_CAT, NULL TABLE_SCHEM, A.TABLE_NAME, A.COLUMN_NAME, B.SEQ_IN_INDEX KEY_SEQ, B.INDEX_NAME PK_NAME "
+    "SELECT NULL TABLE_CAT, A.TABLE_SCHEMA TABLE_SCHEM, A.TABLE_NAME, A.COLUMN_NAME, B.SEQ_IN_INDEX KEY_SEQ, B.INDEX_NAME PK_NAME "
     " FROM INFORMATION_SCHEMA.COLUMNS A, INFORMATION_SCHEMA.STATISTICS B"
     " WHERE A.COLUMN_KEY in ('PRI','pri') AND B.INDEX_NAME='PRIMARY' "
     " AND "
-    +catalogCond("A.TABLE_SCHEMA",catalog)
-    +" AND "
-    +catalogCond("B.TABLE_SCHEMA",catalog)
-    +" AND "
-    +patternCond("A.TABLE_NAME",table)
-    +" AND "
-    +patternCond("B.TABLE_NAME",table)
-    +" AND A.TABLE_SCHEMA = B.TABLE_SCHEMA AND A.TABLE_NAME = B.TABLE_NAME AND A.COLUMN_NAME = B.COLUMN_NAME "
-    " ORDER BY A.COLUMN_NAME";
+    + schemaPatternCond("A.TABLE_SCHEMA", schema) //We don't need all schemas on empty schema, that catCond will do
+    + " AND B.TABLE_SCHEMA=A.TABLE_SCHEMA"
+      " AND "
+    + patternCond("A.TABLE_NAME", table)
+    + " AND B.TABLE_NAME=A.TABLE_NAME AND A.COLUMN_NAME = B.COLUMN_NAME "
+      " ORDER BY A.COLUMN_NAME";
 
   return executeQuery(sql);
 }
@@ -655,13 +665,13 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   std::list<SQLString>& types)
 {
   SQLString sql(
-      "SELECT TABLE_SCHEMA TABLE_CAT, NULL  TABLE_SCHEM,  TABLE_NAME,"
+      "SELECT NULL TABLE_CAT, TABLE_SCHEMA TABLE_SCHEM,  TABLE_NAME,"
       " IF(TABLE_TYPE='BASE TABLE', 'TABLE', TABLE_TYPE) as TABLE_TYPE,"
       " TABLE_COMMENT REMARKS, NULL TYPE_CAT, NULL TYPE_SCHEM, NULL TYPE_NAME, NULL SELF_REFERENCING_COL_NAME, "
       " NULL REF_GENERATION"
       " FROM INFORMATION_SCHEMA.TABLES "
       " WHERE "
-      +catalogCond("TABLE_SCHEMA", catalog)
+      + schemaPatternCond("TABLE_SCHEMA", schemaPattern)
       +" AND "
       +patternCond("TABLE_NAME", tableNamePattern));
 
@@ -673,7 +683,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
         continue;
       }
       SQLString escapedType(type.compare("TABLE") == 0 ? "'BASE TABLE'" : escapeQuote(type).c_str());
-      sql.append(type).append(",");
+      sql.append(escapedType).append(",");
     }
     StringImp::get(sql)[sql.length()-1]= ')';
   }
@@ -775,7 +785,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
                                               const SQLString& columnNamePattern)
   {
     Shared::Options options= urlParser.getOptions();
-    SQLString sql= "SELECT TABLE_SCHEMA TABLE_CAT, NULL TABLE_SCHEM, TABLE_NAME, COLUMN_NAME,"
+    SQLString sql= "SELECT NULL TABLE_CAT, TABLE_SCHEMA TABLE_SCHEM, TABLE_NAME, COLUMN_NAME,"
       +dataTypeClause("COLUMN_TYPE")
       +" DATA_TYPE,"
       + columnTypeClause(options)
@@ -797,7 +807,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       +(options->yearIsDateType ?"":" WHEN 'year' THEN 5")
       +"  ELSE "
       "  IF(NUMERIC_PRECISION IS NULL, LEAST(CHARACTER_MAXIMUM_LENGTH,"
-      + std::to_string(INT32_MAX)
+      + std::to_string(UINT32_MAX)
       +"), NUMERIC_PRECISION) "
       " END"
       " COLUMN_SIZE, 65535 BUFFER_LENGTH, "
@@ -807,16 +817,16 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       +" WHEN 'tinyint' THEN "
       +(options->tinyInt1isBit ? SQLString("0") : SQLString("NUMERIC_SCALE"))
       +" ELSE NUMERIC_SCALE END, UNSIGNED INTEGER) DECIMAL_DIGITS,"
-      " 10 NUM_PREC_RADIX, IF(IS_NULLABLE = 'yes',1,0) NULLABLE,COLUMN_COMMENT REMARKS,"
+      " 10 NUM_PREC_RADIX, IF(IS_NULLABLE = 'yes' OR COLUMN_TYPE='timestamp',1,0) NULLABLE, COLUMN_COMMENT REMARKS," /* NULLABLE: 0- columnNoNulls, 1 - columnNullable */
       " COLUMN_DEFAULT COLUMN_DEF, 0 SQL_DATA_TYPE, 0 SQL_DATETIME_SUB,  "
       " LEAST(CHARACTER_OCTET_LENGTH,"
       + std::to_string(INT32_MAX)
       +") CHAR_OCTET_LENGTH,"
-      " ORDINAL_POSITION, IS_NULLABLE, NULL SCOPE_CATALOG, NULL SCOPE_SCHEMA, NULL SCOPE_TABLE, NULL SOURCE_DATA_TYPE,"
+      " ORDINAL_POSITION, IF(COLUMN_TYPE='timestamp', 'YES', IS_NULLABLE) IS_NULLABLE, NULL SCOPE_CATALOG, NULL SCOPE_SCHEMA, NULL SCOPE_TABLE, NULL SOURCE_DATA_TYPE,"
       " IF(EXTRA = 'auto_increment','YES','NO') IS_AUTOINCREMENT, "
       " IF(EXTRA in ('VIRTUAL', 'PERSISTENT', 'VIRTUAL GENERATED', 'STORED GENERATED') ,'YES','NO') IS_GENERATEDCOLUMN "
       " FROM INFORMATION_SCHEMA.COLUMNS  WHERE "
-      +catalogCond("TABLE_SCHEMA",catalog)
+      +catalogCond("TABLE_SCHEMA", schemaPattern)
       +" AND "
       +patternCond("TABLE_NAME",tableNamePattern)
       +" AND "
@@ -904,8 +914,8 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       throw SQLException("'table' parameter in getExportedKeys cannot be NULL");
     }
     SQLString sql =
-      "SELECT KCU.REFERENCED_TABLE_SCHEMA PKTABLE_CAT, NULL PKTABLE_SCHEM,  KCU.REFERENCED_TABLE_NAME PKTABLE_NAME,"
-      " KCU.REFERENCED_COLUMN_NAME PKCOLUMN_NAME, KCU.TABLE_SCHEMA FKTABLE_CAT, NULL FKTABLE_SCHEM, "
+      "SELECT NULL PKTABLE_CAT, KCU.REFERENCED_TABLE_SCHEMA PKTABLE_SCHEM, KCU.REFERENCED_TABLE_NAME PKTABLE_NAME,"
+      " KCU.REFERENCED_COLUMN_NAME PKCOLUMN_NAME, NULL FKTABLE_CAT, KCU.TABLE_SCHEMA FKTABLE_SCHEM, "
       " KCU.TABLE_NAME FKTABLE_NAME, KCU.COLUMN_NAME FKCOLUMN_NAME, KCU.POSITION_IN_UNIQUE_CONSTRAINT KEY_SEQ,"
       " CASE update_rule "
       "   WHEN 'RESTRICT' THEN 1"
@@ -922,7 +932,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       "  WHEN 'SET DEFAULT' THEN 4"
       " END DELETE_RULE,"
       " RC.CONSTRAINT_NAME FK_NAME,"
-      " NULL PK_NAME,"
+      " RC.UNIQUE_CONSTRAINT_NAME PK_NAME,"
       + std::to_string(importedKeyNotDeferrable)
       +" DEFERRABILITY"
       " FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU"
@@ -930,7 +940,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       " ON KCU.CONSTRAINT_SCHEMA = RC.CONSTRAINT_SCHEMA"
       " AND KCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME"
       " WHERE "
-      + catalogCond("KCU.REFERENCED_TABLE_SCHEMA",catalog)
+      + catalogCond("KCU.REFERENCED_TABLE_SCHEMA",schema)
       +" AND "
       " KCU.REFERENCED_TABLE_NAME = "
       +escapeQuote(table)
@@ -952,8 +962,8 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       throw SQLException("'table' parameter in getImportedKeys cannot be NULL");
     }
     SQLString sql =
-      "SELECT KCU.REFERENCED_TABLE_SCHEMA PKTABLE_CAT, NULL PKTABLE_SCHEM,  KCU.REFERENCED_TABLE_NAME PKTABLE_NAME,"
-      " KCU.REFERENCED_COLUMN_NAME PKCOLUMN_NAME, KCU.TABLE_SCHEMA FKTABLE_CAT, NULL FKTABLE_SCHEM, "
+      "SELECT NULL PKTABLE_CAT, KCU.REFERENCED_TABLE_SCHEMA PKTABLE_SCHEM, KCU.REFERENCED_TABLE_NAME PKTABLE_NAME,"
+      " KCU.REFERENCED_COLUMN_NAME PKCOLUMN_NAME, NULL FKTABLE_CAT, KCU.TABLE_SCHEMA FKTABLE_SCHEM, "
       " KCU.TABLE_NAME FKTABLE_NAME, KCU.COLUMN_NAME FKCOLUMN_NAME, KCU.POSITION_IN_UNIQUE_CONSTRAINT KEY_SEQ,"
       " CASE update_rule "
       "   WHEN 'RESTRICT' THEN 1"
@@ -970,7 +980,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       "  WHEN 'SET DEFAULT' THEN 4"
       " END DELETE_RULE,"
       " RC.CONSTRAINT_NAME FK_NAME,"
-      " NULL PK_NAME,"
+      " RC.UNIQUE_CONSTRAINT_NAME PK_NAME,"
       + std::to_string(importedKeyNotDeferrable)
       +" DEFERRABILITY"
       " FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU"
@@ -1005,14 +1015,15 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       throw std::runtime_error("table");
     }
 
-    ResultSet* rs= connection->createStatement()->executeQuery(
+    std::unique_ptr<Statement> stmt(connection->createStatement());
+    std::unique_ptr<ResultSet> rs(stmt->executeQuery(
           "SHOW CREATE TABLE "
           +MariaDbConnection::quoteIdentifier(catalog)
           +"."
-          +MariaDbConnection::quoteIdentifier(table));
+          +MariaDbConnection::quoteIdentifier(table)));
     if (rs->next()){
-      SQLString tableDef= rs->getString(2);
-      return MariaDbDatabaseMetaData::getImportedKeys(tableDef,table,catalog,connection);
+      SQLString tableDef(rs->getString(2));
+      return MariaDbDatabaseMetaData::getImportedKeys(tableDef, table, catalog, connection);
     }
     throw SQLException("Fail to retrieve table information using SHOW CREATE TABLE");
   }
@@ -1083,8 +1094,8 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       " if(IS_GENERATED='NEVER'," + std::to_string(DatabaseMetaData::bestRowNotPseudo) + "," + std::to_string(DatabaseMetaData::bestRowPseudo) + ") PSEUDO_COLUMN"
       " FROM INFORMATION_SCHEMA.COLUMNS"
       " WHERE COLUMN_KEY IN('PRI', 'UNI')"
-      " AND "
-      +catalogCond("TABLE_SCHEMA",catalog)
+      " AND IS_NULLABLE='NO' AND "
+      +catalogCond("TABLE_SCHEMA", schema)
       +" AND TABLE_NAME = "
       +escapeQuote(table);
 
@@ -1194,7 +1205,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   }
 
   bool MariaDbDatabaseMetaData::nullsAreSortedAtStart(){
-    return false;
+    return true;
   }
 
   bool MariaDbDatabaseMetaData::nullsAreSortedAtEnd(){
@@ -1311,20 +1322,20 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   }
 
   SQLString MariaDbDatabaseMetaData::getNumericFunctions(){
-    return "DIV,ABS,ACOS,ASIN,ATAN,ATAN2,CEIL,CEILING,CONV,COS,COT,CRC32,DEGREES,EXP,FLOOR,GREATEST,LEAST,LN,LOG,"
-      "LOG10,LOG2,MOD,OCT,PI,POW,POWER,RADIANS,RAND,ROUND,SIGN,SIN,SQRT,TAN,TRUNCATE";
+    return "ABS,ACOS,ASIN,ATAN,ATAN2,BIT_COUNT,CEIL,CEILING,CONV,COS,COT,CRC32,DEGREES,DIV,EXP,FLOOR,GREATEST,LEAST,LN,LOG,"
+      "LOG10,LOG2,MAX,MIN,MOD,OCT,PI,POW,POWER,RADIANS,RAND,ROUND,SIGN,SIN,SQRT,TAN,TRUNCATE";
   }
 
   SQLString MariaDbDatabaseMetaData::getStringFunctions(){
-    return "ASCII,BIN,BIT_LENGTH,CAST,CHARACTER_LENGTH,CHAR_LENGTH,CONCAT,CONCAT_WS,CONVERT,ELT,EXPORT_SET,"
-      "EXTRACTVALUE,FIELD,FIND_IN_SET,FORMAT,FROM_BASE64,HEX,INSTR,LCASE,LEFT,LENGTH,LIKE,LOAD_FILE,LOCATE,"
-      "LOWER,LPAD,LTRIM,MAKE_SET,MATCH AGAINST,MID,NOT LIKE,NOT REGEXP,OCTET_LENGTH,ORD,POSITION,QUOTE,"
+    return "ASCII,BIN,BIT_LENGTH,CAST,CHAR,CHARACTER_LENGTH,CHAR_LENGTH,CONCAT,CONCAT_WS,CONV,CONVERT,ELT,EXPORT_SET,"
+      "EXTRACTVALUE,FIELD,FIND_IN_SET,FORMAT,FROM_BASE64,HEX,INSERT,INSTR,LCASE,LEFT,LENGTH,LIKE,LOAD_FILE,LOCATE,"
+      "LOWER,LPAD,LTRIM,MAKE_SET,MATCH AGAINST,MID,NOT LIKE,NOT REGEXP,OCT,OCTET_LENGTH,ORD,POSITION,QUOTE,"
       "REPEAT,REPLACE,REVERSE,RIGHT,RPAD,RTRIM,SOUNDEX,SOUNDS LIKE,SPACE,STRCMP,SUBSTR,SUBSTRING,"
       "SUBSTRING_INDEX,TO_BASE64,TRIM,UCASE,UNHEX,UPDATEXML,UPPER,WEIGHT_STRING";
   }
 
   SQLString MariaDbDatabaseMetaData::getSystemFunctions(){
-    return "DATABASE,USER,SYSTEM_USER,SESSION_USER,LAST_INSERT_ID,VERSION";
+    return "DATABASE,USER,SYSTEM_USER,SESSION_USER,PASSWORD,ENCRYPT,LAST_INSERT_ID,VERSION";
   }
 
   SQLString MariaDbDatabaseMetaData::getTimeDateFunctions(){
@@ -1361,7 +1372,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   }
 
   bool MariaDbDatabaseMetaData::supportsConvert(){
-    return true;
+    return false;
   }
 
   /**
@@ -1597,7 +1608,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   }
 
   bool MariaDbDatabaseMetaData::supportsFullOuterJoins(){
-    return true;
+    return false;
   }
 
   bool MariaDbDatabaseMetaData::supportsLimitedOuterJoins(){
@@ -1613,7 +1624,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   }
 
   SQLString MariaDbDatabaseMetaData::getCatalogTerm(){
-    return "database";
+    return emptyStr;
   }
 
   bool MariaDbDatabaseMetaData::isCatalogAtStart(){
@@ -1621,23 +1632,23 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   }
 
   SQLString MariaDbDatabaseMetaData::getCatalogSeparator(){
-    return ".";
+    return emptyStr;
   }
 
   bool MariaDbDatabaseMetaData::supportsSchemasInDataManipulation(){
-    return false;
+    return true;
   }
 
   bool MariaDbDatabaseMetaData::supportsSchemasInProcedureCalls(){
-    return false;
+    return true;
   }
 
   bool MariaDbDatabaseMetaData::supportsSchemasInTableDefinitions(){
-    return false;
+    return true;
   }
 
   bool MariaDbDatabaseMetaData::supportsSchemasInIndexDefinitions(){
-    return false;
+    return true;
   }
 
   bool MariaDbDatabaseMetaData::supportsSchemasInPrivilegeDefinitions(){
@@ -1645,23 +1656,23 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   }
 
   bool MariaDbDatabaseMetaData::supportsCatalogsInDataManipulation(){
-    return true;
+    return false;
   }
 
   bool MariaDbDatabaseMetaData::supportsCatalogsInProcedureCalls(){
-    return true;
+    return false;
   }
 
   bool MariaDbDatabaseMetaData::supportsCatalogsInTableDefinitions(){
-    return true;
+    return false;
   }
 
   bool MariaDbDatabaseMetaData::supportsCatalogsInIndexDefinitions(){
-    return true;
+    return false;
   }
 
   bool MariaDbDatabaseMetaData::supportsCatalogsInPrivilegeDefinitions(){
-    return true;
+    return false;
   }
 
   bool MariaDbDatabaseMetaData::supportsPositionedDelete(){
@@ -1757,11 +1768,16 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   }
 
   int32_t MariaDbDatabaseMetaData::getMaxConnections(){
+    Unique::ResultSet rs(executeQuery("SELECT @@max_connections"));
+    if (rs && rs->next()) {
+      return rs->getInt(1);
+    }
+
     return 0;
   }
 
   int32_t MariaDbDatabaseMetaData::getMaxCursorNameLength(){
-    return 0;
+    return 64;
   }
 
   int32_t MariaDbDatabaseMetaData::getMaxIndexLength(){
@@ -1769,11 +1785,11 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   }
 
   int32_t MariaDbDatabaseMetaData::getMaxSchemaNameLength(){
-    return 32;
+    return 64;
   }
 
   int32_t MariaDbDatabaseMetaData::getMaxProcedureNameLength(){
-    return 256;
+    return 64;
   }
 
   int32_t MariaDbDatabaseMetaData::getMaxCatalogNameLength(){
@@ -1832,6 +1848,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
    */
   bool MariaDbDatabaseMetaData::supportsTransactionIsolationLevel(int32_t level){
     switch (level){
+      case sql::TRANSACTION_NONE:
       case sql::TRANSACTION_READ_UNCOMMITTED:
       case sql::TRANSACTION_READ_COMMITTED:
       case sql::TRANSACTION_REPEATABLE_READ:
@@ -1904,8 +1921,8 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
 
 
     SQLString sql =
-      "SELECT ROUTINE_SCHEMA PROCEDURE_CAT,NULL PROCEDURE_SCHEM, ROUTINE_NAME PROCEDURE_NAME,"
-      " NULL RESERVED1, NULL RESERVED2, NULL RESERVED3,"
+      "SELECT NULL PROCEDURE_CAT, ROUTINE_SCHEMA PROCEDURE_SCHEM, ROUTINE_NAME PROCEDURE_NAME,"
+      " NULL RESERVED1, NULL RESERVED2, NULL RESERVED3, ROUTINE_COMMENT REMARKS,"
       " CASE ROUTINE_TYPE "
       "  WHEN 'FUNCTION' THEN "
       + std::to_string(procedureReturnsResult)
@@ -1914,12 +1931,12 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       +"  ELSE "
       + std::to_string(procedureResultUnknown)
       +" END PROCEDURE_TYPE,"
-      " ROUTINE_COMMENT REMARKS, SPECIFIC_NAME "
+      "  SPECIFIC_NAME "
       " FROM INFORMATION_SCHEMA.ROUTINES "
       " WHERE "
-      +catalogCond("ROUTINE_SCHEMA",catalog)
+      + (schemaPattern.empty() ? catalogCond("ROUTINE_SCHEMA", schemaPattern) : patternCond("ROUTINE_SCHEMA", schemaPattern))
       +" AND "
-      +patternCond("ROUTINE_NAME",procedureNamePattern)
+      + patternCond("ROUTINE_NAME", procedureNamePattern)
       +"/* AND ROUTINE_TYPE='PROCEDURE' */";
     return executeQuery(sql);
   }
@@ -2272,13 +2289,25 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
 
   ResultSet* MariaDbDatabaseMetaData::getSchemas() {
     return executeQuery("SELECT SCHEMA_NAME TABLE_SCHEM FROM INFORMATION_SCHEMA.SCHEMATA ORDER BY 1");
-    
   }
+
 
   ResultSet* MariaDbDatabaseMetaData::getSchemas(const SQLString& catalog, const SQLString& schemaPattern) {
     // TODO: need obviously smth more than that
-    return executeQuery("SELECT SCHEMA_NAME TABLE_SCHEM FROM INFORMATION_SCHEMA.SCHEMATA ORDER BY 1");
+    std::stringstream query("SELECT SCHEMA_NAME TABLE_SCHEM, '' TABLE_CATALOG  FROM INFORMATION_SCHEMA.SCHEMATA ");
+
+    if (!catalog.empty() && catalog.compare("def") != 0) {
+      query << "WHERE 1=0 ";
+      return executeQuery(query.str());
+    }
+
+    if (!schemaPattern.empty()) {
+      query << "WHERE SCHEMA_NAME=" << escapeQuote(schemaPattern) << " ";
+    }
+    query << "ORDER BY 1";
+    return executeQuery(query.str());
   }
+
 
   ResultSet* MariaDbDatabaseMetaData::getCatalogs() {
     return executeQuery("SELECT '' TABLE_CAT FROM DUAL WHERE 1=0");
@@ -2328,18 +2357,18 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
 
 
     if (table.empty() == true){
-      throw SQLException("'table' parameter must not be NULL");
+      throw SQLException("'table' parameter must not be empty");
     }
     SQLString sql =
-      "SELECT TABLE_SCHEMA TABLE_CAT, NULL TABLE_SCHEM, TABLE_NAME,"
+      "SELECT NULL TABLE_CAT, TABLE_SCHEMA TABLE_SCHEM, TABLE_NAME,"
       " COLUMN_NAME, NULL AS GRANTOR, GRANTEE, PRIVILEGE_TYPE AS PRIVILEGE, IS_GRANTABLE FROM "
       " INFORMATION_SCHEMA.COLUMN_PRIVILEGES WHERE "
-      + catalogCond("TABLE_SCHEMA", catalog)
+      + catalogCond("TABLE_SCHEMA", schema)
       +" AND "
       " TABLE_NAME = "
       + escapeQuote(table)
       +" AND "
-      + patternCond("COLUMN_NAME",columnNamePattern)
+      + patternCond("COLUMN_NAME", columnNamePattern)
       +" ORDER BY COLUMN_NAME, PRIVILEGE_TYPE";
 
     return executeQuery(sql);
@@ -2524,8 +2553,8 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       const SQLString& parentCatalog, const SQLString& parentSchema, const SQLString& parentTable, const SQLString& foreignCatalog, const SQLString& foreignSchema, const SQLString& foreignTable)
   {
     SQLString sql =
-      "SELECT KCU.REFERENCED_TABLE_SCHEMA PKTABLE_CAT, NULL PKTABLE_SCHEM,  KCU.REFERENCED_TABLE_NAME PKTABLE_NAME,"
-      " KCU.REFERENCED_COLUMN_NAME PKCOLUMN_NAME, KCU.TABLE_SCHEMA FKTABLE_CAT, NULL FKTABLE_SCHEM, "
+      "SELECT NULL PKTABLE_CAT, KCU.REFERENCED_TABLE_SCHEMA PKTABLE_SCHEM, KCU.REFERENCED_TABLE_NAME PKTABLE_NAME,"
+      " KCU.REFERENCED_COLUMN_NAME PKCOLUMN_NAME, NULL FKTABLE_CAT, KCU.TABLE_SCHEMA FKTABLE_SCHEM, "
       " KCU.TABLE_NAME FKTABLE_NAME, KCU.COLUMN_NAME FKCOLUMN_NAME, KCU.POSITION_IN_UNIQUE_CONSTRAINT KEY_SEQ,"
       " CASE update_rule "
       "   WHEN 'RESTRICT' THEN 1"
@@ -2542,7 +2571,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       "  WHEN 'SET DEFAULT' THEN 4"
       " END DELETE_RULE,"
       " RC.CONSTRAINT_NAME FK_NAME,"
-      " NULL PK_NAME,"
+      " RC.UNIQUE_CONSTRAINT_NAME PK_NAME,"
       + std::to_string(importedKeyNotDeferrable)
       +" DEFERRABILITY"
       " FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU"
@@ -2550,9 +2579,9 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       " ON KCU.CONSTRAINT_SCHEMA = RC.CONSTRAINT_SCHEMA"
       " AND KCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME"
       " WHERE "
-      +catalogCond("KCU.REFERENCED_TABLE_SCHEMA",parentCatalog)
+      +catalogCond("KCU.REFERENCED_TABLE_SCHEMA",parentSchema)
       +" AND "
-      +catalogCond("KCU.TABLE_SCHEMA",foreignCatalog)
+      +catalogCond("KCU.TABLE_SCHEMA",foreignSchema)
       +" AND "
       " KCU.REFERENCED_TABLE_NAME = "
       +escapeQuote(parentTable)
@@ -3360,15 +3389,15 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
 
 
     SQLString sql =
-      "SELECT TABLE_SCHEMA TABLE_CAT, NULL TABLE_SCHEM, TABLE_NAME, NON_UNIQUE, "
-      " TABLE_SCHEMA INDEX_QUALIFIER, INDEX_NAME, 3 TYPE,"
+      "SELECT NULL TABLE_CAT, TABLE_SCHEMA TABLE_SCHEM, TABLE_NAME, NON_UNIQUE, "
+      " TABLE_SCHEMA INDEX_QUALIFIER, INDEX_NAME, " + std::to_string(DatabaseMetaData::tableIndexOther) + " TYPE,"
       " SEQ_IN_INDEX ORDINAL_POSITION, COLUMN_NAME, COLLATION ASC_OR_DESC,"
       " CARDINALITY, NULL PAGES, NULL FILTER_CONDITION"
       " FROM INFORMATION_SCHEMA.STATISTICS"
       " WHERE TABLE_NAME = "
       +escapeQuote(table)
       +" AND "
-      +catalogCond("TABLE_SCHEMA",catalog)
+      +catalogCond("TABLE_SCHEMA", schema)
       +((unique)?" AND NON_UNIQUE = 0":"")
       +" ORDER BY NON_UNIQUE, TYPE, INDEX_NAME, ORDINAL_POSITION";
 
@@ -3650,7 +3679,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   }
 
   bool MariaDbDatabaseMetaData::supportsResultSetHoldability(int32_t holdability){
-    return holdability= ResultSet::HOLD_CURSORS_OVER_COMMIT;
+    return holdability == ResultSet::HOLD_CURSORS_OVER_COMMIT;
   }
 
 
