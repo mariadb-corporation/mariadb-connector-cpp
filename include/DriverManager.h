@@ -18,28 +18,34 @@
 *************************************************************************************/
 
 
-#ifndef __CONNCPP_H_
-#define __CONNCPP_H_
-
-#include "Driver.h"
-#include "DriverManager.h"
-#include "Connection.h"
-#include "ResultSet.h"
-#include "DatabaseMetaData.h"
-#include "ResultSetMetaData.h"
-#include "Statement.h"
-#include "PreparedStatement.h"
-#include "ParameterMetaData.h"
-#include "CallableStatement.h"
-#include "Warning.h"
-#include "Savepoint.h"
-#include "Types.h"
+#ifndef _DRIVERMANAGER_H_
+#define _DRIVERMANAGER_H_
 
 #include "SQLString.h"
-#include "Exception.h"
-#include "jdbccompat.h"
+#include "Connection.h"
+#include "Driver.h"
 
 namespace sql
 {
+
+/*
+ * Mimimalistic DriverManager manager as the more convenient way to obtain a connection.
+ * There is no means of registsering etc drivers, as it's unlikely needed.
+ */
+class MARIADB_EXPORTED DriverManager
+{
+  DriverManager(const DriverManager &);
+  void operator=(DriverManager&)= delete;
+  DriverManager() {}
+  virtual ~DriverManager(){}
+public:
+
+  static Connection* getConnection(const SQLString& url);
+  static Connection* getConnection(const SQLString& url, Properties& props);
+  static Connection* getConnection(const SQLString& url, const SQLString& user, const SQLString& pwd);
+};
+
 }
+
+
 #endif

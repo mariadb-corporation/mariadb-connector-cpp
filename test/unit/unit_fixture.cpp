@@ -45,7 +45,7 @@
 namespace testsuite
 {
 
-Driver * unit_fixture::driver=NULL;
+Driver * unit_fixture::driver= nullptr;
 
 std::vector< columndefinition > unit_fixture::columns = {
   {"BIT", "BIT", sql::DataType::BIT, "0", false, 1, 0, true, "NULL", 0, "NO", false},
@@ -283,6 +283,39 @@ void unit_fixture::init()
   passwd= TestsRunner::theInstance().getStartOptions()->getString("dbPasswd");
   db= TestsRunner::theInstance().getStartOptions()->getString("dbSchema");
   useTls= TestsRunner::theInstance().getStartOptions()->getBool("useTls");
+
+  // Normalizing URL
+  std::size_t protocolEnd = url.find_first_of("://"); //5 - length of jdbc: prefix
+
+  if (protocolEnd == std::string::npos)
+  {
+    url= "jdbc:mariadb://" + url;
+  }
+  else 
+  {
+    sql::SQLString protocol(url.substr(0, protocolEnd));
+
+    if (protocol.find_first_of("jdbc:mariadb:") != 0)
+    {
+      url = url.substr(protocolEnd + 3/*://*/);
+      std::size_t slashPos = url.find_first_of('/');
+      sql::SQLString hostName(slashPos == std::string::npos ? url : url.substr(0, slashPos));
+
+      url= "jdbc:mariadb://" + url;
+      if (protocol.compare("tcp"))
+      {
+        // Seems like there is nothing to do here
+      }
+      else if (protocol.compare("unix") == 0)
+      {
+        commonProperties["localSocket"]= hostName;
+      }
+      else if (protocol.compare("pipe"))
+      {
+        commonProperties["localSocket"]= hostName;
+      }
+    }
+  }
 }
 
 
@@ -292,7 +325,7 @@ void unit_fixture::setUp()
 
   try
   {
-    con.reset(getConnection());
+    con.reset(this->getConnection(&commonProperties));
   }
   catch (sql::SQLException & sqle)
   {
@@ -377,9 +410,8 @@ unit_fixture::getConnection(sql::ConnectOptionsMap *additional_options)
   }
 
   sql::ConnectOptionsMap connection_properties;
-  connection_properties["hostName"]=url;
-  connection_properties["userName"]=user;
-  connection_properties["password"]=passwd;
+  connection_properties["user"]= user;
+  connection_properties["password"]= passwd;
 
   connection_properties["useTls"]= useTls ? "true" : "false";
 
@@ -395,7 +427,7 @@ unit_fixture::getConnection(sql::ConnectOptionsMap *additional_options)
     }
   }
 
-  return driver->connect(connection_properties);
+  return sql::DriverManager::getConnection(url, connection_properties);
 }
 
 void unit_fixture::logMsg(const sql::SQLString & message)

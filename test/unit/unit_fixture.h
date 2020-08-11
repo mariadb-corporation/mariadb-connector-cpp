@@ -180,6 +180,7 @@ protected:
    */
   List created_objects;
 
+  sql::Properties commonProperties;
   /**
    * Driver to be used
    *

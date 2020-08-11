@@ -93,8 +93,8 @@ namespace mariadb
         auto cit= prop->find("port");
         if (cit != prop->end()) {
           SQLString host(url.substr(mysqlTcp.length()));
-          size_t colon= host.find_first_of(':');
-          size_t schemaSlash= schemaSlash= host.find_first_of('/');
+          std::size_t colon= host.find_first_of(':');
+          std::size_t schemaSlash= schemaSlash= host.find_first_of('/');
           SQLString schema(schemaSlash != std::string::npos ? url.substr(schemaSlash + 1) : emptyStr);
 
           if (colon != std::string::npos) {

@@ -39,6 +39,7 @@ INCLUDE(${CMAKE_SOURCE_DIR}/cmake/SetValueMacro.cmake)
 
 
 SET (MACPP_SOURCES src/MariaDbDriver.cpp
+                   src/DriverManager.cpp
                    src/UrlParser.cpp
                    src/MariaDbDatabaseMetaData.cpp
                    src/HostAddress.cpp
@@ -233,6 +234,7 @@ IF(WIN32)
                    "include/Exception.h"
                    "include/jdbccompat.h"
                    "include/Driver.h"
+                   "include/DriverManager.h"
                    "include/Types.h"
 
                    src/SelectResultSet.h

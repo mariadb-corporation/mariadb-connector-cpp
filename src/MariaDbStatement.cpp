@@ -1292,7 +1292,7 @@ namespace mariadb
       throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }
     //To please compilers etc
-    return false;
+    return nullptr;
   }
 
 
@@ -1319,7 +1319,7 @@ namespace mariadb
       throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }/* TODO: something with the finally was once here */
     //To please compilers etc
-    return false;
+    return nullptr;
   }
 
   /**
