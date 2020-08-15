@@ -145,7 +145,7 @@ namespace sql
       for (size_t i= 1; i <array->size(); i++)
       {
         SQLString str((*array)[i]);
-        str= std::regex_replace(StringImp::get(str), std::regex("[\\(\\)]"), "");
+        str= std::regex_replace(StringImp::get(str), std::regex("[\\(\\)]"), StringImp::get(emptyStr));
         Tokens token= split(str.trim(), "=");
 
         if (token->size() != 2) {
@@ -157,7 +157,7 @@ namespace sql
 
         if ((key.compare("host") == 0))
         {
-          result->host= std::regex_replace(StringImp::get(value), std::regex("[\\[\\]]"), "");
+          result->host= std::regex_replace(StringImp::get(value), std::regex("[\\[\\]]"), StringImp::get(emptyStr));
         }
         else if ((key.compare("port") == 0)) {
           result->port= getPort(value);
