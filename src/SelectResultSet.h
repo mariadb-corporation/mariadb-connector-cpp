@@ -113,13 +113,17 @@ public:
   static ResultSet* createResultSet(std::vector<SQLString>& columnNames, std::vector<ColumnType>& columnTypes,
     std::vector<std::vector<sql::bytes>>& data, Protocol* protocol);
 
+  virtual ~SelectResultSet() {}
+
   virtual bool isFullyLoaded() const=0;
   virtual void fetchRemaining()=0;
+
 protected:
   virtual std::vector<sql::bytes>& getCurrentRowData()=0;
   virtual void updateRowData(std::vector<sql::bytes>& rawData)=0;
   virtual void deleteCurrentRowData()=0;
   virtual void addRowData(std::vector<sql::bytes>& rawData)=0;
+
 public:
   // These 2 methods are currently hidden in the ResultSet, but used internally. Thus (temporary) adding them here.
   //virtual sql::bytes* getBytes(const SQLString& columnLabel)=0;
@@ -131,10 +135,13 @@ public:
   virtual bool wasNull()=0;
 
   virtual void setForceTableAlias()=0;
+
 public:
   virtual int32_t getRowPointer()=0;
+
 protected:
   virtual void setRowPointer(int32_t pointer)=0;
+
 public:
   virtual std::size_t getDataSize()=0;
   virtual bool isBinaryEncoded()=0;

@@ -67,6 +67,7 @@ public:
     int32_t autoIncrement,
     const SQLString& sql,
     std::vector<Shared::ParameterHolder>& parameters);
+  ~Results() {}
 
   void addStats(int64_t updateCount,int64_t insertId,bool moreResultAvailable);
   void addStatsError(bool moreResultAvailable);

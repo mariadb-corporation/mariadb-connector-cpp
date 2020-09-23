@@ -71,6 +71,9 @@ namespace mariadb
     , buf(nullptr)
     , fieldBuf(dummy)
     , length(0)
+    , lastValueNull(0)
+    , index(0)
+    , pos(0)
   {
   }
 
@@ -112,32 +115,61 @@ namespace mariadb
     return value;
   }
 
+  /* Following 3 methods are used only for binary protocol, and work only for it. Thus makes sense to move them to that class. At some point */
   int32_t RowProtocol::getInternalTinyInt(ColumnDefinition* columnInfo)
   {
-    return getInternalInt(columnInfo);
+    if (lastValueWasNull()) {
+      return 0;
+    }
+    int32_t value = fieldBuf[0];//buf[pos];
+    if (!columnInfo->isSigned()) {
+      value = (fieldBuf[0]/*buf[pos]*/ & 0xff);
+    }
+    return value;
   }
 
   int64_t RowProtocol::parseBit()
   {
     if (length == 1) {
-      return (*buf)[pos][0];
+      return fieldBuf[0]; //(*buf)[pos][0];
     }
     int64_t val= 0;
     uint32_t ind= 0;
     do {
-      val +=(static_cast<int64_t>((*buf)[pos][ind] & 0xff))<<(8 *(length - ++ind));
+      val+= (static_cast<int64_t>(fieldBuf[ind] & 0xff)) << (8 * (length - ind - 1));
+      ++ind;
+           //(static_cast<int64_t>((*buf)[pos][ind] & 0xff))<<(8 *(length - ++ind));
     } while (ind < length);
     return val;
   }
 
   int32_t RowProtocol::getInternalSmallInt(ColumnDefinition* columnInfo)
   {
-    return getInternalInt(columnInfo);
+    if (lastValueWasNull()) {
+      return 0;
+    }
+    int value = (fieldBuf[0] & 0xff) + ((fieldBuf[1] & 0xff) << 8);
+    if (!columnInfo->isSigned()) {
+      return value & 0xffff;
+    }
+    // short cast here is important : -1 will be received as -1, -1 -> 65535
+    return static_cast<int16_t>(value);
   }
 
-  int32_t RowProtocol::getInternalMediumInt(ColumnDefinition* columnInfo)
+  int64_t RowProtocol::getInternalMediumInt(ColumnDefinition* columnInfo)
   {
-    return getInternalInt(columnInfo);
+    if (lastValueWasNull()) {
+      return 0;
+    }
+    int64_t value =
+      ((fieldBuf[0] & 0xff)
+        + ((fieldBuf[1] & 0xff) << 8)
+        + ((fieldBuf[2] & 0xff) << 16)
+        + ((fieldBuf[3] & 0xff) << 24));
+    if (!columnInfo->isSigned()) {
+      value = value & 0xffffffff;
+    }
+    return /*static_cast<int32_t>*/(value);
   }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
@@ -162,7 +194,7 @@ namespace mariadb
 
   void RowProtocol::rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo)
   {
-    if (value < minValue ||value > maxValue) {
+    if (value < 0 && !columnInfo->isSigned() || value < minValue || value > maxValue) {
       throw SQLException(
         "Out of range value for column '"
         + columnInfo->getName()

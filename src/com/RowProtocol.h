@@ -98,6 +98,8 @@ protected:
 
 public:
   RowProtocol(int32_t maxFieldSize, Shared::Options options);
+  virtual ~RowProtocol() {}
+
   void resetRow(std::vector<sql::bytes>& buf);
   virtual void setPosition(int32_t position)=0;
   uint32_t getLengthMaxFieldSize();
@@ -141,8 +143,12 @@ protected:
   int32_t getInternalTinyInt(ColumnDefinition* columnInfo);
   int64_t parseBit();
   int32_t getInternalSmallInt(ColumnDefinition* columnInfo);
-  int32_t getInternalMediumInt(ColumnDefinition* columnInfo);
+  int64_t getInternalMediumInt(ColumnDefinition* columnInfo);
+
+public:
   void rangeCheck(const sql::SQLString& className,int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo);
+
+protected:
   int32_t extractNanos(const SQLString& timestring);
 
 public:

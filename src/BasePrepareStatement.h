@@ -75,6 +75,7 @@ protected:
     Shared::ExceptionFactory& factory);
 
 public:
+  virtual ~BasePrepareStatement(){}
   int64_t executeLargeUpdate();
 
 protected:

@@ -76,7 +76,8 @@ namespace mariadb
       maxFieldSize(0),
       exceptionFactory(factory),
       isTimedout(false),
-      queryTimeout(0)
+      queryTimeout(0),
+      executing(false)
   {
   }
 

@@ -42,6 +42,7 @@ class TextRowProtocolCapi  : public RowProtocol {
 
 public:
   TextRowProtocolCapi(int32_t maxFieldSize, Shared::Options options, MYSQL_RES* capiTextResults);
+  ~TextRowProtocolCapi() {}
 
   void setPosition(int32_t newIndex);
 
