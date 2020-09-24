@@ -150,7 +150,7 @@ namespace mariadb
 
     if (cit != props.end())
     {
-      if (!cit->second.startsWith(mysqlTcp)) {
+      if (!UrlParser::acceptsUrl(cit->second)) {
         uri= mysqlTcp;
       }
       uri.append(cit->second);
