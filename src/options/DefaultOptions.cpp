@@ -145,7 +145,7 @@ namespace sql
         false,
         true}},
       {
-        "yearIsDateType", {"yearIsDateType", "0.9.1", "Year is date type, rather than numerical.", false, true}
+        "yearIsDateType", {"yearIsDateType", "0.9.1", "Year is date type, rather than numerical.", false, false}
       },
       {
         "useCompression", {"useCompression",

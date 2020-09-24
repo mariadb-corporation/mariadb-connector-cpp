@@ -267,154 +267,154 @@ namespace mariadb
     if (this == opt) {
       return true;
     }
-    if (trustServerCertificate !=opt->trustServerCertificate) {
+    if (trustServerCertificate != opt->trustServerCertificate) {
       return false;
     }
-    if (useFractionalSeconds !=opt->useFractionalSeconds) {
+    if (useFractionalSeconds != opt->useFractionalSeconds) {
       return false;
     }
-    if (pinGlobalTxToPhysicalConnection !=opt->pinGlobalTxToPhysicalConnection) {
+    if (pinGlobalTxToPhysicalConnection != opt->pinGlobalTxToPhysicalConnection) {
       return false;
     }
-    if (tcpNoDelay !=opt->tcpNoDelay) {
+    if (tcpNoDelay != opt->tcpNoDelay) {
       return false;
     }
-    if (tcpKeepAlive !=opt->tcpKeepAlive) {
+    if (tcpKeepAlive != opt->tcpKeepAlive) {
       return false;
     }
-    if (tcpAbortiveClose !=opt->tcpAbortiveClose) {
+    if (tcpAbortiveClose != opt->tcpAbortiveClose) {
       return false;
     }
-    if (blankTableNameMeta !=opt->blankTableNameMeta) {
+    if (blankTableNameMeta != opt->blankTableNameMeta) {
       return false;
     }
-    if (allowMultiQueries !=opt->allowMultiQueries) {
+    if (allowMultiQueries != opt->allowMultiQueries) {
       return false;
     }
-    if (rewriteBatchedStatements !=opt->rewriteBatchedStatements) {
+    if (rewriteBatchedStatements != opt->rewriteBatchedStatements) {
       return false;
     }
-    if (useCompression !=opt->useCompression) {
+    if (useCompression != opt->useCompression) {
       return false;
     }
-    if (interactiveClient !=opt->interactiveClient) {
+    if (interactiveClient != opt->interactiveClient) {
       return false;
     }
-    if (useTls !=opt->useTls) {
+    if (useTls != opt->useTls) {
       return false;
     }
-    if (tinyInt1isBit !=opt->tinyInt1isBit) {
+    if (tinyInt1isBit != opt->tinyInt1isBit) {
       return false;
     }
-    if (yearIsDateType !=opt->yearIsDateType) {
+    if (yearIsDateType != opt->yearIsDateType) {
       return false;
     }
-    if (createDatabaseIfNotExist !=opt->createDatabaseIfNotExist) {
+    if (createDatabaseIfNotExist != opt->createDatabaseIfNotExist) {
       return false;
     }
-    if (nullCatalogMeansCurrent !=opt->nullCatalogMeansCurrent) {
+    if (nullCatalogMeansCurrent != opt->nullCatalogMeansCurrent) {
       return false;
     }
-    if (dumpQueriesOnException !=opt->dumpQueriesOnException) {
+    if (dumpQueriesOnException != opt->dumpQueriesOnException) {
       return false;
     }
-    if (useOldAliasMetadataBehavior !=opt->useOldAliasMetadataBehavior) {
+    if (useOldAliasMetadataBehavior != opt->useOldAliasMetadataBehavior) {
       return false;
     }
-    if (allowLocalInfile !=opt->allowLocalInfile) {
+    if (allowLocalInfile != opt->allowLocalInfile) {
       return false;
     }
-    if (cachePrepStmts !=opt->cachePrepStmts) {
+    if (cachePrepStmts != opt->cachePrepStmts) {
       return false;
     }
-    if (useAffectedRows !=opt->useAffectedRows) {
+    if (useAffectedRows != opt->useAffectedRows) {
       return false;
     }
-    if (maximizeMysqlCompatibility !=opt->maximizeMysqlCompatibility) {
+    if (maximizeMysqlCompatibility != opt->maximizeMysqlCompatibility) {
       return false;
     }
-    if (useServerPrepStmts !=opt->useServerPrepStmts) {
+    if (useServerPrepStmts != opt->useServerPrepStmts) {
       return false;
     }
-    if (continueBatchOnError !=opt->continueBatchOnError) {
+    if (continueBatchOnError != opt->continueBatchOnError) {
       return false;
     }
-    if (jdbcCompliantTruncation !=opt->jdbcCompliantTruncation) {
+    if (jdbcCompliantTruncation != opt->jdbcCompliantTruncation) {
       return false;
     }
-    if (cacheCallableStmts !=opt->cacheCallableStmts) {
+    if (cacheCallableStmts != opt->cacheCallableStmts) {
       return false;
     }
-    if (useBatchMultiSendNumber !=opt->useBatchMultiSendNumber) {
+    if (useBatchMultiSendNumber != opt->useBatchMultiSendNumber) {
       return false;
     }
-    if (enablePacketDebug !=opt->enablePacketDebug) {
+    if (enablePacketDebug != opt->enablePacketDebug) {
       return false;
     }
-    if (includeInnodbStatusInDeadlockExceptions !=opt->includeInnodbStatusInDeadlockExceptions) {
+    if (includeInnodbStatusInDeadlockExceptions != opt->includeInnodbStatusInDeadlockExceptions) {
       return false;
     }
-    if (includeThreadDumpInDeadlockExceptions !=opt->includeThreadDumpInDeadlockExceptions) {
+    if (includeThreadDumpInDeadlockExceptions != opt->includeThreadDumpInDeadlockExceptions) {
       return false;
     }
-    if (defaultFetchSize !=opt->defaultFetchSize) {
+    if (defaultFetchSize != opt->defaultFetchSize) {
       return false;
     }
-    if (useBulkStmts !=opt->useBulkStmts) {
+    if (useBulkStmts != opt->useBulkStmts) {
       return false;
     }
-    if (disableSslHostnameVerification !=opt->disableSslHostnameVerification) {
+    if (disableSslHostnameVerification != opt->disableSslHostnameVerification) {
       return false;
     }
-    if (log !=opt->log) {
+    if (log != opt->log) {
       return false;
     }
-    if (profileSql !=opt->profileSql) {
+    if (profileSql != opt->profileSql) {
       return false;
     }
-    if (assureReadOnly !=opt->assureReadOnly) {
+    if (assureReadOnly != opt->assureReadOnly) {
       return false;
     }
-    if (autoReconnect !=opt->autoReconnect) {
+    if (autoReconnect != opt->autoReconnect) {
       return false;
     }
-    if (failOnReadOnly !=opt->failOnReadOnly) {
+    if (failOnReadOnly != opt->failOnReadOnly) {
       return false;
     }
-    if (allowMasterDownConnection !=opt->allowMasterDownConnection) {
+    if (allowMasterDownConnection != opt->allowMasterDownConnection) {
       return false;
     }
-    if (retriesAllDown !=opt->retriesAllDown) {
+    if (retriesAllDown != opt->retriesAllDown) {
       return false;
     }
-    if (validConnectionTimeout !=opt->validConnectionTimeout) {
+    if (validConnectionTimeout != opt->validConnectionTimeout) {
       return false;
     }
-    if (loadBalanceBlacklistTimeout !=opt->loadBalanceBlacklistTimeout) {
+    if (loadBalanceBlacklistTimeout != opt->loadBalanceBlacklistTimeout) {
       return false;
     }
-    if (failoverLoopRetries !=opt->failoverLoopRetries) {
+    if (failoverLoopRetries != opt->failoverLoopRetries) {
       return false;
     }
-    if (pool !=opt->pool) {
+    if (pool != opt->pool) {
       return false;
     }
-    if (staticGlobal !=opt->staticGlobal) {
+    if (staticGlobal != opt->staticGlobal) {
       return false;
     }
-    if (useResetConnection !=opt->useResetConnection) {
+    if (useResetConnection != opt->useResetConnection) {
       return false;
     }
-    if (useReadAheadInput !=opt->useReadAheadInput) {
+    if (useReadAheadInput != opt->useReadAheadInput) {
       return false;
     }
-    if (maxPoolSize !=opt->maxPoolSize) {
+    if (maxPoolSize != opt->maxPoolSize) {
       return false;
     }
-    if (maxIdleTime !=opt->maxIdleTime) {
+    if (maxIdleTime != opt->maxIdleTime) {
       return false;
     }
-    if (poolValidMinDelay !=opt->poolValidMinDelay) {
+    if (poolValidMinDelay != opt->poolValidMinDelay) {
       return false;
     }
     if (user.compare(opt->user) != 0) {
@@ -452,7 +452,7 @@ namespace mariadb
     if (!(socketFactory.compare(opt->socketFactory) == 0)) {
       return false;
     }
-    if (connectTimeout !=opt->connectTimeout) {
+    if (connectTimeout != opt->connectTimeout) {
       return false;
     }
     if (!(pipe.compare(opt->pipe) == 0)) {
@@ -493,13 +493,13 @@ namespace mariadb
     if (!(serverTimezone.compare(opt->serverTimezone) == 0)) {
       return false;
     }
-    if (prepStmtCacheSize !=opt->prepStmtCacheSize) {
+    if (prepStmtCacheSize != opt->prepStmtCacheSize) {
       return false;
     }
-    if (prepStmtCacheSqlLimit !=opt->prepStmtCacheSqlLimit) {
+    if (prepStmtCacheSqlLimit != opt->prepStmtCacheSqlLimit) {
       return false;
     }
-    if (callableStmtCacheSize !=opt->callableStmtCacheSize) {
+    if (callableStmtCacheSize != opt->callableStmtCacheSize) {
       return false;
     }
     if (!(connectionAttributes.compare(opt->connectionAttributes) == 0)) {
@@ -514,10 +514,10 @@ namespace mariadb
     if (maxQuerySizeToLog != opt->maxQuerySizeToLog) {
       return false;
     }
-    if (slowQueryThresholdNanos !=opt->slowQueryThresholdNanos) {
+    if (slowQueryThresholdNanos != opt->slowQueryThresholdNanos) {
       return false;
     }
-    if (autocommit !=opt->autocommit) {
+    if (autocommit != opt->autocommit) {
       return false;
     }
     if (!(poolName.compare(opt->poolName) == 0)) {
