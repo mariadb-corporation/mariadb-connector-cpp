@@ -1091,7 +1091,10 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       +" DATA_TYPE, DATA_TYPE TYPE_NAME,"
       " IF(NUMERIC_PRECISION IS NULL, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION) COLUMN_SIZE, 0 BUFFER_LENGTH,"
       " NUMERIC_SCALE DECIMAL_DIGITS,"
-      " if(IS_GENERATED='NEVER'," + std::to_string(DatabaseMetaData::bestRowNotPseudo) + "," + std::to_string(DatabaseMetaData::bestRowPseudo) + ") PSEUDO_COLUMN"
+      + (connection->getProtocol()->versionGreaterOrEqual(10, 2, 5)
+        ? " if(IS_GENERATED='NEVER'," + std::to_string(DatabaseMetaData::bestRowNotPseudo) + "," + std::to_string(DatabaseMetaData::bestRowPseudo) + ")"
+        : std::to_string(DatabaseMetaData::bestRowNotPseudo))
+      + " PSEUDO_COLUMN"
       " FROM INFORMATION_SCHEMA.COLUMNS"
       " WHERE COLUMN_KEY IN('PRI', 'UNI')"
       " AND IS_NULLABLE='NO' AND "
