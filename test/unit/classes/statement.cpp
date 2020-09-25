@@ -585,7 +585,7 @@ void statement::queryTimeout()
   //TODO: Enable it after fixing
   SKIP("Removed untill fixed");
 
-  int serverVersion= getMySQLVersion(con);
+  int serverVersion= getServerVersion(con);
   int timeout= 2;
   if ( serverVersion < 57004 )
   {

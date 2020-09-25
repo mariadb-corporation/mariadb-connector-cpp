@@ -187,7 +187,7 @@ void connection::getClientOption()
       fail(e.what(), __FILE__, __LINE__);
     }
 
-    int serverVersion=getMySQLVersion(con);
+    int serverVersion=getServerVersion(con);
     if ( serverVersion >= 57003)
     {
       try
@@ -2348,7 +2348,7 @@ void connection::loadSameLibraryTwice()
    in second case the error has to be different */
 void connection::enableClearTextAuth()
 {
-  int serverVersion=getMySQLVersion(con);
+  int serverVersion=getServerVersion(con);
 
   if ( ((serverVersion < 55027) || (serverVersion > 56000)) && (serverVersion < 56007))
   {
@@ -2732,7 +2732,7 @@ void connection::connectSSLEnforce()
 void connection::setAuthDir()
 {
   logMsg("connection::setAuthDir - MYSQL_PLUGIN_DIR");
-  int serverVersion=getMySQLVersion(con);
+  int serverVersion=getServerVersion(con);
   if ( serverVersion >= 50703 )
   {
     SKIP("Server version >= 5.7.3 needed to run this test");
@@ -2764,7 +2764,7 @@ void connection::setAuthDir()
 void connection::setDefaultAuth()
 {
   logMsg("connection::setDefaultAuth - MYSQL_DEFAULT_AUTH");
-  int serverVersion=getMySQLVersion(con);
+  int serverVersion=getServerVersion(con);
   if ( serverVersion < 50703 )
   {
     SKIP("Server version >= 5.7.3 needed to run this test");
@@ -3050,6 +3050,11 @@ void connection::tls_version()
 {
   logMsg("connection::tls_version - OPT_TLS_VERSION");
 
+  if (getServerVersion(con) < 104006)
+  {
+    SKIP("Server does not support tls_version variable");
+  }
+
   sql::ConnectOptionsMap connection_properties;
 
   connection_properties["hostName"]= url;
@@ -3135,7 +3140,7 @@ void connection::cached_sha2_auth()
 
   logMsg("connection::auth - MYSQL_OPT_GET_SERVER_PUBLIC_KEY");
 
-  int serverVersion= getMySQLVersion(con);
+  int serverVersion= getServerVersion(con);
   if (serverVersion < 80000 || serverVersion > 100000)
   {
     SKIP("Server doesn't support caching_sha2_password");

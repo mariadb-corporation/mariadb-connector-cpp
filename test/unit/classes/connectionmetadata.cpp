@@ -363,7 +363,7 @@ void connectionmetadata::getColumns()
 {
   logMsg("connectionmetadata::getColumn() - MySQL_ConnectionMetaData::getColumns");
 
-  if (getMySQLVersion(con) < 80000)
+  if (getServerVersion(con) < 80000)
   {
     SKIP("Due to changes on the VARBINARY, this test is disabled.");
     return;
@@ -1132,7 +1132,7 @@ void connectionmetadata::getIndexInfo()
     ASSERT(!res->next());
 
     //Was wrong on previous versions....
-    if (getMySQLVersion(con) >= 80000)
+    if (getServerVersion(con) >= 80000)
     {
       stmt->execute("DROP TABLE IF EXISTS test");
       stmt->execute("CREATE TABLE test(col1 INT NOT NULL, col2 INT NOT NULL, col3 INT NOT NULL, col4 INT, col5 INT, PRIMARY KEY(col1))");

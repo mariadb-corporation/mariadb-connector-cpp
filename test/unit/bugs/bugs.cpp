@@ -278,7 +278,7 @@ void bugs::expired_pwd()
   //TODO: Enable it after fixing
   SKIP("Removed untill fixed");
 
-  if (getMySQLVersion(con) < 56006)
+  if (getServerVersion(con) < 56006)
   {
     SKIP("The server does not support tested functionality(expired password)");
   }
@@ -494,7 +494,7 @@ void bugs::bug71606()
 {
   logMsg("bugs::bug71606");
 
-  if (getMySQLVersion(con) < 56000)
+  if (getServerVersion(con) < 56000)
   {
     SKIP("The server does not support tested functionality(utf8mb4 charset)");
   }
@@ -1096,7 +1096,7 @@ void bugs::bug28204677()
 {
   logMsg("bugs::bug71606");
 
-  if (getMySQLVersion(con) < 57000)
+  if (getServerVersion(con) < 57000)
   {
     SKIP("The server does not support tested functionality(default utf8mb4 charset)");
   }

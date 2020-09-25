@@ -1254,6 +1254,12 @@ void resultset::JSON_support()
   std::stringstream msg;
 
   logMsg("resultset::JSON_support - MySQL_ResultSet::*");
+
+  if (getServerVersion(con) < 102007)
+  {
+    SKIP("Server does not support JSON");
+  }
+
   try
   {
     stmt.reset(con->createStatement());

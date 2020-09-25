@@ -346,7 +346,7 @@ protected:
   /**
    * Helper function to fetch the MySQL Server version as a classical integer in the range from 30000 - 99999
    */
-  int getMySQLVersion(Connection &con);
+  int getServerVersion(Connection &con);
 
 public:
 
