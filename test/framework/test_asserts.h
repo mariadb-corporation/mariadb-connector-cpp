@@ -98,8 +98,7 @@ void assertEquals(const String& expected, const char* result
 // These are needed because blobs may contain \0, and const char* won't work for them
 void assertEquals(const sql::SQLString & result, const String& expected
                   , const char* file, int line);
-void assertEquals(const sql::SQLString& expected, const char* result
-                  , const char* file, int line);
+
 void assertEquals(const sql::SQLString& expected, const char* result
                   , const char* file, int line);
 // Needed to avoid ambiguity

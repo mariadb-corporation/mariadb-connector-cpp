@@ -33,16 +33,20 @@
 #include "Warning.h"
 
 #include <sstream>
+#include <cstdlib>
 #include <stdlib.h>
 #include "ResultSet.h"
 #include "Types.h"
 #include "Connection.h"
 #include "resultsettest.h"
 
+
 namespace testsuite
 {
 namespace classes
 {
+
+static const sql::SQLString id("id");
 
 void resultset::getInt()
 {
@@ -182,7 +186,7 @@ void resultset::getTypes()
     stmt.reset(con->createStatement());
     logMsg("... looping over all kinds of column types");
 
-    for (it=columns.begin(); it != columns.end(); it++)
+    for (it = columns.begin(); it != columns.end(); it++)
     {
       stmt->execute("DROP TABLE IF EXISTS test");
       msg.str("");
@@ -194,7 +198,7 @@ void resultset::getTypes()
         msg << "... testing " << it->sqldef << ", value = '" << it->value << "'";
         logMsg(msg.str());
       }
-      catch (sql::SQLException &)
+      catch (sql::SQLException&)
       {
         msg.str("");
         msg << "... skipping " << it->sqldef;
@@ -203,7 +207,7 @@ void resultset::getTypes()
       }
 
       msg.str("");
-      switch(it->ctype)
+      switch (it->ctype)
       {
       case sql::DataType::BIT:
         msg << "INSERT INTO test(id) VALUES (" << it->value << ")";
@@ -217,7 +221,7 @@ void resultset::getTypes()
         stmt->execute(msg.str());
         ASSERT_EQUALS(1, (int)stmt->getUpdateCount());
       }
-      catch (sql::SQLException &e)
+      catch (sql::SQLException & e)
       {
         logErr(e.what());
         logErr("SQLState: " + std::string(e.getSQLState()));
@@ -239,21 +243,23 @@ void resultset::getTypes()
       if (it->check_as_string)
       {
         logMsg("... checking string value");
-        if (it->as_string != res->getString("id"))
+        if (it->as_string != res->getString(id))
         {
           msg.str("");
-          msg << "... expecting '" << it->as_string << "', got '" << res->getString("id") << "'";
+          msg << "... expecting '" << it->as_string << "', got '" << res->getString(id) << "'";
           logMsg(msg.str());
-          got_warning=true;
+          got_warning = true;
         }
       }
-      ASSERT_EQUALS(res->getString("id"), res->getString(1));
+
+      ASSERT(res->getString(id).compare(res->getString(1)) == 0);
+
       try
       {
         res->getString(0);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::InvalidArgumentException&)
       {
       }
 
@@ -262,7 +268,7 @@ void resultset::getTypes()
         res->getString(3);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::InvalidArgumentException&)
       {
       }
 
@@ -272,7 +278,7 @@ void resultset::getTypes()
         res->getString(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
       res->afterLast();
@@ -281,19 +287,126 @@ void resultset::getTypes()
         res->getString(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
       res->first();
+      ASSERT_EQUALS(res->getBoolean(id), res->getBoolean(1));
+      try
+      {
+        res->getBoolean(0);
+        FAIL("Invalid argument not detected");
+      }
+      catch (sql::InvalidArgumentException&)
+      {
+      }
 
-      ASSERT_EQUALS(res->getDouble("id"), res->getDouble(1));
+      try
+      {
+        res->getBoolean(3);
+        FAIL("Invalid argument not detected");
+      }
+      catch (sql::InvalidArgumentException&)
+      {
+      }
 
+      res->beforeFirst();
+      try
+      {
+        res->getBoolean(1);
+        FAIL("Invalid argument not detected");
+      }
+      catch (sql::SQLDataException&)
+      {
+      }
+      res->afterLast();
+      try
+      {
+        res->getBoolean(1);
+        FAIL("Invalid argument not detected");
+      }
+      catch (sql::SQLDataException&)
+      {
+      }
+
+      res->first();
+      // Comparing prepared statement resultset and statement resultset
+      if (it->check_as_string && (pres->getString(id) != res->getString(id)))
+      {
+        if (it->sqldef.find("ZEROFILL", 0) == std::string::npos)
+        {
+          ps_value = pres->getString(id);
+          len_st = res->getString(id).length();
+          len_ps = ps_value.length();
+          if (len_ps > len_st)
+          {
+            // Something like 1.01000 vs. 1.01 ?
+            std::string::size_type i;
+            for (i = len_st; i < len_ps; i++)
+            {
+              if (ps_value.at(i) != '0')
+                break;
+            }
+            if (i < (len_ps - 1))
+            {
+              got_warning = true;
+              msg.str("");
+              msg << "... \t\tWARNING - getString(), PS: '" << pres->getString(id) << "'";
+              msg << ", Statement: '" << res->getString(id) << "'";
+              logMsg(msg.str());
+            }
+          }
+        }
+      }
+
+      try
+      {
+        ASSERT_EQUALS(res->getDouble(id), res->getDouble(1));
+      }
+      catch (sql::SQLException & e)
+      {
+        if ((it->name.compare("DATE") != 0 && it->name.compare("DATETIME") != 0 && it->name.compare("TIMESTAMP") != 0 && it->name.compare("TIME") != 0 &&
+             it->name.compare("CHAR") != 0 && it->name.compare("BINARY") != 0 && it->name.compare("VARCHAR") != 0 && it->name.compare("VARBINARY") != 0 &&
+             it->name.compare("TINYBLOB") != 0 && it->name.compare("TINYTEXT") != 0 && it->name.compare("TEXT") != 0 && it->name.compare("BLOB") != 0 &&
+             it->name.compare("MEDIUMTEXT") != 0 && it->name.compare("MEDIUMBLOB") != 0 && it->name.compare("LONGBLOB") != 0 &&
+          it->name.compare("LONGTEXT") != 0 && it->name.compare("ENUM") && it->name.compare("SET"))
+          || !e.getMessage().startsWith("getDouble not available for data field type Types::") && !e.getMessage().startsWith("Incorrect format "))
+        {
+          throw e;
+        }
+        try
+        {
+          res->getInt(id);
+          FAIL("getInt shouldn't be available for this type");
+        }
+        catch (sql::SQLException&)
+        {
+        }
+        try
+        {
+          pres->getDouble(id);
+          FAIL("getInt shouldn't be available for this type");
+        }
+        catch (sql::SQLException&)
+        {
+        }
+        try
+        {
+          pres->getInt(id);
+          FAIL("getInt shouldn't be available for this type");
+        }
+        catch (sql::SQLException&)
+        {
+        }
+        // There is not sense to continue for this type further
+        continue;
+      }
       try
       {
         res->getDouble(0);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::InvalidArgumentException&)
       {
       }
 
@@ -302,7 +415,7 @@ void resultset::getTypes()
         res->getDouble(3);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::InvalidArgumentException&)
       {
       }
 
@@ -312,7 +425,7 @@ void resultset::getTypes()
         res->getDouble(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
       res->afterLast();
@@ -321,18 +434,82 @@ void resultset::getTypes()
         res->getDouble(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
       res->first();
 
-      ASSERT_EQUALS(res->getInt(1), res->getInt("id"));
+      int64_t intValue = 0;
+      bool isNumber = true, inIntRange = true, inUintRange = !it->is_negative, inInt64Range = true;
+      try
+      {
+        if (it->is_negative)
+        {
+          intValue = std::stoll(it->value.c_str());
+        }
+        else
+        {
+          intValue = static_cast<int64_t>(std::stoull(it->value.c_str()));
+        }
+      }
+      catch (...)
+      {
+        isNumber = false;
+      }
+
+      if (!it->is_negative && intValue < 0 || intValue < INT32_MIN || intValue > INT32_MAX)
+      {
+        inIntRange = false;
+        try
+        {
+          res->getInt(1);
+          FAIL("Overflow of int value is not detected");
+        }
+        catch (sql::SQLException & e)
+        {
+          //All is good
+          ASSERT_EQUALS(1264, e.getErrorCode());
+          ASSERT_EQUALS("22003", e.getSQLState());
+        }
+
+        if (intValue >= 0 && intValue <= UINT32_MAX)
+        {
+          ASSERT_EQUALS(res->getUInt(1), res->getUInt(id));
+        }
+        else
+        {
+          inUintRange = false;
+          if (!it->is_negative && intValue < 0)// i.e. value is in fact uint64_t
+          {
+            try
+            {
+              res->getLong(1); //getInt64 is the same
+              FAIL("Overflow of int64 value is not detected");
+            }
+            catch (sql::SQLException & e)
+            {
+              //All is good
+              ASSERT_EQUALS(1264, e.getErrorCode());
+              ASSERT_EQUALS("22003", e.getSQLState());
+            }
+          }
+          else
+          {
+            ASSERT_EQUALS(res->getInt64(1), res->getInt64(id));
+          }
+        }
+      }
+      else
+      {
+        ASSERT_EQUALS(res->getInt(1), res->getInt(id));
+      }
+
       try
       {
         res->getInt(0);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::InvalidArgumentException&)
       {
       }
 
@@ -341,7 +518,7 @@ void resultset::getTypes()
         res->getInt(3);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::InvalidArgumentException&)
       {
       }
 
@@ -351,7 +528,7 @@ void resultset::getTypes()
         res->getInt(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
       res->afterLast();
@@ -360,15 +537,33 @@ void resultset::getTypes()
         res->getInt(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
       res->first();
 
-      ASSERT_EQUALS(res->getUInt64(1), res->getUInt64("id"));
+      if (it->is_negative || !inUintRange)
+      {
+        try
+        {
+          ASSERT_EQUALS(res->getUInt(1), res->getUInt(id));
+
+          FAIL("Range error(negative value) has not been detected");
+        }
+        catch (sql::SQLException & e)
+        {
+          ASSERT_EQUALS(1264, e.getErrorCode());
+          ASSERT_EQUALS("22003", e.getSQLState());
+        }
+      }
+      else
+      {
+        ASSERT_EQUALS(res->getUInt(1), res->getUInt(id));
+      }
+
       try
       {
-        res->getUInt64(0);
+        res->getUInt(0);
         FAIL("Invalid argument not detected");
       }
       catch (sql::InvalidArgumentException &)
@@ -377,7 +572,7 @@ void resultset::getTypes()
 
       try
       {
-        res->getUInt64(3);
+        res->getUInt(3);
         FAIL("Invalid argument not detected");
       }
       catch (sql::InvalidArgumentException &)
@@ -387,24 +582,28 @@ void resultset::getTypes()
       res->beforeFirst();
       try
       {
-        res->getUInt64(1);
+        res->getUInt(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
       res->afterLast();
       try
       {
-        res->getUInt64(1);
+        res->getUInt(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
       res->first();
 
-      ASSERT_EQUALS(res->getInt64("id"), res->getInt64(1));
+      // intValue >= 0 means it's in int64 range
+      if (it->is_negative || intValue >= 0)
+      {
+        ASSERT_EQUALS(res->getInt64(id), res->getInt64(1));
+      }
       try
       {
         res->getInt64(0);
@@ -429,7 +628,7 @@ void resultset::getTypes()
         res->getInt64(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
       res->afterLast();
@@ -438,12 +637,30 @@ void resultset::getTypes()
         res->getInt64(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
       res->first();
 
-      ASSERT_EQUALS(res->getUInt64("id"), res->getUInt64(1));
+      if (it->is_negative)
+      {
+        try
+        {
+          ASSERT_EQUALS(res->getUInt64(1), res->getUInt64(id));
+
+          FAIL("Range error(negative value) has not been detected");
+        }
+        catch (sql::SQLException & e)
+        {
+          ASSERT_EQUALS(1264, e.getErrorCode());
+          ASSERT_EQUALS("22003", e.getSQLState());
+        }
+      }
+      else
+      {
+        ASSERT_EQUALS(res->getUInt64(1), res->getUInt64(id));
+      }
+
       try
       {
         res->getUInt64(0);
@@ -468,7 +685,7 @@ void resultset::getTypes()
         res->getUInt64(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
       res->afterLast();
@@ -477,134 +694,76 @@ void resultset::getTypes()
         res->getUInt64(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
+      catch (sql::SQLDataException&)
       {
       }
+
       res->first();
 
-      ASSERT_EQUALS(res->getBoolean("id"), res->getBoolean(1));
       try
       {
-        res->getBoolean(0);
-        FAIL("Invalid argument not detected");
-      }
-      catch (sql::InvalidArgumentException &)
-      {
-      }
-
-      try
-      {
-        res->getBoolean(3);
-        FAIL("Invalid argument not detected");
-      }
-      catch (sql::InvalidArgumentException &)
-      {
-      }
-
-      res->beforeFirst();
-      try
-      {
-        res->getBoolean(1);
-        FAIL("Invalid argument not detected");
-      }
-      catch (sql::InvalidArgumentException &)
-      {
-      }
-      res->afterLast();
-      try
-      {
-        res->getBoolean(1);
-        FAIL("Invalid argument not detected");
-      }
-      catch (sql::InvalidArgumentException &)
-      {
-      }
-      res->first();
-
-      // Comparing prepared statement resultset and statement resultset
-      if (it->check_as_string && (pres->getString("id") != res->getString("id")))
-      {
-        if (it->sqldef.find("ZEROFILL", 0) == std::string::npos)
+        if (!fuzzyEquals(pres->getDouble(id), res->getDouble(id), 0.001))
         {
-          ps_value=pres->getString("id");
-          len_st=res->getString("id").length();
-          len_ps=ps_value.length();
-          if (len_ps > len_st)
-          {
-            // Something like 1.01000 vs. 1.01 ?
-            std::string::size_type i;
-            for (i=len_st; i < len_ps; i++)
-            {
-              if (ps_value.at(i) != '0')
-                break;
-            }
-            if (i < (len_ps - 1))
-            {
-              got_warning=true;
-              msg.str("");
-              msg << "... \t\tWARNING - getString(), PS: '" << pres->getString("id") << "'";
-              msg << ", Statement: '" << res->getString("id") << "'";
-              logMsg(msg.str());
-            }
-          }
+          msg.str("");
+          msg << "... \t\tWARNING - getDouble(), PS: '" << pres->getDouble(id) << "'";
+          msg << ", Statement: '" << res->getDouble(id) << "'";
+          msg << ", Difference: '" << (pres->getDouble(id) - res->getDouble(id)) << "'";
+          logMsg(msg.str());
+          got_warning = true;
         }
-
       }
-      // ASSERT_EQUALS(pres->getString("id"), res->getString("id"));
+      catch (sql::SQLException & e)
+      {
+        if (it->name.compare("DATE") != 0 || !e.getMessage().startsWith("getDouble not available for data field type Types::"))
+        {
+          throw e;
+        }
+      }
 
-      if (!fuzzyEquals(pres->getDouble("id"), res->getDouble("id"), 0.001))
+      if (inIntRange && (pres->getInt(id) != res->getInt(id)))
       {
         msg.str("");
-        msg << "... \t\tWARNING - getDouble(), PS: '" << pres->getDouble("id") << "'";
-        msg << ", Statement: '" << res->getDouble("id") << "'";
-        msg << ", Difference: '" << (pres->getDouble("id") - res->getDouble("id")) << "'";
+        msg << "... \t\tWARNING - getInt(), PS: '" << pres->getInt(id) << "'";
+        msg << ", Statement: '" << res->getInt(id) << "'";
         logMsg(msg.str());
         got_warning=true;
       }
 
-      //ASSERT_EQUALS(pres->getDouble("id"), res->getDouble("id"));
-
-      if (pres->getInt("id") != res->getInt("id"))
+      if (!it->is_negative && (pres->getUInt64(id) != res->getUInt64(id)))
       {
         msg.str("");
-        msg << "... \t\tWARNING - getInt(), PS: '" << pres->getInt("id") << "'";
-        msg << ", Statement: '" << res->getInt("id") << "'";
+        msg << "... \t\tWARNING - getUInt64(), PS: '" << pres->getUInt64(id) << "'";
+        msg << ", Statement: '" << res->getUInt64(id) << "'";
         logMsg(msg.str());
         got_warning=true;
       }
-      // ASSERT_EQUALS(pres->getInt("id"), res->getInt("id"));
 
-      if (!it->is_negative && (pres->getUInt64("id") != res->getUInt64("id")))
+      if (inUintRange)
+      {
+        ASSERT_EQUALS(pres->getUInt(id), res->getUInt(id));
+      }
+
+      if ((it->is_negative || intValue >= 0) && pres->getInt64(id) != res->getInt64(id))
       {
         msg.str("");
-        msg << "... \t\tWARNING - getUInt(), PS: '" << pres->getUInt64("id") << "'";
-        msg << ", Statement: '" << res->getUInt64("id") << "'";
+        msg << "... \t\tWARNING - getInt64(), PS: '" << pres->getInt64(id) << "'";
+        msg << ", Statement: '" << res->getInt64(id) << "'";
         logMsg(msg.str());
         got_warning=true;
       }
-      // ASSERT_EQUALS(pres->getUInt("id"), res->getUInt("id"));
+      // ASSERT_EQUALS(pres->getInt64(id), res->getInt64(id));
 
-      if (pres->getInt64("id") != res->getInt64("id"))
+      if (!it->is_negative && (pres->getUInt64(id) != res->getUInt64(id)))
       {
         msg.str("");
-        msg << "... \t\tWARNING - getInt64(), PS: '" << pres->getInt64("id") << "'";
-        msg << ", Statement: '" << res->getInt64("id") << "'";
+        msg << "... \t\tWARNING - getUInt64(), PS: '" << pres->getUInt64(id) << "'";
+        msg << ", Statement: '" << res->getUInt64(id) << "'";
         logMsg(msg.str());
         got_warning=true;
       }
-      // ASSERT_EQUALS(pres->getInt64("id"), res->getInt64("id"));
+      // ASSERT_EQUALS(pres->getUInt64(id), res->getUInt64(id));
 
-      if (!it->is_negative && (pres->getUInt64("id") != res->getUInt64("id")))
-      {
-        msg.str("");
-        msg << "... \t\tWARNING - getUInt64(), PS: '" << pres->getUInt64("id") << "'";
-        msg << ", Statement: '" << res->getUInt64("id") << "'";
-        logMsg(msg.str());
-        got_warning=true;
-      }
-      // ASSERT_EQUALS(pres->getUInt64("id"), res->getUInt64("id"));
-
-      ASSERT_EQUALS(pres->getBoolean("id"), res->getBoolean(1));
+      ASSERT_EQUALS(pres->getBoolean(id), res->getBoolean(1));
 
     }
     if (got_warning)
@@ -691,23 +850,23 @@ void resultset::getTypesMinorIssues()
       checkResultSetScrolling(pres);
       ASSERT(pres->next());
 
-      if (it->check_as_string && (it->as_string != res->getString("id")))
+      if (it->check_as_string && (it->as_string != res->getString(id)))
       {
         msg.str("");
-        msg << "... expecting '" << it->as_string << "', got '" << res->getString("id") << "'";
+        msg << "... expecting '" << it->as_string << "', got '" << res->getString(id) << "'";
         logMsg(msg.str());
         got_warning=true;
 
       }
 
       // Comparing prepared statement resultset and statement resultset
-      if (pres->getString("id") != res->getString("id"))
+      if (pres->getString(id) != res->getString(id))
       {
         if (it->sqldef.find("ZEROFILL", 0) == std::string::npos)
         {
           bool is_minor=false;
-          ps_value=pres->getString("id");
-          len_st=res->getString("id").length();
+          ps_value=pres->getString(id);
+          len_st=res->getString(id).length();
           len_ps=ps_value.length();
           if (len_ps > len_st)
           {
@@ -740,13 +899,13 @@ void resultset::getTypesMinorIssues()
           msg.str("");
           if (is_minor)
           {
-            msg << "... \t\tMINOR WARNING - getString(), PS: '" << pres->getString("id") << "'";
+            msg << "... \t\tMINOR WARNING - getString(), PS: '" << pres->getString(id) << "'";
           }
           else
           {
-            msg << "... \t\tWARNING - getString(), PS: '" << pres->getString("id") << "'";
+            msg << "... \t\tWARNING - getString(), PS: '" << pres->getString(id) << "'";
           }
-          msg << ", Statement: '" << res->getString("id") << "'";
+          msg << ", Statement: '" << res->getString(id) << "'";
           logMsg(msg.str());
         }
 
@@ -944,8 +1103,8 @@ void resultset::fetchBitAsInt()
     res.reset(stmt->executeQuery("SELECT id, CAST(id AS SIGNED) AS bit_as_signed FROM test ORDER BY id"));
     while (res->next())
     {
-      ASSERT_EQUALS(res->getInt("id"), res->getInt("bit_as_signed"));
-      ASSERT_EQUALS(res->getInt("id"), res->getInt(1));
+      ASSERT_EQUALS(res->getInt(id), res->getInt("bit_as_signed"));
+      ASSERT_EQUALS(res->getInt(id), res->getInt(1));
     }
 
     logMsg("... BIT(0) - PS");
@@ -953,8 +1112,8 @@ void resultset::fetchBitAsInt()
     res.reset(pstmt->executeQuery());
     while (res->next())
     {
-      ASSERT_EQUALS(res->getInt("id"), res->getInt("bit_as_signed"));
-      ASSERT_EQUALS(res->getInt("id"), res->getInt(1));
+      ASSERT_EQUALS(res->getInt(id), res->getInt("bit_as_signed"));
+      ASSERT_EQUALS(res->getInt(id), res->getInt(1));
     }
 
 
@@ -1005,16 +1164,15 @@ void resultset::getResultSetType()
   sql::ConnectOptionsMap connection_properties;
 
   logMsg("resultset::getResultSetType - MySQL_ResultSet::*");
+
+  SKIP("defaultStatementResultType connection option is not supported")
   try
   {
 
-    /* url comes from the unit testing framework */
-    connection_properties["hostName"]=url;
-
     /* user comes from the unit testing framework */
-    connection_properties["userName"]=user;
+    connection_properties["user"]= user;
 
-    connection_properties["password"]=passwd;
+    connection_properties["password"]= passwd;
 
     connection_properties.erase("defaultStatementResultType");
     {
@@ -1023,7 +1181,7 @@ void resultset::getResultSetType()
       try
       {
         created_objects.clear();
-        con.reset(driver->connect(connection_properties));
+        con.reset(driver->connect(url, connection_properties));
       }
       catch (sql::SQLException &e)
       {
@@ -1035,14 +1193,14 @@ void resultset::getResultSetType()
       /* NOTE: no bug - PS supports TYPE_SCROLL_INSENSITIVE only and we
        are setting StatementResultType not PreparedStatementResultType */
       res.reset(pstmt->executeQuery());
-      ASSERT_EQUALS(pstmt->getResultSetType(), sql::ResultSet::TYPE_SCROLL_INSENSITIVE);
+      ASSERT_EQUALS(pstmt->getResultSetType(), sql::ResultSet::TYPE_FORWARD_ONLY);// sql::ResultSet::TYPE_SCROLL_INSENSITIVE);
 
       connection_properties.erase("defaultStatementResultType");
       connection_properties["defaultStatementResultType"]= std::to_string(sql::ResultSet::TYPE_SCROLL_INSENSITIVE);
       try
       {
         created_objects.clear();
-        con.reset(driver->connect(connection_properties));
+        con.reset(driver->connect(url, connection_properties));
       }
       catch (sql::SQLException &e)
       {
@@ -1061,7 +1219,7 @@ void resultset::getResultSetType()
         created_objects.clear();
         try
         {
-          con.reset(driver->connect(connection_properties));
+          con.reset(driver->connect(url, connection_properties));
           FAIL("Bug or API change - TYPE_SCROLL_SENSITIVE is unsupported");
           stmt.reset(con->createStatement());
           ASSERT_EQUALS(stmt->getResultSetType(), sql::ResultSet::TYPE_SCROLL_SENSITIVE);

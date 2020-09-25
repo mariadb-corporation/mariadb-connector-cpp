@@ -323,6 +323,7 @@ namespace capi
      int32_t nanoBegin= -1;
      std::vector<int32_t> timestampsPart{ 0,0,0,0,0,0,0 };
      int32_t partIdx= 0;
+
      for (uint32_t begin= pos; begin <pos +length; begin++) {
        int8_t b= fieldBuf[begin];
        if (b == '-'||b == ' '||b == ':') {
@@ -334,7 +335,7 @@ namespace capi
          nanoBegin= begin;
          continue;
        }
-       if (b <'0'||b >'9') {
+       if (b <'0' || b >'9') {
          throw SQLException(
            "cannot parse data in timestamp string '"
            + SQLString(fieldBuf.arr + pos, length)
@@ -351,14 +352,14 @@ namespace capi
        && timestampsPart[5] == 0
        && timestampsPart[6] == 0)
      {
-       lastValueNull |=BIT_LAST_ZERO_DATE;
+       lastValueNull|= BIT_LAST_ZERO_DATE;
        return nullTs;
      }
 
-
+     // fix non leading tray for nanoseconds
      if (nanoBegin > 0) {
        for (uint32_t begin= 0; begin <6 -(pos +length -nanoBegin -1); begin++) {
-         timestampsPart[6]= timestampsPart[6] *10;
+         timestampsPart[6]= timestampsPart[6]*10;
        }
      }
 
@@ -370,8 +371,11 @@ namespace capi
      timestamp << (timestampsPart[2] < 10 ? "0" : "") << timestampsPart[2] << " ";
      timestamp << (timestampsPart[3] < 10 ? "0" : "") << timestampsPart[3] << ":";
      timestamp << (timestampsPart[4] < 10 ? "0" : "") << timestampsPart[4] << ":";
-     timestamp << (timestampsPart[5] < 10 ? "0" : "") << timestampsPart[5] << ".";
-     timestamp << (nanosStr.length() < 9 ? std::string(9 - nanosStr.length(), '0') : "") << nanosStr;
+     timestamp << (timestampsPart[5] < 10 ? "0" : "") << timestampsPart[5];
+     
+     if (timestampsPart[6] > 0) {
+       timestamp << "." << (nanosStr.length() < 9 ? std::string(9 - nanosStr.length(), '0') : "") << nanosStr;
+     }
 
      return std::unique_ptr<Timestamp>(new Timestamp(timestamp.str()));
    }
@@ -725,6 +729,7 @@ namespace capi
    if (lastValueWasNull()) {
      return 0;
    }
+
    try {
      switch (columnInfo->getColumnType().getType()) {
      case MYSQL_TYPE_FLOAT:
@@ -751,38 +756,97 @@ namespace capi
      case MYSQL_TYPE_LONG:
      case MYSQL_TYPE_INT24:
      case MYSQL_TYPE_LONGLONG:
-       if (columnInfo->isSigned()) {
-         return std::stoll(fieldBuf.arr);
-       }
-       else {
-         return std::stoull(fieldBuf.arr);
-       }
+       return std::stoll(fieldBuf.arr);
+     case MYSQL_TYPE_TIMESTAMP:
+     case MYSQL_TYPE_DATETIME:
+     case MYSQL_TYPE_TIME:
+     case MYSQL_TYPE_DATE:
+       throw SQLException(
+         "Conversion to integer not available for data field type "
+         + columnInfo->getColumnType().getCppTypeName());
      default:
        return std::stoll(std::string(fieldBuf.arr + pos, length));
      }
 
    }
-   catch (std::invalid_argument&) {
+   // Common parent for std::invalid_argument and std::out_of_range
+   catch (std::logic_error&) {
 
-     std::string value(fieldBuf.arr + pos, length);
-     if (std::regex_match(value, isIntegerRegex)) {
-       try {
-         return std::stoll(value.substr(0, value.find_first_of(".")));
-       }
-       catch (std::invalid_argument&) {
-
-       }
-     }
      throw SQLException(
-       "Out of range value for column '"+columnInfo->getName()+"' : value "+value,
+       "Out of range value for column '"+columnInfo->getName()+"' : value " + SQLString(fieldBuf.arr, length),
        "22003",
        1264);
    }
  }
 
+
  uint64_t TextRowProtocolCapi::getInternalULong(ColumnDefinition * columnInfo)
  {
-   return static_cast<uint64_t>(getInternalLong(columnInfo));
+   if (lastValueWasNull()) {
+     return 0;
+   }
+
+   uint64_t value= 0;
+
+   try {
+     switch (columnInfo->getColumnType().getType()) {
+     case MYSQL_TYPE_FLOAT:
+     case MYSQL_TYPE_DOUBLE:
+     {
+       long double doubleValue = std::stold(fieldBuf.arr);
+       if (doubleValue < 0 || doubleValue > static_cast<long double>(UINT64_MAX)) {
+         throw SQLException(
+           "Out of range value for column '"
+           + columnInfo->getName()
+           + "' : value "
+           + SQLString(fieldBuf.arr, length)
+           + " is not in uint64_t range",
+           "22003",
+           1264);
+       }
+       return static_cast<uint64_t>(doubleValue);
+     }
+     case MYSQL_TYPE_BIT:
+       return static_cast<uint64_t>(parseBit());
+     case MYSQL_TYPE_TINY:
+     case MYSQL_TYPE_SHORT:
+     case MYSQL_TYPE_YEAR:
+     case MYSQL_TYPE_LONG:
+     case MYSQL_TYPE_INT24:
+     case MYSQL_TYPE_LONGLONG:
+       value= sql::mariadb::stoull(fieldBuf.arr);
+       break;
+     case MYSQL_TYPE_TIMESTAMP:
+     case MYSQL_TYPE_DATETIME:
+     case MYSQL_TYPE_TIME:
+     case MYSQL_TYPE_DATE:
+       throw SQLException(
+         "Conversion to integer not available for data field type "
+         + columnInfo->getColumnType().getCppTypeName());
+     default:
+       value= sql::mariadb::stoull(fieldBuf.arr + pos, length);
+     }
+
+   }
+   // Common parent for std::invalid_argument and std::out_of_range
+   catch (std::logic_error&) {
+     /*std::stoll and std::stoull take care of */
+     /*std::string value(fieldBuf.arr + pos, length);
+     if (std::regex_match(value, isIntegerRegex)) {
+       try {
+         return std::stoull(value.substr(0, value.find_first_of(".")));
+       }
+       catch (std::exception&) {
+
+       }
+     }*/
+     throw SQLException(
+       "Out of range value for column '" + columnInfo->getName() + "' : value " + value,
+       "22003",
+       1264);
+   }
+
+   return value;
  }
 
  /**
@@ -817,7 +881,8 @@ namespace capi
      try {
        return std::stof(std::string(fieldBuf.arr+pos, length));
      }
-     catch (std::invalid_argument& nfe) {
+     // Common parent for std::invalid_argument and std::out_of_range
+     catch (std::logic_error& nfe) {
        throw SQLException(
            "Incorrect format \""
            +SQLString(fieldBuf.arr + pos, length)
@@ -864,7 +929,8 @@ namespace capi
      try {
        return std::stold(std::string(fieldBuf.arr + pos, length));
      }
-     catch (std::invalid_argument& nfe) {
+     // Common parent for std::invalid_argument and std::out_of_range
+     catch (std::logic_error& nfe) {
        throw SQLException(
            "Incorrect format \""
            + SQLString(fieldBuf.arr + pos, length)

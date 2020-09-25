@@ -175,10 +175,6 @@ namespace capi
     }
     case MYSQL_TYPE_NEWDECIMAL:
     case MYSQL_TYPE_DECIMAL:
-    {
-      std::unique_ptr<BigDecimal> bigDecimal= getInternalBigDecimal(columnInfo);
-      return !bigDecimal ? nullptr : new SQLString(zeroFillingIfNeeded(*bigDecimal, columnInfo));
-    }
     case MYSQL_TYPE_GEOMETRY:
       return new SQLString(asChar);
     case MYSQL_TYPE_NULL:
@@ -240,7 +236,7 @@ namespace capi
         return *static_cast<int32_t*>(bind[index].buffer);
       }
       else {
-        return *static_cast<uint32_t*>(bind[index].buffer);
+        value= *static_cast<uint32_t*>(bind[index].buffer);
       }
       break;
     case MYSQL_TYPE_LONGLONG:
@@ -259,7 +255,17 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
-      value= std::stoi(static_cast<char*>(bind[index].buffer));
+      try {
+        value = std::stoll(static_cast<char*>(bind[index].buffer));
+      }
+      // Common parent for std::invalid_argument and std::out_of_range
+      catch (std::logic_error&) {
+
+        throw SQLException(
+          "Out of range value for column '" + columnInfo->getName() + "' : value " + sql::SQLString(static_cast<char*>(bind[index].buffer), length),
+          "22003",
+          1264);
+      }
       break;
     default:
       throw SQLException(
@@ -286,83 +292,168 @@ namespace capi
 
     int64_t value;
 
+    try {
+      switch (columnInfo->getColumnType().getType()) {
+
+      case MYSQL_TYPE_BIT:
+        return parseBit();
+      case MYSQL_TYPE_TINY:
+        value = getInternalTinyInt(columnInfo);
+        break;
+      case MYSQL_TYPE_SHORT:
+      case MYSQL_TYPE_YEAR:
+      {
+        value = getInternalSmallInt(columnInfo);
+
+        break;
+      }
+      case MYSQL_TYPE_LONG:
+      case MYSQL_TYPE_INT24:
+      {
+        value = getInternalMediumInt(columnInfo);
+
+        break;
+      }
+      case MYSQL_TYPE_LONGLONG:
+      {
+        value = *static_cast<uint64_t*>(bind[index].buffer);
+
+        if (columnInfo->isSigned()) {
+          return value;
+        }
+        uint64_t unsignedValue = *static_cast<uint64_t*>(bind[index].buffer);
+
+        if (unsignedValue > static_cast<uint64_t>(INT64_MAX)) {
+          throw SQLException(
+            "Out of range value for column '"
+            + columnInfo->getName()
+            + "' : value "
+            + std::to_string(unsignedValue)
+            + " is not in int64_t range",
+            "22003",
+            1264);
+        }
+        return unsignedValue;
+      }
+      case MYSQL_TYPE_FLOAT:
+      {
+        float floatValue = getInternalFloat(columnInfo);
+        if (floatValue > static_cast<float>(INT64_MAX)) {
+          throw SQLException(
+            "Out of range value for column '"
+            + columnInfo->getName()
+            + "' : value "
+            + std::to_string(floatValue)
+            + " is not in int64_t range",
+            "22003",
+            1264);
+        }
+        return static_cast<int64_t>(floatValue);
+      }
+      case MYSQL_TYPE_DOUBLE:
+      {
+        long double doubleValue = getInternalDouble(columnInfo);
+        if (doubleValue > static_cast<long double>(INT64_MAX)) {
+          throw SQLException(
+            "Out of range value for column '"
+            + columnInfo->getName()
+            + "' : value "
+            + std::to_string(doubleValue)
+            + " is not in int64_t range",
+            "22003",
+            1264);
+        }
+        return static_cast<int64_t>(doubleValue);
+      }
+      case MYSQL_TYPE_NEWDECIMAL:
+      case MYSQL_TYPE_DECIMAL:
+      {
+        std::unique_ptr<BigDecimal> bigDecimal = getInternalBigDecimal(columnInfo);
+        //rangeCheck("BigDecimal", static_cast<int64_t>(buf));
+
+        return std::stoll(StringImp::get(*bigDecimal));
+      }
+      case MYSQL_TYPE_VAR_STRING:
+      case MYSQL_TYPE_VARCHAR:
+      case MYSQL_TYPE_STRING:
+        return std::stoll(static_cast<char*>(bind[index].buffer));
+      default:
+        throw SQLException(
+          "getLong not available for data field type "
+          + columnInfo->getColumnType().getCppTypeName());
+      }
+    }
+    // stoll may throw. Catching common parent for std::invalid_argument and std::out_of_range
+    catch (std::logic_error&) {
+      throw SQLException(
+        "Out of range value for column '" + columnInfo->getName() + "' : value " + value,
+        "22003",
+        1264);
+    }
+    return value;
+  }
+
+
+  uint64_t BinRowProtocolCapi::getInternalULong(ColumnDefinition* columnInfo)
+  {
+    if (lastValueWasNull()) {
+      return 0;
+    }
+
+    int64_t value;
+
     switch (columnInfo->getColumnType().getType()) {
 
     case MYSQL_TYPE_BIT:
-      return parseBit();
+      return static_cast<int64_t>(parseBit());
     case MYSQL_TYPE_TINY:
       value= getInternalTinyInt(columnInfo);
       break;
     case MYSQL_TYPE_SHORT:
     case MYSQL_TYPE_YEAR:
     {
-      int16_t shortVal= getInternalSmallInt(columnInfo);
-      if (columnInfo->isSigned()) {
-        value= shortVal;
-      }
-      else {
-        value= static_cast<uint16_t>(shortVal);
-      }
+      value= getInternalSmallInt(columnInfo);
+
       break;
     }
     case MYSQL_TYPE_LONG:
     case MYSQL_TYPE_INT24:
     {
-      int32_t value32= getInternalMediumInt(columnInfo);
-      if (columnInfo->isSigned()) {
-        value= value32;
-      }
-      else {
-        value= static_cast<uint32_t>(value32);
-      }
+      value= getInternalMediumInt(columnInfo);
+
       break;
     }
     case MYSQL_TYPE_LONGLONG:
     {
-      value= *static_cast<uint64_t*>(bind[index].buffer);
+      value = *static_cast<int64_t*>(bind[index].buffer);
 
-      if (columnInfo->isSigned()) {
-        return value;
-      }
-      uint64_t unsignedValue= *static_cast<uint64_t*>(bind[index].buffer);
-
-      if (unsignedValue > static_cast<uint64_t>(INT64_MAX)) {
-        throw SQLException(
-          "Out of range value for column '"
-          +columnInfo->getName()
-          +"' : value "
-          + std::to_string(unsignedValue)
-          +" is not in int64_t range",
-          "22003",
-          1264);
-      }
-      return unsignedValue;
+      break;
     }
     case MYSQL_TYPE_FLOAT:
     {
-      float floatValue= getInternalFloat(columnInfo);
-      if (floatValue > static_cast<float>(INT64_MAX)) {
+      float floatValue = getInternalFloat(columnInfo);
+      if (floatValue < 0 || floatValue > static_cast<long double>(UINT64_MAX)) {
         throw SQLException(
           "Out of range value for column '"
-          +columnInfo->getName()
-          +"' : value "
+          + columnInfo->getName()
+          + "' : value "
           + std::to_string(floatValue)
-          +" is not in int64_t range",
+          + " is not in int64_t range",
           "22003",
           1264);
       }
-      return static_cast<int64_t>(floatValue);
+      return static_cast<uint64_t>(floatValue);
     }
     case MYSQL_TYPE_DOUBLE:
     {
-      long double doubleValue= getInternalDouble(columnInfo);
-      if (doubleValue > static_cast<long double>(INT64_MAX)) {
+      long double doubleValue = getInternalDouble(columnInfo);
+      if (doubleValue < 0 || doubleValue > static_cast<long double>(UINT64_MAX)) {
         throw SQLException(
           "Out of range value for column '"
-          +columnInfo->getName()
-          +"' : value "
+          + columnInfo->getName()
+          + "' : value "
           + std::to_string(doubleValue)
-          +" is not in int64_t range",
+          + " is not in int64_t range",
           "22003",
           1264);
       }
@@ -371,32 +462,49 @@ namespace capi
     case MYSQL_TYPE_NEWDECIMAL:
     case MYSQL_TYPE_DECIMAL:
     {
-      std::unique_ptr<BigDecimal> bigDecimal= getInternalBigDecimal(columnInfo);
+      std::unique_ptr<BigDecimal> bigDecimal = getInternalBigDecimal(columnInfo);
       //rangeCheck("BigDecimal", static_cast<int64_t>(buf));
 
-      return std::stoll(StringImp::get(*bigDecimal));
+      return sql::mariadb::stoull(*bigDecimal);
     }
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
-      return std::stoll(static_cast<char*>(bind[index].buffer));
+    {
+      char* charValue = static_cast<char*>(bind[index].buffer);
+      try {
+        return sql::mariadb::stoull(charValue);
+      }
+      // Common parent for std::invalid_argument and std::out_of_range
+      catch (std::logic_error&) {
+        throw SQLException(
+          "Out of range value for column '"
+          + columnInfo->getName()
+          + "' : value "
+          + charValue
+          + " is not in int64_t range",
+          "22003",
+          1264);
+      }
+    }
     default:
       throw SQLException(
         "getLong not available for data field type "
-        +columnInfo->getColumnType().getCppTypeName());
+        + columnInfo->getColumnType().getCppTypeName());
     }
 
-    return value;
-  }
-
-  uint64_t BinRowProtocolCapi::getInternalULong(ColumnDefinition* columnInfo)
-  {
-    if (columnInfo->getColumnType().getType() == MYSQL_TYPE_LONGLONG ) {
-      // getInternalLong may throw, when it should not if application fetches unsigned value
-      return *static_cast<uint64_t*>(bind[index].buffer);
+    if (columnInfo->isSigned() && value < 0) {
+      throw SQLException(
+        "Out of range value for column '"
+        + columnInfo->getName()
+        + "' : value "
+        + std::to_string(value)
+        + " is not in int64_t range",
+        "22003",
+        1264);
     }
-    // For other cases getInternalLong is good
-    return static_cast<uint64_t>(getInternalLong(columnInfo));
+
+    return static_cast<uint64_t>(value);
   }
 
   /**
@@ -450,7 +558,8 @@ namespace capi
         return std::strtof(static_cast<char*>(bind[index].buffer), &end);
         // if (errno == ERANGE) ?
       }
-      catch (std::invalid_argument& nfe) {
+      // Common parent for std::invalid_argument and std::out_of_range
+      catch (std::logic_error& nfe) {
         throw SQLException(
             "Incorrect format for getFloat for data field with type "
             +columnInfo->getColumnType().getCppTypeName(),
@@ -463,19 +572,7 @@ namespace capi
         "getFloat not available for data field type "
         +columnInfo->getColumnType().getCppTypeName());
     }
-    try {
-      return static_cast<float>(value);
-    }
-    catch (std::invalid_argument& nfe) {
-      SQLException sqlException=
-        SQLException(
-          "Incorrect format for getFloat for data field with type "
-          +columnInfo->getColumnType().getCppTypeName(),
-          "22003",
-          1264,
-          &nfe);
-      throw sqlException;
-    }
+    return static_cast<float>(value);
   }
 
   /**
@@ -518,10 +615,10 @@ namespace capi
     case MYSQL_TYPE_STRING:
     case MYSQL_TYPE_DECIMAL:
       try {
-        char* end;
-        return strtold(static_cast<char*>(bind[index].buffer), &end);
+        return std::stold(static_cast<char*>(bind[index].buffer));
       }
-      catch (std::invalid_argument& nfe) {
+      // Common parent for std::invalid_argument and std::out_of_range
+      catch (std::logic_error& nfe) {
         throw SQLException(
             "Incorrect format for getDouble for data field with type "
             +columnInfo->getColumnType().getCppTypeName(),
@@ -615,10 +712,11 @@ namespace capi
     case MYSQL_TYPE_TIMESTAMP:
     case MYSQL_TYPE_DATETIME:
     case MYSQL_TYPE_DATE:
-      out << mt->year << "-" << (mt->month < 10 ? "0" : "") << mt->month << "-" << (mt->day < 10 ? "0" : "") << mt->day << " ";
+      out << mt->year << "-" << (mt->month < 10 ? "0" : "") << mt->month << "-" << (mt->day < 10 ? "0" : "") << mt->day;
       if (type == MYSQL_TYPE_DATE) {
         break;
       }
+      out << " ";
     case MYSQL_TYPE_TIME:
       out << (mt->hour < 10 ? "0" : "") << mt->hour << ":" << (mt->minute < 10 ? "0" : "") << mt->minute << ":" << (mt->second < 10 ? "0" : "") << mt->second;
 
@@ -681,6 +779,21 @@ namespace capi
       }
 
       return Date(rawValue);
+    }
+    case MYSQL_TYPE_YEAR:
+    {
+      int32_t year = *static_cast<int16_t*>(bind[index].buffer);
+      if (length == 2 && columnInfo->getLength() == 2) {
+        if (year < 70) {
+          year += 2000;
+        }
+        else {
+          year += 1900;
+        }
+      }
+      std::ostringstream result;
+      result << year << "-01-01";
+      return result.str();
     }
     default:
       throw SQLException(
@@ -837,7 +950,12 @@ namespace capi
     case MYSQL_TYPE_INT24:
       return getInternalMediumInt(columnInfo)!=0;
     case MYSQL_TYPE_LONGLONG:
-      return getInternalLong(columnInfo)!=0;
+      if (columnInfo->isSigned()) {
+        return getInternalLong(columnInfo) != 0;
+      }
+      else {
+        return getInternalULong(columnInfo) != 0;
+      }
     case MYSQL_TYPE_FLOAT:
       return getInternalFloat(columnInfo)!=0;
     case MYSQL_TYPE_DOUBLE:

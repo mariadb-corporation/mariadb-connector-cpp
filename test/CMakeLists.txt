@@ -68,10 +68,6 @@ TARGET_LINK_LIBRARIES(static_test ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} ${MY_
 ADD_TEST(static_test ${EXECUTABLE_OUTPUT_PATH}/static_test)
 SET_TESTS_PROPERTIES(static_test PROPERTIES TIMEOUT 120)
 
-#SET_TARGET_PROPERTIES(static_test PROPERTIES
-#        LINK_FLAGS "${} "
-#        COMPILE_FLAGS "${}")
-
 ADD_EXECUTABLE(driver_test driver_test.cpp)
 TARGET_LINK_LIBRARIES(driver_test ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} ${MY_GCOV_LINK_LIBRARIES})
 
@@ -87,6 +83,8 @@ ADD_TEST(test_preparedstatement preparedstatement)
 ADD_TEST(test_resultsetmetadata resultsetmetadata)
 ADD_TEST(test_connection connection)
 ADD_TEST(test_databasemetadata databasemetadata)
+ADD_TEST(test_resultset resultset)
+
 
 SET_TESTS_PROPERTIES(test_parametermetadata test_preparedstatement test_resultsetmetadata test_connection PROPERTIES TIMEOUT 120 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 # With remote SkySQL server, compliance tend to timeout

@@ -1048,7 +1048,13 @@ namespace capi
   uint32_t SelectResultSetCapi::getUInt(int32_t columnIndex)
   {
     checkObjectRange(columnIndex);
-    return static_cast<uint32_t>(row->getInternalULong(columnsInformation[columnIndex - 1].get()));
+
+    ColumnDefinition* columnInfo= columnsInformation[columnIndex - 1].get();
+    int64_t value= row->getInternalLong(columnInfo);
+
+    row->rangeCheck("uint32_t", 0, UINT32_MAX, value, columnInfo);
+
+    return static_cast<uint32_t>(value);
   }
 
 

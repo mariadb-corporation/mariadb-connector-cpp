@@ -94,6 +94,7 @@ namespace mariadb
     return replace(str, substr, subst);
   }
 
+
   bool equalsIgnoreCase(const SQLString& str1, const SQLString& str2)
   {
     SQLString localStr1(str1), localStr2(str2);
@@ -101,5 +102,32 @@ namespace mariadb
     return (localStr1.toLowerCase().compare(localStr2.toLowerCase()) == 0);
   }
 
+
+  uint64_t stoull(const SQLString& str, std::size_t* pos)
+  {
+    bool negative= false;
+    std::string::const_iterator ci= str.begin();
+    while (std::isblank(*ci) &&  ci < str.end()) ++ci;
+
+    if (*str == '-')
+    {
+      negative= true;
+    }
+
+    uint64_t result= std::stoull(StringImp::get(str), pos);
+
+    if (negative && result != 0)
+    {
+      throw std::out_of_range("String represents number beyond uint64_t range");
+    }
+    return result;
+  }
+
+
+  uint64_t stoull(const char* str, std::size_t len, std::size_t* pos)
+  {
+    len= len == static_cast<std::size_t>(-1) ? strlen(str) : len;
+    return stoull(sql::SQLString(str, len), pos);
+  }
 }
 }

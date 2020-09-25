@@ -87,44 +87,44 @@ void connection::getClientOption()
       input=(static_cast<bool *> (&input_value));
       output=(static_cast<bool *> (&output_value));
 
-      //con->setClientOption("metadataUseInfoSchema", input);
-      //con->getClientOption("metadataUseInfoSchema", output);
+      con->setClientOption("metadataUseInfoSchema", input);
+      con->getClientOption("metadataUseInfoSchema", output);
       ASSERT_EQUALS(input_value, output_value);
 
-      //con->setClientOption("metadataUseInfoSchema", input);
-      //con->getClientOption("metadataUseInfoSchema", output);
+      con->setClientOption("metadataUseInfoSchema", input);
+      con->getClientOption("metadataUseInfoSchema", output);
       ASSERT_EQUALS(input_value, output_value);
 
       input_value=false;
       output_value=true;
-      //con->setClientOption("metadataUseInfoSchema", input);
-      //con->getClientOption("metadataUseInfoSchema", output);
+      con->setClientOption("metadataUseInfoSchema", input);
+      con->getClientOption("metadataUseInfoSchema", output);
       ASSERT_EQUALS(input_value, output_value);
     }
 
     {
-      int input_value=sql::ResultSet::TYPE_SCROLL_INSENSITIVE;
-      int output_value=sql::ResultSet::TYPE_FORWARD_ONLY;
+      int input_value= sql::ResultSet::TYPE_SCROLL_INSENSITIVE;
+      int output_value= sql::ResultSet::TYPE_FORWARD_ONLY;
       void * input;
       void * output;
 
       input=(static_cast<int *> (&input_value));
       output=(static_cast<int *> (&output_value));
 
-      //con->setClientOption("defaultStatementResultType", input);
-      //con->getClientOption("defaultStatementResultType", output);
+      con->setClientOption("defaultStatementResultType", input);
+      con->getClientOption("defaultStatementResultType", output);
       ASSERT_EQUALS(input_value, output_value);
 
-      input_value=sql::ResultSet::TYPE_FORWARD_ONLY;
-      output_value=sql::ResultSet::TYPE_SCROLL_INSENSITIVE;
-      //con->setClientOption("defaultStatementResultType", input);
-      //con->getClientOption("defaultStatementResultType", output);
+      input_value= sql::ResultSet::TYPE_FORWARD_ONLY;
+      output_value= sql::ResultSet::TYPE_SCROLL_INSENSITIVE;
+      con->setClientOption("defaultStatementResultType", input);
+      con->getClientOption("defaultStatementResultType", output);
       ASSERT_EQUALS(input_value, output_value);
 
       try
       {
         input_value=sql::ResultSet::TYPE_SCROLL_SENSITIVE;
-        //con->setClientOption("defaultStatementResultType", input);
+        con->setClientOption("defaultStatementResultType", input);
         FAIL("API Change or bug, please check");
       }
       catch (sql::InvalidArgumentException &)
@@ -135,7 +135,7 @@ void connection::getClientOption()
       try
       {
         input_value=sql::ResultSet::TYPE_SCROLL_SENSITIVE + sql::ResultSet::TYPE_SCROLL_INSENSITIVE + sql::ResultSet::TYPE_FORWARD_ONLY;
-        //con->setClientOption("defaultStatementResultType", input);
+        con->setClientOption("defaultStatementResultType", input);
         FAIL("API Change or bug, please check");
       }
       catch (sql::InvalidArgumentException &)
@@ -154,14 +154,14 @@ void connection::getClientOption()
       input=(static_cast<bool *> (&input_value));
       output=(static_cast<bool *> (&output_value));
 
-      //con->setClientOption("defaultPreparedStatementResultType", input);
-      //con->getClientOption("defaultPreparedStatementResultType", output);
+      con->setClientOption("defaultPreparedStatementResultType", input);
+      con->getClientOption("defaultPreparedStatementResultType", output);
       ASSERT_EQUALS(input_value, output_value);
 
       input_value=false;
       output_value=true;
-      //con->setClientOption("defaultPreparedStatementResultType", input);
-      //con->getClientOption("defaultPreparedStatementResultType", output);
+      con->setClientOption("defaultPreparedStatementResultType", input);
+      con->getClientOption("defaultPreparedStatementResultType", output);
       ASSERT_EQUALS(input_value, output_value);
 
     }
@@ -175,9 +175,9 @@ void connection::getClientOption()
       sql::SQLString input_value("latin1");
       sql::SQLString output_value;
 
-      //con->setClientOption("characterSetResults", input_value);
+      con->setClientOption("characterSetResults", input_value);
 
-      //output_value=con->getClientOption("characterSetResults");
+      output_value=con->getClientOption("characterSetResults");
       ASSERT_EQUALS(input_value, output_value);
     }
     catch (sql::SQLException &e)
