@@ -21,6 +21,7 @@
 #include <cctype>
 #include <regex>
 #include <string>
+#include <cstring>
 
 #include "util/String.h"
 #include "StringImp.h"
@@ -126,7 +127,7 @@ namespace mariadb
 
   uint64_t stoull(const char* str, std::size_t len, std::size_t* pos)
   {
-    len= len == static_cast<std::size_t>(-1) ? strlen(str) : len;
+    len= len == static_cast<std::size_t>(-1) ? std::strlen(str) : len;
     return stoull(sql::SQLString(str, len), pos);
   }
 }
