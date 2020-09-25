@@ -89,6 +89,6 @@ ADD_TEST(test_resultset resultset)
 SET_TESTS_PROPERTIES(test_parametermetadata test_preparedstatement test_resultsetmetadata test_connection PROPERTIES TIMEOUT 120 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 # With remote SkySQL server, compliance tend to timeout
 SET_TESTS_PROPERTIES(static_test driver_test PROPERTIES TIMEOUT 150 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-SET_TESTS_PROPERTIES(compliance test_databasemetadata PROPERTIES TIMEOUT 450 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+SET_TESTS_PROPERTIES(compliance test_databasemetadata test_resultset PROPERTIES TIMEOUT 450 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 MESSAGE(STATUS "Configuring test cases")

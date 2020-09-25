@@ -1,4 +1,5 @@
 SET(MARIADBCPP_PUBLIC_API   ${CMAKE_SOURCE_DIR}/include/Driver.h
+                            ${CMAKE_SOURCE_DIR}/include/DriverManager.h
                             ${CMAKE_SOURCE_DIR}/include/Connection.h
                             ${CMAKE_SOURCE_DIR}/include/Statement.h
                             ${CMAKE_SOURCE_DIR}/include/PreparedStatement.h
