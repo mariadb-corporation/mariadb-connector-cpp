@@ -966,9 +966,7 @@ namespace capi
       return getInternalLong(columnInfo) != 0;
     }
     default:
-      SQLString rawVal(static_cast<char*>(bind[index].buffer));
-
-      return !(rawVal.toLowerCase().compare("false") == 0 || rawVal.compare("0") == 0);
+      return convertStringToBoolean(static_cast<char*>(bind[index].buffer), * bind[index].length);
     }
   }
 

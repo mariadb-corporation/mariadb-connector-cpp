@@ -172,6 +172,24 @@ namespace mariadb
     return /*static_cast<int32_t>*/(value);
   }
 
+  /* We interprete string as `false` if it equals exactly "0" or "false". Otherwise - true
+  */
+  bool RowProtocol::convertStringToBoolean(const char* str, std::size_t len)
+  {
+    if (len > 0) {
+      // String may be not null-terminated or binary
+      if (str[0] == '0' && (len == 1 || str[1] == '\0')) {
+        return false;
+      }
+
+      if (len == 5 || len > 5 && str[5] == '\0') {
+        SQLString rawVal(str, 5);
+        return (rawVal.toLowerCase().compare("false") != 0);
+      }
+    }
+    return true;
+  }
+
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   void RowProtocol::rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, BigDecimal value, ColumnDefinition* columnInfo)
   {

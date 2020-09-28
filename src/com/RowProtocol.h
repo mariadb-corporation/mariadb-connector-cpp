@@ -145,6 +145,8 @@ protected:
   int32_t getInternalSmallInt(ColumnDefinition* columnInfo);
   int64_t getInternalMediumInt(ColumnDefinition* columnInfo);
 
+  bool convertStringToBoolean(const char* str, std::size_t len);
+
 public:
   void rangeCheck(const sql::SQLString& className,int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo);
 

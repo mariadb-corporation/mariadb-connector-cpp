@@ -2419,7 +2419,7 @@ void connection::connectAttrAdd()
   logMsg("connection::connectAttr - MYSQL_OPT_CONNECT_ATTR_ADD|MYSQL_OPT_CONNECT_ATTR_DELETE");
 
   //TODO: Enable it after fixing
-  SKIP("Removed untill fixed");
+  SKIP("Removed untill fixed(testcase)");
 
 #ifdef MISSING_STUFF_SUPPORT_ADDED
 

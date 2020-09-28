@@ -980,8 +980,7 @@ namespace capi
    if (columnInfo->getColumnType()==ColumnType::BIT) {
      return parseBit()!=0;
    }
-   SQLString rawVal(fieldBuf.arr + pos, length);
-   return !(rawVal.toLowerCase().compare("false") == 0 || rawVal.compare("0") == 0);
+   return convertStringToBoolean(fieldBuf.arr + pos, length);
  }
 
  /**

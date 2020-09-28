@@ -276,7 +276,7 @@ void bugs::expired_pwd()
   logMsg("bugs::expired_pwd");
 
   //TODO: Enable it after fixing
-  SKIP("Removed untill fixed");
+  SKIP("Removed until fixed(testcase)");
 
   if (getServerVersion(con) < 56006)
   {
@@ -1105,6 +1105,27 @@ void bugs::bug28204677()
   res->next();
 
   ASSERT_EQUALS(res->getString(2),"utf8mb4");
+}
+
+
+void bugs::concpp44()
+{
+  logMsg("bugs::concpp44");
+
+  stmt->executeUpdate("DROP TABLE IF EXISTS concpp44");
+  stmt->executeUpdate("CREATE TABLE concpp44(id LONGBLOB NOT NULL)");
+  stmt->executeUpdate("INSERT INTO concpp44 VALUES('False')");
+
+  pstmt.reset(con->prepareStatement("SELECT id FROM concpp44"));
+  res.reset(pstmt->executeQuery());
+  res->next();
+  ASSERT(!res->getBoolean(1));
+
+  res.reset(stmt->executeQuery("SELECT id FROM concpp44"));
+  res->next();
+  ASSERT(!res->getBoolean(1));
+
+  stmt->executeUpdate("DROP TABLE concpp44");
 }
 
 } /* namespace regression */
