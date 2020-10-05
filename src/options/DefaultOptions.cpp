@@ -284,7 +284,7 @@ namespace sql
         "0.9.1",
         "enable/disable prepare Statement cache, default true.",
         false,
-        true}},
+        false}},
       {
         "prepStmtCacheSize", {"prepStmtCacheSize",
         "0.9.1",
@@ -442,7 +442,7 @@ namespace sql
         "0.9.1",
         "enable/disable callable Statement cache, default true.",
         false,
-        true}},
+        false}},
       {
         "callableStmtCacheSize", {"callableStmtCacheSize",
         "0.9.1",
@@ -1027,8 +1027,7 @@ namespace sql
         options->usePipelineAuth= false;
       }
 
-      if (options->pool)
-      {
+      if (options->pool) {
         options->minPoolSize =
           options->minPoolSize == 0
           ? options->maxPoolSize
@@ -1037,6 +1036,9 @@ namespace sql
         throw SQLFeatureNotImplementedException("Pool support is not implemented yet");
       }
 
+      if (options->cacheCallableStmts || options->cachePrepStmts) {
+        throw SQLFeatureNotImplementedException("Callable/Prepared statement caches are not supported yet");
+      }
       if (options->defaultFetchSize < 0){
         options->defaultFetchSize= 0;
       }

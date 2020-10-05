@@ -20,7 +20,6 @@
 
 #include "CallableParameterMetaData.h"
 
-#include "CallParameter.h"
 #include "ColumnType.h"
 #include "MariaDbConnection.h"
 

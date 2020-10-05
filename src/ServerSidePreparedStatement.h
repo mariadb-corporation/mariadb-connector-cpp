@@ -75,8 +75,6 @@ public:
     Shared::ExceptionFactory& factory);
   ServerSidePreparedStatement* clone(MariaDbConnection* connection);
 
-  operator MariaDbStatement*() { return stmt.get(); }
-
 private:
   void prepare(const SQLString& sql);
   void setMetaFromResult();
@@ -112,6 +110,7 @@ public:
 public:
   SQLString toString();
   int64_t getServerThreadId();
+  inline ServerPrepareResult* getPrepareResult() { return serverPrepareResult; }
   };
 }
 }

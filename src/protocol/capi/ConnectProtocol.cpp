@@ -454,7 +454,7 @@ namespace capi
     unsigned reportDataTruncation= 1;
     mysql_optionsv(connection.get(), MYSQL_REPORT_DATA_TRUNCATION, &reportDataTruncation);
 
-    if (mysql_real_connect(connection.get(), NULL, NULL, NULL, NULL, 0, NULL, 0) == nullptr)
+    if (mysql_real_connect(connection.get(), NULL, NULL, NULL, NULL, 0, NULL, CLIENT_MULTI_STATEMENTS) == nullptr)
     {
       throw SQLException(mysql_error(connection.get()), mysql_sqlstate(connection.get()), mysql_errno(connection.get()));
     }

@@ -148,7 +148,7 @@ public:
 private:
   void resetVariables();
 public:
-  void fetchNext();
+  bool fetchNext();
   bool next();
 private:
   void resetRow();

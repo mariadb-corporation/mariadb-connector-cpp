@@ -24,13 +24,14 @@
 #include <regex>
 #include <tuple>
 
+#include "CallParameter.h"
 #include "Consts.h"
 
 namespace sql
 {
 namespace mariadb
 {
-class CallParameter;
+
 
 class CallableParameterMetaData : public ParameterMetaData {
 

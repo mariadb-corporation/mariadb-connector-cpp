@@ -76,7 +76,8 @@ namespace capi
       capiConnHandle(NULL),
       capiStmtHandle(spr->getStatementId()),
       timeZone(nullptr),
-      forceAlias(false)
+      forceAlias(false),
+      lastRowPointer(-1)
     //      timeZone(protocol->getTimeZone(),
   {
     row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
@@ -177,7 +178,7 @@ namespace capi
     std::vector<std::vector<sql::bytes>>& resultSet,
     Protocol* protocol,
     int32_t resultSetScrollType)
-    : statement(NULL),
+    : statement(nullptr),
       row(new capi::TextRowProtocolCapi(0, this->options, nullptr)),
       data(std::move(resultSet)),
       dataSize(data.size()),
@@ -192,8 +193,8 @@ namespace capi
       rowPointer(-1),
       callableResult(false),
       streaming(false),
-      capiConnHandle(NULL),
-      capiStmtHandle(NULL),
+      capiConnHandle(nullptr),
+      capiStmtHandle(nullptr),
       timeZone(nullptr),
       forceAlias(false),
       lastRowPointer(-1),
@@ -570,16 +571,19 @@ namespace capi
   }
 
 
-  void SelectResultSetCapi::fetchNext()
+  bool SelectResultSetCapi::fetchNext()
   {
-    rowPointer++;
+    ++rowPointer;
     if (data.size() > 0) {
       row->resetRow(data[rowPointer]);
     }
     else {
-      row->fetchNext();
+      if (row->fetchNext() == MYSQL_NO_DATA) {
+        return false;
+      }
     }
     lastRowPointer= rowPointer;
+    return true;
   }
 
   bool SelectResultSetCapi::next()
@@ -591,7 +595,12 @@ namespace capi
       if (rowPointer != lastRowPointer) {
         resetRow();
       }
-      fetchNext();
+
+      // Because of bug in C/C we cannot rely on number of rows in a RS for binary protocol
+      if (!fetchNext()) {
+        dataSize= rowPointer;
+        return false;
+      }
       return true;
     }
     else {

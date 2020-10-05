@@ -172,7 +172,7 @@ namespace mariadb
         prepStmtCacheSqlLimit(2048),
         continueBatchOnError(true),
         jdbcCompliantTruncation(true),
-        cacheCallableStmts  (true),
+        cacheCallableStmts  (false),
         callableStmtCacheSize(150),
         useBatchMultiSendNumber(100),
         autocommit          (true),

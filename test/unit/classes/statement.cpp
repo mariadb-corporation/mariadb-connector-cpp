@@ -72,7 +72,7 @@ void statement::getWarnings()
   logMsg("statement::getWarnings() - MySQL_Statement::get|clearWarnings()");
 
   //TODO: Enable it after fixing
-  SKIP("Removed untill fixed");
+  SKIP("Removed until fixed");
 
   std::stringstream msg;
   unsigned int count= 0;
@@ -583,7 +583,7 @@ void statement::queryTimeout()
   logMsg("statement::queryTimeout() - MySQL_Statement::setQueryTimeout");
 
   //TODO: Enable it after fixing
-  SKIP("Removed untill fixed");
+  SKIP("Removed until fixed");
 
   int serverVersion= getServerVersion(con);
   int timeout= 2;

@@ -265,7 +265,6 @@ namespace mariadb
   class SelectResultSet;
   typedef ServerSidePreparedStatement ClientSidePreparedStatement;
   typedef SelectResultSet UpdatableResultSet;
-  //class BasePrepareStatement;
   class ServerPrepareResult;
   class MariaDbParameterMetaData;
   class MariaDbResultSetMetaData;

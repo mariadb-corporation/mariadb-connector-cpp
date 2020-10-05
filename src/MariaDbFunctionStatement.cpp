@@ -223,9 +223,9 @@ namespace mariadb
 
   bool MariaDbFunctionStatement::execute()
   {
-    std::lock_guard<std::mutex> localScopeLock(*connection->getProtocol()->getLock());
+    std::unique_lock<std::mutex>  localScopeLock(*connection->getProtocol()->getLock());
     auto& results= getResults();
-
+    localScopeLock.unlock();
     stmt->execute();
     retrieveOutputResult();
     return results && results->getResultSet();

@@ -317,6 +317,13 @@ namespace mariadb
   }
 
 
+	void ProtocolLoggingProxy::moveToNextResult(Results* results, ServerPrepareResult* spr)
+	{
+		/* Add here logging if needed */
+	  protocol->getResult(results, spr);
+	}
+
+
   void ProtocolLoggingProxy::getResult(Results* results, ServerPrepareResult* spr)
 	{
 		/* Add here logging if needed */

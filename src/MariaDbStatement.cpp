@@ -1118,8 +1118,7 @@ namespace mariadb
    * @see #execute
    */
   bool MariaDbStatement::getMoreResults(int32_t current) {
-
-
+    // if fetch size is set to read fully, other resultSet are put in cache
     checkClose();
     return results && results->getMoreResults(current, protocol);
   }

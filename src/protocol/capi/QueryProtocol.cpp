@@ -46,6 +46,8 @@ class SchedulerServiceProviderHolder;
 
 namespace capi
 {
+#include "mysqld_error.h"
+
   static const int64_t MAX_PACKET_LENGTH= 0x00ffffff + 4;
 
   const Shared::Logger QueryProtocol::logger= LoggerFactory::getLogger(typeid(QueryProtocol));
@@ -937,7 +939,7 @@ namespace capi
     }
     initializeBatchReader();
 
-    capi::MYSQL_STMT *stmt= NULL;
+    capi::MYSQL_STMT *stmt= nullptr;
 
     if (serverPrepareResult == nullptr)
     {
@@ -976,7 +978,7 @@ namespace capi
 
       serverPrepareResult->bindParameters(parameters);
 
-      for (uint32_t i= 0;i < serverPrepareResult->getParameters().size();i++){
+      for (uint32_t i= 0; i < serverPrepareResult->getParameters().size(); i++){
         if (parameters[i]->isLongData()){
           if (!ldBuffer)
           {
@@ -985,19 +987,19 @@ namespace capi
 
           while ((bytesInBuffer= parameters[i]->writeBinary(*ldBuffer)) > 0)
           {
-            mysql_stmt_send_long_data(serverPrepareResult->getStatementId(), i, ldBuffer->arr, bytesInBuffer);
+            capi::mysql_stmt_send_long_data(serverPrepareResult->getStatementId(), i, ldBuffer->arr, bytesInBuffer);
           }
         }
       }
 
-      if (mysql_stmt_execute(serverPrepareResult->getStatementId())) {
+      if (capi::mysql_stmt_execute(serverPrepareResult->getStatementId()) != 0) {
         throwStmtError(serverPrepareResult->getStatementId());
       }
       /*CURSOR_TYPE_NO_CURSOR);*/
       getResult(results.get(), serverPrepareResult);
 
     }catch (SQLException& qex){
-      throw logQuery->exceptionWithQuery(parameters,qex,serverPrepareResult);
+      throw logQuery->exceptionWithQuery(parameters, qex, serverPrepareResult);
     }catch (std::runtime_error& e){
       throw handleIoException(e);
     }
@@ -1329,14 +1331,28 @@ namespace capi
   }
 
 
+  void QueryProtocol::moveToNextResult(Results* results, ServerPrepareResult* spr)
+  {
+    int32_t res;
+    if (spr != nullptr) {
+      res= capi::mysql_stmt_next_result(spr->getStatementId());
+    }
+    else {
+      res= capi::mysql_next_result(connection.get());
+    }
+
+    if (res != 0) {
+      readErrorPacket(results, spr);
+    }
+  }
+
   void QueryProtocol::getResult(Results* results, ServerPrepareResult *pr)
   {
-
     readPacket(results, pr);
 
-    while (hasMoreResults()){
+    /*while (hasMoreResults()){
       readPacket(results, pr);
-    }
+    }*/
   }
 
   /**
@@ -1376,11 +1392,11 @@ namespace capi
    */
   void QueryProtocol::readOkPacket(Results* results, ServerPrepareResult *pr)
   {
-    const int64_t updateCount= mysql_affected_rows(connection.get());
-    const int64_t insertId= mysql_insert_id(connection.get());
+    const int64_t updateCount= (pr == nullptr ? capi::mysql_affected_rows(connection.get()) : capi::mysql_stmt_affected_rows(pr->getStatementId()));
+    const int64_t insertId= (pr == nullptr ? capi::mysql_insert_id(connection.get()) : capi::mysql_stmt_insert_id(pr->getStatementId()));
 
-    mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
-    hasWarningsFlag= mysql_warning_count(connection.get()) > 0;
+    capi::mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
+    hasWarningsFlag= capi::mysql_warning_count(connection.get()) > 0;
 
     if ((serverStatus & ServerStatus::SERVER_SESSION_STATE_CHANGED_)!=0){
       handleStateChange(results);
@@ -1423,13 +1439,11 @@ namespace capi
 
   uint32_t capi::QueryProtocol::errorOccurred(ServerPrepareResult * pr)
   {
-    if (pr != nullptr)
-    {
-      return mysql_stmt_errno(pr->getStatementId());
+    if (pr != nullptr) {
+      return capi::mysql_stmt_errno(pr->getStatementId());
     }
-    else
-    {
-      return mysql_errno(connection.get());
+    else {
+      return capi::mysql_errno(connection.get());
     }
   }
 
@@ -1437,11 +1451,11 @@ namespace capi
   {
     if (pr != nullptr)
     {
-      return mysql_stmt_field_count(pr->getStatementId());
+      return capi::mysql_stmt_field_count(pr->getStatementId());
     }
     else
     {
-      return mysql_field_count(connection.get());
+      return capi::mysql_field_count(connection.get());
     }
   }
 
@@ -1620,7 +1634,7 @@ namespace capi
 
       SelectResultSet* selectResultSet;
 
-      mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
+      capi::mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
       bool callableResult= (serverStatus & ServerStatus::PS_OUT_PARAMETERS)!=0;
 
       if (pr == nullptr)

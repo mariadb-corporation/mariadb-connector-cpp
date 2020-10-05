@@ -47,6 +47,7 @@ namespace testsuite
 /* TODO - document */
 typedef std::unique_ptr<sql::Connection> Connection;
 typedef std::unique_ptr<sql::PreparedStatement> PreparedStatement;
+typedef std::unique_ptr<sql::CallableStatement> CallableStatement;
 typedef sql::ParameterMetaData ParameterMetaData;
 typedef std::unique_ptr<sql::Statement> Statement;
 typedef std::unique_ptr<sql::Savepoint> Savepoint;
@@ -238,7 +239,10 @@ protected:
    * PreparedStatement to be used in tests, not initialized. Cleaned up in tearDown()
    */
   PreparedStatement pstmt;
-
+  /**
+   * CallableStatement to be used in tests, not initialized. Cleaned up in tearDown()
+   */
+  CallableStatement cstmt;
   /**
    * Statement to be used in tests, not initialized. Cleaned up in tearDown()
    */

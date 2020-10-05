@@ -162,6 +162,7 @@ namespace capi
     void checkClose();
 
   public:
+    void moveToNextResult(Results* results, ServerPrepareResult* spr);
     void getResult(Results* results, ServerPrepareResult *pr=nullptr);
 
   private:

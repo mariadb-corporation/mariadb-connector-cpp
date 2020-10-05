@@ -33,9 +33,13 @@ namespace mariadb
     * @param expectedSize expected batch size.
     * @param autoIncrement connection auto increment value.
     */
-  CmdInformationMultiple::CmdInformationMultiple(std::size_t expectedSize, int32_t autoIncrement)
-    : expectedSize(expectedSize)
-    , autoIncrement(autoIncrement)
+  CmdInformationMultiple::CmdInformationMultiple(std::size_t _expectedSize, int32_t _autoIncrement)
+    : expectedSize(_expectedSize)
+    , autoIncrement(_autoIncrement)
+    , moreResultsIdx(0)
+    , insertIdNumber(0)
+    , hasException(false)
+    , rewritten(false)
   {
     insertIds.reserve(expectedSize);
     updateCounts.reserve(expectedSize);
@@ -211,7 +215,7 @@ namespace mariadb
 
   bool CmdInformationMultiple::moreResults()
   {
-    return static_cast<size_t>(moreResultsIdx++) < updateCounts.size() - 1
+    return static_cast<size_t>(moreResultsIdx++) < (updateCounts.size() - 1)
       && updateCounts[moreResultsIdx] == RESULT_SET_VALUE;
   }
 

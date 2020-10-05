@@ -24,6 +24,7 @@
 #include "Consts.h"
 
 #include "ParameterMetaData.h"
+#include "CallParameter.h"
 
 namespace sql
 {
@@ -31,7 +32,6 @@ namespace mariadb
 {
 class SelectResultSet;
 class ParameterHolder;
-class CallParameter;
 class MariaDbConnection;
 
 namespace capi
@@ -40,13 +40,14 @@ namespace capi
 }
 class MariaDbProcedureStatement  : public CloneableCallableStatement
 {
-  SelectResultSet* outputResultSet; /*NULL*/
+  SelectResultSet* outputResultSet;
   std::vector<CallParameter> params;
-  std::vector<int32_t> outputParameterMapper; /*NULL*/
+  std::vector<int32_t> outputParameterMapper;
+  MariaDbConnection* connection;
   Shared::CallableParameterMetaData parameterMetadata;
   bool hasInOutParameters;
   Unique::ServerSidePreparedStatement stmt;
-  MariaDbConnection* connection;
+
 
 public:
 
@@ -59,6 +60,8 @@ public:
    MariaDbProcedureStatement(
      MariaDbConnection* connection, const SQLString& sql, int32_t resultSetScrollType, int32_t resultSetConcurrency, Shared::ExceptionFactory& factory);
    MariaDbProcedureStatement(MariaDbConnection* conn);
+   // Just to have where to put a breakpoint
+   ~MariaDbProcedureStatement() {}
 
 private:
 

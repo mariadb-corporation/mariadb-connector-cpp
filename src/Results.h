@@ -36,6 +36,7 @@ namespace mariadb
 class Results  {
 
   MariaDbStatement* statement;
+  ServerPrepareResult* serverPrepResult;
   int32_t fetchSize;
   bool batch;
   std::size_t expectedSize;
@@ -56,7 +57,7 @@ class Results  {
 public:
   Results();
   Results(
-    MariaDbStatement* statement,
+    Statement* statement,
     int32_t fetchSize,
     bool batch,
     std::size_t expectedSize,

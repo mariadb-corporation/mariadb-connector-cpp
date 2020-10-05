@@ -24,7 +24,6 @@
 #include "parameters/ParameterHolder.h"
 
 #include "ServerSidePreparedStatement.h"
-#include "CallParameter.h"
 #include "CallableParameterMetaData.h"
 #include "Results.h"
 #include "Parameters.h"
@@ -53,8 +52,11 @@ namespace mariadb
     int32_t resultSetType,
     int32_t resultSetConcurrency,
     Shared::ExceptionFactory& factory)
-    : connection(_connection),
-      parameterMetadata(new CallableParameterMetaData(_connection, database, procedureName, false))
+    : outputResultSet(nullptr),
+      connection(_connection),
+      parameterMetadata(new CallableParameterMetaData(_connection, database, procedureName, false)),
+      stmt(new ServerSidePreparedStatement(_connection, query, resultSetType, resultSetConcurrency, Statement::NO_GENERATED_KEYS, factory)),
+      hasInOutParameters(false)
   {
     //super(connection, query, resultSetType, resultSetConcurrency);
     setParamsAccordingToSetArguments();
@@ -163,11 +165,14 @@ namespace mariadb
 
   bool MariaDbProcedureStatement::execute()
   {
-    std::lock_guard<std::mutex> localScopeLock(*connection->lock);
+    std::unique_lock<std::mutex> localScopeLock(*connection->lock);
     Shared::Results& results= getResults();
 
     validAllParameters();
+    // Ugly and possibly incorrect, but executeInternal has own lock
+    localScopeLock.unlock();
     stmt->executeInternal(stmt->getFetchSize());
+    // TODO: better check if further locking might be needed here
     retrieveOutputResult();
 
     return results && results->getResultSet();

@@ -386,7 +386,7 @@ namespace sql
 
       stmt->setInternalResults(
         new Results(
-          this->stmt.get(),
+          this,
           fetchSize,
           false,
           1,

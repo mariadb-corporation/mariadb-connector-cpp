@@ -81,6 +81,7 @@ public:
 protected:
   virtual bool executeInternal(int32_t fetchSize)=0;
 public:
+  operator MariaDbStatement* () { return stmt.get(); }
   /**
   * Retrieves the number, types and properties of this <code>PreparedStatement</code> object's
   * parameters.
