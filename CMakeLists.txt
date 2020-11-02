@@ -22,13 +22,20 @@ cmake_minimum_required(VERSION 3.1)
 CMAKE_POLICY(SET CMP0048 NEW)
 
 PROJECT(mariadb_connector_cpp
-        VERSION 0.9.3
+        VERSION 0.9.4
 #        DESCRIPTION "MariaDB Connector/C++"
         LANGUAGES CXX C)
 
 SET(MACPP_VERSION_QUALITY "beta")
-SET(MACPP_VERSION "0.09.0003")
+SET(MACPP_VERSION "0.09.0004")
 SET(MARIADB_DEFAULT_PLUGINS_SUBDIR "plugin")
+
+SET(CMAKE_CXX_STANDARD 11)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+SET(LIBRARY_NAME "mariadbcpp")
+SET(CPACK_PACKAGE_NAME "${LIBRARY_NAME}")
+
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/Version.h.in
                ${CMAKE_SOURCE_DIR}/src/Version.h)
@@ -355,7 +362,6 @@ ELSE()
     ENDIF()
   ENDIF()
   MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIB_SUFFIX}")
-  SET(INSTALL_PLUGINDIR "${INSTALL_LIB_SUFFIX}/mariadb/plugin")
 #  ADD_DEFINITIONS(-DMARIADB_EXPORTED)
   MESSAGE(STATUS "Authentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
 ENDIF()
@@ -383,6 +389,10 @@ ELSE()
   MESSAGE(STATUS "Configuring to build without SSL support")
 ENDIF()
 
+### Setting installation paths - should go before C/C subproject sets its own. We need to have control over those 
+INCLUDE("${CMAKE_SOURCE_DIR}/cmake/install.cmake")
+
+### Including C/C subproject
 IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
   IF(GIT_BUILD_SRCPKG)
     # We don't want conn/c (wrong) src pkg to be built.
@@ -420,15 +430,8 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
 ENDIF()
-SET(CPACK_PACKAGE_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
-SET(CPACK_COMPONENTS_ALL ClientPlugins  CppLibs ConCLib Documentation PublicAPI)
-SET(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
-SET(LIBRARY_NAME "mariadbcpp")
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.def.in
                ${CMAKE_SOURCE_DIR}/src/maconncpp.def)
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Dynamic linking is default on non-Windows
 IF(MARIADB_LINK_DYNAMIC OR NOT WIN32)# OR USE_SYSTEM_INSTALLED_LIB)
@@ -455,9 +458,11 @@ ELSE()
   ENDIF()
 ENDIF()
 
-#SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LANGUAGE C)
 TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${MARIADB_CLIENT_TARGET_NAME} ${PLATFORM_DEPENDENCIES})
-# Currently on Windows only
+
+########## Packaging ##########
+
+# MSI
 IF(WIN32)
   ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} ARGS -DDRIVER_LIB_DIR=$<TARGET_FILE_DIR:${LIBRARY_NAME}>
@@ -467,11 +472,6 @@ IF(WIN32)
                                   -DFILE_OUT=${CMAKE_SOURCE_DIR}/wininstall/binaries_dir.xml
                                   -P ${CMAKE_SOURCE_DIR}/cmake/ConfigureFile.cmake
                      )
-ENDIF()
-
-SET(CPACK_PACKAGE_NAME "${LIBRARY_NAME}")
-
-IF(WIN32)
   ADD_SUBDIRECTORY(wininstall)
 ELSE()
   IF(APPLE)
@@ -482,28 +482,19 @@ ELSE()
           ${LIBRARY_NAME} 
           LIBRARY DESTINATION ./${INSTALL_LIB_SUFFIX}/mariadb
           COMPONENT CppLibs)
-  IF(NOT DEFINED INSTALL_DOC_DIR)
-    SET(INSTALL_DOC_DIR "./share/doc/${CPACK_PACKAGE_NAME}/" CACHE STRING "Directory, where to install documentation(README)")
-  ENDIF()
-  IF(NOT DEFINED INSTALL_LICENSE_DIR)
-    SET(INSTALL_LICENSE_DIR "./share/doc/${CPACK_PACKAGE_NAME}/" CACHE STRING "Directory, where to install license file")
-  ENDIF()
-  IF(NOT DEFINED INSTALL_INCLUDE_DIR)
-    SET(INSTALL_INCLUDE_DIR "./include/${CPACK_PACKAGE_NAME}/" CACHE STRING "Directory, where to install header files")
-  ENDIF()
 
-  MESSAGE(STATUS "Documentation installed to ${INSTALL_DOC_DIR}")
-  MESSAGE(STATUS "License file installed to ${INSTALL_LICENSE_DIR}")
-  MESSAGE(STATUS "Public API header files installed to ${INSTALL_INCLUDE_DIR}")
+  MESSAGE(STATUS "Documentation installed to ${INSTALL_DOCDIR}")
+  MESSAGE(STATUS "License file installed to ${INSTALL_LICENSEDIR}")
+  MESSAGE(STATUS "Public API header files installed to ${INSTALL_INCLUDEDIR}")
   INSTALL(FILES
           ${CMAKE_SOURCE_DIR}/README
           DESTINATION
-          ${INSTALL_DOC_DIR}
+          ${INSTALL_DOCDIR}
           COMPONENT Documentation)
   INSTALL(FILES
           ${CMAKE_SOURCE_DIR}/COPYING
           DESTINATION
-          ${INSTALL_LICENSE_DIR}
+          ${INSTALL_LICENSEDIR}
           COMPONENT Documentation)
   ADD_SUBDIRECTORY(include)
 ENDIF()
@@ -517,6 +508,9 @@ IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
 ENDIF()
 
 # Packaging
+SET(CPACK_PACKAGE_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
+SET(CPACK_COMPONENTS_ALL ClientPlugins  CppLibs ConCLib Documentation PublicAPI)
+SET(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
 SET(CPACK_PACKAGE_VENDOR "MariaDB Corporation Ab")
 SET(CPACK_PACKAGE_DESCRIPTION "MariaDB Connector/C++. C++ driver library for connecting to MariaDB and MySQL servers")
 IF(NOT SYSTEM_NAME)
