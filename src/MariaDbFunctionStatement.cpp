@@ -52,7 +52,7 @@ namespace mariadb
     int32_t resultSetType,
     int32_t resultSetConcurrency,
     Shared::ExceptionFactory& exptnFactory)
-    : connection(connection),
+    : connection(_connection),
       stmt(new ClientSidePreparedStatement(
       _connection,
       "SELECT "+procedureName +(arguments.empty() ? "()" : arguments),
@@ -171,7 +171,7 @@ namespace mariadb
   CallParameter& MariaDbFunctionStatement::getParameter(uint32_t index)
   {
     if (index > params.size() || index <= 0) {
-      throw SQLException("No parameter with index "+index);
+      throw SQLException("No parameter with index " + std::to_string(index));
     }
     return params[index -1];
   }

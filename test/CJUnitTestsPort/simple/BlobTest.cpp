@@ -99,14 +99,12 @@ void BlobTest::tearDown()
 /* throws Exception */
   void BlobTest::testBlobStreamInsert()
   {
-    //SKIP("too slow");
     testBlobInsert( conn );
   }
 
 
   void BlobTest::testBlobStringInsert()
   {
-    //SKIP("too slow");
     testBlobInsert( conn, true );
   }
 

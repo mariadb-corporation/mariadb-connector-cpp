@@ -306,7 +306,7 @@ namespace capi
       copiedProtocol->setHostAddress(getHostAddress());
       copiedProtocol->connect();
 
-      copiedProtocol->executeQuery("KILL "+serverThreadId);
+      copiedProtocol->executeQuery("KILL " + std::to_string(serverThreadId));
     }catch (SQLException& ){
 
     }

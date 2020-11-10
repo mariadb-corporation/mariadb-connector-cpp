@@ -933,9 +933,9 @@ namespace sql
                       "Optional parameter "
                       +o->optionName
                       +" must be greater or equal to "
-                      + static_cast<const SQLString>(o->minValue)
+                      + o->minValue.toString()
                       + (maxValue != INT32_MAX
-                        ?" and smaller than " + static_cast<const SQLString>(o->maxValue)
+                        ?" and smaller than " + o->maxValue.toString()
                         :" ")
                       +", was \""
                       +propertyValue
@@ -972,9 +972,9 @@ namespace sql
                       "Optional parameter "
                       + o->optionName
                       + " must be greater or equal to "
-                      + static_cast<const SQLString>(o->minValue)
+                      + o->minValue.toString()
                       + (maxValue !=INT64_MAX
-                        ? " and smaller than " + static_cast<const SQLString>(o->maxValue)
+                        ? " and smaller than " + o->maxValue.toString()
                         : SQLString(" "))
                       + ", was \""
                       + propertyValue
@@ -1091,7 +1091,7 @@ namespace sql
             }
             else if (o.objType() == Value::VBOOL)
             {
-              sb.append(static_cast<const SQLString>(value));
+              sb.append(value.toString());
             }
             else if (o.objType() == Value::VINT32 || o.objType() == Value::VINT64)
             {

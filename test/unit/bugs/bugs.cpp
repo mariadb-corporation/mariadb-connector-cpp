@@ -544,7 +544,7 @@ void bugs::bug72700()
     res.reset(stmt->getResultSet());
     checkResultSetScrolling(res);
     ResultSetMetaData meta(res->getMetaData());
-    ASSERT_EQUALS(meta->getColumnType(1), 15);
+    ASSERT_EQUALS(meta->getColumnType(1), sql::Types::LONGVARCHAR);
     ASSERT_EQUALS(meta->getColumnTypeName(1), "LONGTEXT");
   }
   catch (::sql::SQLException & /*e*/)

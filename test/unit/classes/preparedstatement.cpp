@@ -1323,7 +1323,7 @@ void preparedstatement::getWarnings()
   logMsg("preparedstatement::getWarnings() - MySQL_PreparedStatement::get|clearWarnings()");
 
   //TODO: Enable it after fixing
-  SKIP("Removed until fixed");
+  SKIP("Testcase needs to be fixed");
 
   std::stringstream msg;
 
@@ -1333,7 +1333,7 @@ void preparedstatement::getWarnings()
     stmt->execute("DROP TABLE IF EXISTS test");
     stmt->execute("CREATE TABLE test(id INT UNSIGNED)");
 
-  // Generating 2  warnings to make sure we get only the last 1 - won't hurt
+    // Generating 2  warnings to make sure we get only the last 1 - won't hurt
     // Lets hope that this will always cause a 1264 or similar warning
     pstmt.reset(con->prepareStatement("INSERT INTO test(id) VALUES (?)"));
     pstmt->setInt(1, -2);
@@ -1470,7 +1470,7 @@ void preparedstatement::blob()
     ASSERT(res->next());
 
     msg.str("");
-    msg << "... simple INSERT/SELECT, '" << blob_input << "' =? '" << res->getString(2) << "'";
+    msg << "... simple INSERT/SELECT, '" << std::endl << blob_input << std::endl << "' =? '" << std::endl << res->getString(2) << "'";
     logMsg(msg.str());
 
     ASSERT_EQUALS(res->getInt(1), id);
@@ -1490,7 +1490,7 @@ void preparedstatement::blob()
     ASSERT_EQUALS(blob_input, blob_output);
 
     msg.str("");
-    msg << "... second check, '" << blob_input << "' =? '" << blob_output << "'";
+    msg << "... second check, '"<< std::endl  << blob_input << std::endl << "' =? '" << std::endl << blob_output << "'";
     logMsg(msg.str());
 
     ASSERT(!res->next());

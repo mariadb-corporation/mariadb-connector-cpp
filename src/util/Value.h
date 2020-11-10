@@ -112,8 +112,9 @@ public:
     return type;
   }
 
-
   ~Value();
+
+  SQLString toString() const;
 };
 
 }

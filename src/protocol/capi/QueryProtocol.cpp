@@ -1125,19 +1125,20 @@ namespace capi
       logger->trace(SQLString("Connection* is not valid").append(socketException.what()));
       connected= false;
       return false;
-    }/* TODO: something with the finally was once here */ {
-
+    }
+    /* TODO: something with the finally was once here */
+    /*{
 
       try {
         if (initialTimeout != -1){
           this->changeSocketSoTimeout(initialTimeout);
         }
-      }catch (/*SocketException*/std::runtime_error& socketException){
+      }catch (std::runtime_error& socketException){
         logger->warn("Could not set socket timeout back to " + std::to_string(initialTimeout) + socketException.what());
         connected= false;
 
       }
-    }
+    }*/
   }
 
   SQLString QueryProtocol::getCatalog()
@@ -1256,7 +1257,7 @@ namespace capi
       if (max == 0){
         executeQuery("set @@SQL_SELECT_LIMIT=DEFAULT");
       }else {
-        executeQuery("set @@SQL_SELECT_LIMIT="+max);
+        executeQuery("set @@SQL_SELECT_LIMIT=" + std::to_string(max));
       }
       maxRows= max;
     }

@@ -655,7 +655,7 @@ namespace capi
     }
 
     if (position <= 0 || position > columnInformationLength) {
-      throw IllegalArgumentException("No such column: "+position, "22023");
+      throw IllegalArgumentException("No such column: " + std::to_string(position), "22023");
     }
 
     if (lastRowPointer != rowPointer) {

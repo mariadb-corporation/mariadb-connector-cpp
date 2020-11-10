@@ -85,7 +85,7 @@ namespace mariadb
 
   SQLString ByteParameter::toString()
   {
-    return "0x"+hexArray[value & 0xF0] + hexArray[value & 0x0F];
+    return SQLString("0x").append(hexArray[value & 0xF0]).append(hexArray[value & 0x0F]);
   }
 
   bool ByteParameter::isNullData() const

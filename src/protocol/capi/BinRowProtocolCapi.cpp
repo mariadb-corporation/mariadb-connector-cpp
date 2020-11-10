@@ -695,6 +695,8 @@ namespace capi
     case MYSQL_TYPE_TIMESTAMP:
     case MYSQL_TYPE_DATETIME:
       return (isNull && mt->hour == 0 && mt->minute == 0 && mt->second == 0 && mt->second_part == 0);
+    default:
+      return false;
     }
     return false;
   }
@@ -743,6 +745,10 @@ namespace capi
 
         out << digits.c_str();
       }
+      break;
+    default:
+      // clang likes options for all enum members. Other types should not normally happen here. Probably would be better to throw here an exception
+      return emptyStr;
     }
     return out.str();
   }

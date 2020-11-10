@@ -33,9 +33,9 @@ namespace mariadb
     * @param options jdbc options
     */
   DateParameter::DateParameter(const Date& _date, TimeZone* _timeZone, Shared::Options& _options)
-    : date(date)
+    : date(_date)
     //, timeZone(timeZone)
-    , options(options)
+    , options(_options)
   {
   }
 

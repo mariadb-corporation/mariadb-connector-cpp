@@ -54,28 +54,28 @@ public:
 
   EXAMPLE_TEST_FIXTURE(bugs)
   {
-    //TEST_CASE(net_write_timeout39878);
-    ////TEST_CASE(store_result_error_51562);
-    ////TEST_CASE(getResultSet_54840);
-    //TEST_CASE(supportIssue_52319);
-    //TEST_CASE(expired_pwd);
-    //TEST_CASE(bug71606);
-    //TEST_CASE(bug72700);
-    ////TEST_CASE(bug66871);
-    //TEST_CASE(bug20085944);
-    //TEST_CASE(bug19938873_pstmt);
-    //TEST_CASE(bug19938873_stmt);
-    //TEST_CASE(bug68523);
-    ////TEST_CASE(bug66235);
-    ////TEST_CASE(bug14520822);
-    //TEST_CASE(bug17218692);
-    //TEST_CASE(bug21053335);
-    //TEST_CASE(bug21067193);
-    ////TEST_CASE(bug21066575);
-    //TEST_CASE(bug21152054);
-    //TEST_CASE(bug22292073);
-    //TEST_CASE(bug23212333);
-    //TEST_CASE(bug17227390);
+    TEST_CASE(net_write_timeout39878);
+    //TEST_CASE(store_result_error_51562);
+    //TEST_CASE(getResultSet_54840);
+    TEST_CASE(supportIssue_52319);
+    TEST_CASE(expired_pwd);
+    TEST_CASE(bug71606);
+    TEST_CASE(bug72700);
+    //TEST_CASE(bug66871);
+    TEST_CASE(bug20085944);
+    TEST_CASE(bug19938873_pstmt);
+    TEST_CASE(bug19938873_stmt);
+    TEST_CASE(bug68523);
+    //TEST_CASE(bug66235);
+    //TEST_CASE(bug14520822);
+    TEST_CASE(bug17218692);
+    TEST_CASE(bug21053335);
+    TEST_CASE(bug21067193);
+    //TEST_CASE(bug21066575);
+    TEST_CASE(bug21152054);
+    TEST_CASE(bug22292073);
+    TEST_CASE(bug23212333);
+    TEST_CASE(bug17227390);
     TEST_CASE(concpp44);
   }
 

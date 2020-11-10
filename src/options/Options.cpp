@@ -215,6 +215,8 @@ namespace mariadb
             this->*fieldPtr= static_cast<const char*>(cit->second.defaultValue);
             break;
           }
+          case ClassField<Options>::VNONE:
+            break; 
           }
         }
         catch (std::invalid_argument& /*e*/) {

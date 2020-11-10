@@ -326,7 +326,7 @@ namespace mariadb
   CallParameter& CallableParameterMetaData::getParam(uint32_t index)
   {
     if (index < 1 || index > params.size()) {
-      throw SQLException("invalid parameter index "+index);
+      throw SQLException("invalid parameter index " + std::to_string(index));
     }
     readMetadataFromDbIfRequired();
     return params[index - 1];

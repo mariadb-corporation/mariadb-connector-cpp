@@ -342,7 +342,7 @@ namespace capi
            +"'");
        }
 
-       timestampsPart[partIdx] =timestampsPart[partIdx] *10 +b -48;
+       timestampsPart[partIdx]= timestampsPart[partIdx]*10 + b - 48;
      }
      if (timestampsPart[0] == 0
        && timestampsPart[1] == 0

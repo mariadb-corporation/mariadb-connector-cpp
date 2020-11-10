@@ -83,7 +83,7 @@ namespace mariadb
   }
 
   MariaDbProcedureStatement::MariaDbProcedureStatement(MariaDbConnection * conn)
-    : connection(connection)
+    : connection(conn)
   {
   }
 
@@ -865,7 +865,7 @@ namespace mariadb
   CallParameter& MariaDbProcedureStatement::getParameter(uint32_t index)
   {
     if (index > params.size() || index <= 0) {
-      throw SQLException("No parameter with index "+index);
+      throw SQLException("No parameter with index " + std::to_string(index));
     }
     return params[index -1];
   }

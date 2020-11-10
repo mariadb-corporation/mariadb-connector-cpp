@@ -921,9 +921,9 @@ namespace mariadb
             sb= "";
           }
           break;
-        default:
-          // Nothing
-          1;
+        //default:
+        //  // Nothing
+        //  1;
       }
 
       sb.append(car);

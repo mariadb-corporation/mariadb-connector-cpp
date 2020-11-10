@@ -287,7 +287,7 @@ namespace mariadb
       if (ci.isBinary()) {
         return Types::VARBINARY;
       }
-      if (ci.getLength()<0) {
+      if (ci.getLength() > INT32_MAX) {
         return Types::LONGVARCHAR;
       }
       return Types::VARCHAR;

@@ -157,7 +157,6 @@ namespace mariadb
 
   Value::operator const int32_t() const
   {
-    // or exception if emply?
     switch (type)
     {
     case sql::mariadb::Value::VINT32:
@@ -168,6 +167,9 @@ namespace mariadb
       return (isPtr ? *static_cast<bool*>(value.pv) : value.bv) ? 1 : 0;
     case sql::mariadb::Value::VSTRING:
       return std::stoi(StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv));
+    case sql::mariadb::Value::VNONE:
+      // or exception if empty?
+      return 0;
     }
     return 0;
   }
@@ -194,6 +196,8 @@ namespace mariadb
       return (isPtr ? *static_cast<bool*>(value.pv) : value.bv) ? 1 : 0;
     case sql::mariadb::Value::VSTRING:
       return std::stoll(StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv));
+    case sql::mariadb::Value::VNONE:
+      return 0;
     }
     return 0;
   }
@@ -232,9 +236,12 @@ namespace mariadb
         return std::stoll(StringImp::get(str)) != 0;
       }
     }
+    case sql::mariadb::Value::VNONE:
+      return false;
     }
     return false;
   }
+
 
   Value::operator bool&()
   {
@@ -246,7 +253,8 @@ namespace mariadb
     throw std::invalid_argument("Wrong lvalue type requested - the type is not bool");
   }
 
-  Value::operator const SQLString() const
+
+  SQLString Value::toString() const
   {
     switch (type)
     {
@@ -258,8 +266,15 @@ namespace mariadb
       return (isPtr ? *static_cast<bool*>(value.pv) : value.bv) ? "true" : "false";
     case sql::mariadb::Value::VSTRING:
       return isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv;
+    case sql::mariadb::Value::VNONE:
+      return emptyStr;
     }
     return emptyStr;
+  }
+
+  Value::operator const SQLString() const
+  {
+    return toString();
   }
 
 
@@ -382,6 +397,8 @@ namespace mariadb
             return this->value.sv->compare(static_cast<const char*>(other)) == 0;
           //}
         }
+      case sql::mariadb::Value::VNONE:
+        return true;
       }
     }
 
