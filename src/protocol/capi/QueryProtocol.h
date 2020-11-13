@@ -176,7 +176,7 @@ namespace capi
     int32_t getAutoIncrementIncrement();
 
   private:
-    SQLException readErrorPacket(Results* results, ServerPrepareResult *pr);
+    SQLException readErrorPacket(Results* results, ServerPrepareResult *pr= nullptr);
     void readLocalInfilePacket(Shared::Results& results);
     void readResultSet(Results* results, ServerPrepareResult *pr);
 

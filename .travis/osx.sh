@@ -21,7 +21,7 @@ export TEST_PASSWORD=
 mysql.server start
 
 # ls -la /usr/local/Cellar/openssl/
-cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_OPENSSL=ON -DWITH_SSL=OPENSSL -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl/1.0.2o_2 -DOPENSSL_LIBRARIES=/usr/local/Cellar/openssl/1.0.2o_2/lib -DTEST_DEFAULT_HOST="tcp://mariadb.example.com:$TEST_PORT" -DTEST_DEFAULT_DB=test -DTEST_DEFAULT_LOGIN=bob -DTEST_DEFAULT_PASSWD="" .
+cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_OPENSSL=ON -DWITH_SSL=OPENSSL -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -DTEST_DEFAULT_HOST="tcp://mariadb.example.com:$TEST_PORT" -DTEST_DEFAULT_DB=test -DTEST_DEFAULT_LOGIN=bob -DTEST_DEFAULT_PASSWD="" .
 cmake --build . --config RelWithDebInfo
 
 ###################################################################################################################

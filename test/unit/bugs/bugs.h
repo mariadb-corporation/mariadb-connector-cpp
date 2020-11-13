@@ -55,8 +55,8 @@ public:
   EXAMPLE_TEST_FIXTURE(bugs)
   {
     TEST_CASE(net_write_timeout39878);
-    //TEST_CASE(store_result_error_51562);
-    //TEST_CASE(getResultSet_54840);
+    TEST_CASE(store_result_error_51562);
+    TEST_CASE(getResultSet_54840);
     TEST_CASE(supportIssue_52319);
     TEST_CASE(expired_pwd);
     TEST_CASE(bug71606);

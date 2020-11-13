@@ -219,7 +219,7 @@ namespace capi
       map to different blob types based on datatype length
       see https://mariadb.com/kb/en/library/data-types/
       */
-      if (len < 0) {
+      if (len > INT32_MAX) {
         return "LONGBLOB";
       }
       else if (len <= 255) {

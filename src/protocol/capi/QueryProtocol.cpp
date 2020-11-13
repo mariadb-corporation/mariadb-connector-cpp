@@ -589,7 +589,7 @@ namespace capi
 
     capi::MYSQL_STMT* stmtId=  mysql_stmt_init(connection.get());
 
-    if (stmtId == NULL)
+    if (stmtId == nullptr)
     {
       throw SQLException(mysql_error(connection.get()), mysql_sqlstate(connection.get()), mysql_errno(connection.get()));
     }
@@ -1167,14 +1167,17 @@ namespace capi
 
   }
 
-  void QueryProtocol::setCatalog(const SQLString& database)
+  void QueryProtocol::setCatalog(const SQLString& _database)
   {
 
     cmdPrologue();
 
     std::unique_lock<std::mutex> localScopeLock(*lock);
 
-    if (realQuery("USE " + database)) {
+    try {
+      realQuery("USE " + _database);
+    }
+    catch (SQLException&) {
       // TODO: realQuery should throw. Here we could catch and change message
       if (mysql_get_socket(connection.get()) == MARIADB_INVALID_SOCKET) {
         std::string msg("Connection lost: ");
@@ -1185,12 +1188,12 @@ namespace capi
       }
       else {
         throw SQLException(
-          "Could not select database '" + database + "' : " + mysql_error(connection.get()),
+          "Could not select database '" + _database + "' : " + mysql_error(connection.get()),
           mysql_sqlstate(connection.get()),
           mysql_errno(connection.get()));
       }
     }
-    this->database= database;
+    this->database= _database;
   }
 
   void QueryProtocol::resetDatabase()
@@ -1655,7 +1658,11 @@ namespace capi
       }
       results->addResultSet(selectResultSet, hasMoreResults() || results->getFetchSize() > 0);
 
-    }catch (std::runtime_error& e){
+    }
+    catch (SQLException & e) {
+      throw e;
+    }
+    catch (std::runtime_error& e){
       throw handleIoException(e);
     }
   }

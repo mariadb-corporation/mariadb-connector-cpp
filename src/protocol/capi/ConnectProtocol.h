@@ -108,7 +108,7 @@ namespace capi
     static void enabledTlsCipherSuites(MYSQL* sslSocket, const Shared::Options& options);
 
   protected:
-    int32_t realQuery(const SQLString& sql);
+    void realQuery(const SQLString& sql);
   public:
     void close();
     void abort();

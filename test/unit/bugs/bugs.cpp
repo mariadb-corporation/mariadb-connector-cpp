@@ -200,6 +200,7 @@ void bugs::store_result_error_51562()
 
 void bugs::getResultSet_54840()
 {
+  SKIP("The test looks wrong or obsolete")
   stmt->executeUpdate("DROP function if exists _getActivePost");
   stmt->executeUpdate("CREATE Function _getActivePost(_author INT) "
                                                 "RETURNS INT "
@@ -544,8 +545,8 @@ void bugs::bug72700()
     res.reset(stmt->getResultSet());
     checkResultSetScrolling(res);
     ResultSetMetaData meta(res->getMetaData());
-    ASSERT_EQUALS(meta->getColumnType(1), sql::Types::LONGVARCHAR);
-    ASSERT_EQUALS(meta->getColumnTypeName(1), "LONGTEXT");
+    ASSERT_EQUALS(sql::Types::LONGVARCHAR, meta->getColumnType(1));
+    ASSERT_EQUALS("VARCHAR", meta->getColumnTypeName(1));
   }
   catch (::sql::SQLException & /*e*/)
   {
@@ -560,8 +561,8 @@ void bugs::bug72700()
     res.reset(stmt->getResultSet());
     checkResultSetScrolling(res);
     ResultSetMetaData meta(res->getMetaData());
-    ASSERT_EQUALS(meta->getColumnType(1), 15);
-    ASSERT_EQUALS(meta->getColumnTypeName(1), "TEXT");
+    ASSERT_EQUALS(sql::Types::LONGVARCHAR, meta->getColumnType(1));
+    ASSERT_EQUALS("VARCHAR", meta->getColumnTypeName(1));
   }
   catch (::sql::SQLException & /*e*/)
   {
@@ -656,38 +657,26 @@ void bugs::bug20085944()
 void bugs::bug19938873_pstmt()
 {
   logMsg("bugs::bug19938873_pstmt");
-  try
-  {
-    pstmt.reset(con->prepareStatement("SELECT NULL"));
-    res.reset(pstmt->executeQuery());
-    ASSERT(res->next());
-    res->wasNull();
-  }
-  catch (sql::SQLException & /*e*/)
-  {
-    return; /* Everything is fine */
-  }
 
-  FAIL("Exception wasn't thrown by wasNull()");
+  pstmt.reset(con->prepareStatement("SELECT NULL"));
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  /* wasNull is supposed to be called after one of getters. But if not, it isn't supposed to throw, and result is basically
+     undefined.
+     It should throw only "if a database access error occurs or this method is called on a closed result set" */
+  res->wasNull();
 }
 
 
 void bugs::bug19938873_stmt()
 {
   logMsg("bugs::bug19938873_stmt");
-  try
-  {
-    stmt.reset(con->createStatement());
-    res.reset(stmt->executeQuery("SELECT NULL"));
-    ASSERT(res->next());
-    res->wasNull();
-  }
-  catch (sql::SQLException & /*e*/)
-  {
-    return; /* Everything is fine */
-  }
 
-  FAIL("Exception wasn't thrown by wasNull()");
+  stmt.reset(con->createStatement());
+  res.reset(stmt->executeQuery("SELECT NULL"));
+  ASSERT(res->next());
+  /* Same here, as for bug19938873_pstmt */
+  res->wasNull();
 }
 
 
@@ -866,38 +855,36 @@ void bugs::bug21053335()
   logMsg("bugs::bug21053335");
   try
   {
-
     stmt->execute("DROP TABLE IF EXISTS bug21053335");
     stmt->execute("CREATE TABLE bug21053335(c char(10))");
-    stmt->execute("INSERT INTO bug21053335 values(NULL), (1)");
+    stmt->execute("INSERT INTO bug21053335 values(NULL), (1), (NULL)");
     res.reset(stmt->executeQuery("select c from bug21053335"));
     res->next();
     std::stringstream log;
-    log << "Data :" <<res->getString(1);
+    log << "Data :" << res->getString(1);
+    ASSERT(res->wasNull());
     log<<"\nrs->wasNull(1) : "<<res->wasNull()<<std::endl;
     logMsg(log.str().c_str());
-
     ASSERT(res->wasNull());
 
     res->next();
 
-    try{
-      ASSERT(res->wasNull());
-      FAIL("Exception was not thrown by wasNull()");
-    }
-    catch (sql::SQLException&)
-    {
-      // Everything is ok
-    }
+    /* And also here, as in bug19938873_pstmt - exception should not be thrown if getter is not called.
+       The result is undefined, but next correct calls should return correct results */
+    res->wasNull();
 
     log.flush();
-    log << "Data :" <<res->getString(1);
+    log << "Data :" << res->getString(1);
+    ASSERT(!res->wasNull());
     log<<"\nrs->wasNull(1) : "<<res->wasNull()<<std::endl;
     logMsg(log.str().c_str());
 
     ASSERT(!res->wasNull());
-
-
+    
+    res->next();
+    res->getString(1);
+    ASSERT(res->wasNull());
+    stmt->execute("DROP TABLE bug21053335");
   }
 
   catch (sql::SQLException&)
@@ -941,8 +928,63 @@ void bugs::bug17218692()
     FAIL("Exception thrown");
     throw;
   }
+}
 
 
+void resNavTest1(sql::ResultSet* rs)
+{
+    ASSERT_EQUALS(true, rs->absolute(2));
+    ASSERT_EQUALS(2, rs->getInt(1));
+
+    ASSERT_EQUALS(true, rs->absolute(-1));
+    ASSERT_EQUALS(3, rs->getInt(1));
+
+    ASSERT_EQUALS(true, rs->relative(-2));
+    ASSERT_EQUALS(1, rs->getInt(1));
+
+    ASSERT_EQUALS(true, rs->relative(1));
+    ASSERT_EQUALS(2, rs->getInt(1));
+
+    ASSERT_EQUALS(true, rs->last());
+    ASSERT_EQUALS(3, rs->getInt(1));
+
+    ASSERT_EQUALS(true, rs->first());
+    ASSERT_EQUALS(1, rs->getInt(1));
+
+    ASSERT_EQUALS(false, rs->absolute(std::numeric_limits<int>::min())); //Invalid position, Returns FALSE
+
+    ASSERT_EQUALS(true, rs->last());
+    ASSERT_EQUALS(3, rs->getInt(1));
+}
+
+
+void resNavTest2(sql::ResultSet* rs)
+{
+  //Starting from last
+  ASSERT_EQUALS(true, rs->last());
+  ASSERT_EQUALS(3, rs->getInt(1));
+  // Verifying that there is no problem if return to the same position without actually fetching any data on other positions
+  ASSERT_EQUALS(true, rs->relative(-1));
+  ASSERT_EQUALS(true, rs->next());
+  ASSERT_EQUALS(3, rs->getInt(1));
+}
+
+void resNavTest3(sql::ResultSet* rs)
+{
+  //Starting from first
+  ASSERT_EQUALS(true, rs->first());
+  ASSERT_EQUALS(1, rs->getInt(1));
+  ASSERT_EQUALS(true, rs->next());
+  ASSERT_EQUALS(2, rs->getInt(1));
+}
+
+void resNavTest4(sql::ResultSet* rs)
+{
+  //Starting from relative
+  ASSERT_EQUALS(true, rs->relative(2));
+  ASSERT_EQUALS(2, rs->getInt(1));
+  ASSERT_EQUALS(true, rs->next());
+  ASSERT_EQUALS(3, rs->getInt(1));
 }
 
 void bugs::bug21067193()
@@ -950,27 +992,46 @@ void bugs::bug21067193()
   logMsg("bugs::bug21067193");
   try
   {
-
-
     stmt->execute("DROP TABLE IF EXISTS bug21067193");
     stmt->execute("create table bug21067193(id int)");
     stmt->execute("insert into bug21067193 values(1),(2),(3)");
 
     res.reset((stmt->setResultSetType(sql::ResultSet::TYPE_SCROLL_SENSITIVE)->executeQuery("select * from bug21067193")));
+    resNavTest1(res.get());
 
-    ASSERT_EQUALS(true, res->absolute(2));
-    ASSERT_EQUALS(2, res->getInt(1));
+    res.reset((stmt->setResultSetType(sql::ResultSet::TYPE_SCROLL_SENSITIVE)->executeQuery("select * from bug21067193")));
+    resNavTest2(res.get());
+    
+    res.reset((stmt->setResultSetType(sql::ResultSet::TYPE_SCROLL_SENSITIVE)->executeQuery("select * from bug21067193")));
+    resNavTest3(res.get());
 
-    ASSERT_EQUALS(true, res->absolute(-1));
-    ASSERT_EQUALS(3, res->getInt(1));
+    res.reset((stmt->setResultSetType(sql::ResultSet::TYPE_SCROLL_SENSITIVE)->executeQuery("select * from bug21067193")));
+    resNavTest4(res.get());
+    
+    pstmt.reset(con->prepareStatement("select * from bug21067193"));
+    pstmt->setResultSetType(sql::ResultSet::TYPE_SCROLL_SENSITIVE);
+    res.reset(pstmt->executeQuery());
+    resNavTest1(res.get());
 
-    ASSERT_EQUALS(false, res->absolute(std::numeric_limits<int>::min())); //Invalid position, Returns FALSE
+    pstmt.reset(con->prepareStatement("select * from bug21067193"));
+    pstmt->setResultSetType(sql::ResultSet::TYPE_SCROLL_SENSITIVE);
+    res.reset(pstmt->executeQuery());
+    resNavTest2(res.get());
+    
+    pstmt.reset(con->prepareStatement("select * from bug21067193"));
+    pstmt->setResultSetType(sql::ResultSet::TYPE_SCROLL_SENSITIVE);
+    res.reset(pstmt->executeQuery());
+    resNavTest3(res.get());
 
+    pstmt.reset(con->prepareStatement("select * from bug21067193"));
+    pstmt->setResultSetType(sql::ResultSet::TYPE_SCROLL_SENSITIVE);
+    res.reset(pstmt->executeQuery());
+    resNavTest4(res.get());
   }
-  catch (sql::SQLException&)
+  catch (sql::SQLException &e)
   {
 //	Error....
-      throw;
+      throw e;
   }
 
 

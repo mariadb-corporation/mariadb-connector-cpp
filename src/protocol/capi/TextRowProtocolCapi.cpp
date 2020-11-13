@@ -1054,9 +1054,7 @@ namespace capi
 
  void TextRowProtocolCapi::installCursorAtPosition(int32_t rowPtr)
  {
-   mysql_data_seek(capiResults.get(), static_cast<unsigned long long>(rowPtr)  + 1);
-   //fetchNext();
-
+   mysql_data_seek(capiResults.get(), static_cast<unsigned long long>(rowPtr));
  }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED

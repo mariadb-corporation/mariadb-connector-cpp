@@ -131,6 +131,10 @@ namespace capi
     if (fetchSize == 0 || callableResult) {
       data.reserve(10);//= new char[10]; // This has to be array of arrays. Need to decide what to use for its representation
       textNativeResults= mysql_store_result(capiConnHandle);
+
+      if (textNativeResults == nullptr && mysql_errno(capiConnHandle) != 0) {
+        throw SQLException(mysql_error(capiConnHandle), mysql_sqlstate(capiConnHandle), mysql_errno(capiConnHandle));
+      }
       dataSize= static_cast<size_t>(textNativeResults != NULL ? mysql_num_rows(textNativeResults) : 0);
       streaming= false;
       resetVariables();
@@ -592,15 +596,7 @@ namespace capi
       throw SQLException("Operation not permit on a closed resultSet", "HY000");
     }
     if (rowPointer < static_cast<int32_t>(dataSize) - 1) {
-      if (rowPointer != lastRowPointer) {
-        resetRow();
-      }
-
-      // Because of bug in C/C we cannot rely on number of rows in a RS for binary protocol
-      if (!fetchNext()) {
-        dataSize= rowPointer;
-        return false;
-      }
+      ++rowPointer;
       return true;
     }
     else {
@@ -639,7 +635,10 @@ namespace capi
       row->resetRow(data[rowPointer]);
     }
     else {
-      row->installCursorAtPosition(rowPointer);
+      if (rowPointer != lastRowPointer + 1) {
+        row->installCursorAtPosition(rowPointer);
+      }
+      row->fetchNext();
     }
     lastRowPointer= rowPointer;
   }
@@ -773,8 +772,6 @@ namespace capi
     }
 
     rowPointer= 0;
-    //row->installCursorAtPosition(rowPointer);
-    //lastRowPointer = -1;
     return dataSize > 0;
   }
 
@@ -782,8 +779,6 @@ namespace capi
     checkClose();
     fetchRemaining();
     rowPointer= static_cast<int32_t>(dataSize) - 1;
-    //row->installCursorAtPosition(rowPointer);
-    //lastRowPointer = -1;
     return dataSize > 0;
   }
 
@@ -802,18 +797,17 @@ namespace capi
       throw SQLException("Invalid operation for result set type TYPE_FORWARD_ONLY");
     }
 
-    if (static_cast<uint32_t>(rowPos) >= 0 && static_cast<uint32_t>(rowPos) <= dataSize) {
+    if (rowPos >= 0 && static_cast<uint32_t>(rowPos) <= dataSize) {
       rowPointer= rowPos - 1;
       return true;
     }
 
     fetchRemaining();
 
-    if (row >= 0) {
+    if (rowPos >= 0) {
 
       if (static_cast<uint32_t>(rowPos) <= dataSize) {
         rowPointer= rowPos - 1;
-        row->installCursorAtPosition(rowPointer);
         return true;
       }
 
@@ -823,10 +817,10 @@ namespace capi
     }
     else {
 
-      if (dataSize + rowPos >= 0) {
+      // Need to cast, or otherwise the result would be size_t -> always not negative
+      if (static_cast<int64_t>(dataSize) + rowPos >= 0) {
 
         rowPointer= static_cast<int32_t>(dataSize + rowPos);
-        row->installCursorAtPosition(rowPointer);
         return true;
       }
 
@@ -841,7 +835,7 @@ namespace capi
     if (streaming &&resultSetScrollType == TYPE_FORWARD_ONLY) {
       throw SQLException("Invalid operation for result set type TYPE_FORWARD_ONLY");
     }
-    int32_t newPos= rowPointer +rows;
+    int32_t newPos= rowPointer + rows;
     if (newPos <=-1) {
       rowPointer= -1;
       return false;
@@ -852,7 +846,6 @@ namespace capi
     }
     else {
       rowPointer= newPos;
-      row->installCursorAtPosition(rowPointer);
       return true;
     }
   }
@@ -862,8 +855,8 @@ namespace capi
     if (streaming && resultSetScrollType == TYPE_FORWARD_ONLY) {
       throw SQLException("Invalid operation for result set type TYPE_FORWARD_ONLY");
     }
-    if (rowPointer >-1) {
-      rowPointer--;
+    if (rowPointer > -1) {
+      --rowPointer;
       return rowPointer != -1;
     }
     return false;

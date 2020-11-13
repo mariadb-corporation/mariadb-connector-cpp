@@ -110,7 +110,7 @@ namespace capi
 
   void BinRowProtocolCapi::installCursorAtPosition(int32_t rowPtr)
   {
-    mysql_stmt_data_seek(stmt, static_cast<unsigned long long>(rowPtr) + 1);
+    mysql_stmt_data_seek(stmt, static_cast<unsigned long long>(rowPtr));
     //fetchNext();
   }
 
