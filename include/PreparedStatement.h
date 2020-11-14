@@ -29,7 +29,7 @@
 namespace sql
 {
 
-class MARIADB_EXPORTED PreparedStatement: public Statement {
+class MARIADB_EXPORTED PreparedStatement: virtual public Statement {
   PreparedStatement(const PreparedStatement &);
   void operator=(PreparedStatement &);
 public:
@@ -40,10 +40,11 @@ public:
   virtual bool execute(const SQLString& sql)=0;
   virtual ParameterMetaData* getParameterMetaData()=0;
   virtual int32_t executeUpdate()=0;
-  virtual int32_t executeUpdate(const SQLString& sql)=0;
+  //virtual int32_t executeUpdate(const SQLString& sql)=0;
   virtual int64_t executeLargeUpdate()=0;
   virtual ResultSet* executeQuery()=0;
-  virtual ResultSet* executeQuery(const SQLString& sql)=0;
+  virtual void addBatch()=0;
+  //virtual ResultSet* executeQuery(const SQLString& sql)=0;
   virtual void clearParameters()=0;
   virtual void setNull(int32_t parameterIndex,int32_t sqlType)=0;
   virtual void setNull(int32_t parameterIndex,int32_t sqlType,const SQLString& typeName)=0;

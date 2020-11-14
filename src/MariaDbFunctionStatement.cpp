@@ -466,7 +466,7 @@ namespace mariadb
   }
 
 
-  int64_t MariaDbFunctionStatement::executeLargeUpdate(const SQLString& sql, SQLString* columnNames)
+  int64_t MariaDbFunctionStatement::executeLargeUpdate(const SQLString& sql, const SQLString* columnNames)
   {
     return stmt->executeLargeUpdate(sql, columnNames);
   }
@@ -681,6 +681,10 @@ namespace mariadb
     return stmt->isCloseOnCompletion();
   }
 
+  void MariaDbFunctionStatement::addBatch()
+  {
+    stmt->addBatch();
+  }
 
   void MariaDbFunctionStatement::addBatch(const SQLString& sql)
   {

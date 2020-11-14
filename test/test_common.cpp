@@ -2379,6 +2379,7 @@ static void test_not_implemented_ps(std::unique_ptr<sql::Connection> & conn, con
 
   std::unique_ptr<sql::PreparedStatement> ps1(conn->prepareStatement("SELECT 1"));
   std::unique_ptr<sql::PreparedStatement> ps2(conn->prepareStatement("SELECT ?"));
+  sql::Statement* ps1asSt= dynamic_cast<sql::Statement*>(ps1.get());
   ps2->setInt(1, 2);
 
   try {
@@ -2392,14 +2393,14 @@ static void test_not_implemented_ps(std::unique_ptr<sql::Connection> & conn, con
     // executeQuery(const std::string&)
     try {
       ++total_tests;
-      ps1->executeQuery(bar);
+      ps1asSt->executeQuery(bar);
       ensure("ERR: Exception not thrown", false);
     } catch (sql::MethodNotImplementedException &) {}
 
     // executeUpdate(const std::string&)
     try {
       ++total_tests;
-      ps1->executeUpdate(bar);
+      ps1asSt->executeUpdate(bar);
       ensure("ERR: Exception not thrown", false);
     } catch (sql::MethodNotImplementedException &) {}
 

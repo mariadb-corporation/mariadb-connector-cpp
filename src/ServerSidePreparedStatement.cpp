@@ -180,7 +180,7 @@ namespace sql
 
   void ServerSidePreparedStatement::addBatch(const SQLString& sql)
   {
-    throw *exceptionFactory->raiseStatementError(connection, stmt.get())->create("Cannot do addBatch(SQLString) on preparedStatement");
+    BasePrepareStatement::addBatch(sql);
   }
 
   void ServerSidePreparedStatement::clearBatch()

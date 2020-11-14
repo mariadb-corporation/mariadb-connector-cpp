@@ -575,14 +575,14 @@ void bugs::bug72700()
 
 void bugs::bug66871()
 {
-  sql::Connection *con = NULL;
-  sql::Statement *stmt = NULL;
-  sql::ResultSet *res = NULL;
+  sql::Connection *con= nullptr;
+  sql::Statement *stmt= nullptr;
+  sql::ResultSet *res=  nullptr;
 
   logMsg("bugs::bug66871");
   try
   {
-    con = getConnection(NULL);
+    con = getConnection(nullptr);
     stmt = con->createStatement();
     ASSERT(stmt->execute("select 1"));
     res= stmt->getResultSet();
@@ -1189,6 +1189,267 @@ void bugs::concpp44()
   stmt->executeUpdate("DROP TABLE concpp44");
 }
 
+
+void bugs::concpp48()
+{
+  logMsg("bugs::concpp44");
+
+  pstmt.reset(con->prepareStatement("SELECT 1"));
+  res.reset(pstmt->executeQuery());
+  sql::Statement* pstmtAsSt = dynamic_cast<sql::Statement*>(pstmt.get());
+  try
+  {
+    pstmtAsSt->addBatch("SELECT 2");
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->executeUpdate("SELECT 3");
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->executeUpdate("SELECT 4", 1);
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->executeUpdate("SELECT 5", static_cast<int32_t*>(nullptr));
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->executeUpdate("SELECT 6", static_cast<const sql::SQLString*>(nullptr));
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->executeLargeUpdate("SELECT 3");
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->executeLargeUpdate("SELECT 4", 1);
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->executeLargeUpdate("SELECT 5", static_cast<int32_t*>(nullptr));
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->executeLargeUpdate("SELECT 6", static_cast<const sql::SQLString*>(nullptr));
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->execute("SELECT 3");
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->execute("SELECT 4", 1);
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->execute("SELECT 5", static_cast<int32_t*>(nullptr));
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+  try
+  {
+    pstmtAsSt->execute("SELECT 6", static_cast<const sql::SQLString*>(nullptr));
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
+
+  /////////// Now all the same with CallableStatement ///////////
+  stmt->executeUpdate("DROP PROCEDURE IF EXISTS concpp48");
+  try
+  {
+    stmt->executeUpdate("CREATE PROCEDURE concpp48(IN val VARCHAR(25)) BEGIN SELECT = CONCAT('Param= \"', val, '\"'); END;");
+    cstmt.reset(con->prepareCall("CALL concpp48('abc')"));
+    res.reset(cstmt->executeQuery());
+    sql::Statement* pstmtAsSt = dynamic_cast<sql::Statement*>(cstmt.get());
+
+    try
+    {
+      pstmtAsSt->addBatch("SELECT 2");
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->executeUpdate("SELECT 3");
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->executeUpdate("SELECT 4", 1);
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->executeUpdate("SELECT 5", static_cast<int32_t*>(nullptr));
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->executeUpdate("SELECT 6", static_cast<const sql::SQLString*>(nullptr));
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->executeLargeUpdate("SELECT 3");
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->executeLargeUpdate("SELECT 4", 1);
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->executeLargeUpdate("SELECT 5", static_cast<int32_t*>(nullptr));
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->executeLargeUpdate("SELECT 6", static_cast<const sql::SQLString*>(nullptr));
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->execute("SELECT 3");
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->execute("SELECT 4", 1);
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->execute("SELECT 5", static_cast<int32_t*>(nullptr));
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
+      pstmtAsSt->execute("SELECT 6", static_cast<const sql::SQLString*>(nullptr));
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+  }
+  catch (sql::SQLException &)
+  {
+    logMsg("Could not create procedure");
+    return;
+  }
+
+  stmt->executeUpdate("DROP PROCEDURE concpp48");
+}
 } /* namespace regression */
 } /* namespace testsuite */
 
