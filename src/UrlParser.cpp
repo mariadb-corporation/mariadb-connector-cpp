@@ -92,13 +92,13 @@ namespace mariadb
   UrlParser* UrlParser::parse(const SQLString& url) {
     Properties emptyProps;
     return parse(url, emptyProps);
-  }
+  }   
 
 
   UrlParser* UrlParser::parse(const SQLString& url, Properties& prop)
   {
     if ((url.startsWith("jdbc:mariadb:")
-      || url.startsWith("jdbc:mysql:") && url.find_first_of(DISABLE_MYSQL_URL) == std::string::npos)
+      || (url.startsWith("jdbc:mysql:") && url.find_first_of(DISABLE_MYSQL_URL) == std::string::npos))
       || isLegacyUriFormat(url))
     {
       UrlParser *urlParser= new UrlParser();

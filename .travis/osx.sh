@@ -6,7 +6,7 @@ set -e
 export TEST_SERVER=localhost
 export TEST_SOCKET=
 export TEST_SCHEMA=test
-export TEST_UID=root
+export TEST_UID=bob
 export TEST_PASSWORD= 
 
 # for some reason brew upgrades postgresql, so let's remove it
@@ -30,9 +30,8 @@ cmake --build . --config RelWithDebInfo
 
 # check users of MariaDB and create test database
 mysql --version
-mysql -u root -e "SELECT user, host FROM mysql.user"
-mysql -u root -e "CREATE DATABASE test"
-mysql -u root -e "SHOW DATABASES"
+#mysql -u bob -e "CREATE DATABASE test"
+mysql -u bob -e "SHOW DATABASES"
 
 echo "Running tests"
 cd test

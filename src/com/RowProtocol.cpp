@@ -182,7 +182,7 @@ namespace mariadb
         return false;
       }
 
-      if (len == 5 || len > 5 && str[5] == '\0') {
+      if (len == 5 || (len > 5 && str[5] == '\0')) {
         SQLString rawVal(str, 5);
         return (rawVal.toLowerCase().compare("false") != 0);
       }
@@ -212,7 +212,7 @@ namespace mariadb
 
   void RowProtocol::rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo)
   {
-    if (value < 0 && !columnInfo->isSigned() || value < minValue || value > maxValue) {
+    if ((value < 0 && !columnInfo->isSigned()) || value < minValue || value > maxValue) {
       throw SQLException(
         "Out of range value for column '"
         + columnInfo->getName()

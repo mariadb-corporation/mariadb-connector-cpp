@@ -927,7 +927,7 @@ namespace sql
                 int32_t maxValue= o->maxValue;
 
                 if (value < minValue
-                    || maxValue != INT32_MAX && value > maxValue)
+                    || (maxValue != INT32_MAX && value > maxValue))
                 {
                   throw IllegalArgumentException(
                       "Optional parameter "
@@ -966,7 +966,7 @@ namespace sql
                 int64_t maxValue= o->maxValue;
 
                 if (value < minValue
-                    || maxValue != INT64_MAX && value > maxValue)
+                    || (maxValue != INT64_MAX && value > maxValue))
                 {
                   throw IllegalArgumentException(
                       "Optional parameter "

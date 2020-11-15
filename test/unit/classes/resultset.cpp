@@ -370,7 +370,7 @@ void resultset::getTypes()
              it->name.compare("TINYBLOB") != 0 && it->name.compare("TINYTEXT") != 0 && it->name.compare("TEXT") != 0 && it->name.compare("BLOB") != 0 &&
              it->name.compare("MEDIUMTEXT") != 0 && it->name.compare("MEDIUMBLOB") != 0 && it->name.compare("LONGBLOB") != 0 &&
           it->name.compare("LONGTEXT") != 0 && it->name.compare("ENUM") && it->name.compare("SET"))
-          || !e.getMessage().startsWith("getDouble not available for data field type Types::") && !e.getMessage().startsWith("Incorrect format "))
+          || (!e.getMessage().startsWith("getDouble not available for data field type Types::") && !e.getMessage().startsWith("Incorrect format ")))
         {
           throw e;
         }
@@ -457,7 +457,7 @@ void resultset::getTypes()
         isNumber = false;
       }
 
-      if (!it->is_negative && intValue < 0 || intValue < INT32_MIN || intValue > INT32_MAX)
+      if ((!it->is_negative && intValue < 0) || intValue < INT32_MIN || intValue > INT32_MAX)
       {
         inIntRange = false;
         try

@@ -2447,7 +2447,7 @@ void connectionmetadata::bugCpp25()
   // More to test connector's split
   sql::mariadb::Tokens verParts(sql::mariadb::split(verFromServer, "."));
 
-  ASSERT_EQUALS(std::size_t(3), verParts->size());
+  ASSERT_EQUALS(3ULL, static_cast<uint64_t>(verParts->size()));
   ASSERT_EQUALS(major, std::stoul((*verParts)[0].c_str()));
   ASSERT_EQUALS(minor, std::stoul((*verParts)[1].c_str()));
 
@@ -2456,7 +2456,7 @@ void connectionmetadata::bugCpp25()
 
   // And even some more testing of the internal split
   sql::mariadb::Tokens csv(sql::mariadb::split("575,1,,22,,", ","));
-  ASSERT_EQUALS(std::size_t(6), csv->size());
+  ASSERT_EQUALS(6ULL, static_cast<uint64_t>(csv->size()));
   ASSERT_EQUALS("575", (*csv)[0]);
   ASSERT_EQUALS("1", (*csv)[1]);
   ASSERT_EQUALS("", (*csv)[2]);
