@@ -546,7 +546,7 @@ void bugs::bug72700()
     checkResultSetScrolling(res);
     ResultSetMetaData meta(res->getMetaData());
     ASSERT_EQUALS(sql::Types::LONGVARCHAR, meta->getColumnType(1));
-    ASSERT_EQUALS("VARCHAR", meta->getColumnTypeName(1));
+    ASSERT_EQUALS("LONGTEXT", meta->getColumnTypeName(1));
   }
   catch (::sql::SQLException & /*e*/)
   {
@@ -554,7 +554,7 @@ void bugs::bug72700()
   }
 
   stmt->execute("DROP TABLE IF EXISTS bug72700");
-  stmt->execute("CREATE TABLE bug72700(valtext longtext)");
+  stmt->execute("CREATE TABLE bug72700(valtext longtext, mtext mediumtext, justtext text, ttextt tinytext)");
   ASSERT(stmt->execute("SELECT valtext FROM bug72700"));
   try
   {
@@ -562,6 +562,15 @@ void bugs::bug72700()
     checkResultSetScrolling(res);
     ResultSetMetaData meta(res->getMetaData());
     ASSERT_EQUALS(sql::Types::LONGVARCHAR, meta->getColumnType(1));
+    ASSERT_EQUALS("LONGTEXT", meta->getColumnTypeName(1));
+
+    ASSERT_EQUALS(sql::Types::LONGVARCHAR, meta->getColumnType(2));
+    ASSERT_EQUALS("MEDIUMTEXT", meta->getColumnTypeName(2));
+
+    ASSERT_EQUALS(sql::Types::LONGVARCHAR, meta->getColumnType(3));
+    ASSERT_EQUALS("TEXT", meta->getColumnTypeName(3));
+
+    ASSERT_EQUALS(sql::Types::VARCHAR, meta->getColumnType(1));
     ASSERT_EQUALS("VARCHAR", meta->getColumnTypeName(1));
   }
   catch (::sql::SQLException & /*e*/)

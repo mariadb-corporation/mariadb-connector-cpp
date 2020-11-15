@@ -278,7 +278,7 @@ namespace mariadb
       return Types::SMALLINT;
     }
     else if (ci.getColumnType() == ColumnType::BLOB) {
-      if (ci.getLength()<0 ||ci.getLength()>16777215) {
+      if (ci.getLength() > 16777215) {
         return Types::LONGVARBINARY;
       }
       return Types::VARBINARY;
@@ -287,7 +287,7 @@ namespace mariadb
       if (ci.isBinary()) {
         return Types::VARBINARY;
       }
-      if (ci.getLength() > INT32_MAX) {
+      if (ci.getLength() > static_cast<uint32_t>(INT32_MAX)) {
         return Types::LONGVARCHAR;
       }
       return Types::VARCHAR;

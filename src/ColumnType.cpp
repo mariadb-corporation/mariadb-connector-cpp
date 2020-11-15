@@ -240,7 +240,22 @@ namespace capi
       if (binary) {
         return "VARBINARY";
       }
-      return "VARCHAR";
+
+      if (len > INT32_MAX) {
+        return "LONGTEXT";
+      }
+      else if (len <= 255) {
+        return "VARCHAR";
+      }
+      else if (len <= 65535) {
+        return "TEXT";
+      }
+      else if (len <= 16777215) {
+        return "MEDIUMTEXT";
+      }
+      else {
+        return "LONGTEXT";
+      }
     }
     else if (type == STRING)
     {
