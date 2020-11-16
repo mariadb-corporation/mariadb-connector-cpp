@@ -60,11 +60,11 @@ matrix:
       compiler: gcc
       env: DB=mariadb:10.5
       addons:
-        mariadb: '10.4'
+        mariadb: '10.5'
       before_script:
         - brew update
         - brew install openssl
-        - brew install mariadb
+      #- brew install mariadb
     - os: linux
       env: DB=mariadb:10.2 PACKET=8M MAXSCALE_VERSION=2.1.8
     - os: linux
