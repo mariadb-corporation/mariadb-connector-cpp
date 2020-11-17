@@ -37,7 +37,7 @@ namespace capi
 
 class ColumnDefinitionCapi : public sql::mariadb::ColumnDefinition
 {
-  static int32_t maxCharlen[];
+  static uint8_t maxCharlen[];
   MYSQL_FIELD* metadata;
   /** Fow "hand-made" RS we need to take care of freeing memory, while for "natural" MYSQL_FIELD
     we have to use pointer to C/C structures(to automatically get max_length when it's calculated -
@@ -64,7 +64,7 @@ public:
   uint32_t getLength() const;
   uint32_t getMaxLength() const;
   int64_t getPrecision() const;
-  int32_t getDisplaySize() const;
+  uint32_t getDisplaySize() const;
   uint8_t getDecimals() const;
   const ColumnType& getColumnType() const;
   int16_t getFlags() const;

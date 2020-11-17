@@ -52,7 +52,7 @@ public:
   /* Max length of the column in the resultset(if available) */
   virtual uint32_t getMaxLength() const=0;
   virtual int64_t getPrecision() const=0;
-  virtual int32_t getDisplaySize() const=0;
+  virtual uint32_t getDisplaySize() const=0;
   virtual uint8_t getDecimals() const=0;
   virtual const ColumnType& getColumnType() const=0;
   virtual short getFlags() const=0;

@@ -74,7 +74,7 @@ public:
      type object */
   static const std::type_info& classFromJavaType(int32_t type);
   static bool isNumeric(const ColumnType& type);
-  static SQLString getColumnTypeName(const ColumnType& type, int64_t len, bool _signed, bool binary);
+  static SQLString getColumnTypeName(const ColumnType& type, int64_t len, int64_t charLen, bool _signed, bool binary);
   static const ColumnType& fromServer(int32_t typeValue, int32_t charsetNumber);
   static const ColumnType& toServer(int32_t javaType);
   static SQLString getClassName(const ColumnType& type, int32_t len, bool _signed, bool binary, Shared::Options options);

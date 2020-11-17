@@ -202,7 +202,7 @@ namespace capi
     * @param binary binary
     * @return type
     */
-  SQLString ColumnType::getColumnTypeName(const ColumnType& type, int64_t len, bool _signed, bool binary)
+  SQLString ColumnType::getColumnTypeName(const ColumnType& type, int64_t len, int64_t charLen, bool _signed, bool binary)
   {
     if (type == SMALLINT || type == MEDIUMINT || type == INTEGER || type == BIGINT)
     {
@@ -244,13 +244,13 @@ namespace capi
       if (len > INT32_MAX) {
         return "LONGTEXT";
       }
-      else if (len <= 255) {
+      else if (charLen <= 65532) {
         return "VARCHAR";
       }
-      else if (len <= 65535) {
+      else if (charLen <= 65535) {
         return "TEXT";
       }
-      else if (len <= 16777215) {
+      else if (charLen <= 16777215) {
         return "MEDIUMTEXT";
       }
       else {

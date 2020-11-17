@@ -27,7 +27,7 @@ namespace mariadb
 namespace capi
 {
   // where character_sets.character_set_name = collations.character_set_name order by id"
-  int32_t ColumnDefinitionCapi::maxCharlen[]={
+  uint8_t ColumnDefinitionCapi::maxCharlen[]={
   0,2,1,1,1,1,1,1,
   1,1,1,1,3,2,1,1,
   1,0,1,2,1,1,1,1,
@@ -164,17 +164,17 @@ namespace capi
     *
     * @return size
     */
-  int32_t ColumnDefinitionCapi::getDisplaySize() const {
+  uint32_t ColumnDefinitionCapi::getDisplaySize() const {
     int32_t vtype= type.getSqlType();
     if (vtype == Types::VARCHAR || vtype == Types::CHAR) {
-      int32_t maxWidth= maxCharlen[metadata->charsetnr & 0xff];
+      uint8_t maxWidth= maxCharlen[metadata->charsetnr & 0xff];
       if (maxWidth == 0) {
         maxWidth= 1;
       }
 
-      return static_cast<int32_t>(length) / maxWidth;
+      return length / maxWidth;
     }
-    return static_cast<int32_t>(length);
+    return length;
   }
 
   uint8_t ColumnDefinitionCapi::getDecimals() const {

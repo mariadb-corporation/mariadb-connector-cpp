@@ -315,7 +315,7 @@ namespace mariadb
   {
     const ColumnDefinition& ci= getColumnDefinition(column);
     return ColumnType::getColumnTypeName(
-      ci.getColumnType(), ci.getLength(), ci.isSigned(), ci.isBinary());
+      ci.getColumnType(), ci.getLength(), ci.getDisplaySize(), ci.isSigned(), ci.isBinary());
   }
 
   /**
