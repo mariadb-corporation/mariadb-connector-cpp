@@ -42,10 +42,10 @@ namespace capi
    BinRowProtocolCapi::BinRowProtocolCapi(
     std::vector<Shared::ColumnDefinition>& _columnInformation,
     int32_t _columnInformationLength,
-    int32_t maxFieldSize,
+    uint32_t _maxFieldSize,
     Shared::Options options,
     MYSQL_STMT* capiStmtHandle)
-     : RowProtocol(maxFieldSize, options)
+     : RowProtocol(_maxFieldSize, options)
      , stmt(capiStmtHandle)
      , columnInformation(_columnInformation)
      , columnInformationLength(_columnInformationLength)
@@ -55,6 +55,7 @@ namespace capi
      for (auto& columnInfo : columnInformation)
      {
        length= columnInfo->getLength();
+       maxFieldSize= columnInfo->getMaxLength();
        //TODO maybe change property type in the ColumnInfo?
        bind.emplace_back();
 
@@ -159,11 +160,23 @@ namespace capi
       return new SQLString(date);
     }
     case MYSQL_TYPE_YEAR:
+    {
       if (options->yearIsDateType) {
-        Date dateInter= getInternalDate(columnInfo);//, cal, timeZone);
+        Date dateInter = getInternalDate(columnInfo);//, cal, timeZone);
         return (dateInter.empty() || dateInter.compare(nullDate)) == 0 ? nullptr : new SQLString(dateInter);
       }
-      return new SQLString(std::to_string(getInternalSmallInt(columnInfo)));
+      int32_t year= getInternalSmallInt(columnInfo);
+      SQLString *result;
+
+      if (year < 10) {
+        result= new SQLString("0");
+        result->append(std::to_string(year));
+      }
+      else {
+        result= new SQLString(std::to_string(year));
+      }
+      return result;
+    }
     case MYSQL_TYPE_TIMESTAMP:
     case MYSQL_TYPE_DATETIME:
     {
@@ -176,7 +189,7 @@ namespace capi
     case MYSQL_TYPE_NEWDECIMAL:
     case MYSQL_TYPE_DECIMAL:
     case MYSQL_TYPE_GEOMETRY:
-      return new SQLString(asChar);
+      return new SQLString(asChar, getLengthMaxFieldSize());
     case MYSQL_TYPE_NULL:
       return nullptr;
     default:

@@ -47,7 +47,10 @@ public:
   virtual SQLString getOriginalName() const=0;
   virtual short getCharsetNumber() const=0;
   virtual SQLString getCollation() const=0;
+  /* Length of the column */
   virtual uint32_t getLength() const=0;
+  /* Max length of the column in the resultset(if available) */
+  virtual uint32_t getMaxLength() const=0;
   virtual int64_t getPrecision() const=0;
   virtual int32_t getDisplaySize() const=0;
   virtual uint8_t getDecimals() const=0;

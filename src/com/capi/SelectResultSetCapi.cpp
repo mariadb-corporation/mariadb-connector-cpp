@@ -80,8 +80,6 @@ namespace capi
       lastRowPointer(-1)
     //      timeZone(protocol->getTimeZone(),
   {
-    row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
-
     if (fetchSize == 0 || callableResult) {
       data.reserve(10);//= new char[10]; // This has to be array of arrays. Need to decide what to use for its representation
       if (mysql_stmt_store_result(capiStmtHandle)) {
@@ -102,6 +100,8 @@ namespace capi
       nextStreamingValue();
       streaming= true;
     }
+
+    row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
   }
 
   SelectResultSetCapi::SelectResultSetCapi(Results * results,

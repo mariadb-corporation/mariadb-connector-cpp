@@ -65,8 +65,8 @@ namespace mariadb
 #endif
 
 
-  RowProtocol::RowProtocol(int32_t maxFieldSize, Shared::Options options)
-    : maxFieldSize(maxFieldSize)
+  RowProtocol::RowProtocol(uint32_t _maxFieldSize, Shared::Options options)
+    : maxFieldSize(_maxFieldSize)
     , options(options)
     , buf(nullptr)
     , fieldBuf(dummy)

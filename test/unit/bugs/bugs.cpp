@@ -1069,7 +1069,6 @@ void bugs::bug21152054()
 
 void bugs::bug22292073()
 {
-
   stmt->execute("DROP TABLE IF EXISTS bug22292073");
   stmt->execute("create table bug22292073 (jdoc JSON);" );
   stmt->execute("insert into bug22292073 values('{ \"name\": \"abc\", \"age\": 1 , \"misc\":\
@@ -1122,13 +1121,17 @@ void bugs::bug23212333()
   stmt->executeUpdate("drop table if exists bug23212333");
   stmt->executeUpdate("create table bug23212333(id longtext)");
 
-  pstmt.reset(con->prepareStatement("insert into test.bug23212333 VALUES(?)"));
+  pstmt.reset(con->prepareStatement("insert into bug23212333 VALUES(?)"));
 
   std::string buffer;
   buffer.append(256*1024+1,'A');
 
   pstmt->setString(1, buffer);
   pstmt->execute();
+
+  pstmt.reset(con->prepareStatement("SELECT id FROM bug23212333"));
+  res.reset(pstmt->executeQuery());
+  sql::SQLString str(res->getString(1));
 }
 
 void bugs::bug17227390()

@@ -37,34 +37,34 @@ namespace mariadb
   */
   Shared::ColumnDefinition ColumnDefinition::create(const SQLString& name, const ColumnType& _type)
   {
-    capi::MYSQL_FIELD md;
+    capi::MYSQL_FIELD* md= new capi::MYSQL_FIELD;
 
-    std::memset(&md, 0, sizeof(capi::MYSQL_FIELD));
+    std::memset(md, 0, sizeof(capi::MYSQL_FIELD));
 
-    md.name= (char*)name.c_str();
-    md.org_name= (char*)name.c_str();
-    md.name_length= static_cast<unsigned int>(name.length());
-    md.org_name_length= static_cast<unsigned int>(name.length());
+    md->name= (char*)name.c_str();
+    md->org_name= (char*)name.c_str();
+    md->name_length= static_cast<unsigned int>(name.length());
+    md->org_name_length= static_cast<unsigned int>(name.length());
 
     switch (_type.getSqlType()) {
     case Types::VARCHAR:
     case Types::CHAR:
-      md.length= 64 *3;
+      md->length= 64*3;
       break;
     case Types::SMALLINT:
-      md.length= 5;
+      md->length= 5;
       break;
     case Types::_NULL:
-      md.length= 0;
+      md->length= 0;
       break;
     default:
-      md.length= 1;
+      md->length= 1;
       break;
     }
 
-    md.type= static_cast<capi::enum_field_types>(ColumnType::toServer(_type.getSqlType()).getType());
+    md->type= static_cast<capi::enum_field_types>(ColumnType::toServer(_type.getSqlType()).getType());
 
-    return Shared::ColumnDefinition(new capi::ColumnDefinitionCapi(&md));
+    return Shared::ColumnDefinition(new capi::ColumnDefinitionCapi(md, true));
   }
 
 }

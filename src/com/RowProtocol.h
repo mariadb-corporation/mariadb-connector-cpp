@@ -97,7 +97,7 @@ protected:
   int32_t index;
 
 public:
-  RowProtocol(int32_t maxFieldSize, Shared::Options options);
+  RowProtocol(uint32_t maxFieldSize, Shared::Options options);
   virtual ~RowProtocol() {}
 
   void resetRow(std::vector<sql::bytes>& buf);

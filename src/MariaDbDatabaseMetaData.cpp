@@ -2658,10 +2658,24 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
   ResultSet* MariaDbDatabaseMetaData::getTypeInfo()
   {
     static std::vector<SQLString> columnNames{
-      "TYPE_NAME","DATA_TYPE","PRECISION","LITERAL_PREFIX","LITERAL_SUFFIX",
-      "CREATE_PARAMS","NULLABLE","CASE_SENSITIVE","SEARCHABLE","UNSIGNED_ATTRIBUTE",
-      "FIXED_PREC_SCALE","AUTO_INCREMENT","LOCAL_TYPE_NAME","MINIMUM_SCALE","MAXIMUM_SCALE",
-      "SQL_DATA_TYPE","SQL_DATETIME_SUB","NUM_PREC_RADIX"
+      "TYPE_NAME",
+      "DATA_TYPE",
+      "PRECISION",
+      "LITERAL_PREFIX",
+      "LITERAL_SUFFIX",     /*5*/
+      "CREATE_PARAMS",
+      "NULLABLE",
+      "CASE_SENSITIVE",
+      "SEARCHABLE",
+      "UNSIGNED_ATTRIBUTE", /*10*/
+      "FIXED_PREC_SCALE",
+      "AUTO_INCREMENT",
+      "LOCAL_TYPE_NAME",
+      "MINIMUM_SCALE",
+      "MAXIMUM_SCALE",      /*15*/
+      "SQL_DATA_TYPE",
+      "SQL_DATETIME_SUB",
+      "NUM_PREC_RADIX"      /*18*/
     };
     std::vector<ColumnType> columnTypes{
       ColumnType::VARCHAR,
@@ -2685,29 +2699,45 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
     };
 
     static std::vector<std::vector<sql::bytes>> data{
-    {BYTES_INIT("BIT"),
-    BYTES_INIT("-7"),
-    BYTES_INIT("1"),
-    BYTES_INIT(""),
-    BYTES_INIT(""),
-    BYTES_INIT(""),
-    BYTES_INIT("1"),
-    BYTES_INIT("1"),
-    BYTES_INIT("3"),
-    BYTES_INIT("0"),
-    BYTES_INIT("0"),
-    BYTES_INIT("0"),
-    BYTES_INIT("BIT"),
-    BYTES_INIT("0"),
-    BYTES_INIT("0"),
-    BYTES_INIT("0"),
-    BYTES_INIT("0"),
-    BYTES_INIT("10")},
     {
-      BYTES_INIT("BOOL"),BYTES_INIT("-7"),BYTES_INIT("1"),BYTES_INIT(""),BYTES_INIT(""),BYTES_INIT(""),BYTES_INIT("1"),BYTES_INIT("1"),BYTES_INIT("3"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("BOOL"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),
+      BYTES_INIT("BIT"),
+      BYTES_INIT("-7"),
+      BYTES_INIT("1"),
+      BYTES_INIT(""),
+      BYTES_INIT(""),
+      BYTES_INIT(""),
+      BYTES_INIT("1"),
+      BYTES_INIT("1"),
+      BYTES_INIT("3"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("BIT"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
+      BYTES_INIT("BOOL"),
+      BYTES_INIT("-7"),
+      BYTES_INIT("1"),
+      BYTES_INIT(""),
+      BYTES_INIT(""),
+      BYTES_INIT(""),
+      BYTES_INIT("1"),
+      BYTES_INIT("1"),
+      BYTES_INIT("3"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("BOOL"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("10")
+    },{
       BYTES_INIT("TINYINT"),
       BYTES_INIT("-6"),
       BYTES_INIT("3"),
@@ -2726,8 +2756,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("TINYINT UNSIGNED"),
       BYTES_INIT("-6"),
       BYTES_INIT("3"),
@@ -2746,8 +2775,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("BIGINT"),
       BYTES_INIT("-5"),
       BYTES_INIT("19"),
@@ -2766,8 +2794,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("BIGINT UNSIGNED"),
       BYTES_INIT("-5"),
       BYTES_INIT("20"),
@@ -2786,8 +2813,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("LONG VARBINARY"),
       BYTES_INIT("-4"),
       BYTES_INIT("16777215"),
@@ -2806,8 +2832,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("MEDIUMBLOB"),
       BYTES_INIT("-4"),
       BYTES_INIT("16777215"),
@@ -2826,8 +2851,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("LONGBLOB"),
       BYTES_INIT("-4"),
       BYTES_INIT("2147483647"),
@@ -2846,12 +2870,10 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("BLOB"),BYTES_INIT("-4"),BYTES_INIT("65535"),BYTES_INIT("'"),BYTES_INIT("'"),BYTES_INIT(""),BYTES_INIT("1"),BYTES_INIT("1"),BYTES_INIT("3"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("BLOB"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),
       BYTES_INIT("0"),BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("TINYBLOB"),
       BYTES_INIT("-4"),
       BYTES_INIT("255"),
@@ -2870,8 +2892,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("VARBINARY"),
       BYTES_INIT("-3"),
       BYTES_INIT("255"),
@@ -2890,12 +2911,26 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
-      BYTES_INIT("BINARY"),BYTES_INIT("-2"),BYTES_INIT("255"),BYTES_INIT("'"),BYTES_INIT("'"),BYTES_INIT("(M)"),BYTES_INIT("1"),BYTES_INIT("1"),BYTES_INIT("3"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("BINARY"),BYTES_INIT("0"),BYTES_INIT("0"),
-      BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("10")
-    },
-    {
+    },{
+      BYTES_INIT("BINARY"),
+      BYTES_INIT("-2"),
+      BYTES_INIT("255"),
+      BYTES_INIT("'"),
+      BYTES_INIT("'"),
+      BYTES_INIT("(M)"),
+      BYTES_INIT("1"),
+      BYTES_INIT("1"),
+      BYTES_INIT("3"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("BINARY"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("10")
+    },{
       BYTES_INIT("LONG VARCHAR"),
       BYTES_INIT("-1"),
       BYTES_INIT("16777215"),
@@ -2914,8 +2949,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("MEDIUMTEXT"),
       BYTES_INIT("-1"),
       BYTES_INIT("16777215"),
@@ -2934,8 +2968,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("LONGTEXT"),
       BYTES_INIT("-1"),
       BYTES_INIT("2147483647"),
@@ -2954,12 +2987,26 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
-      BYTES_INIT("TEXT"),BYTES_INIT("-1"),BYTES_INIT("65535"),BYTES_INIT("'"),BYTES_INIT("'"),BYTES_INIT(""),BYTES_INIT("1"),BYTES_INIT("0"),BYTES_INIT("3"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("TEXT"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),
-      BYTES_INIT("0"),BYTES_INIT("10")
-    },
-    {
+    },{
+      BYTES_INIT("TEXT"),
+      BYTES_INIT("-1"),
+      BYTES_INIT("65535"),
+      BYTES_INIT("'"),
+      BYTES_INIT("'"),
+      BYTES_INIT(""),
+      BYTES_INIT("1"),
+      BYTES_INIT("0"),
+      BYTES_INIT("3"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("TEXT"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("10")
+    },{
       BYTES_INIT("TINYTEXT"),
       BYTES_INIT("-1"),
       BYTES_INIT("255"),
@@ -2978,12 +3025,26 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
-      BYTES_INIT("CHAR"),BYTES_INIT("1"),BYTES_INIT("255"),BYTES_INIT("'"),BYTES_INIT("'"),BYTES_INIT("(M)"),BYTES_INIT("1"),BYTES_INIT("0"),BYTES_INIT("3"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("CHAR"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),
-      BYTES_INIT("0"),BYTES_INIT("10")
-    },
-    {
+    },{
+      BYTES_INIT("CHAR"),
+      BYTES_INIT("1"),
+      BYTES_INIT("255"),
+      BYTES_INIT("'"),
+      BYTES_INIT("'"),
+      BYTES_INIT("(M)"),
+      BYTES_INIT("1"),
+      BYTES_INIT("0"),
+      BYTES_INIT("3"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("CHAR"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("0"),
+      BYTES_INIT("10")
+    },{
       BYTES_INIT("NUMERIC"),
       BYTES_INIT("2"),
       BYTES_INIT("65"),
@@ -3002,8 +3063,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("DECIMAL"),
       BYTES_INIT("3"),
       BYTES_INIT("65"),
@@ -3022,8 +3082,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("INTEGER"),
       BYTES_INIT("4"),
       BYTES_INIT("10"),
@@ -3042,8 +3101,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("INTEGER UNSIGNED"),
       BYTES_INIT("4"),
       BYTES_INIT("10"),
@@ -3062,8 +3120,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("INT"),
       BYTES_INIT("4"),
       BYTES_INIT("10"),
@@ -3082,8 +3139,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("INT UNSIGNED"),
       BYTES_INIT("4"),
       BYTES_INIT("10"),
@@ -3102,8 +3158,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("MEDIUMINT"),
       BYTES_INIT("4"),
       BYTES_INIT("7"),
@@ -3122,8 +3177,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("MEDIUMINT UNSIGNED"),
       BYTES_INIT("4"),
       BYTES_INIT("8"),
@@ -3142,8 +3196,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("SMALLINT"),
       BYTES_INIT("5"),
       BYTES_INIT("5"),
@@ -3162,8 +3215,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("SMALLINT UNSIGNED"),
       BYTES_INIT("5"),
       BYTES_INIT("5"),
@@ -3182,8 +3234,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("FLOAT"),
       BYTES_INIT("7"),
       BYTES_INIT("10"),
@@ -3202,8 +3253,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("DOUBLE"),
       BYTES_INIT("8"),
       BYTES_INIT("17"),
@@ -3222,8 +3272,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("DOUBLE PRECISION"),
       BYTES_INIT("8"),
       BYTES_INIT("17"),
@@ -3242,8 +3291,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("REAL"),
       BYTES_INIT("8"),
       BYTES_INIT("17"),
@@ -3262,33 +3310,27 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("VARCHAR"),BYTES_INIT("12"),BYTES_INIT("255"),BYTES_INIT("'"),BYTES_INIT("'"),BYTES_INIT("(M)"),BYTES_INIT("1"),
       BYTES_INIT("0"),BYTES_INIT("3"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("VARCHAR"),BYTES_INIT("0"),BYTES_INIT("0"),
       BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("ENUM"),BYTES_INIT("12"),BYTES_INIT("65535"),BYTES_INIT("'"),BYTES_INIT("'"),BYTES_INIT(""),BYTES_INIT("1"),BYTES_INIT("0"),
       BYTES_INIT("3"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("ENUM"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),
       BYTES_INIT("0"),BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("SET"),BYTES_INIT("12"),BYTES_INIT("64"),BYTES_INIT("'"),BYTES_INIT("'"),BYTES_INIT(""),BYTES_INIT("1"),BYTES_INIT("0"),
       BYTES_INIT("3"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("SET"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("DATE"),BYTES_INIT("91"),BYTES_INIT("10"),BYTES_INIT("'"),BYTES_INIT("'"),BYTES_INIT(""),BYTES_INIT("1"),BYTES_INIT("0"),
       BYTES_INIT("3"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("DATE"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("TIME"),BYTES_INIT("92"),BYTES_INIT("18"),BYTES_INIT("'"),BYTES_INIT("'"),BYTES_INIT("[(M)]"),BYTES_INIT("1"),
       BYTES_INIT("0"),BYTES_INIT("3"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("TIME"),BYTES_INIT("0"),BYTES_INIT("0"),BYTES_INIT("0"),
       BYTES_INIT("0"),BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("DATETIME"),
       BYTES_INIT("93"),
       BYTES_INIT("27"),
@@ -3307,8 +3349,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       BYTES_INIT("0"),
       BYTES_INIT("0"),
       BYTES_INIT("10")
-    },
-    {
+    },{
       BYTES_INIT("TIMESTAMP"),
       BYTES_INIT("93"),
       BYTES_INIT("27"),
@@ -3330,7 +3371,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       }
     };
 
-    return SelectResultSet::createResultSet(columnNames, columnTypes, data,connection->getProtocol());
+    return SelectResultSet::createResultSet(columnNames, columnTypes, data, connection->getProtocol());
   }
 
   /**

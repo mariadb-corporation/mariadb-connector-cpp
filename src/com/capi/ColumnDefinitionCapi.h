@@ -38,14 +38,20 @@ namespace capi
 class ColumnDefinitionCapi : public sql::mariadb::ColumnDefinition
 {
   static int32_t maxCharlen[];
-  std::shared_ptr<MYSQL_FIELD> metadata;
+  MYSQL_FIELD* metadata;
+  /** Fow "hand-made" RS we need to take care of freeing memory, while for "natural" MYSQL_FIELD
+    we have to use pointer to C/C structures(to automatically get max_length when it's calculated -
+    that happens later, than the object is created).
+    It has to be shared since we have copy-copyconstructor(not sure why we have it)
+  */
+  std::shared_ptr<MYSQL_FIELD> owned;
   const ColumnType& type;
   uint32_t length;
   //SQLString db;
 
 public:
   ColumnDefinitionCapi(const ColumnDefinitionCapi& other);
-  ColumnDefinitionCapi(capi::MYSQL_FIELD* metadata);
+  ColumnDefinitionCapi(capi::MYSQL_FIELD* metadata, bool ownshipPassed= false);
 
 public:
   SQLString getDatabase() const;
@@ -56,6 +62,7 @@ public:
   int16_t getCharsetNumber() const;
   SQLString getCollation() const;
   uint32_t getLength() const;
+  uint32_t getMaxLength() const;
   int64_t getPrecision() const;
   int32_t getDisplaySize() const;
   uint8_t getDecimals() const;

@@ -48,7 +48,7 @@ public:
   BinRowProtocolCapi(
     std::vector<Shared::ColumnDefinition>& columnInformation,
     int32_t columnInformationLength,
-    int32_t maxFieldSize,
+    uint32_t maxFieldSize,
     Shared::Options options,
     MYSQL_STMT* stmt);
 

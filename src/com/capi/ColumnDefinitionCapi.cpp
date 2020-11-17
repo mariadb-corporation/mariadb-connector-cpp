@@ -70,7 +70,8 @@ namespace capi
   ColumnDefinitionCapi::ColumnDefinitionCapi(const ColumnDefinitionCapi& other) :
     metadata(other.metadata),
     type(other.type),
-    length(other.length)
+    length(other.length),
+    owned(other.owned)
   {
   }
 
@@ -79,11 +80,14 @@ namespace capi
     *
     * @param buffer buffer
     */
-  ColumnDefinitionCapi::ColumnDefinitionCapi(capi::MYSQL_FIELD* _metadata) :
-    metadata(new capi::MYSQL_FIELD(*_metadata)),
+  ColumnDefinitionCapi::ColumnDefinitionCapi(capi::MYSQL_FIELD* _metadata, bool ownshipPassed) :
+    metadata(_metadata),
     type(ColumnType::fromServer(metadata->type & 0xff, metadata->charsetnr)), // TODO: may be wrong
-    length(std::max(_metadata->length, metadata->max_length))
+    length(std::max(_metadata->length, _metadata->max_length))
   {
+    if (ownshipPassed) {
+      owned.reset(_metadata);
+    }
   }
 
 
@@ -129,7 +133,12 @@ namespace capi
     return emptyStr;
   }
   uint32_t ColumnDefinitionCapi::getLength() const {
-    return length;
+    return length;//std::max(metadata->length, metadata->max_length);
+  }
+
+  uint32_t ColumnDefinitionCapi::getMaxLength() const
+  {
+    return metadata->max_length;
   }
 
   /**
