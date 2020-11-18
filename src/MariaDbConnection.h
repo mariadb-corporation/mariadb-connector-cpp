@@ -101,7 +101,7 @@ public:
   static SQLString unquoteIdentifier(SQLString& string);
   ~MariaDbConnection() {}
 //protected:
-  Protocol* getProtocol();
+  Shared::Protocol& getProtocol();
 
 public:
   Statement* createStatement();

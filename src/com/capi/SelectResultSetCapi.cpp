@@ -205,7 +205,7 @@ namespace capi
       eofDeprecated(false),
       noBackslashEscapes(false)
   {
-    if (protocol) {
+    if (protocol != nullptr) {
       this->options= protocol->getOptions();
       this->timeZone= protocol->getTimeZone();
     }

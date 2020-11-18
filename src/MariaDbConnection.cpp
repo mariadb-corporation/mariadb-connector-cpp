@@ -105,8 +105,8 @@ namespace mariadb
   }
 
 
-  Protocol* MariaDbConnection::getProtocol() {
-    return protocol.get();
+  Shared::Protocol& MariaDbConnection::getProtocol() {
+    return protocol;
   }
 
   /**

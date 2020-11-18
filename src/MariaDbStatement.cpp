@@ -295,7 +295,7 @@ namespace mariadb
             sql,
             dummy));
 
-      protocol->executeQuery(protocol->isMasterConnection(), results, getTimeoutSql(Utils::nativeSql(sql,protocol)));
+      protocol->executeQuery(protocol->isMasterConnection(), results, getTimeoutSql(Utils::nativeSql(sql, protocol.get())));
 
       results->commandEnd();
       executeEpilogue();
@@ -439,7 +439,7 @@ namespace mariadb
       protocol->executeQuery(
           protocol->isMasterConnection(),
           results,
-          getTimeoutSql(Utils::nativeSql(sql,protocol)),
+          getTimeoutSql(Utils::nativeSql(sql, protocol.get())),
           &charset);
 
       results->commandEnd();
@@ -880,7 +880,7 @@ namespace mariadb
 
       }else if (results
           && results->getFetchSize()!=0
-          && !results->isFullyLoaded(protocol))
+          && !results->isFullyLoaded(protocol.get()))
       {
         try {
           protocol->cancelCurrentQuery();
@@ -986,7 +986,7 @@ namespace mariadb
   ResultSet* MariaDbStatement::getGeneratedKeys()
   {
     if (results){
-      return results->getGeneratedKeys(protocol);
+      return results->getGeneratedKeys(protocol.get());
     }
     return SelectResultSet::createEmptyResultSet();
   }
@@ -1120,7 +1120,7 @@ namespace mariadb
   bool MariaDbStatement::getMoreResults(int32_t current) {
     // if fetch size is set to read fully, other resultSet are put in cache
     checkClose();
-    return results && results->getMoreResults(current, protocol);
+    return results && results->getMoreResults(current, protocol.get());
   }
 
   /**

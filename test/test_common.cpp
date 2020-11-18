@@ -3280,7 +3280,7 @@ int run_tests(int argc, const char **argv)
   }
   printf("\n# Loops=%2d Tests= %4d Failures= %3d \n", loops, total_tests, total_errors);
 
-  return 0;
+  return total_errors != 0 ? 1 : 0;
 }
 /* }}} */
 

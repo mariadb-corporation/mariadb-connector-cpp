@@ -318,7 +318,7 @@ namespace sql
         return result < 0;
         });
 
-    return SelectResultSet::createResultSet(columnNames, columnTypes, data, connection->getProtocol());
+    return SelectResultSet::createResultSet(columnNames, columnTypes, data, connection->getProtocol().get());
   }
 
   /**
@@ -3371,7 +3371,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       }
     };
 
-    return SelectResultSet::createResultSet(columnNames, columnTypes, data, connection->getProtocol());
+    return SelectResultSet::createResultSet(columnNames, columnTypes, data, connection->getProtocol().get());
   }
 
   /**
@@ -3862,7 +3862,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
           "The hostname of the computer the application using the connection is running on"
           },
           types));*/
-    return SelectResultSet::createResultSet(columnNames, columnTypes, rows, connection->getProtocol());
+    return SelectResultSet::createResultSet(columnNames, columnTypes, rows, connection->getProtocol().get());
     /*return new SelectResultSet(
         columns, rows, connection->getProtocol(), ResultSet::TYPE_SCROLL_INSENSITIVE);*/
   }

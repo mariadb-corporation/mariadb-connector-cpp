@@ -21,9 +21,9 @@ cmake --build . --config RelWithDebInfo
 ###################################################################################################################
 
 # check users of MariaDB and create test database
-mysql --version
+#mysql --version
 #mysql -u bob -e "CREATE DATABASE test"
-mysql -u bob -e "SHOW DATABASES"
+#mysql -u bob -e "SHOW DATABASES"
 
 echo "Running tests"
 cd test

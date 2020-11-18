@@ -51,7 +51,7 @@ class MariaDbStatement : public Statement
 protected:
   MariaDbConnection* connection;
   //TODO: possibly it is better to make it weak ptr, and check if it's still available, and gracefully throw exception otherwise
-  Protocol* protocol;
+  Shared::Protocol protocol;
   const Shared::mutex lock;
   int32_t resultSetScrollType;
   int32_t resultSetConcurrency;

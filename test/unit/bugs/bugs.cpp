@@ -589,18 +589,21 @@ void bugs::bug66871()
   sql::ResultSet *res=  nullptr;
 
   logMsg("bugs::bug66871");
+  
+  con = getConnection(nullptr);
+  stmt = con->createStatement();
+  ASSERT(stmt->execute("select 1"));
+  res= stmt->getResultSet();
+  ASSERT(res->next());
+  ASSERT_EQUALS(res->getInt(1), 1);
+
+  con->close();
+  delete con;
+  
+  ASSERT_EQUALS(res->getInt(1), 1);
   try
   {
-    con = getConnection(nullptr);
-    stmt = con->createStatement();
-    ASSERT(stmt->execute("select 1"));
-    res= stmt->getResultSet();
-    ASSERT(res->next());
-    ASSERT_EQUALS(res->getInt(1), 1);
-
-    con->close();
-    delete con;
-
+    
     ASSERT(stmt->execute("select 2"));
     res= stmt->getResultSet();
     ASSERT(res->next());
@@ -1131,6 +1134,7 @@ void bugs::bug23212333()
 
   pstmt.reset(con->prepareStatement("SELECT id FROM bug23212333"));
   res.reset(pstmt->executeQuery());
+  ASSERT(res->relative(1));
   sql::SQLString str(res->getString(1));
 }
 

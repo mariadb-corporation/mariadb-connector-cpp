@@ -71,6 +71,7 @@ namespace capi
        bind.back().is_null=       &bind.back().is_null_value;
        bind.back().error=         &bind.back().error_value;
      }
+     maxFieldSize= 0;
      if (mysql_stmt_bind_result(stmt, bind.data())) {
        throwStmtError(stmt);
      }

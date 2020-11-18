@@ -76,7 +76,7 @@ namespace mariadb
     if (!outputResultSet /*== nullptr*/) {
       if (stmt->getFetchSize() != 0) {
         Shared::Results& results= getResults();
-        results->loadFully(false, connection->getProtocol());
+        results->loadFully(false, connection->getProtocol().get());
         outputResultSet= results->getCallableResultSet();
         if (outputResultSet) {
           outputResultSet->next();
