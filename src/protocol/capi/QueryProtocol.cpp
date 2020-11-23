@@ -1746,7 +1746,7 @@ namespace capi
     }
 
     if (!this->connected){
-      throw SQLException("Connection* is closed","08000",1220);
+      throw SQLException("Connection* is closed", "08000", 1220);
     }
     interrupted= false;
   }

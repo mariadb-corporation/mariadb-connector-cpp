@@ -56,7 +56,6 @@ private:
   std::vector<std::vector<Shared::ParameterHolder>> queryParameters;
 
   bool mustExecuteOnMaster;
-  //Unique::BasePrepareStatement bpstmt;
 
   ServerSidePreparedStatement(
     MariaDbConnection* connection,

@@ -584,42 +584,66 @@ void bugs::bug72700()
 
 void bugs::bug66871()
 {
-  sql::Connection *con= nullptr;
-  sql::Statement *stmt= nullptr;
-  sql::ResultSet *res=  nullptr;
+  Connection con(getConnection(nullptr));
+  Statement  stmt(con->createStatement());
+  ResultSet  res;
+  PreparedStatement ps(con->prepareStatement("SELECT 3"));
 
   logMsg("bugs::bug66871");
-  
-  con = getConnection(nullptr);
-  stmt = con->createStatement();
+
   ASSERT(stmt->execute("select 1"));
-  res= stmt->getResultSet();
+  res.reset(stmt->getResultSet());
   ASSERT(res->next());
   ASSERT_EQUALS(res->getInt(1), 1);
 
   con->close();
-  delete con;
+  con.reset();
   
   ASSERT_EQUALS(res->getInt(1), 1);
+  ASSERT(!res->next());
+
   try
   {
-    
     ASSERT(stmt->execute("select 2"));
-    res= stmt->getResultSet();
+    res.reset(stmt->getResultSet());
     ASSERT(res->next());
     ASSERT_EQUALS(res->getInt(1), 2);
 
+    ASSERT(ps->execute());
   }
   catch (::sql::SQLException & /*e*/)
   {
-    delete res;
-    delete stmt;
+    try
+    {
+      ASSERT(ps->execute());
+    }
+    catch (::sql::SQLException& /*e*/)
+    {
+      try
+      {
+        // ps should be actually already close. but closing should work fine
+        ps->close();
+        /* Now testing once again that closing of statementes works fine in same scenario, but without
+           attempts of execution
+        */
+        con.reset(getConnection(nullptr));
+        stmt.reset(con->createStatement());
+        ps.reset(con->prepareStatement("SELECT 1"));
+        ASSERT(ps->execute());
+        ASSERT(stmt->execute("select 1"));
 
-    return; /* Everything is fine */
+        con->close();
+        con.reset();
+
+        stmt->close();
+        ps->close();
+        return;
+      }
+      catch (::sql::SQLException& /*e*/)
+      {
+      }
+    }
   }
-
-  delete res;
-  delete stmt;
 
   FAIL("Exception wasn't thrown by execute");
 }
@@ -724,26 +748,26 @@ void bugs::bug66235()
   logMsg("bug::bug66235");
   try
   {
+    int32_t result[]= {1, 2, 1, 1, 2, 7}, i= -1;
     stmt.reset(con->createStatement());
     stmt->execute("DROP TABLE IF EXISTS test");
     stmt->execute("CREATE TABLE test(id BIT(3))");
-    stmt->execute("INSERT INTO test(id) VALUES(0b1), (0b10), (0b1), (0b1), (0b10), (0b111);");
+    stmt->execute("INSERT INTO test(id) VALUES(0b1), (0b10), (0b1), (0b1), (0b10), (0b111)");
 
+    res.reset(stmt->executeQuery("SELECT id FROM test"));
+    while (res->next())
+    {
+      ASSERT_EQUALS(result[++i], res->getInt(1));
+      ASSERT_EQUALS(std::to_string(result[i]), res->getString(1));
+    }
     res.reset(stmt->executeQuery("SELECT MAX(id), MIN(id) FROM test"));
     while (res->next())
     {
-      ASSERT_EQUALS(res->getString(1), "7");
-      ASSERT_EQUALS(res->getInt(1), 7);
+      ASSERT_EQUALS(7, res->getInt(1));
+      ASSERT_EQUALS(1, res->getInt(2));
 
-      ASSERT_EQUALS(res->getString(2), "1");
-      ASSERT_EQUALS(res->getInt(2), 1);
-    }
-
-    res.reset(stmt->executeQuery("SELECT id FROM test limit 1"));
-    while (res->next())
-    {
-      ASSERT_EQUALS(res->getString(1), "1");
-      ASSERT_EQUALS(res->getInt(1), 1);
+      ASSERT_EQUALS("7", res->getString(1));
+      ASSERT_EQUALS("1", res->getString(2));
     }
 
     stmt->execute("DROP TABLE IF EXISTS test");
@@ -1119,15 +1143,17 @@ void bugs::bug22292073()
   ASSERT_EQUALS(31.0, res->getDouble(1));
 }
 
+
 void bugs::bug23212333()
 {
+  const std::size_t charCount= 256*1024+1;
   stmt->executeUpdate("drop table if exists bug23212333");
   stmt->executeUpdate("create table bug23212333(id longtext)");
 
   pstmt.reset(con->prepareStatement("insert into bug23212333 VALUES(?)"));
 
   std::string buffer;
-  buffer.append(256*1024+1,'A');
+  buffer.append(charCount,'A');
 
   pstmt->setString(1, buffer);
   pstmt->execute();
@@ -1136,7 +1162,9 @@ void bugs::bug23212333()
   res.reset(pstmt->executeQuery());
   ASSERT(res->relative(1));
   sql::SQLString str(res->getString(1));
+  ASSERT_EQUALS(charCount, str.length());
 }
+
 
 void bugs::bug17227390()
 {

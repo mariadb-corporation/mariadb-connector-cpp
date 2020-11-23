@@ -104,6 +104,11 @@ namespace mariadb
     return string;
   }
 
+  MariaDbConnection::~MariaDbConnection()
+  {
+    protocol->closeExplicit();
+  }
+
 
   Shared::Protocol& MariaDbConnection::getProtocol() {
     return protocol;

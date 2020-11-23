@@ -85,7 +85,7 @@ public:
 //protected:
   bool nullCatalogMeansCurrent;
 private:
-  std::unique_ptr<CallableStatementCache> callableStatementCache; /* Unique? */
+  std::unique_ptr<CallableStatementCache> callableStatementCache;
   volatile int32_t lowercaseTableNames ; /*-1*/
   bool _canUseServerTimeout;
   bool sessionStateAware;
@@ -99,7 +99,7 @@ public:
   static MariaDbConnection* newConnection(UrlParser& urlParser, GlobalStateInfo* globalInfo);
   static SQLString quoteIdentifier(const SQLString& string);
   static SQLString unquoteIdentifier(SQLString& string);
-  ~MariaDbConnection() {}
+  ~MariaDbConnection();
 //protected:
   Shared::Protocol& getProtocol();
 

@@ -213,6 +213,7 @@ namespace mariadb
     return *sqlException;
   }
 
+
   void MariaDbStatement::executeEpilogue()
   {
     stopTimeoutTask();
@@ -304,13 +305,12 @@ namespace mariadb
     catch (SQLException& exception)
     {
       executeEpilogue();
+      localScopeLock.unlock();
 
       if (exception.getSQLState().compare("70100") == 0 && 1927 == exception.getErrorCode()) {
-        localScopeLock.unlock();
+        
         throw protocol->handleIoException(exception);
       }
-      executeEpilogue();
-      localScopeLock.unlock();
       throw executeExceptionEpilogue(exception);
     }
     return false;
@@ -707,22 +707,28 @@ namespace mariadb
   {
     std::lock_guard<std::mutex> localScopeLock(*lock);
 
-    closed= true;
-    if (results){
-      if (results->getFetchSize()!=0){
-        skipMoreResults();
+    try {
+      closed = true;
+      if (results) {
+        if (results->getFetchSize() != 0) {
+          skipMoreResults();
+        }
+
+        results->close();
       }
 
-      results->close();
+      if (protocol->isClosed()
+        || !connection->pooledConnection
+        || connection->pooledConnection->noStmtEventListeners()) {
+        //protocol.reset();
+        return;
+      }
+      connection->pooledConnection->fireStatementClosed(this);
     }
-    protocol= nullptr;
-
-    if (connection
-        ||connection->pooledConnection){
-      return;
+    catch (...) {
     }
-    connection->pooledConnection->fireStatementClosed(this);
-
+    //protocol.reset();
+    connection= nullptr;
   }
 
   /**

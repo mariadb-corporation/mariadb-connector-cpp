@@ -99,22 +99,16 @@ namespace sql
     const T* end() const;
 
     CArray(std::initializer_list<T> const& initList);
-    //CArray(CArray&& rhs);
     CArray(const CArray& rhs);
 
-    //T& operator[](std::size_t N) { return arr[N]; }
-
-    CArray() : arr(NULL), length(0)
+    CArray() : arr(nullptr), length(0)
     {}
-    //void reset();
+
     void assign(const T* _arr, std::size_t size= 0);
     void wrap(T* _arr, std::size_t size);
     void reserve(std::size_t size);
   };
 
-#define BYTES_INIT(STR) {STR, STR!=nullptr ? strlen(STR) + 1 : 1}
-#define BYTES_STR_INIT(STR) {STR.c_str(), STR.length()}
-#define BYTES_ASSIGN_STR(BYTES, STR) BYTES.assign(STR.c_str(), STR.length())
 
   typedef CArray<char> bytes;
   typedef CArray<int32_t> Ints;

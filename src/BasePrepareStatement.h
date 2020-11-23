@@ -63,8 +63,12 @@ protected:
 //private:
   bool useFractionalSeconds;
   bool noBackslashEscapes;
-  //TODO: maybe it's better to add this factory getter to MariaDbStatement, and use its factory
-  Shared::ExceptionFactory exceptionFactory;
+  /** Pointers to the factory and protocol owned by stmt(shared ownship)
+      If connection object gets deleted - stmt will still have valid Protocol object.
+      That helps not to crash and throw exception
+  */
+  ExceptionFactory* exceptionFactory;
+  Protocol* protocol;
 
 //public:
   BasePrepareStatement(
@@ -167,6 +171,8 @@ public:
 
   int32_t executeUpdate();
   bool execute();
+
+  SQLException BasePrepareStatement::executeExceptionEpilogue(SQLException& sqle);
 
   /*** Inherited methods that should not work with Prepared/CallableStatement ***/
   void addBatch(const SQLString& sql);
