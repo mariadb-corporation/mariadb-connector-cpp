@@ -98,7 +98,8 @@ private:
 
 public:
 
-  sql::Ints* executeBatch();
+  const sql::Ints& executeBatch();
+  const sql::Longs& executeLargeBatch();
   void setParametersVariables();
   ParameterMetaData* getParameterMetaData();
 
@@ -300,7 +301,6 @@ public:
   void addBatch(const SQLString& sql);
   void clearBatch();
   void close();
-  sql::Longs* executeLargeBatch();
   int32_t executeUpdate();
   int64_t executeLargeUpdate();
   Statement* setResultSetType(int32_t rsType);

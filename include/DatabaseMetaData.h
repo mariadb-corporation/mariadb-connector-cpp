@@ -22,6 +22,7 @@
 #define _DatabaseMetaData_H_
 
 #include <list>
+#include "buildconf.h"
 
 namespace sql
 {

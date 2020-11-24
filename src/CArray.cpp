@@ -17,36 +17,13 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
-
-#ifndef _DRIVERMANAGER_H_
-#define _DRIVERMANAGER_H_
-
 #include "buildconf.h"
-#include "SQLString.h"
-#include "Connection.h"
-#include "Driver.h"
+#include "CArrayImp.h"
 
 namespace sql
 {
-
-/*
- * Mimimalistic DriverManager manager as the more convenient way to obtain a connection.
- * There is no means of registsering etc drivers, as it's unlikely needed.
- */
-class MARIADB_EXPORTED DriverManager
-{
-  DriverManager(const DriverManager &);
-  void operator=(DriverManager&)= delete;
-  DriverManager() {}
-  virtual ~DriverManager(){}
-public:
-
-  static Connection* getConnection(const SQLString& url);
-  static Connection* getConnection(const SQLString& url, Properties& props);
-  static Connection* getConnection(const SQLString& url, const SQLString& user, const SQLString& pwd);
-};
-
+// Instantiating template classed that have to be exported
+template struct MARIADB_EXPORTED CArray<char>;
+template struct MARIADB_EXPORTED CArray<int32_t>;
+template struct MARIADB_EXPORTED CArray<int64_t>;
 }
-
-
-#endif

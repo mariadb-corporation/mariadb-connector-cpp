@@ -39,9 +39,9 @@ class CmdInformationSingle  : public CmdInformation {
 
 public:
   CmdInformationSingle(int64_t insertId,int64_t updateCount,int32_t autoIncrement);
-  sql::Ints* getUpdateCounts();
-  sql::Ints* getServerUpdateCounts();
-  sql::Longs* getLargeUpdateCounts();
+  std::vector<int32_t>& getUpdateCounts();
+  std::vector<int32_t>& getServerUpdateCounts();
+  std::vector<int64_t>& getLargeUpdateCounts();
   int32_t getUpdateCount();
   int64_t getLargeUpdateCount();
   void addErrorStat();

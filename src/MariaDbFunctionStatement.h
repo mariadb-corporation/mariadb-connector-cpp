@@ -123,7 +123,6 @@ public:
   void addBatch(const SQLString& sql);
   void clearBatch();
   void close();
-  sql::Longs* executeLargeBatch();
   int64_t executeLargeUpdate();
   void registerOutParameter(int32_t parameterIndex, int32_t sqlType, const SQLString& typeName);
   void registerOutParameter(int32_t parameterIndex, int32_t sqlType);
@@ -131,7 +130,9 @@ public:
   void registerOutParameter(const SQLString& parameterName, int32_t sqlType);
   void registerOutParameter(const SQLString& parameterName, int32_t sqlType, int32_t scale);
   void registerOutParameter(const SQLString& parameterName, int32_t sqlType, const SQLString& typeName);
-  sql::Ints* executeBatch();
+
+  const sql::Ints& executeBatch();
+  const sql::Longs& executeLargeBatch();
 
   bool wasNull();
   SQLString getString(int32_t parameterIndex);

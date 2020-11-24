@@ -17,36 +17,21 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
+#ifndef _BUILDCONF_H_
+#define _BUILDCONF_H_
 
-#ifndef _DRIVERMANAGER_H_
-#define _DRIVERMANAGER_H_
-
-#include "buildconf.h"
-#include "SQLString.h"
-#include "Connection.h"
-#include "Driver.h"
-
-namespace sql
-{
-
-/*
- * Mimimalistic DriverManager manager as the more convenient way to obtain a connection.
- * There is no means of registsering etc drivers, as it's unlikely needed.
- */
-class MARIADB_EXPORTED DriverManager
-{
-  DriverManager(const DriverManager &);
-  void operator=(DriverManager&)= delete;
-  DriverManager() {}
-  virtual ~DriverManager(){}
-public:
-
-  static Connection* getConnection(const SQLString& url);
-  static Connection* getConnection(const SQLString& url, Properties& props);
-  static Connection* getConnection(const SQLString& url, const SQLString& user, const SQLString& pwd);
-};
-
-}
-
+#ifdef _WIN32
+# ifndef MARIADB_EXPORTED
+#  define MARIADB_EXPORTED __declspec(dllimport)
+#  define MARIADB_EXTERN extern
+# else
+#  define MARIADB_EXTERN  
+# endif
+#else
+# ifndef MARIADB_EXPORTED
+#  define MARIADB_EXPORTED 
+# endif
+# define MARIADB_EXTERN extern
+#endif
 
 #endif

@@ -21,6 +21,7 @@
 #ifndef _CONNECTION_H_
 #define _CONNECTION_H_
 
+#include "buildconf.h"
 #include "SQLString.h"
 #include "Savepoint.h"
 #include "jdbccompat.h"

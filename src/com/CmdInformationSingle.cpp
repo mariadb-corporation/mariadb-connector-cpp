@@ -43,19 +43,22 @@ namespace mariadb
   {
   }
 
-  sql::Ints* CmdInformationSingle::getUpdateCounts()
+  std::vector<int32_t>& CmdInformationSingle::getUpdateCounts()
   {
-    return new sql::Ints{ static_cast<int32_t>(updateCount) };
+    batchRes[0]= static_cast<int32_t>(updateCount);
+    return batchRes;
   }
 
-  sql::Ints* CmdInformationSingle::getServerUpdateCounts()
+  std::vector<int32_t>& CmdInformationSingle::getServerUpdateCounts()
   {
-    return new sql::Ints{ static_cast<int32_t>(updateCount) };
+    batchRes[0]= static_cast<int32_t>(updateCount);
+    return batchRes;
   }
 
-  sql::Longs* CmdInformationSingle::getLargeUpdateCounts()
+  std::vector<int64_t>& CmdInformationSingle::getLargeUpdateCounts()
   {
-    return new sql::Longs{ updateCount };
+    largeBatchRes[0]= updateCount;
+    return largeBatchRes;
   }
 
   int32_t CmdInformationSingle::getUpdateCount()

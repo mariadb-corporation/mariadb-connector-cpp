@@ -85,8 +85,8 @@ public:
   void clearBatch();
   sql::ParameterMetaData* getParameterMetaData();
   sql::ResultSetMetaData* getMetaData();
-  sql::Ints* executeBatch();
-  sql::Longs* executeLargeBatch();
+  const sql::Ints& executeBatch();
+  const sql::Longs& executeLargeBatch();
 
 private:
   void executeBatchInternal(int32_t queryParameterSize);

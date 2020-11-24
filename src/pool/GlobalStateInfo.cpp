@@ -17,8 +17,10 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
+#include "Consts.h"
 #include "Connection.h"
 #include "GlobalStateInfo.h"
+
 namespace sql
 {
 namespace mariadb

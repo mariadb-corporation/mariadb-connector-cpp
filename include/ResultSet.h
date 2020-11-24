@@ -23,6 +23,7 @@
 
 #include <istream>
 
+#include "buildconf.h"
 #include "SQLString.h"
 #include "Warning.h"
 #include "jdbccompat.h"

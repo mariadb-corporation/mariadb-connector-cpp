@@ -21,6 +21,7 @@
 #ifndef _STATEMENT_H_
 #define _STATEMENT_H_
 
+#include "buildconf.h"
 #include "SQLString.h"
 #include "ResultSet.h"
 #include "Warning.h"
@@ -99,8 +100,8 @@ public:
   virtual int32_t getResultSetType()=0;
   virtual void addBatch(const SQLString& sql)=0;
   virtual void clearBatch()=0;
-  virtual sql::Ints* executeBatch()=0;
-  virtual sql::Longs* executeLargeBatch()=0;
+  virtual const sql::Ints& executeBatch()=0;
+  virtual const sql::Longs& executeLargeBatch()=0;
   virtual void closeOnCompletion()=0;
   virtual bool isCloseOnCompletion()=0;
   virtual Statement* setResultSetType(int32_t rsType)=0;

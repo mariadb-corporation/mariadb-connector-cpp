@@ -23,9 +23,9 @@
 
 #include <map>
 #include <algorithm>
-#include <initializer_list>
 #include <istream>
 
+#include  "CArray.h"
 /* Missing JDBC classes/types/enums or their stubs or tmporary definitions(or some of them become permanent) */
 //#include "compat/Array.h"
 #include "compat/Struct.h"
@@ -35,6 +35,7 @@
 namespace sql
 {
   class SQLString;
+
   typedef enum enRowIdLifetime {
     ROWID_UNSUPPORTED= 0,
     ROWID_VALID_OTHER,
@@ -62,58 +63,6 @@ namespace sql
   typedef SQLString NClob;
   typedef SQLString URL;
 
-  /* Simple C array wrapper template for use to pass arrays from connector */
-  template <class T> struct CArray
-  {
-    T* arr;
-    int64_t length;
-
-    operator T*()
-    {
-      return arr;
-    }
-    operator const T*() const
-    {
-      return arr;
-    }
-
-    operator bool()
-    {
-      return arr != nullptr;
-    }
-
-    CArray(int64_t len);
-    CArray(int64_t len, const T& fillValue);
-
-    /* This constructor takes existing(stack?) array for "storing". Won't delete */
-    CArray(T _arr[], size_t len);
-    CArray(const T _arr[], size_t len);
-
-    ~CArray();
-
-    T* begin() { return arr; }
-    T* end();
-
-    std::size_t size() const { return end() - begin(); }
-    const T* begin() const { return arr; }
-    const T* end() const;
-
-    CArray(std::initializer_list<T> const& initList);
-    CArray(const CArray& rhs);
-
-    CArray() : arr(nullptr), length(0)
-    {}
-
-    void assign(const T* _arr, std::size_t size= 0);
-    void wrap(T* _arr, std::size_t size);
-    void reserve(std::size_t size);
-  };
-
-
-  typedef CArray<char> bytes;
-  typedef CArray<int32_t> Ints;
-  typedef CArray<int64_t> Longs;
-
 
   class RowId
   {
@@ -127,6 +76,7 @@ namespace sql
     virtual int64_t hashCode() const=0;
     virtual SQLString toString() const=0;
   };
+
 
   class Ref
   {

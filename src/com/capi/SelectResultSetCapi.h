@@ -46,7 +46,6 @@ namespace sql
 namespace mariadb
 {
 class TimeZone;
-//class RowProtocol;
 class ServerPrepareResult;
 struct memBuf;
 

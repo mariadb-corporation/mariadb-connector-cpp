@@ -17,7 +17,7 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
-
+#include "Consts.h"
 #include "DriverManager.h"
 #include "Exception.h"
 

@@ -204,26 +204,29 @@ namespace sql
     return metadata.get();
   }
 
-  sql::Ints* ServerSidePreparedStatement::executeBatch()
+  const sql::Ints& ServerSidePreparedStatement::executeBatch()
   {
     stmt->checkClose();
+    sql::Ints& res= stmt->getBatchResArr();
+    res.wrap(nullptr, 0);
     int32_t queryParameterSize= static_cast<int32_t>(queryParameters.size());
     if (queryParameterSize == 0) {
-      return new sql::Ints();
+      return res;
     }
     executeBatchInternal(queryParameterSize);
-    return stmt->getInternalResults()->getCmdInformation()->getUpdateCounts();
+    return res.wrap(stmt->getInternalResults()->getCmdInformation()->getUpdateCounts());
   }
 
-  sql::Longs* ServerSidePreparedStatement::executeLargeBatch()
+  const sql::Longs& ServerSidePreparedStatement::executeLargeBatch()
   {
     stmt->checkClose();
+    sql::Longs& res = stmt->getLargeBatchResArr();
     int32_t queryParameterSize= static_cast<int32_t>(queryParameters.size());
     if (queryParameterSize == 0) {
-      return new sql::Longs();
+      return res;
     }
     executeBatchInternal(queryParameterSize);
-    return stmt->getInternalResults()->getCmdInformation()->getLargeUpdateCounts();
+    return res.wrap(stmt->getInternalResults()->getCmdInformation()->getLargeUpdateCounts());
   }
 
   void ServerSidePreparedStatement::executeBatchInternal(int32_t queryParameterSize)

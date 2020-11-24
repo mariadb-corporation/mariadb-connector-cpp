@@ -21,6 +21,7 @@
 #ifndef _PREPARESTATEMENT_H_
 #define _PREPARESTATEMENT_H_
 
+#include "buildconf.h"
 #include "SQLString.h"
 #include "ParameterMetaData.h"
 
@@ -78,7 +79,7 @@ public:
   virtual void setDouble(int32_t parameterIndex, double* value)=0;
 #endif
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXT_VERSION
   virtual void setRowId(int32_t parameterIndex, const RowId* rowid)=0;
   /* Pass refs or pointers? */
   virtual void setCharacterStream(int32_t parameterIndex, const std::istringstream& reader, int32_t length)=0;

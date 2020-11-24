@@ -84,6 +84,7 @@ ADD_TEST(test_resultsetmetadata resultsetmetadata)
 ADD_TEST(test_connection connection)
 ADD_TEST(test_databasemetadata databasemetadata)
 ADD_TEST(test_resultset resultset)
+ADD_TEST(test_statement statement)
 ADD_TEST(unsorted_bugs unsorted_bugs)
 
 

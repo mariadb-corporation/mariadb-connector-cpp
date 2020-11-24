@@ -37,8 +37,8 @@ class CmdInformationBatch : public CmdInformation {
   std::size_t expectedSize;
   int32_t autoIncrement;
   int64_t insertIdNumber ; /*0*/
-  bool hasException;
-  bool rewritten;
+  bool hasException= false;
+  bool rewritten= false;
 
 public:
   CmdInformationBatch(std::size_t expectedSize,int32_t autoIncrement);
@@ -46,9 +46,9 @@ public:
   void reset();
   void addResultSetStat();
   void addSuccessStat(int64_t updateCount,int64_t insertId);
-  sql::Ints* getUpdateCounts();
-  sql::Ints* getServerUpdateCounts();
-  sql::Longs* getLargeUpdateCounts();
+  std::vector<int32_t>& getUpdateCounts();
+  std::vector<int32_t>& getServerUpdateCounts();
+  std::vector<int64_t>& getLargeUpdateCounts();
   int32_t getUpdateCount();
   int64_t getLargeUpdateCount();
   ResultSet* getBatchGeneratedKeys(Protocol* protocol);

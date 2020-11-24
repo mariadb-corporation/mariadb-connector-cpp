@@ -330,6 +330,7 @@ void statement::unbufferedFetch()
 {
   logMsg("statement::unbufferedFetch() - MySQL_Resultset::*");
 
+  SKIP("Test needs to be fixed");
   sql::ConnectOptionsMap connection_properties;
   int id=0;
 
@@ -510,6 +511,8 @@ void statement::unbufferedOutOfSync()
 {
   logMsg("statement::unbufferedOutOfSync() - MySQL_Statement::*");
 
+  SKIP("Tested functionality is not supported yet");
+
   try
   {
     stmt.reset(con->createStatement());
@@ -610,6 +613,36 @@ void statement::queryTimeout()
   }
 }
 
+
+void statement::addBatch()
+{
+  stmt->executeUpdate("DROP TABLE IF EXISTS testAddBatch");
+  stmt->executeUpdate("CREATE TABLE testAddBatch "
+                      "(id int not NULL)");
+  
+  stmt->addBatch("INSERT INTO testAddBatch VALUES(1)");
+  stmt->addBatch("INSERT INTO testAddBatch VALUES(2)");
+  stmt->addBatch("INSERT INTO testAddBatch VALUES(3)");
+
+  const sql::Ints& batchRes= stmt->executeBatch();
+
+  ASSERT_EQUALS(3ULL, batchRes.size());
+  ASSERT_EQUALS(sql::Statement::SUCCESS_NO_INFO, batchRes[0]);
+  ASSERT_EQUALS(sql::Statement::SUCCESS_NO_INFO, batchRes[1]);
+  ASSERT_EQUALS(sql::Statement::SUCCESS_NO_INFO, batchRes[2]);
+
+  res.reset(stmt->executeQuery("SELECT MIN(id), MAX(id), SUM(id), count(*) FROM testAddBatch"));
+
+  ASSERT(res->next());
+
+  ASSERT_EQUALS(1, res->getInt(1));
+  ASSERT_EQUALS(3, res->getInt(2));
+  ASSERT_EQUALS(6, res->getInt(3));
+  ASSERT_EQUALS(3, res->getInt(4));
+
+  stmt->executeUpdate("DROP TABLE IF EXISTS testAddBatch");
+
+}
 
 } /* namespace statement */
 } /* namespace testsuite */

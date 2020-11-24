@@ -65,6 +65,8 @@ protected:
   Shared::Results results;
   int32_t fetchSize;
   volatile bool executing;
+  sql::Ints batchRes;
+  sql::Longs largeBatchRes;
 
 private:
 #ifdef MAYBE_IN_BETA
@@ -161,8 +163,9 @@ public:
   int32_t getResultSetType();
   void addBatch(const SQLString& sql);
   void clearBatch();
-  sql::Ints* executeBatch();
-  sql::Longs* executeLargeBatch();
+
+  const sql::Ints& executeBatch();
+  const sql::Longs& executeLargeBatch();
 
 private:
   void internalBatchExecution(std::size_t size);
@@ -182,6 +185,8 @@ public:
   void markClosed();
   //Shared::Protocol& getProtocol() { return protocol; }
   //Shared::Options& getOptions() { return options; }
+  sql::Ints& getBatchResArr() { return batchRes; }
+  sql::Longs& getLargeBatchResArr() { return largeBatchRes; }
   };
 }
 }

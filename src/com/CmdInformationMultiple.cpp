@@ -73,69 +73,73 @@ namespace mariadb
     updateCounts.push_back(updateCount);
   }
 
-  sql::Ints* CmdInformationMultiple::getServerUpdateCounts()
+  std::vector<int32_t>& CmdInformationMultiple::getServerUpdateCounts()
   {
-    sql::Ints* ret= new sql::Ints(updateCounts.size());
+    batchRes.clear();
+    batchRes.reserve(updateCounts.size());
 
     auto iterator= updateCounts.begin();
     int32_t pos= 0;
     while (iterator!= updateCounts.end()) {
-      ret[pos]= static_cast<int32_t>(*iterator);
+      batchRes[pos]= static_cast<int32_t>(*iterator);
       ++pos;
       ++iterator;
     }
 
-    return ret;
+    return batchRes;
   }
 
-  sql::Ints* CmdInformationMultiple::getUpdateCounts()
+  std::vector<int32_t>& CmdInformationMultiple::getUpdateCounts()
   {
+    batchRes.clear();
     if (rewritten) {
-      sql::Ints* ret= new sql::Ints(expectedSize, hasException ? Statement::EXECUTE_FAILED : Statement::SUCCESS_NO_INFO);
-      return ret;
+      batchRes.resize(expectedSize, hasException ? Statement::EXECUTE_FAILED : Statement::SUCCESS_NO_INFO);
+      return batchRes;
     }
-    sql::Ints* ret= new sql::Ints(std::max(updateCounts.size(), static_cast<size_t>(expectedSize)));
+    batchRes.reserve(std::max(updateCounts.size(), expectedSize));
 
     auto iterator= updateCounts.begin();
     int32_t pos= 0;
     while (iterator!= updateCounts.end()) {
-      ret[pos]= static_cast<int32_t>(*iterator);
+      batchRes[pos]= static_cast<int32_t>(*iterator);
       ++pos;
       ++iterator;
     }
 
 
-    while (pos < ret->length) {
-      ret[pos++]= Statement::EXECUTE_FAILED;
+    while (pos < expectedSize) {
+      batchRes[pos++]= Statement::EXECUTE_FAILED;
     }
 
-    return ret;
+    return batchRes;
   }
 
-  sql::Longs* CmdInformationMultiple::getLargeUpdateCounts()
+
+  std::vector<int64_t>& CmdInformationMultiple::getLargeUpdateCounts()
   {
+    largeBatchRes.clear();
     if (rewritten) {
-      sql::Longs* ret= new sql::Longs(expectedSize, hasException ? Statement::EXECUTE_FAILED : Statement::SUCCESS_NO_INFO);
-      return ret;
+      largeBatchRes.resize(expectedSize, hasException ? Statement::EXECUTE_FAILED : Statement::SUCCESS_NO_INFO);
+      return largeBatchRes;
     }
 
-    sql::Longs* ret= new sql::Longs(std::max(updateCounts.size(), static_cast<size_t>(expectedSize)));
+    largeBatchRes.reserve(std::max(updateCounts.size(), expectedSize));
 
     auto iterator= updateCounts.begin();
     int32_t pos= 0;
     while (iterator != updateCounts.end()) {
-      ret[pos]= *iterator;
+      largeBatchRes[pos]= *iterator;
       ++pos;
       ++iterator;
     }
 
-
-    while (pos <ret->length) {
-      ret[pos++]= Statement::EXECUTE_FAILED;
+    while (pos < expectedSize) {
+      largeBatchRes[pos++]= Statement::EXECUTE_FAILED;
     }
 
-    return ret;
+    return largeBatchRes;
   }
+
 
   int32_t CmdInformationMultiple::getUpdateCount()
   {

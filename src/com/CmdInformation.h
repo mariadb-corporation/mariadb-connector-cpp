@@ -21,6 +21,7 @@
 #ifndef _CMDINFORMATION_H_
 #define _CMDINFORMATION_H_
 
+#include <vector>
 #include "MariaDbConnCpp.h"
 
 namespace sql
@@ -28,10 +29,13 @@ namespace sql
 namespace mariadb
 {
 
-
 class CmdInformation  {
   CmdInformation(const CmdInformation &);
   void operator=(CmdInformation &);
+protected:
+  // It's probably better to eventually move them to implementation classes
+  std::vector<int32_t> batchRes;
+  std::vector<int64_t> largeBatchRes;
 public:
   CmdInformation() {}
   virtual ~CmdInformation(){}
@@ -39,9 +43,9 @@ public:
   enum {
     RESULT_SET_VALUE= -1
   };
-  virtual sql::Ints* getUpdateCounts()=0;
-  virtual sql::Ints* getServerUpdateCounts()=0;
-  virtual sql::Longs* getLargeUpdateCounts()=0;
+  virtual std::vector<int32_t>& getUpdateCounts()=0;
+  virtual std::vector<int32_t>& getServerUpdateCounts()=0;
+  virtual std::vector<int64_t>& getLargeUpdateCounts()=0;
   virtual int32_t getUpdateCount()=0;
   virtual int64_t getLargeUpdateCount()=0;
   virtual void addSuccessStat(int64_t updateCount,int64_t insertId)=0;

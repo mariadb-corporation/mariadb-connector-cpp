@@ -65,6 +65,7 @@ public:
     TEST_CASE(unbufferedFetch);
     TEST_CASE(unbufferedOutOfSync);
     TEST_CASE(queryTimeout);
+    TEST_CASE(addBatch);
   }
 
   /**
@@ -107,6 +108,10 @@ public:
    */
   void queryTimeout();
 
+  /**
+   * checks addBatch
+   */
+  void addBatch();
 };
 
 REGISTER_FIXTURE(statement);

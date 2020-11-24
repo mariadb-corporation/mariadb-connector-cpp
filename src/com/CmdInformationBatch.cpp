@@ -42,11 +42,13 @@ namespace mariadb
   {
   }
 
+
   void CmdInformationBatch::addErrorStat()
   {
     hasException= true;
     updateCounts.push_back(static_cast<int64_t>(Statement::EXECUTE_FAILED));
   }
+
 
   void CmdInformationBatch::reset()
   {
@@ -57,10 +59,12 @@ namespace mariadb
     rewritten= false;
   }
 
+
   void CmdInformationBatch::addResultSetStat()
   {
     this->updateCounts.push_back(static_cast<int64_t>(RESULT_SET_VALUE));
   }
+
 
   void CmdInformationBatch::addSuccessStat(int64_t updateCount, int64_t insertId)
   {
@@ -69,10 +73,12 @@ namespace mariadb
     updateCounts.push_back(updateCount);
   }
 
-  sql::Ints* CmdInformationBatch::getUpdateCounts()
+
+  std::vector<int32_t>& CmdInformationBatch::getUpdateCounts()
   {
+    batchRes.clear();
     if (rewritten) {
-      sql::Ints* ret=  nullptr;
+      
       int32_t resultValue;
 
       if (hasException) {
@@ -89,41 +95,42 @@ namespace mariadb
           }
         }
       }
-      ret= new sql::Ints(expectedSize, resultValue);
-      return ret;
+      batchRes.resize(expectedSize, resultValue);
+      return batchRes;
     }
 
-    sql::Ints* ret= new sql::Ints(std::max(updateCounts.size(), static_cast<size_t>(expectedSize)));
+    batchRes.reserve(std::max(updateCounts.size(), expectedSize));
 
     size_t pos= 0;
 
     for (auto& updCnt : updateCounts) {
-      ret[pos++]= updCnt;
+      batchRes[pos++]= static_cast<int32_t>(updCnt);
     }
 
-
-    while (pos < ret->size()) {
-      ret[pos++]= Statement::EXECUTE_FAILED;
+    while (pos < expectedSize) {
+      batchRes[pos++]= Statement::EXECUTE_FAILED;
     }
 
-    return ret;
+    return batchRes;
   }
 
-  sql::Ints* CmdInformationBatch::getServerUpdateCounts()
+
+  std::vector<int32_t>& CmdInformationBatch::getServerUpdateCounts()
   {
-    sql::Ints* ret= new sql::Ints(updateCounts.size());
+    batchRes.clear();
+    batchRes.reserve(updateCounts.size());
     size_t pos= 0;
 
     for (auto& updCnt : updateCounts) {
-      ret[pos++]= static_cast<int32_t>(updCnt);
+      batchRes[pos++]= static_cast<int32_t>(updCnt);
     }
-    return ret;
+    return batchRes;
   }
 
-  sql::Longs* CmdInformationBatch::getLargeUpdateCounts()
+  std::vector<int64_t>& CmdInformationBatch::getLargeUpdateCounts()
   {
+    largeBatchRes.clear();
     if (rewritten) {
-      sql::Longs* ret;
 
       int64_t resultValue;
       if (hasException) {
@@ -142,24 +149,23 @@ namespace mariadb
         }
       }
 
-      ret= new sql::Longs(expectedSize, resultValue);
+      largeBatchRes.resize(expectedSize, resultValue);
 
-      return ret;
+      return largeBatchRes;
     }
 
-    sql::Longs* ret= new sql::Longs(std::max(updateCounts.size(), static_cast<size_t>(expectedSize)));
+    largeBatchRes.reserve(std::max(updateCounts.size(), expectedSize));
 
-    ret->assign(updateCounts.data(), updateCounts.size());
-
-    if (updateCounts.size() < static_cast<size_t>(expectedSize))
-    {
-      size_t pos= updateCounts.size();
-      while (pos < ret->size()) {
-        ret[pos++]= Statement::EXECUTE_FAILED;
-      }
+    size_t pos= 0;
+    for (auto& updCnt : updateCounts) {
+      largeBatchRes[pos++] = updCnt;
     }
 
-    return ret;
+    while (pos < expectedSize) {
+      largeBatchRes[pos++]= Statement::EXECUTE_FAILED;
+    }
+
+    return largeBatchRes;
   }
 
 

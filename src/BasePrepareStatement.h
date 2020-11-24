@@ -172,7 +172,7 @@ public:
   int32_t executeUpdate();
   bool execute();
 
-  SQLException BasePrepareStatement::executeExceptionEpilogue(SQLException& sqle);
+  SQLException executeExceptionEpilogue(SQLException& sqle);
 
   /*** Inherited methods that should not work with Prepared/CallableStatement ***/
   void addBatch(const SQLString& sql);

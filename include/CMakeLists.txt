@@ -15,6 +15,8 @@ SET(MARIADBCPP_PUBLIC_API   ${CMAKE_SOURCE_DIR}/include/Driver.h
                             ${CMAKE_SOURCE_DIR}/include/Types.h
                             ${CMAKE_SOURCE_DIR}/include/jdbccompat.h
                             ${CMAKE_SOURCE_DIR}/include/ConnCpp.h
+                            ${CMAKE_SOURCE_DIR}/include/buildconf.h
+                            ${CMAKE_SOURCE_DIR}/include/CArray.h
                             )
 SET(MARIADBCPP_COMPAT_STUBS ${CMAKE_SOURCE_DIR}/include/compat/Array.h
                             ${CMAKE_SOURCE_DIR}/include/compat/Executor.h

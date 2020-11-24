@@ -195,7 +195,7 @@ namespace mariadb
     stmt->validParameters();
   }
 
-  sql::Ints* MariaDbProcedureStatement::executeBatch()
+  const sql::Ints& MariaDbProcedureStatement::executeBatch()
   {
     if (!hasInOutParameters) {
       return stmt->executeBatch();
@@ -1114,13 +1114,16 @@ namespace mariadb
   void MariaDbProcedureStatement::addBatch(const SQLString& sql) {
     stmt->addBatch(sql);
   }
+
   void MariaDbProcedureStatement::clearBatch() {
     stmt->clearBatch();
   }
+
   void MariaDbProcedureStatement::close() {
     stmt->close();
   }
-  sql::Longs* MariaDbProcedureStatement::executeLargeBatch() {
+
+  const sql::Longs& MariaDbProcedureStatement::executeLargeBatch() {
     return stmt->executeLargeBatch();
   }
 

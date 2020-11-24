@@ -414,7 +414,7 @@ namespace mariadb
     return stmt->getMaxFieldSize();
   }
 
-  sql::Ints * MariaDbFunctionStatement::executeBatch() {
+  const sql::Ints& MariaDbFunctionStatement::executeBatch() {
     return stmt->executeBatch();
   }
 
@@ -704,7 +704,7 @@ namespace mariadb
   }
 
 
-  sql::Longs* MariaDbFunctionStatement::executeLargeBatch() {
+  const sql::Longs& MariaDbFunctionStatement::executeLargeBatch() {
     return stmt->executeLargeBatch();
   }
 

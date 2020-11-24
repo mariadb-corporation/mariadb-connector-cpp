@@ -19,18 +19,11 @@
 
 #ifndef _SQLSTRING_H_
 #define _SQLSTRING_H_
+
 #include <memory>
 #include <string>
 
-#ifdef _WIN32
-# ifndef MARIADB_EXPORTED
-#  define MARIADB_EXPORTED __declspec(dllimport)
-# endif
-#else
-# ifndef MARIADB_EXPORTED
-#  define MARIADB_EXPORTED 
-# endif
-#endif
+#include "buildconf.h"
 
 namespace sql
 {

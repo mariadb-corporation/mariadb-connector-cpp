@@ -26,7 +26,7 @@ PROJECT(mariadb_connector_cpp
 #        DESCRIPTION "MariaDB Connector/C++"
         LANGUAGES CXX C)
 
-SET(MACPP_VERSION_QUALITY "beta")
+SET(MACPP_VERSION_QUALITY "rc")
 SET(MACPP_VERSION "0.09.0004")
 SET(MARIADB_DEFAULT_PLUGINS_SUBDIR "plugin")
 
@@ -154,6 +154,7 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/protocol/capi/TextRowProtocolCapi.cpp
                    src/ExceptionFactory.cpp
                    src/StringImp.cpp
+                   src/CArray.cpp
                    ####CPP####
                    )
 
@@ -243,6 +244,8 @@ IF(WIN32)
                    "include/Driver.h"
                    "include/DriverManager.h"
                    "include/Types.h"
+                   "include/buildconf.h"
+                   "include/CArray.h"
 
                    src/SelectResultSet.h
                    src/com/capi/SelectResultSetCapi.h
@@ -301,6 +304,7 @@ IF(WIN32)
                    src/protocol/capi/TextRowProtocolCapi.h
                    src/ExceptionFactory.h
                    src/StringImp.h
+                   src/CArrayImp.h
                    ####H####
                        )
   SOURCE_GROUP(Logging REGULAR_EXPRESSION "/logger/")
@@ -362,7 +366,6 @@ ELSE()
     ENDIF()
   ENDIF()
   MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIB_SUFFIX}")
-#  ADD_DEFINITIONS(-DMARIADB_EXPORTED)
   MESSAGE(STATUS "Authentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
 ENDIF()
 

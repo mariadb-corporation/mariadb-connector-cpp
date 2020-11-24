@@ -77,7 +77,9 @@ namespace mariadb
       exceptionFactory(factory),
       isTimedout(false),
       queryTimeout(0),
-      executing(false)
+      executing(false),
+      batchRes(0),
+      largeBatchRes(0)
   {
   }
 
@@ -248,15 +250,15 @@ namespace mariadb
   BatchUpdateException MariaDbStatement::executeBatchExceptionEpilogue(SQLException& initialSqle, std::size_t size)
   {
     SQLException sqle(handleFailoverAndTimeout(initialSqle));
-    std::unique_ptr<sql::Ints> ret;
 
     if (!results || !results->commandEnd())
     {
-      ret.reset(new sql::Ints(size, Statement::EXECUTE_FAILED));
+     // TODO would need new CArray method for this, but it's not used anyway
+     // batchRes.assign(size, Statement::EXECUTE_FAILED));
     }
     else
     {
-      ret.reset(results->getCmdInformation()->getUpdateCounts());
+      batchRes.wrap(results->getCmdInformation()->getUpdateCounts());
     }
 
     Unique::SQLException sqle2= exceptionFactory->raiseStatementError(connection, this)->create(sqle);
@@ -1232,10 +1234,6 @@ namespace mariadb
    * @see DatabaseMetaData#supportsBatchUpdates
    */
   void MariaDbStatement::addBatch(const SQLString& sql) {
-    if (batchQueries.size() > 0)
-    {
-      batchQueries.clear();
-    }
     if (sql.empty())
     {
       throw *exceptionFactory->raiseStatementError(connection, this)->create("Empty string cannot be set to addBatch(const SQLString& sql)");
@@ -1276,13 +1274,14 @@ namespace mariadb
    * @see DatabaseMetaData#supportsBatchUpdates
    * @since 1.3
    */
-  sql::Ints* MariaDbStatement::executeBatch()
+  const sql::Ints& MariaDbStatement::executeBatch()
   {
     checkClose();
     std::size_t size= batchQueries.size();
 
+    batchRes.wrap(nullptr, 0);
     if (size == 0) {
-      return NULL;
+      return batchRes;
     }
 
     std::lock_guard<std::mutex> localScopeLock(*lock);
@@ -1290,25 +1289,26 @@ namespace mariadb
     {
       internalBatchExecution(size);
       executeBatchEpilogue();
-      /* TODO maybe internally we should still exchange data in vectors, and give application wrapped C array?, and also receive vector by ref ? */
-      return results->getCmdInformation()->getUpdateCounts();// .data();
+
+      return batchRes.wrap(results->getCmdInformation()->getUpdateCounts());// .data();
     }
     catch (SQLException& initialSqlEx){
       executeBatchEpilogue();
       throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }
     //To please compilers etc
-    return nullptr;
+    return batchRes;
   }
 
 
-  sql::Longs* MariaDbStatement::executeLargeBatch()
+  const sql::Longs& MariaDbStatement::executeLargeBatch()
   {
     checkClose();
     std::size_t size= batchQueries.size();
+    largeBatchRes.wrap(nullptr, 0);
 
     if (size == 0) {
-      return NULL;
+      return largeBatchRes;
     }
 
     std::lock_guard<std::mutex> localScopeLock(*lock);
@@ -1316,7 +1316,8 @@ namespace mariadb
     {
       internalBatchExecution(size);
       executeBatchEpilogue();
-      return results->getCmdInformation()->getLargeUpdateCounts();
+
+      return largeBatchRes.wrap(results->getCmdInformation()->getLargeUpdateCounts());
 
     }
     catch (SQLException& initialSqlEx)
@@ -1325,7 +1326,7 @@ namespace mariadb
       throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }/* TODO: something with the finally was once here */
     //To please compilers etc
-    return nullptr;
+    return largeBatchRes;
   }
 
   /**

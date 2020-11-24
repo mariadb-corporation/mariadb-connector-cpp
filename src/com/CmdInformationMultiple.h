@@ -47,9 +47,9 @@ public:
   void reset();
   void addResultSetStat();
   void addSuccessStat(int64_t updateCount,int64_t insertId);
-  sql::Ints* getServerUpdateCounts();
-  sql::Ints* getUpdateCounts();
-  sql::Longs* getLargeUpdateCounts();
+  std::vector<int32_t>& getServerUpdateCounts();
+  std::vector<int32_t>& getUpdateCounts();
+  std::vector<int64_t>& getLargeUpdateCounts();
   int32_t getUpdateCount();
   int64_t getLargeUpdateCount();
   ResultSet* getBatchGeneratedKeys(Protocol* protocol);

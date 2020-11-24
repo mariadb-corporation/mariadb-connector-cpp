@@ -21,6 +21,7 @@
 #ifndef _DRIVER_H_
 #define _DRIVER_H_
 
+#include "buildconf.h"
 #include "SQLString.h"
 #include "Connection.h"
 #include "jdbccompat.h"
