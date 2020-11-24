@@ -626,10 +626,10 @@ void statement::addBatch()
 
   const sql::Ints& batchRes= stmt->executeBatch();
 
-  ASSERT_EQUALS(3ULL, batchRes.size());
-  ASSERT_EQUALS(sql::Statement::SUCCESS_NO_INFO, batchRes[0]);
-  ASSERT_EQUALS(sql::Statement::SUCCESS_NO_INFO, batchRes[1]);
-  ASSERT_EQUALS(sql::Statement::SUCCESS_NO_INFO, batchRes[2]);
+  ASSERT_EQUALS(3UI64, static_cast<uint64_t>(batchRes.size()));
+  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[0]);
+  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[1]);
+  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[2]);
 
   res.reset(stmt->executeQuery("SELECT MIN(id), MAX(id), SUM(id), count(*) FROM testAddBatch"));
 
