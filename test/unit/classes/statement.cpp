@@ -616,6 +616,7 @@ void statement::queryTimeout()
 
 void statement::addBatch()
 {
+  Statement st2(con->createStatement());
   stmt->executeUpdate("DROP TABLE IF EXISTS testAddBatch");
   stmt->executeUpdate("CREATE TABLE testAddBatch "
                       "(id int not NULL)");
@@ -626,12 +627,7 @@ void statement::addBatch()
 
   const sql::Ints& batchRes= stmt->executeBatch();
 
-  ASSERT_EQUALS(3UI64, static_cast<uint64_t>(batchRes.size()));
-  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[0]);
-  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[1]);
-  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[2]);
-
-  res.reset(stmt->executeQuery("SELECT MIN(id), MAX(id), SUM(id), count(*) FROM testAddBatch"));
+  res.reset(st2->executeQuery("SELECT MIN(id), MAX(id), SUM(id), count(*) FROM testAddBatch"));
 
   ASSERT(res->next());
 
@@ -639,9 +635,12 @@ void statement::addBatch()
   ASSERT_EQUALS(3, res->getInt(2));
   ASSERT_EQUALS(6, res->getInt(3));
   ASSERT_EQUALS(3, res->getInt(4));
+  ASSERT_EQUALS(3ULL, static_cast<uint64_t>(batchRes.size()));
+  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[0]);
+  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[1]);
+  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[2]);
 
   stmt->executeUpdate("DROP TABLE IF EXISTS testAddBatch");
-
 }
 
 } /* namespace statement */

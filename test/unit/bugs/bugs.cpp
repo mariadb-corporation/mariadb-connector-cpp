@@ -545,7 +545,7 @@ void bugs::bug72700()
     res.reset(stmt->getResultSet());
     checkResultSetScrolling(res);
     ResultSetMetaData meta(res->getMetaData());
-    ASSERT_EQUALS((getServerVersion(con) < 102000 || getServerVersion(con) > 103000) ? sql::Types::LONGVARCHAR : sql::Types::VARCHAR, meta->getColumnType(1));
+    ASSERT_EQUALS((getServerVersion(con) > 103000) ? sql::Types::LONGVARCHAR : sql::Types::VARCHAR, meta->getColumnType(1));
     ASSERT_EQUALS("LONGTEXT", meta->getColumnTypeName(1));
   }
   catch (::sql::SQLException & /*e*/)
@@ -1096,6 +1096,10 @@ void bugs::bug21152054()
 
 void bugs::bug22292073()
 {
+  if ((getServerVersion(con) < 102000))
+  {
+    SKIP("Server does not support tested functionality(JSON type)")
+  }
   stmt->execute("DROP TABLE IF EXISTS bug22292073");
   stmt->execute("create table bug22292073 (jdoc JSON);" );
   stmt->execute("insert into bug22292073 values('{ \"name\": \"abc\", \"age\": 1 , \"misc\":\
