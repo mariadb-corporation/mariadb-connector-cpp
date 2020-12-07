@@ -15,6 +15,8 @@ License information can be found in the COPYING file.
 
 To report issues: [https://jira.mariadb.org/projects/CONCPP/issues/](https://jira.mariadb.org/projects/CONCPP/issues/)
 
+Documentation: [https://mariadb.com/docs/appdev/connector-cpp/](https://mariadb.com/docs/appdev/connector-cpp/)
+
 ## Basic Use
 
 Connector implements JDBC API with minimal extensions and minimal

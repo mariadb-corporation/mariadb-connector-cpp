@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -88,44 +89,32 @@ void assertEquals(bool expected, bool result,
 
 }
 
-void assertEquals(int expected, unsigned int result
+
+void assertEquals(int32_t expected, int32_t result
                   , const char * file, int line)
 {
-  if ((unsigned) expected != result)
+  assertEquals(static_cast<int64_t>(expected), static_cast<int64_t>(result), file, line);
+}
+
+void assertEquals(int32_t expected, uint32_t result
+                  , const char * file, int line)
+{
+  if (expected < 0 || static_cast<uint32_t>(expected) != result)
   {
     std::stringstream errmsg;
     errmsg.str("");
-    errmsg << "assertEquals(int) failed in " << file << ", line #" << line;
-    errmsg << " expecting '" << expected << "' got '" << result << "'";
+    errmsg << "assertEquals(boolean) failed in " << file << ", line #" << line;
     TestsListener::testHasFailed(errmsg.str());
   }
 }
 
-void assertEquals(int expected, int result
+
+void assertEquals(uint32_t expected, uint32_t result
                   , const char * file, int line)
 {
-  if (expected != result)
-  {
-    std::stringstream errmsg;
-    errmsg.str("");
-    errmsg << "assertEquals(int) failed in " << file << ", line #" << line;
-    errmsg << " expecting '" << expected << "' got '" << result << "'";
-    TestsListener::testHasFailed(errmsg.str());
-  }
+  assertEquals(static_cast<uint64_t>(expected), static_cast<uint64_t>(result), file, line);
 }
 
-void assertEquals(unsigned int expected, unsigned int result
-                  , const char * file, int line)
-{
-  if (expected != result)
-  {
-    std::stringstream errmsg;
-    errmsg.str("");
-    errmsg << "assertEquals(unsigned int) failed in " << file << ", line #" << line;
-    errmsg << " expecting '" << expected << "' got '" << result << "'";
-    TestsListener::testHasFailed(errmsg.str());
-  }
-}
 
 void assertEquals(int64_t expected, int64_t result
                   , const char * file, int line)
@@ -140,6 +129,7 @@ void assertEquals(int64_t expected, int64_t result
   }
 }
 
+
 void assertEquals(uint64_t expected, uint64_t result
                   , const char * file, int line)
 {
@@ -152,6 +142,7 @@ void assertEquals(uint64_t expected, uint64_t result
     TestsListener::testHasFailed(errmsg.str());
   }
 }
+
 
 bool isNaN(double smth)
 {

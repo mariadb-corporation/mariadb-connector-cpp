@@ -46,6 +46,7 @@ public:
   SQLString();
   virtual ~SQLString();
 
+  static const std::size_t npos= std::string::npos;
   const char * c_str() const;
   SQLString& operator=(const SQLString&);
   //operator std::string() { return std::string(this->c_str(), this->length()); }
@@ -61,18 +62,18 @@ public:
   SQLString & append(const char * const addition);
   SQLString & append(const char * const addition, std::size_t len);
   SQLString & append(char c);
-  SQLString substr(size_t pos= 0, size_t count=std::string::npos) const;
-  size_t find_first_of(const SQLString& str, size_t pos = 0) const;
-  size_t find_first_of(const char* str, size_t pos = 0) const;
-  size_t find_first_of(const char ch, size_t pos = 0) const;
-  size_t find_last_of(const SQLString& str, size_t pos=std::string::npos) const;
-  size_t find_last_of(const char* str, size_t pos=std::string::npos) const;
-  size_t find_last_of(const char ch, size_t pos=std::string::npos) const;
-  size_t size() const;
-  size_t length() const;
-  void reserve(size_t n= 0);
-  char& at(size_t pos);
-  const char& at(size_t pos) const;
+  SQLString substr(std::size_t pos= 0, size_t count=npos) const;
+  std::size_t find_first_of(const SQLString& str, std::size_t pos = 0) const;
+  std::size_t find_first_of(const char* str, std::size_t pos = 0) const;
+  std::size_t find_first_of(const char ch, std::size_t pos = 0) const;
+  std::size_t find_last_of(const SQLString& str, std::size_t pos=npos) const;
+  std::size_t find_last_of(const char* str, std::size_t pos=npos) const;
+  std::size_t find_last_of(const char ch, std::size_t pos=npos) const;
+  std::size_t size() const;
+  std::size_t length() const;
+  void reserve(std::size_t n= 0);
+  char& at(std::size_t pos);
+  const char& at(std::size_t pos) const;
   std::string::iterator begin();
   std::string::iterator end();
   std::string::const_iterator begin() const;

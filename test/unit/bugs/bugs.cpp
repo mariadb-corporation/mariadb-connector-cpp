@@ -1150,7 +1150,7 @@ void bugs::bug22292073()
 
 void bugs::bug23212333()
 {
-  const std::size_t charCount= 256*1024+1;
+  std::size_t charCount= 256*1024+1;
   stmt->executeUpdate("drop table if exists bug23212333");
   stmt->executeUpdate("create table bug23212333(id longtext)");
 

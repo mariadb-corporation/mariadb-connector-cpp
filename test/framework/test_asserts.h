@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -53,13 +54,13 @@ void assertTrue(const char* msg, bool expression
 void assertEquals(const char * expected, const char * result
                   , const char * file, int line);
 
-void assertEquals(int expected, unsigned int result
+void assertEquals(int32_t expected, uint32_t result
                   , const char * file, int line);
 
-void assertEquals(int expected, int result
+void assertEquals(int32_t expected, int32_t result
                   , const char * file, int line);
 
-void assertEquals(unsigned int expected, unsigned int result
+void assertEquals(uint32_t expected, uint32_t result
                   , const char * file, int line);
 
 void assertEquals(int64_t expected, int64_t result

@@ -44,7 +44,7 @@ static const String defaultHost=    _T(TEST_DEFAULT_HOST);
 static const String defaultDb=      _T(TEST_DEFAULT_DB);
 static const String defaultLogin=   _T(TEST_DEFAULT_LOGIN);
 static const String defaultPasswd=  _T(TEST_DEFAULT_PASSWD);
-static bool defaultUseTls = TEST_USETLS;
+static bool defaultUseTls= TEST_USETLS;
 
 int TestFixtureCommon::instanceCount=1;
 

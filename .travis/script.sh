@@ -75,7 +75,7 @@ else
   export TEST_PASSWORD= 
 fi
 
-cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_OPENSSL=ON -DWITH_SSL=OPENSSL -DTEST_DEFAULT_HOST="tcp://$TEST_SERVER:$TEST_PORT" .
+cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_OPENSSL=ON -DWITH_SSL=OPENSSL -DTEST_HOST="tcp://$TEST_SERVER:$TEST_PORT" .
 # In Travis we are interested in tests with latest C/C version, while for release we must use only latest release tag
 #git submodule update --remote
 set -x
@@ -96,7 +96,7 @@ if [ -n "$SKYSQL" ] ; then
   mysql --protocol=tcp -u$TEST_UID -h$TEST_SERVER --port=$TEST_PORT --ssl -p$TEST_PASSWORD < cts.sql
   set -x
 else
-  mysql --protocol=tcp -ubob -h127.0.0.1 --port=$TEST_PORT < cts.sql
+  mysql --protocol=tcp -u$TEST_UID -h$TEST_SERVER --port=$TEST_PORT --password=$TEST_PASSWORD < cts.sql
 fi
 
 ctest -VV

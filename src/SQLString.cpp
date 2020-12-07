@@ -172,62 +172,64 @@ namespace sql
     return (*theString)->compare(size - otherSize, otherSize, (*str.theString)->c_str(), (*str.theString)->length()) == 0;
   }
 
-  SQLString SQLString::substr(size_t pos, size_t count) const
+  SQLString SQLString::substr(std::size_t pos, std::size_t count) const
   {
     return (*theString)->substr(pos, count).c_str();
   }
 
-  size_t SQLString::find_first_of(const SQLString & str, size_t pos) const
+  std::size_t SQLString::find_first_of(const SQLString & str, std::size_t pos) const
   {
     return (*theString)->find_first_of((*str.theString)->c_str(), pos, (*str.theString)->length());
   }
 
-  size_t SQLString::find_first_of(const char * str, size_t pos) const
+  std::size_t SQLString::find_first_of(const char * str, std::size_t pos) const
   {
     return (*theString)->find_first_of(str, pos);
   }
 
-  size_t SQLString::find_first_of(const char ch, size_t pos) const
+  std::size_t SQLString::find_first_of(const char ch, std::size_t pos) const
   {
     return (*theString)->find_first_of(ch, pos);
   }
 
 
-  size_t SQLString::find_last_of(const SQLString& str, size_t pos) const
+  std::size_t SQLString::find_last_of(const SQLString& str, std::size_t pos) const
   {
     return (*theString)->find_last_of(str.theString->get(), pos);
   }
-  size_t SQLString::find_last_of(const char* str, size_t pos) const
+
+  std::size_t SQLString::find_last_of(const char* str, std::size_t pos) const
   {
     return (*theString)->find_last_of(str, pos);
   }
-  size_t SQLString::find_last_of(const char ch, size_t pos) const
+
+  std::size_t SQLString::find_last_of(const char ch, std::size_t pos) const
   {
     return (*theString)->find_last_of(ch, pos);
   }
 
 
-  size_t SQLString::size() const
+  std::size_t SQLString::size() const
   {
     return (*theString)->size();
   }
 
-  size_t SQLString::length() const
+  std::size_t SQLString::length() const
   {
     return (*theString)->length();
   }
 
-  void SQLString::reserve(size_t n)
+  void SQLString::reserve(std::size_t n)
   {
     (*theString)->reserve(n);
   }
 
-  char & SQLString::at(size_t pos)
+  char & SQLString::at(std::size_t pos)
   {
     return (*theString)->at(pos);
   }
 
-  const char & SQLString::at(size_t pos) const
+  const char & SQLString::at(std::size_t pos) const
   {
     return (*theString)->at(pos);
   }
