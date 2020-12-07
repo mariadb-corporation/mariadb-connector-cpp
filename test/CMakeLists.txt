@@ -29,7 +29,7 @@
 
 #Use Options to configure default test server params
 
-SET_VALUE(TEST_DEFAULT_HOST   "tcp://localhost:3306" "Defines Unit Tests default server")
+SET_VALUE(TEST_HOST           "tcp://localhost:3306" "Defines Unit Tests default server")
 SET_VALUE(TEST_SCHEMA         "test"                 "Defines Unit Tests default Database")
 SET_VALUE(TEST_UID            "root"                 "Defines Unit Tests default login user")
 SET_VALUE(TEST_PASSWORD       "root"                 "Defines Unit Tests default login user password")

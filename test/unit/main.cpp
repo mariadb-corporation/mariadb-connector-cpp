@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -47,14 +48,14 @@ int main(int argc, char** argv)
 
   Properties defaultStringValues;
 
-  defaultStringValues.insert(Properties::value_type("dbUrl"   ,TEST_DEFAULT_HOST   ));
-  defaultStringValues.insert(Properties::value_type("dbUser"  ,TEST_DEFAULT_LOGIN ));
-  defaultStringValues.insert(Properties::value_type("dbPasswd",TEST_DEFAULT_PASSWD));
-  defaultStringValues.insert(Properties::value_type("dbSchema",TEST_DEFAULT_DB    ));
+  defaultStringValues.insert(Properties::value_type("dbUrl", HOST_ENV_OR_DEFAULT));
+  defaultStringValues.insert(Properties::value_type("dbUser", UID_ENV_OR_DEFAULT));
+  defaultStringValues.insert(Properties::value_type("dbPasswd", PASSWD_ENV_OR_DEFAULT));
+  defaultStringValues.insert(Properties::value_type("dbSchema", SCHEMA_ENV_OR_DEFAULT));
 
   std::map<String, bool> defaultBoolValues;
 
-  defaultBoolValues["useTls"]= TEST_USETLS;
+  defaultBoolValues["useTls"] = USETLS_ENV_OR_DEFAULT;
 
   testsuite::StartOptions options(unnamedStartParams, & defaultStringValues
                                   , & defaultBoolValues);

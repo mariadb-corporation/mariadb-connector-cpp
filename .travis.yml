@@ -33,10 +33,11 @@ matrix:
     - os: linux
       env: DB=mysql:5.7
     - os: osx
-      env: DB=mariadb:10.4
+      compiler: gcc
+      env: DB=mariadb:10.5
     - os: linux
       compiler: clang
-      env: DB=mariadb:10.4
+      env: DB=mariadb:10.5
     - os: linux
       env: SKYSQL=true PACKET=8M
   include:

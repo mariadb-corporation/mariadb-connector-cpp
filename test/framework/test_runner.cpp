@@ -41,8 +41,8 @@ namespace testsuite
 {
 
 TestsRunner::TestsRunner()
-  : startOptions( NULL  )
-  , filter      ( NULL  )
+  : startOptions( nullptr )
+  , filter      ( nullptr )
 {
 }
 
@@ -79,7 +79,7 @@ bool TestsRunner::runTests()
 
 void TestsRunner::setStartOptions(StartOptions * options)
 {
-  startOptions=options;
+  startOptions= options;
 }
 
 
@@ -97,7 +97,7 @@ StartOptions * TestsRunner::getStartOptions()
 
 bool TestsRunner::Admits( const String & testName )
 {
-  if ( theInstance().filter != NULL )
+  if ( theInstance().filter != nullptr )
     return theInstance().filter->Admits( testName );
 
   return true;

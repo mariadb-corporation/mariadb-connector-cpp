@@ -2998,15 +2998,14 @@ int run_tests(int argc, const char **argv)
   int last_error_total = 0;
   int i;
 
-  const std::string user(argc >=3 ? argv[2] : TEST_DEFAULT_LOGIN);
-  const std::string pass(argc >=4 ? argv[3] : TEST_DEFAULT_PASSWD);
-  const std::string database(argc >=5 ? argv[4] : TEST_DEFAULT_DB);
-  const bool useTls= TEST_USETLS;
-
+  const std::string user(argc >=3 ? argv[2] : UID_ENV_OR_DEFAULT);
+  const std::string pass(argc >=4 ? argv[3] : PASSWD_ENV_OR_DEFAULT);
+  const std::string database(argc >=5 ? argv[4] : SCHEMA_ENV_OR_DEFAULT);
+  const bool useTls= USETLS_ENV_OR_DEFAULT;
   for (i = 0 ; i < loops; ++i) {
     last_error_total = total_errors;
                 printf("# 0 - total_errors %d, last_error_total = %d\n", total_errors, last_error_total);
-    const std::string host(argc >=2 ? argv[1] : TEST_DEFAULT_HOST);
+    const std::string host(argc >=2 ? argv[1] : HOST_ENV_OR_DEFAULT);
     std::cout << "# Host=" << host << std::endl;
                 std::cout << "# User=" << user << std::endl;
 

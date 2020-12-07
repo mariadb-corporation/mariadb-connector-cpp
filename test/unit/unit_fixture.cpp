@@ -333,7 +333,7 @@ void unit_fixture::setUp()
     throw sqle;
   }
 
-  /* TODO: conect message incl. version using logDebug() */
+  logDebug("Host: " + url + ", UID: " + user + ", Schema: " + db + ", Tls: " + (useTls ? "yes" : "no"));
 
   /*
    logDebug("Driver: " + driver->getName());
@@ -418,7 +418,7 @@ unit_fixture::getConnection(sql::ConnectOptionsMap *additional_options)
   bool bval= !TestsRunner::getStartOptions()->getBool("dont-use-is");
   connection_properties["metadataUseInfoSchema"]= bval ? "1" : "0";
 
-  if (additional_options != NULL)
+  if (additional_options != nullptr)
   {
     for (sql::ConnectOptionsMap::const_iterator cit= additional_options->begin();
          cit != additional_options->end(); ++cit)
