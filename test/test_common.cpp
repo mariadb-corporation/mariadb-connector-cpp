@@ -37,6 +37,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cstring>
 #ifndef _WIN32
 #include <inttypes.h>
 #endif
