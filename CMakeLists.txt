@@ -104,7 +104,7 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/io/StandardPacketInputStream.cpp
 
                    src/Charset.cpp
-                   #src/ClientSidePreparedStatement.cpp
+                   src/ClientSidePreparedStatement.cpp
                    src/BasePrepareStatement.cpp
                    src/MariaDbFunctionStatement.cpp
                    src/MariaDbProcedureStatement.cpp
@@ -155,6 +155,7 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/ExceptionFactory.cpp
                    src/StringImp.cpp
                    src/CArray.cpp
+                   src/SimpleParameterMetaData.cpp
                    ####CPP####
                    )
 
@@ -305,6 +306,7 @@ IF(WIN32)
                    src/ExceptionFactory.h
                    src/StringImp.h
                    src/CArrayImp.h
+                   src/SimpleParameterMetaData.h
                    ####H####
                        )
   SOURCE_GROUP(Logging REGULAR_EXPRESSION "/logger/")

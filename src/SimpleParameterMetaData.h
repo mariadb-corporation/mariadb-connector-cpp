@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -17,18 +17,33 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
+#ifndef _SIMPLEPARAMETERMETADATA_H_
+#define _SIMPLEPARAMETERMETADATA_H_
 
-#include "ParameterHolder.h"
+#include "Consts.h"
 
 namespace sql
 {
 namespace mariadb
 {
-  char ParameterHolder::BINARY_INTRODUCER[]= {'_','b','i','n','a','r','y',' ','\'','\0'};
-  char ParameterHolder::QUOTE= '\'';
 
-  ParameterHolder::~ParameterHolder()
-  {
-  }
+class SimpleParameterMetaData  : public ParameterMetaData
+{
+  uint32_t parameterCount;
+  void validateParameter(uint32_t param);
+
+public:
+  SimpleParameterMetaData(uint32_t parameterCount);
+  uint32_t getParameterCount();
+  int32_t isNullable(uint32_t param);
+  bool isSigned(uint32_t param);
+  int32_t getPrecision(uint32_t param);
+  int32_t getScale(uint32_t param);
+  int32_t getParameterType(uint32_t param);
+  SQLString getParameterTypeName(uint32_t param);
+  SQLString getParameterClassName(uint32_t param);
+  int32_t getParameterMode(uint32_t param);
+  };
 }
 }
+#endif

@@ -50,7 +50,7 @@ namespace sql
        {
          "localSocket", {"localSocket",
          "0.9.1",
-         "Permits connecting to the database via Unix domain socket, if the server allows it."
+         "For connections to localhost, the Unix socket file to use."
          " \nThe value is the path of Unix domain socket (i.e \"socket\" database parameter : "
          "select @@socket).",
          false}},

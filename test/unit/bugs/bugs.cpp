@@ -739,7 +739,6 @@ void bugs::bug68523()
     logErr("SQLState: " + std::string(e.getSQLState()));
     fail(e.what(), __FILE__, __LINE__);
   }
-
 }
 
 
@@ -1240,11 +1239,20 @@ void bugs::concpp44()
 
 void bugs::concpp48()
 {
-  logMsg("bugs::concpp44");
+  logMsg("bugs::concpp48");
 
   pstmt.reset(con->prepareStatement("SELECT 1"));
   res.reset(pstmt->executeQuery());
   sql::Statement* pstmtAsSt = dynamic_cast<sql::Statement*>(pstmt.get());
+  try
+  {
+    res.reset(pstmtAsSt->executeQuery("SELECT 7"));
+    FAIL("No exception thrown, as expected");
+  }
+  catch (sql::SQLException & e)
+  {
+    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+  }
   try
   {
     pstmtAsSt->addBatch("SELECT 2");
@@ -1374,6 +1382,15 @@ void bugs::concpp48()
 
     try
     {
+      res.reset(pstmtAsSt->executeQuery("SELECT 7"));
+      FAIL("No exception thrown, as expected");
+    }
+    catch (sql::SQLException & e)
+    {
+      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    }
+    try
+    {
       pstmtAsSt->addBatch("SELECT 2");
       FAIL("No exception thrown, as expected");
     }
@@ -1498,6 +1515,32 @@ void bugs::concpp48()
 
   stmt->executeUpdate("DROP PROCEDURE concpp48");
 }
+
+
+void bugs::concpp59()
+{
+  try
+  {
+    stmt->execute("DROP TABLE IF EXISTS bug68523");
+    stmt->execute("CREATE TABLE bug68523(ts TIMESTAMP(6))");
+    stmt->execute("INSERT INTO bug68523(ts) values('2015-01-20 16:14:36.709649')");
+
+    res.reset(stmt->executeQuery("SELECT ts, TIME(ts) from bug68523"));
+    ASSERT(res->next());
+
+    ASSERT_EQUALS(res->getString(1), "2015-01-20 16:14:36.709649");
+    ASSERT_EQUALS(res->getString(2), "16:14:36.709649");
+
+    stmt->execute("DROP TABLE IF EXISTS bug68523");
+  }
+  catch (sql::SQLException & e)
+  {
+    logErr(e.what());
+    logErr("SQLState: " + std::string(e.getSQLState()));
+    fail(e.what(), __FILE__, __LINE__);
+  }
+}
+
 } /* namespace regression */
 } /* namespace testsuite */
 

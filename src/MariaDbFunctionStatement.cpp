@@ -22,6 +22,7 @@
 
 #include "MariaDbFunctionStatement.h"
 #include "ServerSidePreparedStatement.h"
+#include "ClientSidePreparedStatement.h"
 #include "CallableParameterMetaData.h"
 #include "MariaDbConnection.h"
 #include "CallParameter.h"

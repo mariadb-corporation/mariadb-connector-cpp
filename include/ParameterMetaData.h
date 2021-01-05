@@ -28,9 +28,9 @@ namespace sql
 
 class ParameterMetaData
 {
-  ParameterMetaData(const ParameterMetaData &);
   void operator=(ParameterMetaData &);
-
+protected:
+  ParameterMetaData(const ParameterMetaData&) {}
 public:
   enum {
     parameterModeUnknown= 0,

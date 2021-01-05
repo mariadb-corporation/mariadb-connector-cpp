@@ -101,7 +101,7 @@ namespace capi
       inSeconds= (options->socketTimeout + 999) / 1000;
       mysql_optionsv(socket, MYSQL_OPT_READ_TIMEOUT, (const char *)&inSeconds);
     }
-    if (options->tcpKeepAlive){
+    if (options->autoReconnect){
       mysql_optionsv(socket, MYSQL_OPT_RECONNECT, &OptionSelected);
     }
     if (options->tcpRcvBuf > 0){
@@ -116,8 +116,8 @@ namespace capi
 
     // Bind the socket to a particular interface if the connection property
     // localSocketAddress has been defined.
-    if (!options->localSocketAddress.empty()){
-      mysql_optionsv(socket, MARIADB_OPT_UNIXSOCKET, (void *)options->localSocketAddress.c_str());
+    if (!options->localSocket.empty()){
+      mysql_optionsv(socket, MARIADB_OPT_UNIXSOCKET, (void *)options->localSocket.c_str());
       int protocol= MYSQL_PROTOCOL_SOCKET;
       mysql_optionsv(socket, MYSQL_OPT_PROTOCOL, (void*)&protocol);
     }
@@ -1388,8 +1388,9 @@ namespace capi
 
   void ConnectProtocol::realQuery(const SQLString& sql)
   {
-    if (mysql_real_query(connection.get(), sql.c_str(), static_cast<unsigned long>(sql.length()))) {
-      throw SQLException(mysql_error(connection.get()), mysql_sqlstate(connection.get()), mysql_errno(connection.get()));
+    if (capi::mysql_real_query(connection.get(), sql.c_str(), static_cast<unsigned long>(sql.length()))) {
+      throw SQLException(capi::mysql_error(connection.get()), capi::mysql_sqlstate(connection.get()),
+                        capi::mysql_errno(connection.get()));
     }
   }
 }

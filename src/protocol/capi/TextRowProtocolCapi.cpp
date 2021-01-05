@@ -320,30 +320,36 @@ namespace capi
    case MYSQL_TYPE_VAR_STRING:
    case MYSQL_TYPE_STRING:
    {
+     const std::size_t nanosIdx= 6;
      int32_t nanoBegin= -1;
+     std::string nanosStr("");
      std::vector<int32_t> timestampsPart{ 0,0,0,0,0,0,0 };
      int32_t partIdx= 0;
 
-     for (uint32_t begin= pos; begin <pos +length; begin++) {
+     for (uint32_t begin= pos; begin < pos + length; begin++) {
        int8_t b= fieldBuf[begin];
-       if (b == '-'||b == ' '||b == ':') {
+       if (b == '-'|| b == ' ' || b == ':') {
          partIdx++;
          continue;
        }
        if (b == '.') {
          partIdx++;
          nanoBegin= begin;
+         nanosStr.reserve(length - (nanoBegin - pos) - 1/*dot itself*/);
          continue;
        }
-       if (b <'0' || b >'9') {
+       if (b < '0' || b > '9') {
          throw SQLException(
            "cannot parse data in timestamp string '"
            + SQLString(fieldBuf.arr + pos, length)
            +"'");
        }
-
        timestampsPart[partIdx]= timestampsPart[partIdx]*10 + b - 48;
+       if (partIdx == nanosIdx) {
+         nanosStr.append(1, b);
+       }
      }
+
      if (timestampsPart[0] == 0
        && timestampsPart[1] == 0
        && timestampsPart[2] == 0
@@ -358,13 +364,12 @@ namespace capi
 
      // fix non leading tray for nanoseconds
      if (nanoBegin > 0) {
-       for (uint32_t begin= 0; begin <6 -(pos +length -nanoBegin -1); begin++) {
+       for (uint32_t begin= 0; begin < 9 - (pos + length - nanoBegin - 1); begin++) {
          timestampsPart[6]= timestampsPart[6]*10;
        }
      }
 
      std::ostringstream timestamp;
-     std::string nanosStr(std::to_string(timestampsPart[6]));
 
      timestamp << timestampsPart[0] << "-";
      timestamp << (timestampsPart[1] < 10 ? "0" : "") << timestampsPart[1] << "-";
@@ -374,7 +379,8 @@ namespace capi
      timestamp << (timestampsPart[5] < 10 ? "0" : "") << timestampsPart[5];
      
      if (timestampsPart[6] > 0) {
-       timestamp << "." << (nanosStr.length() < 9 ? std::string(9 - nanosStr.length(), '0') : "") << nanosStr;
+       /*<< (nanosStr.length() < 9 ? std::string(9 - nanosStr.length(), '0') : "")*/
+       timestamp << "." << nanosStr;
      }
 
      return std::unique_ptr<Timestamp>(new Timestamp(timestamp.str()));

@@ -27,9 +27,9 @@ namespace sql
 {
 class ResultSetMetaData
 {
-  ResultSetMetaData(const ResultSetMetaData &);
   void operator=(ResultSetMetaData &);
-
+protected:
+  ResultSetMetaData(const ResultSetMetaData&) {}
 public:
   enum {
     columnNoNulls= 0,

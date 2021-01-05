@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -91,12 +91,6 @@ static int silent = 1;
 #endif
 
 
-//extern "C"
-//{
-//#include "mysql.h"
-//}
-//#undef bool
-
 #if defined(_WIN32) || defined(_WIN64)
 #pragma warning(disable:4251)
 #endif
@@ -120,7 +114,7 @@ static int silent = 1;
 #endif
 #endif
 
-
+#define SSPS_USED() ((loops % 2) != 0)
 /* {{{ */
 static bool populate_blob_table(std::unique_ptr<sql::Connection> & conn, std::string database)
 {
@@ -1839,13 +1833,16 @@ static void test_prep_statement_2(std::unique_ptr<sql::Connection> & conn, std::
 
     try {
       std::unique_ptr<sql::PreparedStatement> stmt(conn->prepareStatement("SELECT '1"));
-      ensure("ERR: Exception not thrown", false);
+      if (SSPS_USED()) {
+        ensure("ERR: Exception not thrown", false);
+      }
     } catch (sql::SQLException &) {}
 
     /* USE still cannot be prepared */
     try {
       std::unique_ptr<sql::PreparedStatement> stmt(conn->prepareStatement("USE " + database));
-      ensure("ERR: Exception not thrown", false);
+      // for unpreparable(on server) queries connector prepares queries on client
+      //Besides 10.6 is gonna change that(everything will be prperable)
     } catch (sql::SQLException &) {}
 
   } catch (sql::SQLException &e) {

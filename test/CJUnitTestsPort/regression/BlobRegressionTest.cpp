@@ -336,16 +336,17 @@ namespace regression
     pstmt.reset( conn->prepareStatement(String( "INSERT INTO " ) +
                                         tableName + " VALUES (?)") );
 
-    std::istringstream str("");
+    std::istringstream str("\0");
     pstmt->setBlob(1, & str);
 
     pstmt->executeUpdate();
 
-    /*ASSERT( getSingleIndexedValueWithQuery(1,
-        String( "SELECT LENGTH(field1) FROM " ) + tableName).toString() == "0");*/
+    /* It doesn't make sense to make NULL value in the DB an equivalent of an empty stream. NULL
+       can be done with setNull, NULL pointer(and maybe failing stream) */
     ResultSet rs(stmt->executeQuery("SELECT field1 FROM testBug10850"));
     ASSERT(rs->next());
-    ASSERT(rs->isNull(1));
+    ASSERT(!rs->isNull(1));
+    ASSERT_EQUALS("", rs->getString(1));
 
     stmt->executeUpdate(String( "TRUNCATE TABLE " ) + tableName);
     pstmt->clearParameters();

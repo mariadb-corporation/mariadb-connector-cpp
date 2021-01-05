@@ -64,10 +64,18 @@ but not all options will have effect at the moment. In particular, not supported
   - allowPublicKeyRetrieval
   - tlsSocketType
 
-Additionally supported are(or added new aliases):
+Not complete list of supported options - mostly newly added or with new aliases:
 
 |Option|Description|Type|Default|Aliases|
 |---:|---|:---:|:---:|---|
+| **`useServerPrepStmts`** |Whether to use Server Side Prepared Statements(SSPS) for PreparedStatement by default, and not client side ones(CSPS)|*bool* |false||
+| **`connectTimeout`** |The connect timeout value, in milliseconds, or zero for no timeout.|*int* |30000||
+| **`socketTimeout`** |Specifies the timeout in seconds for reading packets from the server. Value of 0 disables this timeout.|*int* |0||
+| **`autoReconnect`** |Enable or disable automatic reconnect.|*bool* |false||
+| **`tcpRcvBuf`** |The buffer size for TCP/IP and socket communication. `tcpSndBuf` changes the same buffer value, and the biggest value of the two is selected|*int* |0x4000|tcpSndBuf|
+| **`tcpSndBuf`** |The buffer size for TCP/IP and socket communication. `tcpRcvBuf` changes the same buffer value, and the biggest value of the two is selected|*int* |0x4000|tcpRcvBuf|
+| **`localSocket`** |For connections to localhost, the Unix socket file to use.|*string* |||
+| **`pipe`** |On Windows, specify the named pipe name to connect.|*string* |||
 | **`useTls`** |Whether to force TLS. This enables TLS with the default system settings. |*bool* ||useSsl,useSSL|
 | **`tlsKey`** |File path to a private key file |*string* ||sslKey|
 | **`keyPassword`** |Password for the private key |*string* ||MARIADB_OPT_TLS_PASSPHRASE|

@@ -78,6 +78,7 @@ public:
     TEST_CASE(bug17227390);
     TEST_CASE(concpp44);
     TEST_CASE(concpp48);
+    TEST_CASE(concpp59);
   }
 
   /**
@@ -143,6 +144,7 @@ public:
 
   void concpp44();
   void concpp48();
+  void concpp59();
 };
 
 REGISTER_FIXTURE(bugs);

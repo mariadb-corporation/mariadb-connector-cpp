@@ -67,7 +67,7 @@ void parametermetadata::getMeta()
   try
   {
     pstmt->getParameterMetaData();
-    FAIL("Closed connection not detected");
+    FAIL("Closed statement not detected");
   }
   catch (...)//sql::InvalidInstanceException&)
   {

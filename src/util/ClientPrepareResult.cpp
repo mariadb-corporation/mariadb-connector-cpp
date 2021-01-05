@@ -154,8 +154,8 @@ namespace mariadb
       case '?':
         if (state == LexState::Normal) {
           partList.push_back(
-            queryString.substr(lastParameterPosition, i)/*.getBytes(StandardCharsets.UTF_8)*/);
-          lastParameterPosition= i +1;
+            queryString.substr(lastParameterPosition, i - lastParameterPosition)/*.getBytes(StandardCharsets.UTF_8)*/);
+          lastParameterPosition= i + 1;
         }
         break;
       case '`':
@@ -656,7 +656,7 @@ namespace mariadb
     return rewriteType;
   }
 
-  size_t ClientPrepareResult::getParamCount() const
+  std::size_t ClientPrepareResult::getParamCount() const
   {
     return paramCount;
   }

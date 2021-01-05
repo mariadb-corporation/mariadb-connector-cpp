@@ -68,7 +68,7 @@ public:
   bool isQueryMultiValuesRewritable() const;
   bool isQueryMultipleRewritable() const;
   bool isRewriteType() const;
-  size_t getParamCount() const;
+  std::size_t getParamCount() const;
   };
 
 //void assembleQueryText(SQLString& resultSql, const ClientPrepareResult* clientPrepareResult, const std::vector<ParameterHolder>& parameters);

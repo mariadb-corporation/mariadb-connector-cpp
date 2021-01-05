@@ -50,6 +50,10 @@ namespace mariadb
 
   void StreamParameter::writeTo(SQLString& str)
   {
+    if (is.fail()) {
+      str.append("NULL");
+      return;
+    }
     str.append(BINARY_INTRODUCER);
 
     char buffer[8192];

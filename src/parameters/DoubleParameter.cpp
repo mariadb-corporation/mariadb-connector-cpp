@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -33,7 +33,10 @@ namespace mariadb
 
   void DoubleParameter::writeTo(SQLString& str)
   {
-    str.append(std::to_string(value));
+    //std::to_string is not precise enough. at least on windows it does just sprintf("%f")
+    std::stringstream doubleAsString("");
+    doubleAsString << value;
+    str.append(doubleAsString.str().c_str());
   }
 
 

@@ -629,16 +629,27 @@ void preparedstatement::assortedSetType()
       }
 
       pstmt->clearParameters();
-      pstmt->setDouble(1, (double) 1.23);
+      pstmt->setDouble(1, 1.23);
 
       if (it->name != "TIMESTAMP" && it->name != "DATETIME" && it->name != "DATE")
       {
-        ASSERT_EQUALS(1, pstmt->executeUpdate());
+        try
+        {
+          ASSERT_EQUALS(1, pstmt->executeUpdate());
+        }
+        catch(sql::SQLException& e)
+        {
+          if (!((it->name == "VARBINARY" || it->name == "BINARY" || it->name == "CHAR") &&
+            it->precision < 8 && e.getSQLState() == "22001" && e.getErrorCode() == 1406))
+          {
+            throw e;
+          }
+        }
 
         pstmt->clearParameters();
         try
         {
-          pstmt->setDouble(0, (double)1.23);
+          pstmt->setDouble(0, 1.23);
           FAIL("Invalid argument not detected");
         }
         catch (sql::SQLException&)
@@ -648,7 +659,7 @@ void preparedstatement::assortedSetType()
         pstmt->clearParameters();
         try
         {
-          pstmt->setDouble(2, (double)1.23);
+          pstmt->setDouble(2, 1.23);
           FAIL("Invalid argument not detected");
         }
         catch (sql::SQLException&)
@@ -1306,16 +1317,17 @@ void preparedstatement::crash()
     pstmt.reset(con->prepareStatement("INSERT INTO test(id) VALUES (?)"));
 
     pstmt->clearParameters();
-    pstmt->setDouble(1, (double) 1.23);
+    pstmt->setDouble(1, 1.23);
     ASSERT_EQUALS(1, pstmt->executeUpdate());
   }
   catch (sql::SQLException &e)
   {
     logErr(e.what());
-    logErr("SQLState: " + std::string(e.getSQLState()));
-    fail(e.what(), __FILE__, __LINE__);
+    logErr("SQLState: " + e.getSQLState());
+    ASSERT_EQUALS("22001", e.getSQLState());
+    ASSERT_EQUALS(1406, e.getErrorCode());
+    logErr("Error of field overflow is expected");
   }
-
 }
 
 void preparedstatement::getWarnings()

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -31,6 +31,7 @@
 #include <vector>
 #include <stdexcept>
 #include <cstring>
+#include <sstream>
 
 #include "StringImp.h"
 #include "Version.h"
@@ -94,10 +95,10 @@ namespace mariadb
   class CmdInformation;
   class Buffer;
   class ClientPrepareResult;
-  //class ClientSidePreparedStatement;
+  class ClientSidePreparedStatement;
   class ServerSidePreparedStatement;
   class SelectResultSet;
-  typedef ServerSidePreparedStatement ClientSidePreparedStatement;
+  //typedef ServerSidePreparedStatement ClientSidePreparedStatement;
   typedef SelectResultSet UpdatableResultSet;
   class ServerPrepareResult;
   class MariaDbParameterMetaData;

@@ -180,7 +180,7 @@ void TestSuite::runTest()
     catch ( std::exception & e )
     {
       TestsListener::errorsLog()
-        << "Not trapped exception occurred while running while tearDown after:"
+        << "Not trapped exception occurred while running tearDown after:"
         << (*it)->get()->name() << ". Message: " << e.what()
         << std::endl;
     }

@@ -45,6 +45,7 @@ class MariaDbStatement : public Statement
   static const std::map<std::string,std::string> mapper;
   static Shared::Logger logger ; /*LoggerFactory.getLogger(MariaDbStatement)*/
 
+  friend class ClientSidePreparedStatement;
   /* We don't want copy constructing*/
   MariaDbStatement(const MariaDbStatement& other) = delete;
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -52,6 +52,9 @@ get_connection(const std::string& host, const std::string& user, const std::stri
     connection_properties["userName"]= user;
     connection_properties["password"]= pass;
     connection_properties["useTls"]=   useTls ? "true" : "false";
+    /* We need to run tests for client- and server-side prepared statements. That also gives
+       much more sense for these tests to be run twice */
+    connection_properties["useServerPrepStmts"]= "true";
 
     return driver->connect(connection_properties);
   }
