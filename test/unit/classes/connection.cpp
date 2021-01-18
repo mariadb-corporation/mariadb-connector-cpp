@@ -370,6 +370,11 @@ void connection::getNoWarningsOnNewLine()
 
 void connection::invalidCredentials()
 {
+  if (useTls) {
+    logMsg("skip because TLS is needed");
+    return void();
+  }
+
   logMsg("connection::invalidCredentials() - MySQL_Connection connect");
   std::string myurl("tcp://");
   std::string myuser("");
@@ -579,6 +584,7 @@ void connection::connectUsingMapWrongTypes()
     bool boolval=true;
     std::string strval("");
 
+    connection_properties["useTls"]= useTls? "true" : "false";
     try
     {
       connection_properties["hostName"]=(boolval);
@@ -1050,6 +1056,7 @@ void connection::connectUsingMap()
     connection_properties["hostName"]=url;
     connection_properties["userName"]=user;
     connection_properties["password"]=passwd;
+    connection_properties["useTls"]= useTls? "true" : "false";
 
     bool bval= !TestsRunner::getStartOptions()->getBool("dont-use-is");
     connection_properties["metadataUseInfoSchema"]=(bval ? "true" : "false");
@@ -1932,6 +1939,10 @@ void connection::connectOptReconnect()
 {
   logMsg("connection::connectOptReconnect - OPT_RECONNECT");
   std::stringstream msg;
+    if (std::getenv("MAXSCALE_TEST_DISABLE") != nullptr) {
+        printf("# <<<<  canceled for maxscale \n# ");
+        return void();
+    }
 
   try
   {
@@ -1940,6 +1951,7 @@ void connection::connectOptReconnect()
     connection_properties["hostName"]=url;
     connection_properties["userName"]=user;
     connection_properties["password"]=passwd;
+    connection_properties["useTls"]= useTls? "true" : "false";
 
     bool bval= !TestsRunner::getStartOptions()->getBool("dont-use-is");
     connection_properties["metadataUseInfoSchema"]=(bval? "true" : "false");
@@ -2333,7 +2345,7 @@ void connection::loadSameLibraryTwice()
   connection_properties["hostName"]=url;
   connection_properties["userName"]=user;
   connection_properties["password"]=passwd;
-
+  connection_properties["useTls"]= useTls? "true" : "false";
   connection_properties["clientlib"]=baseName;
 
   con.reset(driver->connect(connection_properties));
@@ -2698,6 +2710,7 @@ void connection::connectCharsetDir()
   opts["hostName"]=url;
   opts["userName"]=user;
   opts["password"]=passwd;
+  opts["useTls"]= useTls? "true" : "false";
   opts["charsetDir"]=charDir;
 
   created_objects.clear();
@@ -2780,6 +2793,7 @@ void connection::setDefaultAuth()
     opts["hostName"]=url;
     opts["userName"]=user;
     opts["password"]=passwd;
+    opts["useTls"]= useTls? "true" : "false";
     opts["defaultAuth"]=def_auth;
     created_objects.clear();
 
@@ -3060,8 +3074,7 @@ void connection::tls_version()
   connection_properties["hostName"]= url;
   connection_properties["userName"]= user;
   connection_properties["password"]= passwd;
-
-  connection_properties["useTls"]= "false";
+  connection_properties["useTls"]= useTls? "true" : "false";
 
   created_objects.clear();
   con.reset(driver->connect(connection_properties));

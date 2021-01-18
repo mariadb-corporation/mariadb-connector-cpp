@@ -53,6 +53,7 @@ get_connection(const std::string & host, const std::string & user, const std::st
     if (!driver) {
       driver = sql::mariadb::get_driver_instance();
     }
+
     if (loops % 2 && !useTls) {
       return driver->connect(host, user, pass);
     } else {

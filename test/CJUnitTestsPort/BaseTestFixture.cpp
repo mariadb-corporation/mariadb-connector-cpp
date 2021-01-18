@@ -796,7 +796,7 @@ sql::Connection * BaseTestFixture::getConnection()
   connection_properties["userName"]= login;
   connection_properties["password"]= passwd;
 
-  connection_properties["useTls"]= defaultUseTls ? "true" : "false";
+  connection_properties["useTls"]= defaultUseTls? "true" : "false";
 
   return driver->connect(connection_properties);// host, /*port,*/ login, passwd);
 }

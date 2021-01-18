@@ -200,6 +200,7 @@ void statement::callSP()
     /* user comes from the unit testing framework */
     connection_properties["userName"]=user;
     connection_properties["password"]=passwd;
+    connection_properties["useTls"]= useTls? "true" : "false";
 
     bool bval= !TestsRunner::getStartOptions()->getBool("dont-use-is");
     connection_properties["metadataUseInfoSchema"]= bval ? "1" : "0";
@@ -251,7 +252,9 @@ void statement::callSP()
     ASSERT(stmt->execute("SELECT @version AS _version"));
     res.reset(stmt->getResultSet());
     ASSERT(res->next());
-    ASSERT_EQUALS(dbmeta->getDatabaseProductVersion(), res->getString("_version"));
+    if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+      ASSERT_EQUALS(dbmeta->getDatabaseProductVersion(), res->getString("_version"));
+    }
 
     stmt->execute("DROP PROCEDURE IF EXISTS p");
     ASSERT(!stmt->execute("CREATE PROCEDURE p(IN ver_in VARCHAR(250), OUT ver_out VARCHAR(250)) BEGIN SELECT ver_in INTO ver_out; END;"));

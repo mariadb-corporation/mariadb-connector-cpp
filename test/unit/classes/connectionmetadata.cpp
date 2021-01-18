@@ -2452,7 +2452,9 @@ void connectionmetadata::bugCpp25()
   ASSERT_EQUALS(minor, std::stoul((*verParts)[1].c_str()));
 
   std::size_t dashPos = (*verParts)[2].find_first_of("-");
-  ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? (*verParts)[2].c_str() : (*verParts)[2].substr(0, dashPos).c_str()));
+  if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+    ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? (*verParts)[2].c_str() : (*verParts)[2].substr(0, dashPos).c_str()));
+  }
 
   // And even some more testing of the internal split
   sql::mariadb::Tokens csv(sql::mariadb::split("575,1,,22,,", ","));

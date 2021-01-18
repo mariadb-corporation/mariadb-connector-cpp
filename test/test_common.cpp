@@ -284,7 +284,10 @@ static void test_connection_0(std::unique_ptr<sql::Connection> & conn)
   ENTER_FUNCTION();
   try {
     char buff[64];
-
+    if (std::getenv("MAXSCALE_TEST_DISABLE") != nullptr) {
+        LEAVE_FUNCTION();
+        return void();
+    }
     std::unique_ptr<sql::Statement> stmt1(conn->createStatement());
     ensure("stmt1 is NULL", stmt1.get() != NULL);
     std::unique_ptr<sql::ResultSet> rset1(stmt1->executeQuery("SELECT CONNECTION_ID()"));
@@ -2999,6 +3002,7 @@ int run_tests(int argc, const char **argv)
   const std::string pass(argc >=4 ? argv[3] : PASSWD_ENV_OR_DEFAULT);
   const std::string database(argc >=5 ? argv[4] : SCHEMA_ENV_OR_DEFAULT);
   const bool useTls= USETLS_ENV_OR_DEFAULT;
+
   for (i = 0 ; i < loops; ++i) {
     last_error_total = total_errors;
                 printf("# 0 - total_errors %d, last_error_total = %d\n", total_errors, last_error_total);
