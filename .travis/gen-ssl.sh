@@ -17,7 +17,7 @@ print_usage () {
 gen_cert_subject () {
   local fqdn="$1"
   [[ "${fqdn}" != "" ]] || print_error "FQDN cannot be blank"
-  echo "/C=/ST=/O=/localityName=/CN=${fqdn}/organizationalUnitName=/emailAddress=/"
+  echo "/C=XX/ST=X/O=X/localityName=X/CN=${fqdn}/organizationalUnitName=X/emailAddress=X/"
 }
 
 main () {
@@ -30,6 +30,7 @@ main () {
   local caKeyFile="${sslDir}/ca.key"
   local certFile="${sslDir}/server.crt"
   local keyFile="${sslDir}/server.key"
+  local pubkeyFile="${sslDir}/public.key"
   local csrFile=$(mktemp)
   local clientCertFile="${sslDir}/client.crt"
   local clientKeyFile="${sslDir}/client.key"
@@ -55,6 +56,9 @@ main () {
 
   log "Generating private key"
   openssl genrsa -out "${keyFile}" 2048
+
+  log "Generating public key"
+  openssl rsa -in "${keyFile}" -pubout -out "${pubkeyFile}"
 
   log "Generating certificate signing request"
   openssl req \
@@ -108,6 +112,16 @@ main () {
     -name "mysqlAlias" \
     -passout pass:kspass
 
+  # convert PKSC12 to JKS
+  keytool \
+    -importkeystore \
+    -deststorepass kspass \
+    -destkeypass kspass \
+    -destkeystore "${clientKeystoreFile}" \
+    -srckeystore ${tmpKeystoreFile} \
+    -srcstoretype PKCS12 \
+    -srcstorepass kspass \
+    -alias "mysqlAlias"
 
   # Now generate a full keystore with the client cert & key + trust certificates
   log "Generating full client keystore"
@@ -120,6 +134,20 @@ main () {
     -passout pass:kspass
 
 
+  # convert PKSC12 to JKS
+  keytool \
+    -importkeystore \
+    -deststorepass kspass \
+    -destkeypass kspasskey \
+    -deststoretype JKS \
+    -destkeystore "${fullClientKeystoreFile}" \
+    -srckeystore ${pcks12FullKeystoreFile} \
+    -srcstoretype PKCS12 \
+    -srcstorepass kspass \
+    -alias "mysqlAlias"
+
+  log "Generating trustStore"
+  keytool -import -file "${certFile}" -alias CA -keystore "${fullClientKeystoreFile}" -storepass kspass -keypass kspasskey -noprompt
 
   # Clean up CSR file:
   rm "$csrFile"
