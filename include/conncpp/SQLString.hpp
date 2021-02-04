@@ -46,7 +46,7 @@ public:
   SQLString();
   virtual ~SQLString();
 
-  static const std::size_t npos= std::string::npos;
+  static const std::size_t npos= -1;
   const char * c_str() const;
   SQLString& operator=(const SQLString&);
   //operator std::string() { return std::string(this->c_str(), this->length()); }
