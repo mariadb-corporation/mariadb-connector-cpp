@@ -43,14 +43,6 @@ namespace sql
     ROWID_VALID_FOREVER
   } RowIdLifetime;
 
-  enum ClientInfoStatus
-  {
-    REASON_UNKNOWN= 0,
-    REASON_UNKNOWN_PROPERTY,
-    REASON_VALUE_INVALID,
-    REASON_VALUE_TRUNCATED
-  };
-
   typedef SQLString Time;
   typedef SQLString Date;
   typedef SQLString BigDecimal;
