@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -302,7 +302,7 @@ void unit_fixture::init()
       sql::SQLString hostName(slashPos == std::string::npos ? url : url.substr(0, slashPos));
 
       url= "jdbc:mariadb://" + url;
-      if (protocol.compare("tcp"))
+      if (protocol.compare("tcp") == 0)
       {
         // Seems like there is nothing to do here
       }
@@ -310,9 +310,9 @@ void unit_fixture::init()
       {
         commonProperties["localSocket"]= hostName;
       }
-      else if (protocol.compare("pipe"))
+      else if (protocol.compare("pipe") == 0)
       {
-        commonProperties["localSocket"]= hostName;
+        commonProperties["pipe"]= hostName;
       }
     }
   }

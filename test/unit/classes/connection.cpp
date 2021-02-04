@@ -3118,7 +3118,6 @@ void connection::tls_version()
     //Should FAIL to connect
   }
 
-
   for (std::vector<std::string>::const_iterator version = tls_versions.begin();
        version != tls_versions.end();
        ++version)
@@ -3145,7 +3144,6 @@ void connection::tls_version()
 
     ASSERT_EQUALS(*version, res->getString(2));
   }
-
 }
 
 void connection::cached_sha2_auth()

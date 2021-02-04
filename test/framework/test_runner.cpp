@@ -49,8 +49,6 @@ TestsRunner::TestsRunner()
 
 bool TestsRunner::runTests()
 {
-  //TestSuiteNames.empty();
-
   TestSuiteFactory::theInstance().getTestsList( TestSuiteNames );
 
   TestsListener::setVerbose(startOptions->getBool( "verbose") );

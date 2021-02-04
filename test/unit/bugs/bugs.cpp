@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -1149,7 +1149,7 @@ void bugs::bug22292073()
 
 void bugs::bug23212333()
 {
-  std::size_t charCount= 256*1024+1;
+  uint64_t charCount= 256*1024+1;
   stmt->executeUpdate("drop table if exists bug23212333");
   stmt->executeUpdate("create table bug23212333(id longtext)");
 
@@ -1165,7 +1165,7 @@ void bugs::bug23212333()
   res.reset(pstmt->executeQuery());
   ASSERT(res->relative(1));
   sql::SQLString str(res->getString(1));
-  ASSERT_EQUALS(charCount, str.length());
+  ASSERT_EQUALS(charCount, static_cast<uint64_t>(str.length()));
 }
 
 
@@ -1517,27 +1517,55 @@ void bugs::concpp48()
 }
 
 
-void bugs::concpp59()
+void bugs::concpp62()
 {
+  logMsg("bugs::concpp62");
   try
   {
-    stmt->execute("DROP TABLE IF EXISTS bug68523");
-    stmt->execute("CREATE TABLE bug68523(ts TIMESTAMP(6))");
-    stmt->execute("INSERT INTO bug68523(ts) values('2015-01-20 16:14:36.709649')");
+    stmt->execute("DROP TABLE IF EXISTS concpp62");
+    stmt->execute("CREATE TABLE concpp62(ts TIMESTAMP(6))");
+    stmt->execute("INSERT INTO concpp62(ts) values('2015-01-20 16:14:36.709649')");
 
-    res.reset(stmt->executeQuery("SELECT ts, TIME(ts) from bug68523"));
+    res.reset(stmt->executeQuery("SELECT ts, TIME(ts) from concpp62"));
     ASSERT(res->next());
 
     ASSERT_EQUALS(res->getString(1), "2015-01-20 16:14:36.709649");
     ASSERT_EQUALS(res->getString(2), "16:14:36.709649");
 
-    stmt->execute("DROP TABLE IF EXISTS bug68523");
+    stmt->execute("DROP TABLE IF EXISTS concpp62");
   }
   catch (sql::SQLException & e)
   {
     logErr(e.what());
     logErr("SQLState: " + std::string(e.getSQLState()));
     fail(e.what(), __FILE__, __LINE__);
+  }
+}
+
+
+void bugs::concpp60()
+{
+  logMsg("bugs::concpp60");
+  logMsg("It doesn't re-create the problem. Scenario looks like this in general, but something is missing. Still useful to run");
+  static sql::ConnectOptionsMap connProps({ {"password", "wrongpwd"} });
+  for (uint32_t i = 0; i < 100; ++i)
+  {
+    try
+    {
+      try
+      {
+        getConnection(&connProps);
+        fail("Connection was supposed to fail", __FILE__, __LINE__);
+      }
+      catch (sql::SQLException & e)
+      {
+        throw e;
+      }
+    }
+    catch (std::exception & e)
+    {
+      logMsg(e.what());
+    }
   }
 }
 

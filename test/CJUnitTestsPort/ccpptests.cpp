@@ -65,26 +65,6 @@ int main(int argc, char** argv)
 
   testsuite::FiltersSuperposition filter( options.getString( "filter" ) );
 
-
-
-  /*
-  std::cerr << "BlobTest: "
-      << (filter.Admits( "BlobTest" ) ? "Admitted" : "Filtered Out" )
-      << std::endl;
-
-    return 0;*/
-
-/*std::cerr << options.getString( "dbUrl" ) << std::endl;
-  std::cerr << options.getString( "dbUser" ) << std::endl;
-  std::cerr << options.getString( "dbPasswd" ) << std::endl;
-  std::cerr << options.getString( "dbSchema" ) << std::endl;
-  std::cerr << options.getBool( "verbose" ) << std::endl;
-  std::cerr << options.getBool( "timer" ) << std::endl;
-  std::cerr << options.getBool( "dont-use-is" ) << std::endl;
-
-  return 0;*/
-
-
   testsuite::TestsRunner & testsRunner=testsuite::TestsRunner::theInstance();
 
   testsRunner.setStartOptions ( & options );

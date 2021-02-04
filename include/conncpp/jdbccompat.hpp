@@ -45,7 +45,7 @@ namespace sql
 
   enum ClientInfoStatus
   {
-    REASON_UNKNOWN= 0,
+    _REASON_UNKNOWN= 0, //REASON_UNKNOWN clashes with winreg.h, whehere it is defined
     REASON_UNKNOWN_PROPERTY,
     REASON_VALUE_INVALID,
     REASON_VALUE_TRUNCATED

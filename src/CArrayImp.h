@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -107,7 +107,7 @@ template <class T> CArray<T>::CArray(const CArray& rhs)
   if (length > 0)
   {
     arr= new T[static_cast<size_t>(length)];
-    std::memcpy(arr, rhs.arr, length);
+    std::memcpy(arr, rhs.arr, static_cast<std::size_t>(length));
   }
 }
 

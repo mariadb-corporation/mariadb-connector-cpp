@@ -111,8 +111,8 @@ void TestSuite::runTest()
         String( "An exception occurred while running setUp before " )
         + (*it)->get()->name() + ". Message: " + e.what() + ". Skipping all tests in the suite" );
 
-      //not really needed probably
-      //TestsListener::testHasFinished( trrThrown, "Test setup has failed, all tests in the suite will be skipped" );
+      // This needed to record the error for the testsuite(i.e. program eventually exits with not 0)
+      TestsListener::testHasFinished( trrThrown, "Test setup has failed, all tests in the suite will be skipped" );
 
       TestsListener::incrementCounter( static_cast<int>(testCases.size()
                                           - ( it - testCases.begin() + 1 )) );
@@ -132,16 +132,16 @@ void TestSuite::runTest()
     // framework shouldn't know about sql::* exceptions
     catch ( sql::MethodNotImplementedException & sqlni )
     {
-      String msg( "SKIP relies on method " ); // or should it be TODO
+      String msg( "SKIP relies on the method, that is not implemented at the moment. (\"" ); // or should it be TODO
       msg= msg + sqlni.what()
-        + ", which is not implemented at the moment.";
+        + "\")";
 
       TestsListener::setTestExecutionComment( msg );
     }
     catch (sql::SQLFeatureNotSupportedException & e)
     {
-      String msg( "SKIP relies on method " ); // or should it be TODO
-      msg= msg + e.what() + ", which is not supported at the moment.";
+      String msg( "SKIP relies on the method, that is not supported at the moment. (\"" ); // or should it be TODO
+      msg= msg + e.what() + "\")";
 
       TestsListener::setTestExecutionComment( msg );
     }

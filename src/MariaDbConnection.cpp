@@ -1148,7 +1148,7 @@ namespace mariadb
     if (protocol->isExplicitClosed())
     {
       std::map<SQLString, ClientInfoStatus> failures;
-      failures.insert({ name, ClientInfoStatus::REASON_UNKNOWN });
+      failures.insert({ name, ClientInfoStatus::_REASON_UNKNOWN });
       throw SQLException("setClientInfo() is called on closed connection");// SQLClientInfoException("setClientInfo() is called on closed connection", failures);
     }
   }
@@ -1166,7 +1166,7 @@ namespace mariadb
       catch (SQLException& /*sqle*/)
       {
         std::map<SQLString, ClientInfoStatus>failures;
-        failures.insert({name, ClientInfoStatus::REASON_UNKNOWN});
+        failures.insert({name, ClientInfoStatus::_REASON_UNKNOWN});
         throw SQLException("ClientInfoException: Connection* closed");// SQLClientInfoException("Connection* closed", failures, sqle);
       }
     }
@@ -1283,7 +1283,7 @@ namespace mariadb
     catch (SQLException &/*sqle*/)
     {
       std::map<SQLString, ClientInfoStatus> failures;
-      failures.insert({ name, ClientInfoStatus::REASON_UNKNOWN });
+      failures.insert({ name, ClientInfoStatus::_REASON_UNKNOWN });
       throw //SQLClientInfoException
         SQLException("unexpected error during setClientInfo");// , failures, sqle);
     }
