@@ -23,10 +23,10 @@
 
 #include <istream>
 
-#include "buildconf.h"
-#include "SQLString.h"
-#include "Warning.h"
-#include "jdbccompat.h"
+#include "buildconf.hpp"
+#include "SQLString.hpp"
+#include "Warning.hpp"
+#include "jdbccompat.hpp"
 
 namespace sql
 {

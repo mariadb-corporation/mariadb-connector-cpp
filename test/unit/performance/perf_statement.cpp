@@ -30,9 +30,9 @@
 
 
 
-#include "Statement.h"
-#include "Connection.h"
-#include "Warning.h"
+#include "Statement.hpp"
+#include "Connection.hpp"
+#include "Warning.hpp"
 #include "perf_statement.h"
 #include <stdlib.h>
 

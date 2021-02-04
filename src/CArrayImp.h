@@ -25,7 +25,7 @@
 
 #include <stdexcept>
 #include <cstring>
-#include "CArray.h"
+#include "CArray.hpp"
 
 #define BYTES_INIT(STR) {STR, STR!=nullptr ? strlen(STR) + 1 : 1}
 #define BYTES_STR_INIT(STR) {STR.c_str(), STR.length()}

@@ -21,7 +21,7 @@
 #ifndef _PREPARERESULT_H_
 #define _PREPARERESULT_H_
 
-#include "SQLString.h"
+#include "SQLString.hpp"
 
 namespace sql
 {

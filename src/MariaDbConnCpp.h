@@ -35,7 +35,7 @@
 #include <functional>
 #include <algorithm>
 
-#include "ConnCpp.h"
+#include "conncpp.hpp"
 #include "Version.h"
 #include "Consts.h"
 #include "Protocol.h"
@@ -44,7 +44,7 @@
 #include "options/DefaultOptions.h"
 #include "options/DriverPropertyInfo.h"
 #include "io/PacketOutputStream.h"
-#include "Driver.h"
+#include "Driver.hpp"
 #include "UrlParser.h"
 #include "MariaDbDatabaseMetaData.h"
 #include "MariaDbConnection.h"

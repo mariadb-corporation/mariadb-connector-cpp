@@ -27,8 +27,8 @@
 
 //#include "MariaDbConnection.h"
 
-#include "ResultSet.h"
-#include "Statement.h"
+#include "ResultSet.hpp"
+#include "Statement.hpp"
 #include "Consts.h"
 #include "Charset.h"
 

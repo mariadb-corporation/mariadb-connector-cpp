@@ -21,11 +21,11 @@
 #ifndef _PREPARESTATEMENT_H_
 #define _PREPARESTATEMENT_H_
 
-#include "buildconf.h"
-#include "SQLString.h"
-#include "ParameterMetaData.h"
+#include "buildconf.hpp"
+#include "SQLString.hpp"
+#include "ParameterMetaData.hpp"
 
-#include "Statement.h"
+#include "Statement.hpp"
 
 namespace sql
 {

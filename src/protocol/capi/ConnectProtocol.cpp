@@ -67,6 +67,7 @@ namespace capi
     , majorVersion(0)
     , minorVersion(0)
     , patchVersion(0)
+    , proxy(nullptr)
   {
     urlParser->auroraPipelineQuirks();
     if (options->cachePrepStmts && options->useServerPrepStmts){

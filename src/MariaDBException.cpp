@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -18,22 +18,23 @@
 *************************************************************************************/
 
 
-#include "Exception.h"
+#include "Exception.hpp"
 
 namespace sql
 {
+  /******************** SQLException ***************************/
+  SQLException::~SQLException()
+  {}
 
   SQLException::SQLException() : std::runtime_error(""), ErrorCode(0)
   {}
 
-  SQLException::~SQLException()
+  SQLException::SQLException(const SQLException& other) :
+    std::runtime_error(other),
+    SqlState(other.SqlState),
+    ErrorCode(other.ErrorCode),
+    Cause(other.Cause)
   {}
-
-  /*SQLException::SQLException(const SQLString &msg, const SQLString &state, int32_t error, const std::exception *e ) :
-    std::runtime_error(msg.c_str()),
-    SqlState(state),
-    ErrorCode(error)
-  {}*/
 
   SQLException::SQLException(const char* msg, const char* state, int32_t error, const std::exception *e) : std::runtime_error(msg),
     SqlState(state), ErrorCode(error)
@@ -42,9 +43,14 @@ namespace sql
   SQLException::SQLException(const SQLString& msg): SQLException(msg.c_str(), "", 0)
   {}
 
-   SQLException* SQLException::getNextException()
+  SQLException* SQLException::getNextException()
   {
-    return NULL;
+    return nullptr;
+  }
+
+  char const* SQLException::what() const noexcept
+  {
+    return std::runtime_error::what();
   }
 
   void SQLException::setNextException(sql::SQLException& nextException)
@@ -52,20 +58,6 @@ namespace sql
     /* Doing nothing so far */
   }
 
-  /*inline const SQLString& SQLException::getSQLState()
-  {
-    return SqlState;
-  }
-
-  inline const char* SQLException::getSQLStateCStr()
-  {
-    return SqlState.c_str();
-  }*/
-
-  int32_t SQLException::getErrorCode()
-  {
-    return ErrorCode;
-  }
 
   SQLString SQLException::getMessage()
   {
@@ -84,4 +76,192 @@ namespace sql
     }
   }
 
+  /******************** SQLFeatureNotImplementedException ***************************/
+  SQLFeatureNotImplementedException::~SQLFeatureNotImplementedException()
+  {}
+
+  SQLFeatureNotImplementedException::SQLFeatureNotImplementedException(const SQLFeatureNotImplementedException& other) :
+    SQLException(other)
+  {}
+
+  SQLFeatureNotImplementedException::SQLFeatureNotImplementedException(const SQLString& msg)
+    : SQLException(msg)
+  {}
+
+  /******************** IllegalArgumentException ***************************/
+  IllegalArgumentException::~IllegalArgumentException()
+  {}
+
+  IllegalArgumentException::IllegalArgumentException(const IllegalArgumentException& other) :
+    SQLException(other)
+  {}
+
+  IllegalArgumentException::IllegalArgumentException(const SQLString& msg, const char* sqlState, int32_t error) :
+    SQLException(msg.c_str(), sqlState, error)
+  {}
+
+  /******************** SQLFeatureNotSupportedException ***************************/
+  SQLFeatureNotSupportedException::~SQLFeatureNotSupportedException()
+  {}
+
+  SQLFeatureNotSupportedException::SQLFeatureNotSupportedException(const SQLFeatureNotSupportedException& other) :
+    SQLException(other)
+  {}
+
+  SQLFeatureNotSupportedException::SQLFeatureNotSupportedException(const SQLString& msg) :
+    SQLException(msg)
+  {}
+
+  SQLFeatureNotSupportedException::SQLFeatureNotSupportedException(const SQLString& msg, const char* state, int32_t error, const std::exception* e) :
+    SQLException(msg.c_str(), state, error, e)
+  {}
+
+  /******************** SQLTransientConnectionException ***************************/
+  SQLTransientConnectionException::~SQLTransientConnectionException()
+  {}
+
+  SQLTransientConnectionException::SQLTransientConnectionException(const SQLTransientConnectionException& other) :
+    SQLException(other)
+  {}
+
+  SQLTransientConnectionException::SQLTransientConnectionException(const SQLString& msg) :
+    SQLException(msg)
+  {}
+
+  SQLTransientConnectionException::SQLTransientConnectionException(const SQLString& msg, const SQLString& state, int32_t error, const std::exception* e) :
+    SQLException(msg, state, error, e)
+  {}
+
+  /******************** SQLNonTransientConnectionException ***************************/
+  SQLNonTransientConnectionException::~SQLNonTransientConnectionException()
+  {}
+
+  SQLNonTransientConnectionException::SQLNonTransientConnectionException(const SQLNonTransientConnectionException& other) :
+    SQLException(other)
+  {}
+
+  SQLNonTransientConnectionException::SQLNonTransientConnectionException(const SQLString& msg)
+    : SQLException(msg)
+  {}
+
+  SQLNonTransientConnectionException::SQLNonTransientConnectionException(const SQLString& msg, const SQLString& state, int32_t error, const std::exception* e) :
+    SQLException(msg, state, error, e)
+  {}
+
+  /******************** SQLTransientException ***************************/
+  SQLTransientException::~SQLTransientException()
+  {}
+
+  SQLTransientException::SQLTransientException(const SQLTransientException& other) :
+    SQLException(other)
+  {}
+
+  SQLTransientException::SQLTransientException(const SQLString& msg)
+    : SQLException(msg)
+  {}
+
+  SQLTransientException::SQLTransientException(const SQLString& msg, const SQLString& state, int32_t error, const std::exception* e) :
+    SQLException(msg, state, error, e)
+  {}
+
+  /******************** SQLSyntaxErrorException ***************************/
+  SQLSyntaxErrorException::~SQLSyntaxErrorException()
+  {}
+
+  SQLSyntaxErrorException::SQLSyntaxErrorException(const SQLString& msg) :
+    SQLException(msg)
+  {}
+
+  SQLSyntaxErrorException::SQLSyntaxErrorException(const SQLString& msg, const SQLString& state, int32_t error, const std::exception* e) :
+    SQLException(msg, state, error, e)
+  {}
+
+  SQLSyntaxErrorException::SQLSyntaxErrorException(const SQLSyntaxErrorException& other) : SQLException(other) {}
+
+  /******************** SQLTimeoutException ***************************/
+  SQLTimeoutException::~SQLTimeoutException()
+  {}
+
+  SQLTimeoutException::SQLTimeoutException(const SQLTimeoutException& other) :
+    SQLException(other)
+  {}
+
+  SQLTimeoutException::SQLTimeoutException(const SQLString& msg, const SQLString& state, int32_t error, const std::exception* e) :
+    SQLException(msg, state, error, e)
+  {}
+  
+  /******************** BatchUpdateException ***************************/
+  BatchUpdateException::~BatchUpdateException()
+  {}
+
+  BatchUpdateException::BatchUpdateException(const BatchUpdateException& other) :
+    SQLException(other)
+  {}
+
+  BatchUpdateException::BatchUpdateException(const SQLString& msg, const SQLString& state, int32_t error, int64_t* updCts, const std::exception* e) :
+    SQLException(msg, state, error, e)
+  {}
+
+  /******************** SQLDataException ***************************/
+  SQLDataException::~SQLDataException()
+  {}
+
+  SQLDataException::SQLDataException(const SQLDataException& other) :
+    SQLException(other)
+  {}
+
+  SQLDataException::SQLDataException(const SQLString& msg, const SQLString& state, int32_t error, const std::exception* e) :
+    SQLException(msg, state, error, e)
+  {}
+
+  /******************** SQLIntegrityConstraintViolationException ***************************/
+  SQLIntegrityConstraintViolationException::~SQLIntegrityConstraintViolationException()
+  {}
+
+  SQLIntegrityConstraintViolationException::SQLIntegrityConstraintViolationException(const SQLIntegrityConstraintViolationException& other) :
+    SQLException(other)
+  {}
+
+  SQLIntegrityConstraintViolationException::SQLIntegrityConstraintViolationException(const SQLString& msg, const SQLString& state, int32_t error,
+                                                                                     const std::exception* e) :
+    SQLException(msg, state, error, e)
+  {}
+
+  /******************** SQLInvalidAuthorizationSpecException ***************************/
+  SQLInvalidAuthorizationSpecException::~SQLInvalidAuthorizationSpecException()
+  {}
+
+  SQLInvalidAuthorizationSpecException::SQLInvalidAuthorizationSpecException(const SQLInvalidAuthorizationSpecException& other) :
+    SQLException(other)
+  {}
+
+  SQLInvalidAuthorizationSpecException::SQLInvalidAuthorizationSpecException(const SQLString& msg, const SQLString& state, int32_t error,
+                                                                             const std::exception* e) :
+    SQLException(msg, state, error, e)
+  {}
+
+  /******************** SQLTransactionRollbackException ***************************/
+  SQLTransactionRollbackException::~SQLTransactionRollbackException()
+  {}
+
+  SQLTransactionRollbackException::SQLTransactionRollbackException(const SQLTransactionRollbackException& other) :
+    SQLException(other)
+  {}
+
+  SQLTransactionRollbackException::SQLTransactionRollbackException(const SQLString& msg, const SQLString& state, int32_t error,
+                                                                   const std::exception* e) :
+    SQLException(msg, state, error, e)
+  {}
+
+  /******************** ParseException ***************************/
+  ParseException::~ParseException()
+  {}
+
+  ParseException::ParseException(const ParseException& other) :
+    SQLException(other)
+  {}
+
+  ParseException::ParseException(const SQLString& str, std::size_t pos) :
+    SQLException(str), position(pos)
+  {}
 }

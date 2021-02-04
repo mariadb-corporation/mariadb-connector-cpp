@@ -39,7 +39,7 @@
 
 #include "../framework/framework.h"
 
-#include "ConnCpp.h"
+#include "conncpp.hpp"
 
 
 namespace testsuite

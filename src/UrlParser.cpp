@@ -22,7 +22,7 @@
 #include "Consts.h"
 #include "options/DefaultOptions.h"
 #include "pool/GlobalStateInfo.h"
-#include "Exception.h"
+#include "Exception.hpp"
 #include "credential/CredentialPluginLoader.h"
 #include "logger/LoggerFactory.h"
 

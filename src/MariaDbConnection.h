@@ -26,8 +26,8 @@
 #include "MariaDbStatement.h"
 //#include "ClientSidePreparedStatement.h"
 
-#include "Connection.h"
-#include "Statement.h"
+#include "Connection.hpp"
+#include "Statement.hpp"
 #include "Protocol.h"
 
 #include "MariaDbPooledConnection.h"

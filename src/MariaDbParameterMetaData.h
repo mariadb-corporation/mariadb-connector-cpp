@@ -21,7 +21,7 @@
 #ifndef _MARIADBPARAMETERMETADATA_H_
 #define _MARIADBPARAMETERMETADATA_H_
 
-#include "ParameterMetaData.h"
+#include "ParameterMetaData.hpp"
 
 #include "Consts.h"
 

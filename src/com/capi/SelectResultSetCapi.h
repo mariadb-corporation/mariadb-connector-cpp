@@ -33,12 +33,12 @@
 
 #include "MariaDbStatement.h"
 
-#include "ResultSet.h"
+#include "ResultSet.hpp"
 #include "ColumnType.h"
 #include "com/ColumnNameMap.h"
 #include "io/StandardPacketInputStream.h"
 
-#include "jdbccompat.h"
+#include "jdbccompat.hpp"
 
 
 namespace sql

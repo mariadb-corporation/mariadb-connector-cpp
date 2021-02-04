@@ -40,7 +40,7 @@
 
 #include "start_options.h"
 
-#include "Exception.h"
+#include "conncpp/Exception.hpp"
 
 #include "test_case.h"
 #include "test_listener.h"

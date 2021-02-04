@@ -36,7 +36,7 @@
 #include "ColumnNameMap.h"
 #include "io/StandardPacketInputStream.h"
 
-#include "jdbccompat.h"
+#include "jdbccompat.hpp"
 
 
 namespace sql

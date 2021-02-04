@@ -22,7 +22,7 @@
 
 #include <string>
 
-#include "SQLString.h"
+#include "SQLString.hpp"
 
 namespace sql
 {

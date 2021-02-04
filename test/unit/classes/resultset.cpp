@@ -30,14 +30,14 @@
 
 
 
-#include "Warning.h"
+#include "Warning.hpp"
 
 #include <sstream>
 #include <cstdlib>
 #include <stdlib.h>
-#include "ResultSet.h"
-#include "Types.h"
-#include "Connection.h"
+#include "ResultSet.hpp"
+#include "conncpp/Types.hpp"
+#include "conncpp/Connection.hpp"
 #include "resultsettest.h"
 
 

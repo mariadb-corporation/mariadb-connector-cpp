@@ -23,7 +23,7 @@
 #include <memory>
 #include <string>
 
-#include "buildconf.h"
+#include "buildconf.hpp"
 
 namespace sql
 {

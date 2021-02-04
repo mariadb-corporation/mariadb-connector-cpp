@@ -21,7 +21,7 @@
 #ifndef _CARRAY_H_
 #define _CARRAY_H_
 
-#include "buildconf.h"
+#include "buildconf.hpp"
 #include <initializer_list>
 #include <vector>
 

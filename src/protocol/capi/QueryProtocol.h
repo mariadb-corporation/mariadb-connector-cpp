@@ -27,7 +27,7 @@
 #include "Consts.h"
 
 #include "protocol/capi/ConnectProtocol.h"
-#include "Exception.h"
+#include "Exception.hpp"
 
 namespace sql
 {

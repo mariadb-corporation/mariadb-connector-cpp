@@ -31,7 +31,7 @@
 
 
 #include "../unit_fixture.h"
-#include "ParameterMetaData.h"
+#include "ParameterMetaData.hpp"
 
 /**
  * Example of a collection of tests

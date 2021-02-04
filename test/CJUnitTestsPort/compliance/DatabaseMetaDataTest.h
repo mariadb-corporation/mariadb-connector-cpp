@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,11 +33,11 @@
 
 #include "../BaseTestFixture.h"
 
-#include "Connection.h"
-#include "DatabaseMetaData.h"
-#include "ResultSet.h"
-#include "ResultSetMetaData.h"
-#include "Exception.h"
+#include "Connection.hpp"
+#include "DatabaseMetaData.hpp"
+#include "ResultSet.hpp"
+#include "ResultSetMetaData.hpp"
+#include "Exception.hpp"
 
 //#include javax.sql.DataSource
 

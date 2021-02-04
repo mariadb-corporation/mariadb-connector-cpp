@@ -24,7 +24,7 @@
 #include <memory>
 
 #include "util/ClassField.h"
-#include "ConnCpp.h"
+#include "conncpp.hpp"
 
 namespace sql
 {

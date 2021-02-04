@@ -21,7 +21,7 @@
 #ifndef _RESULTSETMETADATA_H_
 #define _RESULTSETMETADATA_H_
 
-#include "SQLString.h"
+#include "SQLString.hpp"
 
 namespace sql
 {

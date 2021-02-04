@@ -25,12 +25,11 @@
 #include <algorithm>
 #include <istream>
 
-#include  "CArray.h"
+#include  "CArray.hpp"
 /* Missing JDBC classes/types/enums or their stubs or tmporary definitions(or some of them become permanent) */
-//#include "compat/Array.h"
-#include "compat/Struct.h"
-#include "compat/Object.h"
-#include "compat/Executor.h"
+#include "compat/Struct.hpp"
+#include "compat/Object.hpp"
+#include "compat/Executor.hpp"
 
 namespace sql
 {

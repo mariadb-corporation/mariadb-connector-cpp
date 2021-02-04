@@ -18,7 +18,7 @@
 *************************************************************************************/
 
 #include "CredentialPluginLoader.h"
-#include "Exception.h"
+#include "Exception.hpp"
 namespace sql
 {
 namespace mariadb

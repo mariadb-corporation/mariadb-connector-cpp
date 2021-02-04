@@ -22,7 +22,7 @@
 #include <algorithm>
 #include <sstream>
 
-#include "ResultSet.h"
+#include "ResultSet.hpp"
 
 #include "MariaDbDatabaseMetaData.h"
 #include "MariaDbConnection.h"

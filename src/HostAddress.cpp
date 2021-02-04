@@ -24,7 +24,7 @@
 #include "HostAddress.h"
 #include "Consts.h"
 #include "logger/LoggerFactory.h"
-#include "Exception.h"
+#include "Exception.hpp"
 
 namespace sql
 {

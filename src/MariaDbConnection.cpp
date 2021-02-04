@@ -31,7 +31,7 @@
 #include "logger/LoggerFactory.h"
 #include "pool/Pools.h"
 #include "util/Utils.h"
-#include "jdbccompat.h"
+#include "jdbccompat.hpp"
 #include "ExceptionFactory.h"
 
 namespace sql
@@ -1156,7 +1156,7 @@ namespace mariadb
 
   void MariaDbConnection::checkClientReconnect(const SQLString& name)
   {
-    if (protocol->isClosed() && protocol->getProxy()!=NULL )
+    if (protocol->isClosed() && protocol->getProxy() != nullptr )
     {
       std::lock_guard<std::mutex> localScopeLock(*lock);
       try

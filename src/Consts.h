@@ -39,12 +39,12 @@
 #include "util/String.h"
 #include "CArrayImp.h"
 
-#include "ResultSet.h"
-#include "CallableStatement.h"
-#include "Statement.h"
-#include "Connection.h"
-#include "ResultSetMetaData.h"
-#include "ParameterMetaData.h"
+#include "ResultSet.hpp"
+#include "CallableStatement.hpp"
+#include "Statement.hpp"
+#include "Connection.hpp"
+#include "ResultSetMetaData.hpp"
+#include "ParameterMetaData.hpp"
 
 #include "Charset.h"
 #include "MariaDbServerCapabilities.h"

@@ -31,14 +31,14 @@
 
 
 
-#include "Warning.h"
+#include "Warning.hpp"
 
 #include "connectiontest.h"
 #include <stdlib.h>
 #include <fstream>
-#include "Connection.h"
+#include "Connection.hpp"
 
-#include "Exception.h"
+#include "Exception.hpp"
 //#include <cppconn/version_info.h>
 
 #include <memory>

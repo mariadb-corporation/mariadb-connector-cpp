@@ -18,7 +18,7 @@
 *************************************************************************************/
 
 #include "Consts.h"
-#include "Connection.h"
+#include "Connection.hpp"
 #include "GlobalStateInfo.h"
 
 namespace sql

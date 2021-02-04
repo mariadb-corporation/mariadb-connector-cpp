@@ -31,9 +31,9 @@
 
 
 
-#include "PreparedStatement.h"
-#include "Connection.h"
-#include "Warning.h"
+#include "PreparedStatement.hpp"
+#include "Connection.hpp"
+#include "Warning.hpp"
 #include "statementtest.h"
 #include <stdlib.h>
 #include <time.h>

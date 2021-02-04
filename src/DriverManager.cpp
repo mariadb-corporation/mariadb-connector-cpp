@@ -18,8 +18,8 @@
 *************************************************************************************/
 
 #include "Consts.h"
-#include "DriverManager.h"
-#include "Exception.h"
+#include "DriverManager.hpp"
+#include "Exception.hpp"
 
 namespace sql
 {

@@ -30,9 +30,9 @@
 
 
 
-#include "PreparedStatement.h"
-#include "Connection.h"
-#include "Warning.h"
+#include "PreparedStatement.hpp"
+#include "Connection.hpp"
+#include "Warning.hpp"
 #include "preparedstatementtest.h"
 #include <stdlib.h>
 

@@ -22,7 +22,7 @@
 #define _MARIADBRESULTSETMETADATA_H_
 
 #include "Consts.h"
-#include "ResultSetMetaData.h"
+#include "ResultSetMetaData.hpp"
 
 namespace sql
 {
