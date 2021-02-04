@@ -23,7 +23,7 @@
 
 #include "Consts.h"
 
-#include "PreparedStatement.h"
+#include "PreparedStatement.hpp"
 
 #include "ColumnType.h"
 #include "parameters/ParameterHolder.h"

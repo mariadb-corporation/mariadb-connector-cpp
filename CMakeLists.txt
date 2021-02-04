@@ -139,8 +139,6 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/CallParameter.cpp
                    src/CallableParameterMetaData.cpp
                    src/com/Packet.cpp
-                   # src/util/ServerStatus.cpp # Won't be needed
-                   # src/MariaDbServerCapabilities.cpp # Won't be needed
                    src/credential/Credential.cpp
                    src/util/LogQueryTool.cpp
                    src/util/ClientPrepareResult.cpp
@@ -229,24 +227,24 @@ IF(WIN32)
 
                    src/com/CmdInformation.h
 
-                   "include/ConnCpp.h"
-                   "include/Connection.h"
-                   "include/Statement.h"
-                   "include/ResultSet.h"
-                   "include/PreparedStatement.h"
-                   "include/ParameterMetaData.h"
-                   "include/ResultSetMetaData.h"
-                   "include/DatabaseMetaData.h"
-                   "include/CallableStatement.h"
-                   "include/SQLString.h"
-                   "include/Warning.h"
-                   "include/Exception.h"
-                   "include/jdbccompat.h"
-                   "include/Driver.h"
-                   "include/DriverManager.h"
-                   "include/Types.h"
-                   "include/buildconf.h"
-                   "include/CArray.h"
+                   "include/conncpp.hpp"
+                   "include/conncpp/Connection.hpp"
+                   "include/conncpp/Statement.hpp"
+                   "include/conncpp/ResultSet.hpp"
+                   "include/conncpp/PreparedStatement.hpp"
+                   "include/conncpp/ParameterMetaData.hpp"
+                   "include/conncpp/ResultSetMetaData.hpp"
+                   "include/conncpp/DatabaseMetaData.hpp"
+                   "include/conncpp/CallableStatement.hpp"
+                   "include/conncpp/SQLString.hpp"
+                   "include/conncpp/Warning.hpp"
+                   "include/conncpp/Exception.hpp"
+                   "include/conncpp/jdbccompat.hpp"
+                   "include/conncpp/Driver.hpp"
+                   "include/conncpp/DriverManager.hpp"
+                   "include/conncpp/Types.hpp"
+                   "include/conncpp/buildconf.hpp"
+                   "include/conncpp/CArray.hpp"
 
                    src/SelectResultSet.h
                    src/com/capi/SelectResultSetCapi.h
@@ -294,6 +292,7 @@ IF(WIN32)
                    src/util/ServerStatus.h
                    src/credential/Credential.h
                    src/util/LogQueryTool.h
+                   src/PrepareResult.h
                    src/util/ClientPrepareResult.h
                    src/util/ServerPrepareResult.h
                    src/util/ServerPrepareStatementCache.h
@@ -428,9 +427,10 @@ IF(WITH_SIGNCODE)
   MARK_AS_ADVANCED(SIGN_OPTIONS)
 ENDIF()
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/libmariadb/include)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}/libmariadb/include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/libmariadb/include)
+INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/libmariadb/include)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include/conncpp)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE "RelWithDebInfo")

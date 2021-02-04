@@ -30,10 +30,10 @@
 
 
 
-#include "Connection.h"
+#include "Connection.hpp"
 
 
-#include "Warning.h"
+#include "Warning.hpp"
 
 #include "savepointtest.h"
 #include <stdlib.h>

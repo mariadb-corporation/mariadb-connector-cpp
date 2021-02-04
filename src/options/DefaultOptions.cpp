@@ -23,7 +23,7 @@
 
 #include "DefaultOptions.h"
 #include "Consts.h"
-#include "Exception.h"
+#include "Exception.hpp"
 
 
 namespace sql
@@ -728,6 +728,7 @@ namespace sql
       completeOptionsMap.emplace("MARIADB_OPT_SSL_FP_LIST",    &OptionsMap["tlsPeerFPList"]);
       completeOptionsMap.emplace("rsaKey",                     &OptionsMap["serverRsaPublicKeyFile"]);
       completeOptionsMap.emplace("OPT_READ_TIMEOUT",           &OptionsMap["socketTimeout"]);
+      completeOptionsMap.emplace("OPT_RECONNECT",              &OptionsMap["autoReconnect"]);
       return true;
     }
 

@@ -22,7 +22,7 @@
 
 #include <memory>
 
-#include "Warning.h"
+#include "Warning.hpp"
 
 namespace sql
 {

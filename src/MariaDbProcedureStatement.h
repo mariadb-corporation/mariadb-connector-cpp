@@ -23,7 +23,7 @@
 
 #include "Consts.h"
 
-#include "ParameterMetaData.h"
+#include "ParameterMetaData.hpp"
 #include "CallParameter.h"
 
 namespace sql

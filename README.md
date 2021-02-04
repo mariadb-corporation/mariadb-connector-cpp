@@ -70,8 +70,8 @@ Not complete list of supported options - mostly newly added or with new aliases:
 |---:|---|:---:|:---:|---|
 | **`useServerPrepStmts`** |Whether to use Server Side Prepared Statements(SSPS) for PreparedStatement by default, and not client side ones(CSPS)|*bool* |false||
 | **`connectTimeout`** |The connect timeout value, in milliseconds, or zero for no timeout.|*int* |30000||
-| **`socketTimeout`** |Specifies the timeout in seconds for reading packets from the server. Value of 0 disables this timeout.|*int* |0||
-| **`autoReconnect`** |Enable or disable automatic reconnect.|*bool* |false||
+| **`socketTimeout`** |Specifies the timeout in seconds for reading packets from the server. Value of 0 disables this timeout.|*int* |0|OPT_READ_TIMEOUT|
+| **`autoReconnect`** |Enable or disable automatic reconnect.|*bool* |false|OPT_RECONNECT|
 | **`tcpRcvBuf`** |The buffer size for TCP/IP and socket communication. `tcpSndBuf` changes the same buffer value, and the biggest value of the two is selected|*int* |0x4000|tcpSndBuf|
 | **`tcpSndBuf`** |The buffer size for TCP/IP and socket communication. `tcpRcvBuf` changes the same buffer value, and the biggest value of the two is selected|*int* |0x4000|tcpRcvBuf|
 | **`localSocket`** |For connections to localhost, the Unix socket file to use.|*string* |||
@@ -88,7 +88,6 @@ Not complete list of supported options - mostly newly added or with new aliases:
 | **`tlsPeerFP`** |A SHA1 fingerprint of a server certificate for validation during the TLS handshake.|*string* ||tlsPeerFp, MARIADB_OPT_SSL_FP|
 | **`tlsPeerFPList`** |A file containing one or more SHA1 fingerprints of server certificates for validation during the TLS handshake.|*string* ||tlsPeerFpList, MARIADB_OPT_SSL_FP_LIST|
 | **`serverRsaPublicKeyFile`** |The name of the file which contains the RSA public key of the database server. The format of this file must be in PEM format. This option is used by the caching_sha2_password client authentication plugin.|*string* ||rsaKey|
-| **`socketTimeout`** |Network socket timeout in milliseconds. Value of 0 disables this timeout.|*int* ||OPT_READ_TIMEOUT|
 
 
 Properties is map of strings, and is another way to pass optional parameters.

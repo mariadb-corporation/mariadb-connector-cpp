@@ -19,7 +19,7 @@
 
 #include "Version.h"
 #include "Consts.h"
-#include "jdbccompat.h"
+#include "jdbccompat.hpp"
 
 namespace sql
 {

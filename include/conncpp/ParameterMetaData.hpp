@@ -18,26 +18,44 @@
 *************************************************************************************/
 
 
-#ifndef _WARNING_H_
-#define _WARNING_H_
+#ifndef _PARAMETERMETADATA_H_
+#define _PARAMETERMETADATA_H_
 
-#include "SQLString.h"
+#include "SQLString.hpp"
 
 namespace sql
 {
-class SQLWarning
-{
-  SQLWarning(const SQLWarning&)= delete;
-  SQLWarning & operator=(const SQLWarning &)= delete;
 
+class ParameterMetaData
+{
+  void operator=(ParameterMetaData &);
+protected:
+  ParameterMetaData(const ParameterMetaData&) {}
 public:
-  SQLWarning() {}
-  virtual ~SQLWarning(){}
-  virtual SQLWarning* getNextWarning() const=0;
-  virtual void setNextWarning(const SQLWarning* nextWarning)=0;
-  virtual const SQLString& getSQLState() const=0;
-  virtual int32_t getErrorCode() const=0;
-  virtual const SQLString& getMessage() const=0;
+  enum {
+    parameterModeUnknown= 0,
+    parameterModeIn,
+    parameterModeInOut,
+    parameterModeOut= 4
+  };
+  enum {
+    parameterNoNulls= 0,
+    parameterNullable,
+    parameterNullableUnknown,
+  };
+
+  ParameterMetaData() {}
+  virtual ~ParameterMetaData(){}
+
+  virtual uint32_t getParameterCount()=0;
+  virtual int32_t isNullable(uint32_t param)=0;
+  virtual bool isSigned(uint32_t param)=0;
+  virtual int32_t getPrecision(uint32_t param)=0;
+  virtual int32_t getScale(uint32_t param)=0;
+  virtual int32_t getParameterType(uint32_t param)=0;
+  virtual SQLString getParameterTypeName(uint32_t param)=0;
+  virtual SQLString getParameterClassName(uint32_t param)=0;
+  virtual int32_t getParameterMode(uint32_t param)=0;
 };
 }
 #endif

@@ -23,7 +23,7 @@
 #include "UrlParser.h"
 #include "MariaDbConnection.h"
 #include "options/DefaultOptions.h"
-#include "Exception.h"
+#include "Exception.hpp"
 #include "Consts.h"
 #include "util/ClassField.h"
 #include "MariaDbDatabaseMetaData.h"

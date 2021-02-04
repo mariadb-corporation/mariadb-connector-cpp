@@ -21,9 +21,9 @@
 #ifndef _CALLABLESTATEMENT_H_
 #define _CALLABLESTATEMENT_H_
 
-#include "SQLString.h"
-#include "jdbccompat.h"
-#include "PreparedStatement.h"
+#include "SQLString.hpp"
+#include "jdbccompat.hpp"
+#include "PreparedStatement.hpp"
 
 namespace sql
 {

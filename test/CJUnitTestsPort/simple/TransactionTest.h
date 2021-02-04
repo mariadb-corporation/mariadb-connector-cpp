@@ -30,7 +30,7 @@
 
 
 
-#include "Exception.h"
+#include "Exception.hpp"
 
 #include "../BaseTestFixture.h"
 

@@ -23,7 +23,7 @@
 
 #include <unordered_map>
 
-#include "CallableStatement.h"
+#include "CallableStatement.hpp"
 
 #include "CallableStatementCacheKey.h"
 #include "Consts.h"

@@ -30,7 +30,7 @@
  */
 
 
-#include "ConnCpp.h"
+#include "conncpp.hpp"
 
 #include "tests_config.h"
 

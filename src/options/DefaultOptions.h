@@ -23,7 +23,7 @@
 
 #include <memory>
 
-#include "jdbccompat.h"
+#include "jdbccompat.hpp"
 #include "util/Value.h"
 #include "StringImp.h"
 #include "Options.h"

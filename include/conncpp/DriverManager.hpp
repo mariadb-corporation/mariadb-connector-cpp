@@ -18,44 +18,35 @@
 *************************************************************************************/
 
 
-#ifndef _PARAMETERMETADATA_H_
-#define _PARAMETERMETADATA_H_
+#ifndef _DRIVERMANAGER_H_
+#define _DRIVERMANAGER_H_
 
-#include "SQLString.h"
+#include "buildconf.hpp"
+#include "SQLString.hpp"
+#include "Connection.hpp"
+#include "Driver.hpp"
 
 namespace sql
 {
 
-class ParameterMetaData
+/*
+ * Mimimalistic DriverManager manager as the more convenient way to obtain a connection.
+ * There is no means of registsering etc drivers, as it's unlikely needed.
+ */
+class MARIADB_EXPORTED DriverManager
 {
-  void operator=(ParameterMetaData &);
-protected:
-  ParameterMetaData(const ParameterMetaData&) {}
+  DriverManager(const DriverManager &);
+  void operator=(DriverManager&)= delete;
+  DriverManager() {}
+  virtual ~DriverManager(){}
 public:
-  enum {
-    parameterModeUnknown= 0,
-    parameterModeIn,
-    parameterModeInOut,
-    parameterModeOut= 4
-  };
-  enum {
-    parameterNoNulls= 0,
-    parameterNullable,
-    parameterNullableUnknown,
-  };
 
-  ParameterMetaData() {}
-  virtual ~ParameterMetaData(){}
-
-  virtual uint32_t getParameterCount()=0;
-  virtual int32_t isNullable(uint32_t param)=0;
-  virtual bool isSigned(uint32_t param)=0;
-  virtual int32_t getPrecision(uint32_t param)=0;
-  virtual int32_t getScale(uint32_t param)=0;
-  virtual int32_t getParameterType(uint32_t param)=0;
-  virtual SQLString getParameterTypeName(uint32_t param)=0;
-  virtual SQLString getParameterClassName(uint32_t param)=0;
-  virtual int32_t getParameterMode(uint32_t param)=0;
+  static Connection* getConnection(const SQLString& url);
+  static Connection* getConnection(const SQLString& url, Properties& props);
+  static Connection* getConnection(const SQLString& url, const SQLString& user, const SQLString& pwd);
 };
+
 }
+
+
 #endif

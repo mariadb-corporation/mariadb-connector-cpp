@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -31,15 +31,12 @@
 
 
 
-#include "Warning.h"
+#include "conncpp.hpp"
 
 #include "connectionmetadata.h"
 #include <sstream>
 #include <stdlib.h>
-#include "ResultSet.h"
-#include "Types.h"
-#include "Connection.h"
-#include "DatabaseMetaData.h"
+
 
 namespace testsuite
 {

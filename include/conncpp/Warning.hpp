@@ -18,28 +18,26 @@
 *************************************************************************************/
 
 
-#ifndef __CONNCPP_H_
-#define __CONNCPP_H_
+#ifndef _WARNING_H_
+#define _WARNING_H_
 
-#include "Driver.h"
-#include "DriverManager.h"
-#include "Connection.h"
-#include "ResultSet.h"
-#include "DatabaseMetaData.h"
-#include "ResultSetMetaData.h"
-#include "Statement.h"
-#include "PreparedStatement.h"
-#include "ParameterMetaData.h"
-#include "CallableStatement.h"
-#include "Warning.h"
-#include "Savepoint.h"
-#include "Types.h"
-
-#include "SQLString.h"
-#include "Exception.h"
-#include "jdbccompat.h"
+#include "SQLString.hpp"
 
 namespace sql
 {
+class SQLWarning
+{
+  SQLWarning(const SQLWarning&)= delete;
+  SQLWarning & operator=(const SQLWarning &)= delete;
+
+public:
+  SQLWarning() {}
+  virtual ~SQLWarning(){}
+  virtual SQLWarning* getNextWarning() const=0;
+  virtual void setNextWarning(const SQLWarning* nextWarning)=0;
+  virtual const SQLString& getSQLState() const=0;
+  virtual int32_t getErrorCode() const=0;
+  virtual const SQLString& getMessage() const=0;
+};
 }
 #endif

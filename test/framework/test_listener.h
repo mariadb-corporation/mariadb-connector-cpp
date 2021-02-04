@@ -43,7 +43,7 @@
 
 #include "start_options.h"
 #include "test_tapOutputter.h"
-#include "Exception.h"
+#include "conncpp/Exception.hpp"
 #include "../common/stringutils.h"
 #include "../common/singleton.h"
 

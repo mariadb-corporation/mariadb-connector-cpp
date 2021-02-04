@@ -12,12 +12,12 @@
       <WixVariable Id="WixUILicenseRtf" Value="@CPP_SOURCE_WIX_DIR@/license.rtf" />
       <WixVariable Id="WixUIBannerBmp" Value="@CPP_SOURCE_WIX_DIR@/mdb-connector-cpp.png" />
       <WixVariable Id="WixUIDialogBmp" Value="@CPP_SOURCE_WIX_DIR@/mdb-dialog-popup.png" />
-      <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Make User DSN's for older Connnector versions to use this version" />
 
     <Feature Id="ProductFeature" Title="@PRODUCT_NAME@ @PRODUCT_VERSION@" Level="1">
       <ComponentRef Id="Driver" />
       <ComponentRef Id="CcPlugins" />
       <ComponentRef Id="CcInclude" />
+      <ComponentRef Id="CcIncludeClasses" />
       <ComponentRef Id="CcIncludeCompat" />
       <@TLS_LIB_BEGIN@ComponentRef Id="TlsLib" /@TLS_LIB_END@>
     </Feature>
@@ -38,7 +38,11 @@
             <Directory Id="PLUGINSFOLDER" Name="$(var.plugins_subdir_name)">
             </Directory>
             <Directory Id="INCLUDESFOLDER" Name="include">
-              <Directory Id="COMPATINCLUDES" Name="compat">
+              <Directory Id="INCLUDESMARIADB" Name="mariadb">
+                <Directory Id="CLASSESINCLUDES" Name="conncpp">
+                  <Directory Id="COMPATINCLUDES" Name="compat">
+                  </Directory>
+                </Directory>
               </Directory>
             </Directory>
           </Directory>
@@ -75,31 +79,36 @@
       <File Id="client_ed25519_pdb" Name="client_ed25519.pdb" DiskId="1" Source="$(var.plugins_source_dir)/client_ed25519.pdb" />
       <CreateFolder />
     </Component>
-    <Component Id="CcInclude" Guid="@GUID_INCLUDES@" Directory="INCLUDESFOLDER" DiskId="1" Win64="@IS_WIN64@">
-      <File Id="CallableStatementH" Name="CallableStatement.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/CallableStatement.h" />
-      <File Id="ConnCppH" Name="ConnCpp.h"  DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/ConnCpp.h" />
-      <File Id="ConnectionH" Name="Connection.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/Connection.h" />
-      <File Id="DatabaseMEtaDataH" Name="DatabaseMEtaData.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/DatabaseMEtaData.h" />
-      <File Id="DriverH" Name="Driver.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/Driver.h" />
-      <File Id="ExceptionH" Name="Exception.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/Exception.h" />
-      <File Id="jdbccompatH" Name="jdbccompat.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/jdbccompat.h" />
-      <File Id="ParameterMetaDataH" Name="ParameterMetaData.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/ParameterMetaData.h" />
-      <File Id="PreparedStatementH" Name="PreparedStatement.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/PreparedStatement.h" />
-      <File Id="ResultSetH" Name="ResultSet.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/ResultSet.h" />
-      <File Id="ResultSetMetaDataH" Name="ResultSetMetaData.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/ResultSetMetaData.h" />
-      <File Id="SavepointH" Name="Savepoint.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/Savepoint.h" />
-      <File Id="SQLStringH" Name="SQLString.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/SQLString.h" />
-      <File Id="StatementH" Name="Statement.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/Statement.h" />
-      <File Id="TypesH" Name="Types.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/Types.h" />
-      <File Id="WarningH" Name="Warning.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/Warning.h" />
+    <Component Id="CcInclude" Guid="@GUID_INCLUDES@" Directory="INCLUDESMARIADB" DiskId="1" Win64="@IS_WIN64@">
+      <File Id="ConnCppH" Name="conncpp.hpp"  DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp.hpp" />
+    </Component>
+    <Component Id="CcIncludeClasses" Guid="@GUID_INCLUDESCLASSES@" Directory="CLASSESINCLUDES" DiskId="1" Win64="@IS_WIN64@">
+      <File Id="CallableStatementH" Name="CallableStatement.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/CallableStatement.hpp" />
+      <File Id="ConnectionH" Name="Connection.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/Connection.hpp" />
+      <File Id="DatabaseMetaDataH" Name="DatabaseMEtaData.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/DatabaseMetaData.hpp" />
+      <File Id="DriverH" Name="Driver.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/Driver.hpp" />
+      <File Id="DriverManagerH" Name="DriverManager.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/DriverManager.hpp" />
+      <File Id="ExceptionH" Name="Exception.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/Exception.hpp" />
+      <File Id="jdbccompatH" Name="jdbccompat.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/jdbccompat.hpp" />
+      <File Id="ParameterMetaDataH" Name="ParameterMetaData.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/ParameterMetaData.hpp" />
+      <File Id="PreparedStatementH" Name="PreparedStatement.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/PreparedStatement.hpp" />
+      <File Id="ResultSetH" Name="ResultSet.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/ResultSet.hpp" />
+      <File Id="ResultSetMetaDataH" Name="ResultSetMetaData.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/ResultSetMetaData.hpp" />
+      <File Id="SavepointH" Name="Savepoint.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/Savepoint.hpp" />
+      <File Id="SQLStringH" Name="SQLString.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/SQLString.hpp" />
+      <File Id="StatementH" Name="Statement.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/Statement.hpp" />
+      <File Id="TypesH" Name="Types.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/Types.hpp" />
+      <File Id="WarningH" Name="Warning.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/Warning.hpp" />
+      <File Id="buildconfH" Name="buildconf.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/buildconf.hpp" />
+      <File Id="CArrayH" Name="CArray.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/CArray.hpp" />
       <CreateFolder />
     </Component>
     <Component Id="CcIncludeCompat" Guid="@GUID_COMPATINCLUDES@" Directory="COMPATINCLUDES" DiskId="1" Win64="@IS_WIN64@">
-      <File Id="ArrayH" Name="Array.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/compat/Array.h" />
-      <File Id="ExecutorH" Name="Executor.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/compat/Executor.h" />
-      <File Id="ObjectH" Name="Object.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/compat/Object.h" />
-      <File Id="SQLTypeH" Name="SQLType.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/compat/SQLType.h" />
-      <File Id="StructH" Name="Struct.h" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/compat/Struct.h" />
+      <File Id="ArrayH" Name="Array.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/compat/Array.hpp" />
+      <File Id="ExecutorH" Name="Executor.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/compat/Executor.hpp" />
+      <File Id="ObjectH" Name="Object.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/compat/Object.hpp" />
+      <File Id="SQLTypeH" Name="SQLType.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/compat/SQLType.hpp" />
+      <File Id="StructH" Name="Struct.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/compat/Struct.hpp" />
       <CreateFolder />
     </Component>
     <@TLS_LIB_BEGIN@Component Id="TlsLib" Guid="@GUID_TLS_LIB@" Directory="INSTALLFOLDER" DiskId="1" Win64="@IS_WIN64@">

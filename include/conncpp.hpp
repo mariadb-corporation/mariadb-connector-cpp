@@ -18,27 +18,28 @@
 *************************************************************************************/
 
 
-#ifndef _SAVEPOINT_H_
-#define _SAVEPOINT_H_
+#ifndef __CONNCPP_H_
+#define __CONNCPP_H_
 
-#include "SQLString.h"
+#include "conncpp/Driver.hpp"
+#include "conncpp/DriverManager.hpp"
+#include "conncpp/Connection.hpp"
+#include "conncpp/ResultSet.hpp"
+#include "conncpp/DatabaseMetaData.hpp"
+#include "conncpp/ResultSetMetaData.hpp"
+#include "conncpp/Statement.hpp"
+#include "conncpp/PreparedStatement.hpp"
+#include "conncpp/ParameterMetaData.hpp"
+#include "conncpp/CallableStatement.hpp"
+#include "conncpp/Warning.hpp"
+#include "conncpp/Savepoint.hpp"
+#include "conncpp/Types.hpp"
+
+#include "conncpp/SQLString.hpp"
+#include "conncpp/Exception.hpp"
+#include "conncpp/jdbccompat.hpp"
 
 namespace sql
 {
-
-class Savepoint
-{
-  Savepoint(const Savepoint &);
-  void operator=(Savepoint &);
-
-public:
-  Savepoint() {}
-  virtual ~Savepoint(){}
-
-  virtual int32_t getSavepointId() const=0;
-  virtual const SQLString& getSavepointName() const=0;
-  virtual SQLString toString() const=0;
-};
-
 }
 #endif

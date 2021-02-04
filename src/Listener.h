@@ -23,7 +23,7 @@
 
 #include <vector>
 
-#include "Connection.h"
+#include "Connection.hpp"
 
 #include "UrlParser.h"
 #include "HostAddress.h"

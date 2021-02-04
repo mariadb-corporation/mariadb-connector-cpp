@@ -22,7 +22,7 @@
 #define _EXCEPTIONFACTORY_H_
 
 #include "Consts.h"
-#include "Exception.h"
+#include "Exception.hpp"
 
 namespace sql
 {

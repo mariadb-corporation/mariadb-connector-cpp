@@ -31,13 +31,13 @@
 
 
 
-#include "PreparedStatement.h"
-#include "ParameterMetaData.h"
+#include "PreparedStatement.hpp"
+#include "ParameterMetaData.hpp"
 
-#include "Connection.h"
+#include "Connection.hpp"
 
 
-#include "Warning.h"
+#include "Warning.hpp"
 
 #include "parametermetadatatest.h"
 #include <stdlib.h>

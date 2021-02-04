@@ -17,7 +17,7 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
-#include "buildconf.h"
+#include "buildconf.hpp"
 #include "CArrayImp.h"
 
 namespace sql

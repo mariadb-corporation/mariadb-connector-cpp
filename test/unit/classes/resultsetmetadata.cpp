@@ -30,17 +30,13 @@
 
 
 
-#include "Warning.h"
+#include "Warning.hpp"
 
 #include "resultsetmetadatatest.h"
 
 #include <sstream>
 #include <stdlib.h>
-#include "ResultSet.h"
-#include "Types.h"
-#include "PreparedStatement.h"
-#include "Statement.h"
-#include "Connection.h"
+#include "conncpp.hpp"
 
 namespace testsuite
 {

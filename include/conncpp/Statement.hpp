@@ -21,11 +21,11 @@
 #ifndef _STATEMENT_H_
 #define _STATEMENT_H_
 
-#include "buildconf.h"
-#include "SQLString.h"
-#include "ResultSet.h"
-#include "Warning.h"
-#include "Connection.h"
+#include "buildconf.hpp"
+#include "SQLString.hpp"
+#include "ResultSet.hpp"
+#include "Warning.hpp"
+#include "Connection.hpp"
 
 namespace sql
 {

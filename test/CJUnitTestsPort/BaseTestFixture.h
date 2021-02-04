@@ -38,7 +38,7 @@
 #include <memory>
 
 #include "resources.h"
-#include "ConnCpp.h"
+#include "conncpp.hpp"
 
 #include "../framework/framework.h"
 

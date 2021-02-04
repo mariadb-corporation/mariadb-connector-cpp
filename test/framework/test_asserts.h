@@ -34,7 +34,7 @@
 #ifndef __TESTASSERTS_H_
 #define __TESTASSERTS_H_
 
-#include "ResultSet.h"
+#include "conncpp/ResultSet.hpp"
 
 #include "../common/ccppTypes.h"
 
