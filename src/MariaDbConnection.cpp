@@ -169,7 +169,7 @@ namespace mariadb
   void MariaDbConnection::checkConnection()
   {
     if (protocol->isExplicitClosed()) {
-      throw *exceptionFactory->create("createStatement() is called on closed connection", "08000");
+      exceptionFactory->create("createStatement() is called on closed connection", "08000").Throw();
     }
     if (protocol->isClosed() && protocol->getProxy())
     {
@@ -868,7 +868,8 @@ namespace mariadb
         throw SQLException("Could not get transaction isolation level: Invalid value \"" + response + "\"");
       }
     }
-    throw *exceptionFactory->create("Failed to retrieve transaction isolation");
+    exceptionFactory->create("Failed to retrieve transaction isolation").Throw();
+    return sql::TRANSACTION_NONE;
   }
 
   /**

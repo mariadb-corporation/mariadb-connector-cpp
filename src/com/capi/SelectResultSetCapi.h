@@ -126,7 +126,7 @@ public:
   void fetchRemaining();
 
 private:
-  SQLException handleIoException(std::exception& ioe);
+  void handleIoException(std::exception& ioe);
   void nextStreamingValue();
   void addStreamingValue();
   bool readNextValue();

@@ -48,6 +48,7 @@
 
 #include "Charset.h"
 #include "MariaDbServerCapabilities.h"
+#include "MariaDBException.h"
 
 #include "options/Options.h"
 #include "logger/Logger.h"

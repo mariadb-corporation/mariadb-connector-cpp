@@ -18,7 +18,7 @@
 *************************************************************************************/
 
 
-#include "Exception.hpp"
+#include "MariaDBException.h"
 
 namespace sql
 {
@@ -264,4 +264,27 @@ namespace sql
   ParseException::ParseException(const SQLString& str, std::size_t pos) :
     SQLException(str), position(pos)
   {}
+
+  /********************* MaxAllowedPacketException **************************/
+  // Not sure this class really needs to be open to users
+  MaxAllowedPacketException::~MaxAllowedPacketException()
+  {}
+
+  MaxAllowedPacketException::MaxAllowedPacketException(const MaxAllowedPacketException& other) :
+    std::runtime_error(other)
+  {}
+
+  MaxAllowedPacketException::MaxAllowedPacketException(const char* message, bool _mustReconnect)
+    : std::runtime_error(message)
+    , mustReconnect(_mustReconnect)
+  {
+  }
+
+  /////////////////////////////
+  MariaDBExceptionThrower::MariaDBExceptionThrower(MariaDBExceptionThrower&& moved) : exceptionThrower(std::move(moved.exceptionThrower))
+  {}
+
+  void MariaDBExceptionThrower::assign(MariaDBExceptionThrower other) {
+    exceptionThrower.reset(other.release());
+  }
 }

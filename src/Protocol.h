@@ -151,7 +151,7 @@ public:
   virtual void resetStateAfterFailover( int64_t maxRows,int32_t transactionIsolationLevel, const SQLString& database,bool autocommit)= 0;
   virtual bool isServerMariaDb()=0;
   virtual void setActiveFutureTask(FutureTask* activeFutureTask)=0;
-  virtual SQLException handleIoException(std::runtime_error& initialException)=0;
+  virtual MariaDBExceptionThrower handleIoException(std::runtime_error& initialException, bool throwRightAway=true)=0;
   //virtual PacketInputistream* getReader()=0;
   //virtual PacketOutputStream* getWriter()=0;
   virtual bool isEofDeprecated()=0;

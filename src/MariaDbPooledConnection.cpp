@@ -157,7 +157,7 @@ namespace mariadb
     * @param st statement
     * @param ex exception
     */
-  void MariaDbPooledConnection::fireStatementErrorOccured(Statement* st, SQLException ex)
+  void MariaDbPooledConnection::fireStatementErrorOccured(Statement* st, MariaDBExceptionThrower& ex)
   {
     if (INSTANCEOF(st, PreparedStatement*)) {
       /*StatementEvent* event= new StatementEvent(this, st, ex);

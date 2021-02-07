@@ -51,7 +51,7 @@ public:
   void addStatementEventListener(StatementEventListener& listener);
   void removeStatementEventListener(StatementEventListener& listener);
   void fireStatementClosed(Statement* st);
-  void fireStatementErrorOccured(Statement* st, SQLException ex);
+  void fireStatementErrorOccured(Statement* st, MariaDBExceptionThrower& ex);
   void fireConnectionClosed();
   void fireConnectionErrorOccured(SQLException ex);
   bool noStmtEventListeners();

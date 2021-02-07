@@ -22,7 +22,7 @@
 #define _EXCEPTIONFACTORY_H_
 
 #include "Consts.h"
-#include "Exception.hpp"
+#include "MariaDBException.h"
 
 namespace sql
 {
@@ -38,7 +38,7 @@ class ExceptionFactory final  {
 
 public:
   static ExceptionFactory INSTANCE; /*new ExceptionFactory(-1,NULL)*/
-
+  static void Throw(std::unique_ptr<sql::SQLException> e);
 private:
   int64_t threadId;
   Shared::Options options;
@@ -55,14 +55,15 @@ public:
   static ExceptionFactory* of(int64_t threadId, Shared::Options& options);
 
 private:
-  static Unique::SQLException createException(
+  static MariaDBExceptionThrower createException(
     const SQLString& initialMessage, const SQLString& sqlState,
     int32_t errorCode,
     int64_t threadId,
     Shared::Options& options,
     MariaDbConnection* connection,
     Statement* statement,
-    std::exception* cause);
+    std::exception* cause,
+    bool throwRightAway= true);
 
   static SQLString buildMsgText(const SQLString& initialMessage, int64_t threadId, Shared::Options& options, std::exception* cause);
 
@@ -70,13 +71,13 @@ public:
   std::unique_ptr<ExceptionFactory> raiseStatementError(MariaDbConnection* connection, Statement* stmt);
   SQLFeatureNotSupportedException notSupported(const SQLString& message);
 
-  Unique::SQLException create(SQLException& cause);
-  Unique::SQLException create(const SQLString& message);
-  Unique::SQLException create(const SQLString& message, std::exception* cause);
-  Unique::SQLException create(const SQLString& message, const SQLString& sqlState);
-  Unique::SQLException create(const SQLString& message, const SQLString& sqlState, std::exception* cause);
-  Unique::SQLException create(const SQLString& message, const SQLString& sqlState, int32_t errorCode);
-  Unique::SQLException create(const SQLString& message, const SQLString& sqlState, int32_t errorCode, std::exception* cause);
+  MariaDBExceptionThrower create(SQLException& cause, bool throwRightAway = true);
+  MariaDBExceptionThrower create(const SQLString& message, bool throwRightAway = true);
+  MariaDBExceptionThrower create(const SQLString& message, std::exception* cause, bool throwRightAway = true);
+  MariaDBExceptionThrower create(const SQLString& message, const SQLString& sqlState, bool throwRightAway = true);
+  MariaDBExceptionThrower create(const SQLString& message, const SQLString& sqlState, std::exception* cause, bool throwRightAway = true);
+  MariaDBExceptionThrower create(const SQLString& message, const SQLString& sqlState, int32_t errorCode, bool throwRightAway = true);
+  MariaDBExceptionThrower create(const SQLString& message, const SQLString& sqlState, int32_t errorCode, std::exception* cause, bool throwRightAway = true);
 
   int64_t getThreadId();
   Shared::Options& getOptions();

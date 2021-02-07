@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -63,7 +63,9 @@ namespace mariadb
   void NoLogger::error(const SQLString& msg){
   }
 
-  void NoLogger::error(const SQLString& msg, std::exception &e){
+  void NoLogger::error(const SQLString& msg, SQLException& e) {
+  }
+  void NoLogger::error(const SQLString& msg, MariaDBExceptionThrower& e){
   }
 }
 }

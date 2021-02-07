@@ -53,7 +53,7 @@ namespace mariadb
   }
 
 
-  MARIADB_EXPORTED Driver* get_driver_instance()
+  Driver* get_driver_instance()
   {
     return &theInstance;
   }

@@ -254,11 +254,10 @@ class MaxAllowedPacketException : public std::runtime_error {
   bool mustReconnect;
 
 public:
-  MaxAllowedPacketException(const char* message, bool _mustReconnect)
-    : std::runtime_error(message)
-    , mustReconnect(_mustReconnect)
-  {
-  }
+  MARIADB_EXPORTED virtual ~MaxAllowedPacketException();
+
+  MARIADB_EXPORTED MaxAllowedPacketException(const MaxAllowedPacketException&);
+  MARIADB_EXPORTED MaxAllowedPacketException(const char* message, bool _mustReconnect);
 
   bool isMustReconnect() {
     return mustReconnect;

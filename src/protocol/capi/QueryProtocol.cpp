@@ -526,10 +526,9 @@ namespace capi
    */
   void QueryProtocol::executeBatch(Shared::Results& results, const std::vector<SQLString>& queries)
   {
-
     if (!options->useBatchMultiSend){
 
-      SQLException* exception= NULL;
+      MariaDBExceptionThrower exception;
 
       for (auto& sql : queries){
 
@@ -540,16 +539,17 @@ namespace capi
 
         }catch (SQLException& sqlException){
           if (!exception){
-            *exception= logQuery->exceptionWithQuery(sql, sqlException, explicitClosed);
+            SQLException ex(logQuery->exceptionWithQuery(sql, sqlException, explicitClosed));
+            exception.take(ex);
             if (!options->continueBatchOnError){
-              throw exception;
+              exception.Throw();
             }
           }
         }catch (std::runtime_error& e){
           if (!exception){
-            *exception= handleIoException(e);
+            exception.assign(handleIoException(e, false));
             if (!options->continueBatchOnError){
-              throw exception;
+              exception.Throw();
             }
           }
         }
@@ -557,7 +557,7 @@ namespace capi
       stopIfInterrupted();
 
       if (exception){
-        throw *exception;
+        exception.Throw();
       }
       return;
     }
@@ -1174,17 +1174,14 @@ namespace capi
 
     std::unique_lock<std::mutex> localScopeLock(*lock);
 
-    try {
-      realQuery("USE " + _database);
-    }
-    catch (SQLException&) {
+    if (capi::mysql_select_db(connection.get(), _database.c_str()) != 0) {
       // TODO: realQuery should throw. Here we could catch and change message
       if (mysql_get_socket(connection.get()) == MARIADB_INVALID_SOCKET) {
         std::string msg("Connection lost: ");
         msg.append(mysql_error(connection.get()));
         std::runtime_error e(msg.c_str());
         localScopeLock.unlock();
-        handleIoException(e);
+        throw logQuery->exceptionWithQuery("COM_INIT_DB", *handleIoException(e, false).getException(), false);
       }
       else {
         throw SQLException(
@@ -1698,14 +1695,14 @@ namespace capi
         connectWithoutProxy();
       }catch (SQLException& qe){
 
-        throw *ExceptionFactory::of(serverThreadId, options)->create(qe);
+        ExceptionFactory::of(serverThreadId, options)->create(qe).Throw();
       }
     }
 
     try {
       setMaxRows(maxRows);
     }catch (SQLException& qe){
-      throw *ExceptionFactory::of(serverThreadId, options)->create(qe);
+      ExceptionFactory::of(serverThreadId, options)->create(qe).Throw();
     }
 
     connection->reenableWarnings();
@@ -1787,21 +1784,29 @@ namespace capi
    * @param initialException initial Io error
    * @return the resulting error to return to client.
    */
-  SQLException QueryProtocol::handleIoException(std::runtime_error& initialException)
+  MariaDBExceptionThrower QueryProtocol::handleIoException(std::runtime_error& initialException, bool throwRightAway)
   {
     bool mustReconnect= options->autoReconnect;
     bool maxSizeError;
     MaxAllowedPacketException* maxAllowedPacketEx= dynamic_cast<MaxAllowedPacketException*>(&initialException);
+    MariaDBExceptionThrower result;
 
     if (maxAllowedPacketEx != nullptr){
       maxSizeError= true;
       if (maxAllowedPacketEx->isMustReconnect()){
         mustReconnect= true;
       }else {
-        return SQLNonTransientConnectionException(
-            initialException.what() + getTraces(),
-            UNDEFINED_SQLSTATE.getSqlState(), 0,
-            &initialException);
+        SQLNonTransientConnectionException ex(
+          initialException.what() + getTraces(),
+          UNDEFINED_SQLSTATE.getSqlState(), 0,
+          &initialException);
+        if (throwRightAway) {
+          throw ex;
+        }
+        else {
+          result.take(ex);
+          return result;
+        }
       }
     }else {
       maxSizeError= false;// writer.exceedMaxLength();
@@ -1819,40 +1824,76 @@ namespace capi
               getMaxRows(), getTransactionIsolationLevel(), getDatabase(), getAutocommit());
 
           if (maxSizeError){
-            return SQLTransientConnectionException(
+            SQLTransientConnectionException ex(
                 "Could not send query: query size is >= to max_allowed_packet ("
                 +/*writer.getMaxAllowedPacket()*/std::to_string(MAX_PACKET_LENGTH)
                 +")"
                 +getTraces(),
                 UNDEFINED_SQLSTATE.getSqlState(), 0,
                 &initialException);
+            if (throwRightAway) {
+              throw ex;
+            }
+            else {
+              result.take(ex);
+              return result;
+            }
           }
 
-          return SQLNonTransientConnectionException(
+          SQLNonTransientConnectionException ex(
               initialException.what()+getTraces(),
               UNDEFINED_SQLSTATE.getSqlState(), 0,
               &initialException);
+          if (throwRightAway) {
+            throw ex;
+          }
+          else {
+            result.take(ex);
+            return result;
+          }
 
         }catch (SQLException& /*queryException*/){
-          return SQLNonTransientConnectionException(
+          SQLNonTransientConnectionException ex(
               "reconnection succeed, but resetting previous state failed",
               UNDEFINED_SQLSTATE.getSqlState()+getTraces(), 0,
               &initialException);
+          if (throwRightAway) {
+            throw ex;
+          }
+          else {
+            result.take(ex);
+            return result;
+          }
         }
 
       }catch (SQLException& /*queryException*/){
         connected= false;
-        return SQLNonTransientConnectionException(
+        SQLNonTransientConnectionException ex(
             SQLString(initialException.what()).append("\nError during reconnection").append(getTraces()),
             CONNECTION_EXCEPTION.getSqlState(), 0,
             &initialException);
+        if (throwRightAway) {
+          throw ex;
+        }
+        else {
+          result.take(ex);
+          return result;
+        }
       }
     }
     connected= false;
-    return SQLNonTransientConnectionException(
+    SQLNonTransientConnectionException ex(
         initialException.what()+getTraces(),
         CONNECTION_EXCEPTION.getSqlState(), 0,
         &initialException);
+
+    if (throwRightAway) {
+      throw ex;
+    }
+    else {
+      result.take(ex);
+      return result;
+    }
   }
 
 

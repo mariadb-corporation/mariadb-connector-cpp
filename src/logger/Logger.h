@@ -22,6 +22,7 @@
 #define _LOGGER_H_
 
 #include "StringImp.h"
+#include "MariaDBException.h"
 
 namespace sql
 {
@@ -42,7 +43,8 @@ struct Logger
   virtual void warn(const SQLString& msg)= 0;
   virtual bool isErrorEnabled()= 0;
   virtual void error(const SQLString& msg)= 0;
-  virtual void error(const SQLString& msg, std::exception& e)= 0;
+  virtual void error(const SQLString& msg, SQLException& e)= 0;
+  virtual void error(const SQLString& msg, sql::MariaDBExceptionThrower& e)= 0;
 
 private:
   Logger(const Logger &) {}

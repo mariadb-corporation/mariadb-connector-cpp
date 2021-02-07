@@ -106,8 +106,8 @@ namespace mariadb
     for (int32_t i= 0; i <prepareResult->getParamCount(); i++) {
       if (!parameters[i]) {
         logger->error("Parameter at position " + std::to_string(i + 1) + " is not set");
-        throw *exceptionFactory->raiseStatementError(connection, this)->create("Parameter at position "
-          + std::to_string(i + 1) + " is not set", "07004");
+        exceptionFactory->raiseStatementError(connection, this)->create("Parameter at position "
+          + std::to_string(i + 1) + " is not set", "07004").Throw();
       }
     }
 
@@ -145,8 +145,9 @@ namespace mariadb
       }
       stmt->executeEpilogue();
       localScopeLock.unlock();
-      throw executeExceptionEpilogue(exception);
+      executeExceptionEpilogue(exception).Throw();
     }
+    return false;
   }
 
   /**
@@ -168,10 +169,10 @@ namespace mariadb
           "You need to set exactly "
           + std::to_string(prepareResult->getParamCount())
           + " parameters on the prepared statement");
-        throw *exceptionFactory->raiseStatementError(connection, this)->create(
+        exceptionFactory->raiseStatementError(connection, this)->create(
           "You need to set exactly "
           + std::to_string(prepareResult->getParamCount())
-          + " parameters on the prepared statement");
+          + " parameters on the prepared statement").Throw();
       }
     }
     parameterList.push_back(holder);
@@ -396,7 +397,7 @@ namespace mariadb
       }
 
       logger->error(error);
-      throw *exceptionFactory->raiseStatementError(connection, this)->create(error);
+      exceptionFactory->raiseStatementError(connection, this)->create(error).Throw();
     }
   }
 

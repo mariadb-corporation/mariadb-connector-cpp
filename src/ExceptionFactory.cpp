@@ -31,6 +31,12 @@ namespace mariadb
   ExceptionFactory ExceptionFactory::INSTANCE(-1, nullptr);
 
 
+  void ExceptionFactory::Throw(std::unique_ptr<sql::SQLException> e)
+  {
+    sql::SQLSyntaxErrorException* asSyntaxError= dynamic_cast<sql::SQLSyntaxErrorException*>(e.get());
+
+  }
+
   ExceptionFactory::ExceptionFactory(int64_t threadId, Shared::Options& options, MariaDbConnection* connection, Statement* statement)
     : threadId(threadId)
     , options(options)
@@ -55,52 +61,100 @@ namespace mariadb
   }
 
 
-  Unique::SQLException ExceptionFactory::createException(
+  MariaDBExceptionThrower ExceptionFactory::createException(
       const SQLString& initialMessage, const SQLString& sqlState,
       int32_t errorCode,
       int64_t threadId,
       Shared::Options& options,
       MariaDbConnection* connection,
       Statement* statement,
-      std::exception* cause)
+      std::exception* cause,
+      bool throwRightAway)
   {
     SQLString msg(buildMsgText(initialMessage, threadId, options, cause));
 
-    Unique::SQLException returnEx;
+    MariaDBExceptionThrower returnEx;
 
     if (sqlState.compare("70100") == 0) { // ER_QUERY_INTERRUPTED
-      returnEx.reset(new SQLTimeoutException(msg, sqlState, errorCode));
-      return returnEx;
+      SQLTimeoutException ex(msg, sqlState, errorCode);
+      if (throwRightAway) {
+        throw ex;
+      }
+      else {
+        returnEx.take(ex);
+      }
     }
 
     SQLString sqlClass(sqlState.empty() ? "42" : sqlState.substr(0, 2).c_str());
 
     if (sqlClass.compare("0A") == 0) {
-      returnEx.reset(new SQLFeatureNotSupportedException(msg, sqlState, errorCode, cause));
+      SQLFeatureNotSupportedException ex(msg, sqlState, errorCode, cause);
+      if (throwRightAway) {
+        throw ex;
+      }
+      else {
+        returnEx.take(ex);
+      }
     }
     else if (sqlClass.compare("22") == 0 || sqlClass.compare("26") == 0 || sqlClass.compare("2F") == 0
       || sqlClass.compare("20") == 0 || sqlClass.compare("42") == 0 || sqlClass.compare("XA"))
     {
-      returnEx.reset(new SQLSyntaxErrorException(msg, sqlState, errorCode, cause));
+      SQLSyntaxErrorException ex(msg, sqlState, errorCode, cause);
+      if (throwRightAway) {
+        throw ex;
+      }
+      else {
+        returnEx.take(ex);
+      }
     }
     else if (sqlClass.compare("25") == 0 || sqlClass.compare("28") == 0) {
-      returnEx.reset(new SQLInvalidAuthorizationSpecException(msg, sqlState, errorCode, cause));
+      SQLInvalidAuthorizationSpecException ex(msg, sqlState, errorCode, cause);
+      if (throwRightAway) {
+        throw ex;
+      }
+      else {
+        returnEx.take(ex);
+      }
     }
     else if (sqlClass.compare("21") == 0 || sqlClass.compare("23") == 0) {
-      returnEx.reset(new SQLIntegrityConstraintViolationException(msg, sqlState, errorCode, cause));
+      SQLIntegrityConstraintViolationException ex(msg, sqlState, errorCode, cause);
+      if (throwRightAway) {
+        throw ex;
+      }
+      else {
+        returnEx.take(ex);
+      }
     }
     else if (sqlClass.compare("08") == 0) {
-      returnEx.reset(new SQLNonTransientConnectionException(msg, sqlState, errorCode, cause));
+      SQLNonTransientConnectionException ex(msg, sqlState, errorCode, cause);
+      if (throwRightAway) {
+        throw ex;
+      }
+      else {
+        returnEx.take(ex);
+      }
     }
     else if (sqlClass.compare("40") == 0) {
-      returnEx.reset(new SQLTransactionRollbackException(msg, sqlState, errorCode, cause));
+      SQLTransactionRollbackException ex(msg, sqlState, errorCode, cause);
+      if (throwRightAway) {
+        throw ex;
+      }
+      else {
+        returnEx.take(ex);
+      }
     }
     else {
-      returnEx.reset(new SQLTransientConnectionException(msg, sqlState, errorCode, cause));
+      SQLTransientConnectionException ex(msg, sqlState, errorCode, cause);
+      if (throwRightAway) {
+        throw ex;
+      }
+      else {
+        returnEx.take(ex);
+      }
     }
 
     if (connection && connection->pooledConnection) {
-      connection->pooledConnection->fireStatementErrorOccured(statement, *returnEx);
+      connection->pooledConnection->fireStatementErrorOccured(statement, returnEx);
     }
     return returnEx;
   }
@@ -167,7 +221,7 @@ namespace mariadb
     return std::unique_ptr<ExceptionFactory>(new ExceptionFactory(threadId, options, connection, stmt));
   }
 
-  Unique::SQLException ExceptionFactory::create(SQLException& cause)
+  MariaDBExceptionThrower ExceptionFactory::create(SQLException& cause, bool throwRightAway)
   {
     return createException(
         cause.getMessage(),
@@ -177,44 +231,47 @@ namespace mariadb
         options,
         connection,
         statement,
-        &cause);
+        &cause,
+        throwRightAway);
   }
 
   SQLFeatureNotSupportedException ExceptionFactory::notSupported(const SQLString& message)
   {
-    return *dynamic_cast<SQLFeatureNotSupportedException*>(createException(message, "0A000", -1, threadId, options, connection, statement, nullptr).get());
+    //TODO this particular case leaving a bit ugly. But on othe hand it doesn't need any 
+    return *createException(message, "0A000", -1, threadId, options, connection, statement, nullptr).get<SQLFeatureNotSupportedException>();
   }
 
-  Unique::SQLException ExceptionFactory::create(const SQLString& message)
+  MariaDBExceptionThrower ExceptionFactory::create(const SQLString& message, bool throwRightAway)
   {
-    return createException(message,"42000",-1,threadId,options,connection,statement, nullptr);
+    return createException(message,"42000",-1,threadId,options,connection,statement, nullptr, throwRightAway);
   }
 
-  Unique::SQLException ExceptionFactory::create(const SQLString& message, std::exception* cause)
+  MariaDBExceptionThrower ExceptionFactory::create(const SQLString& message, std::exception* cause, bool throwRightAway)
   {
-    return createException(message, "42000", -1, threadId, options, connection, statement, cause);
+    return createException(message, "42000", -1, threadId, options, connection, statement, cause, throwRightAway);
   }
 
-  Unique::SQLException ExceptionFactory::create(const SQLString& message, const SQLString& sqlState)
+  MariaDBExceptionThrower ExceptionFactory::create(const SQLString& message, const SQLString& sqlState, bool throwRightAway)
   {
-    return createException(message,sqlState,-1,threadId,options,connection,statement,NULL);
+    return createException(message,sqlState,-1,threadId,options,connection,statement, nullptr, throwRightAway);
   }
 
-  Unique::SQLException ExceptionFactory::create(const SQLString& message, const SQLString& sqlState, std::exception* cause)
+  MariaDBExceptionThrower ExceptionFactory::create(const SQLString& message, const SQLString& sqlState, std::exception* cause, bool throwRightAway)
   {
-    return createException(message,sqlState,-1,threadId,options,connection,statement,cause);
+    return createException(message,sqlState,-1,threadId,options,connection,statement,cause, throwRightAway);
   }
 
-  Unique::SQLException ExceptionFactory::create(const SQLString& message, const SQLString& sqlState,int32_t errorCode)
-  {
-    return createException(
-        message,sqlState,errorCode,threadId,options,connection,statement,NULL);
-  }
-
-  Unique::SQLException ExceptionFactory::create(const SQLString& message, const SQLString& sqlState,int32_t errorCode, std::exception* cause)
+  MariaDBExceptionThrower ExceptionFactory::create(const SQLString& message, const SQLString& sqlState,int32_t errorCode, bool throwRightAway)
   {
     return createException(
-        message,sqlState,errorCode,threadId,options,connection,statement,cause);
+        message,sqlState,errorCode,threadId,options,connection,statement, nullptr, throwRightAway);
+  }
+
+  MariaDBExceptionThrower ExceptionFactory::create(const SQLString& message, const SQLString& sqlState,int32_t errorCode,
+    std::exception* cause, bool throwRightAway)
+  {
+    return createException(
+        message,sqlState,errorCode,threadId,options,connection,statement,cause, throwRightAway);
   }
 
 

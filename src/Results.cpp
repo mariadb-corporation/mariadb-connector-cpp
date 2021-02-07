@@ -337,7 +337,7 @@ namespace mariadb
 
       }catch (SQLException& e)
       {
-        throw *ExceptionFactory::INSTANCE.create(e);
+        ExceptionFactory::INSTANCE.create(e).Throw();
       }
     }
 

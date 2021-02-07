@@ -142,7 +142,7 @@ public:
   void resetStateAfterFailover(int64_t maxRows,int32_t transactionIsolationLevel, const SQLString& database, bool autocommit);
   bool isServerMariaDb();
   void setActiveFutureTask(FutureTask* activeFutureTask);
-  SQLException handleIoException(std::runtime_error& initialException);
+  MariaDBExceptionThrower handleIoException(std::runtime_error& initialException, bool throwRightAway= true);
   //PacketInputistream* getReader();
   //PacketOutputStream* getWriter();
   bool isEofDeprecated();

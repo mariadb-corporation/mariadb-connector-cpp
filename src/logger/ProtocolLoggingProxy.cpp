@@ -642,7 +642,7 @@ namespace mariadb
 	}
 
 
-  SQLException ProtocolLoggingProxy::handleIoException(std::runtime_error& initialException)
+	MariaDBExceptionThrower ProtocolLoggingProxy::handleIoException(std::runtime_error& initialException, bool throwRightAway)
 	{
 		/* Add here logging if needed */
 	  return protocol->handleIoException(initialException);

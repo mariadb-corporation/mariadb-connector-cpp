@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -19,7 +19,9 @@
 
 #ifndef _NOLOGGER_H_
 #define _NOLOGGER_H_
+
 #include "Logger.h"
+
 namespace sql
 {
 namespace mariadb
@@ -36,7 +38,8 @@ struct NoLogger  : public Logger {
   void warn(const SQLString& msg);
   bool isErrorEnabled();
   void error(const SQLString& msg);
-  void error(const SQLString& msg, std::exception& e);
+  void error(const SQLString& msg, SQLException& e);
+  void error(const SQLString& msg, MariaDBExceptionThrower& e);
 };
 }
 }

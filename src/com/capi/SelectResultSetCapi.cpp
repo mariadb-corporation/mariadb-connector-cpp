@@ -302,26 +302,25 @@ namespace capi
 
       }
       catch (SQLException& queryException) {
-        throw *ExceptionFactory::INSTANCE.create(queryException);
+        ExceptionFactory::INSTANCE.create(queryException).Throw();
       }
       catch (std::exception& ioe) {
-        throw handleIoException(ioe);
+        handleIoException(ioe);
       }
       dataFetchTime++;
     }
   }
 
-  SQLException SelectResultSetCapi::handleIoException(std::exception& ioe)
+  void SelectResultSetCapi::handleIoException(std::exception& ioe)
   {
-
-    return *ExceptionFactory::INSTANCE.create(
+    ExceptionFactory::INSTANCE.create(
         "Server has closed the connection. \n"
         "Please check net_read_timeout/net_write_timeout/wait_timeout server variables. "
         "If result set contain huge amount of data, Server expects client to"
         " read off the result set relatively fast. "
         "In this case, please consider increasing net_read_timeout session variable"
         " / processing your result set faster (check Streaming result sets documentation for more information)",
-        CONNECTION_EXCEPTION.getSqlState(), &ioe);
+        CONNECTION_EXCEPTION.getSqlState(), &ioe).Throw();
   }
 
   /**
@@ -547,12 +546,12 @@ namespace capi
         }
       }
       catch (SQLException& queryException) {
-        throw *ExceptionFactory::INSTANCE.create(queryException);
+        ExceptionFactory::INSTANCE.create(queryException).Throw();
       }
       catch (std::runtime_error& ioe) {
         resetVariables();
         localScopeLock.unlock();
-        throw handleIoException(ioe);
+        handleIoException(ioe);
       }
     }
     resetVariables();
@@ -608,7 +607,7 @@ namespace capi
           }
         }
         catch (std::exception& ioe) {
-          throw handleIoException(ioe);
+          handleIoException(ioe);
         }
 
         if (resultSetScrollType == TYPE_FORWARD_ONLY) {
@@ -702,7 +701,7 @@ namespace capi
           }
         }
         catch (std::exception& ioe) {
-          throw handleIoException(ioe);
+          handleIoException(ioe);
         }
 
         return dataSize == rowPointer;
@@ -737,7 +736,7 @@ namespace capi
         }
       }
       catch (std::exception& ioe) {
-        throw handleIoException(ioe);
+        handleIoException(ioe);
       }
 
       if (isEof) {
@@ -887,7 +886,7 @@ namespace capi
         }
       }
       catch (std::exception& ioe) {
-        throw handleIoException(ioe);
+        handleIoException(ioe);
       }
       streaming= dataFetchTime == 1;
     }

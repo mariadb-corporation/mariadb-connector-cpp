@@ -174,7 +174,7 @@ public:
   bool execute();
   ResultSet* executeQuery();
 
-  SQLException executeExceptionEpilogue(SQLException& sqle);
+  MariaDBExceptionThrower executeExceptionEpilogue(SQLException& sqle);
 
   /*** Inherited methods that should not work with Prepared/CallableStatement ***/
   void addBatch(const SQLString& sql);

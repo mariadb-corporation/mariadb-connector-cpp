@@ -196,7 +196,7 @@ namespace capi
 
   public:
     void resetStateAfterFailover(int64_t maxRows, int32_t transactionIsolationLevel, const SQLString& database, bool autocommit);
-    SQLException handleIoException(std::runtime_error& initialException);
+    MariaDBExceptionThrower handleIoException(std::runtime_error& initialException, bool throwRightAway=true);
     void setActiveFutureTask(FutureTask* activeFutureTask);
     void interrupt();
     bool isInterrupted();

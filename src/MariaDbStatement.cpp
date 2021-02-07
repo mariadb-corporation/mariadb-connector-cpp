@@ -151,7 +151,7 @@ namespace mariadb
   void MariaDbStatement::executeQueryPrologue(bool isBatch) {
     setExecutingFlag();
     if (closed){
-      throw *exceptionFactory->raiseStatementError(connection, this)->create("execute() is called on closed statement");
+      exceptionFactory->raiseStatementError(connection, this)->create("execute() is called on closed statement").Throw();
     }
     protocol->prolog(maxRows, protocol->getProxy(), connection, this);
     if (queryTimeout != 0 &&(!canUseServerTimeout ||isBatch)){
@@ -187,7 +187,7 @@ namespace mariadb
    * @param sqle current exception
    * @return SQLException exception with new message in case of timer timeout.
    */
-  SQLException MariaDbStatement::executeExceptionEpilogue(SQLException& sqle)
+  MariaDBExceptionThrower MariaDbStatement::executeExceptionEpilogue(SQLException& sqle)
   {
     if (!sqle.getSQLState().empty() && sqle.getSQLState().startsWith("08")){
       try {
@@ -198,7 +198,7 @@ namespace mariadb
     }
 
     if (sqle.getErrorCode()==1148 &&!options->allowLocalInfile){
-      return *exceptionFactory->raiseStatementError(connection, this)->create(
+      return exceptionFactory->raiseStatementError(connection, this)->create(
           "Usage of LOCAL INFILE is disabled. "
           "To use it enable it via the connection property allowLocalInfile=true",
           "42000",
@@ -207,12 +207,12 @@ namespace mariadb
     }
 
     if (isTimedout){
-      return *exceptionFactory->raiseStatementError(connection, this)->create("Query timed out", "70100", 1317, &sqle);
+      return exceptionFactory->raiseStatementError(connection, this)->create("Query timed out", "70100", 1317, &sqle);
     }
-    Unique::SQLException sqlException= exceptionFactory->raiseStatementError(connection, this)->create(sqle);
-    logger->error("error executing query", *sqlException);
+    MariaDBExceptionThrower sqlException= exceptionFactory->raiseStatementError(connection, this)->create(sqle);
+    logger->error("error executing query", sqlException);
 
-    return *sqlException;
+    return sqlException;
   }
 
 
@@ -230,7 +230,7 @@ namespace mariadb
     clearBatch();
   }
 
-  SQLException MariaDbStatement::handleFailoverAndTimeout(SQLException& sqle)
+  MariaDBExceptionThrower MariaDbStatement::handleFailoverAndTimeout(SQLException& sqle)
   {
     if (sqle.getSQLState().empty() != true &&sqle.getSQLState().startsWith("08")){
       try {
@@ -241,15 +241,17 @@ namespace mariadb
     }
 
     if (isTimedout){
-      return *exceptionFactory->raiseStatementError(connection, this)->create("Query timed out", "70100", 1317, &sqle);
+      return exceptionFactory->raiseStatementError(connection, this)->create("Query timed out", "70100", 1317, &sqle);
     }
-    return sqle;
+    MariaDBExceptionThrower exThrower;
+    exThrower.take<SQLException>(sqle);
+    return exThrower;
   }
 
 
   BatchUpdateException MariaDbStatement::executeBatchExceptionEpilogue(SQLException& initialSqle, std::size_t size)
   {
-    SQLException sqle(handleFailoverAndTimeout(initialSqle));
+    MariaDBExceptionThrower sqle(handleFailoverAndTimeout(initialSqle));
 
     if (!results || !results->commandEnd())
     {
@@ -261,10 +263,10 @@ namespace mariadb
       batchRes.wrap(results->getCmdInformation()->getUpdateCounts());
     }
 
-    Unique::SQLException sqle2= exceptionFactory->raiseStatementError(connection, this)->create(sqle);
-    logger->error("error executing query", *sqle2);
+    MariaDBExceptionThrower sqle2= exceptionFactory->raiseStatementError(connection, this)->create(*sqle.getException());
+    logger->error("error executing query", sqle2);
 
-    return BatchUpdateException(sqle2->getMessage(), sqle2->getSQLState(), sqle2->getErrorCode());//, ret, &sqle2); //MAYBE_IN_BETA
+    return BatchUpdateException(sqle2.getException()->getMessage(), sqle2.getException()->getSQLState(), sqle2.getException()->getErrorCode());//, ret, &sqle2); //MAYBE_IN_BETA
   }
 
   /**
@@ -311,9 +313,9 @@ namespace mariadb
 
       if (exception.getSQLState().compare("70100") == 0 && 1927 == exception.getErrorCode()) {
         
-        throw protocol->handleIoException(exception);
+        protocol->handleIoException(exception, true);
       }
-      throw executeExceptionEpilogue(exception);
+      executeExceptionEpilogue(exception).Throw();
     }
     return false;
   }
@@ -362,7 +364,7 @@ namespace mariadb
     else
     {
       if ((identifier.find_first_of("\u0000") != std::string::npos)){
-        throw *exceptionFactory->raiseStatementError(connection, this)->create("Invalid name - containing u0000 character", "42000");;
+        exceptionFactory->raiseStatementError(connection, this)->create("Invalid name - containing u0000 character", "42000").Throw();
       }
 
       std::string result(StringImp::get(identifier));
@@ -451,7 +453,7 @@ namespace mariadb
     }
     catch (SQLException& exception){
       executeEpilogue();
-      throw executeExceptionEpilogue(exception);
+      executeExceptionEpilogue(exception).Throw();
     }
     //To please compilers etc
     return false;
@@ -789,9 +791,9 @@ namespace mariadb
    */
   void MariaDbStatement::setMaxRows(int32_t max) {
     if (max < 0){
-      throw *exceptionFactory->raiseStatementError(connection, this)->create(
+      exceptionFactory->raiseStatementError(connection, this)->create(
         "max rows cannot be negative : asked for " + std::to_string(max),
-        "42000");
+        "42000").Throw();
     }
     maxRows= max;
   }
@@ -804,9 +806,9 @@ namespace mariadb
 
   void MariaDbStatement::setLargeMaxRows(int64_t max) {
     if (max <0){
-      throw *exceptionFactory->raiseStatementError(connection, this)->create(
+      exceptionFactory->raiseStatementError(connection, this)->create(
         "max rows cannot be negative : setLargeMaxRows value is " + std::to_string(max),
-        "42000");
+        "42000").Throw();
     }
     maxRows= max;
   }
@@ -847,8 +849,8 @@ namespace mariadb
    */
   void MariaDbStatement::setQueryTimeout(int32_t seconds) {
     if (seconds < 0){
-      throw *exceptionFactory->raiseStatementError(connection, this)->create(
-        "Query timeout value cannot be negative : asked for " + std::to_string(seconds));
+      exceptionFactory->raiseStatementError(connection, this)->create(
+        "Query timeout value cannot be negative : asked for " + std::to_string(seconds)).Throw();
     }
     this->queryTimeout= seconds;
   }
@@ -1190,7 +1192,7 @@ namespace mariadb
    */
   void MariaDbStatement::setFetchSize(int32_t rows) {
     if (rows <0 &&rows != INT32_MIN){
-      throw *exceptionFactory->raiseStatementError(connection, this)->create("invalid fetch size");
+      exceptionFactory->raiseStatementError(connection, this)->create("invalid fetch size").Throw();
     }else if (rows == INT32_MIN)
     {
       this->fetchSize= 1;
@@ -1236,7 +1238,7 @@ namespace mariadb
   void MariaDbStatement::addBatch(const SQLString& sql) {
     if (sql.empty())
     {
-      throw *exceptionFactory->raiseStatementError(connection, this)->create("Empty string cannot be set to addBatch(const SQLString& sql)");
+      exceptionFactory->raiseStatementError(connection, this)->create("Empty string cannot be set to addBatch(const SQLString& sql)").Throw();
     }
     batchQueries.push_back(sql);
   }
@@ -1410,7 +1412,7 @@ namespace mariadb
    */
   void MariaDbStatement::checkClose() {
     if (closed){
-      throw *exceptionFactory->raiseStatementError(connection, this)->create("Cannot do an operation on a closed statement");
+      exceptionFactory->raiseStatementError(connection, this)->create("Cannot do an operation on a closed statement").Throw();
     }
   }
 

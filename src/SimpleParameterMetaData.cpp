@@ -29,8 +29,7 @@ void SimpleParameterMetaData::validateParameter(uint32_t param)
   if (param < 1 || param > parameterCount) {
     std::stringstream msg("Parameter metadata out of range : param was ");
     msg << param << " and must be in range 1 - " << parameterCount;
-    throw* ExceptionFactory::INSTANCE.create(msg.str(),
-      "07009");
+    ExceptionFactory::INSTANCE.create(msg.str(), "07009").Throw();
   }
 }
 

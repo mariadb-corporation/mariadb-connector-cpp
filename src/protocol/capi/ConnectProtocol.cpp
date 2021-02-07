@@ -378,8 +378,8 @@ namespace capi
     try {
       createConnection(&currentHost, username);
     }catch (SQLException& exception){
-      throw *ExceptionFactory::INSTANCE.create(
-          "Could not connect to "+currentHost.toString() +". "+exception.getMessage() + getTraces(), "08000", &exception);
+      ExceptionFactory::INSTANCE.create(
+          "Could not connect to "+currentHost.toString() +". "+exception.getMessage() + getTraces(), "08000", &exception).Throw();
     }
   }
 
@@ -439,10 +439,10 @@ namespace capi
     }catch (std::exception& ioException){
       destroySocket();
       if (!host.empty()){
-        throw *ExceptionFactory::INSTANCE.create(
-            "Could not connect to socket : " + SQLString(ioException.what()), "08000", &ioException);
+        ExceptionFactory::INSTANCE.create(
+            "Could not connect to socket : " + SQLString(ioException.what()), "08000", &ioException).Throw();
       }
-      throw *ExceptionFactory::INSTANCE.create(
+      ExceptionFactory::INSTANCE.create(
           "Could not connect to "
           +host
           +":"
@@ -450,7 +450,7 @@ namespace capi
           +" : "
           + SQLString(ioException.what()),
           "08000",
-          &ioException);
+          &ioException).Throw();
     }
     unsigned reportDataTruncation= 1;
     mysql_optionsv(connection.get(), MYSQL_REPORT_DATA_TRUNCATION, &reportDataTruncation);
@@ -597,7 +597,7 @@ namespace capi
 
     }catch (std::exception& ioe){
       destroySocket();
-      throw *ExceptionFactory::INSTANCE.create(SQLString("Socket error: ") + ioe.what(), "08000", &ioe);
+      ExceptionFactory::INSTANCE.create(SQLString("Socket error: ") + ioe.what(), "08000", &ioe).Throw();
     }
   }
 
@@ -650,8 +650,8 @@ namespace capi
       throw sqlException;
     }catch (std::runtime_error& ioException){
       destroySocket();
-      throw *exceptionFactory->create(
-          SQLString("Socket error during post connection queries: ") + ioException.what(), "08000", &ioException);
+      exceptionFactory->create(
+          SQLString("Socket error during post connection queries: ") + ioException.what(), "08000", &ioException).Throw();
     }
   }
 
@@ -736,14 +736,14 @@ namespace capi
   void ConnectProtocol::readPipelineAdditionalData(std::map<SQLString, SQLString>& serverData)
   {
 
-    Unique::SQLException resultingException;
+    MariaDBExceptionThrower resultingException;
 
     try {
       Unique::Results res(new Results());
       getResult(res.get());
     }catch (SQLException& sqlException){
 
-      resultingException.reset(new SQLException(sqlException));
+      resultingException.take(sqlException);
     }
 
     bool canTrySessionWithShow= false;
@@ -752,7 +752,7 @@ namespace capi
       readRequestSessionVariables(serverData);
     }catch (SQLException& sqlException){
       if (!resultingException){
-        resultingException= exceptionFactory->create("could not load system variables", "08000", &sqlException);
+        resultingException.assign(exceptionFactory->create("could not load system variables", "08000", &sqlException));
         canTrySessionWithShow= true;
       }
     }
@@ -762,8 +762,8 @@ namespace capi
     }catch (SQLException& sqlException){
       canTrySessionWithShow= false;
       if (!resultingException){
-        throw *exceptionFactory->create(
-            "could not identified if server is master", "08000", &sqlException);
+        exceptionFactory->create(
+            "could not identified if server is master", "08000", &sqlException).Throw();
       }
     }
 
@@ -775,7 +775,7 @@ namespace capi
     }
 
     if (resultingException){
-      throw *resultingException;
+      resultingException.Throw();
     }
     connected= true;
   }
@@ -803,13 +803,13 @@ namespace capi
           serverData.emplace(resultSet->getString(1),resultSet->getString(2));
         }
         if (serverData.size()<4){
-          throw *exceptionFactory->create(mysql_get_socket(connection.get()) == MARIADB_INVALID_SOCKET ?
-              "could not load system variables. socket connected: No" : "could not load system variables. socket connected: Yes", "08000");
+          exceptionFactory->create(mysql_get_socket(connection.get()) == MARIADB_INVALID_SOCKET ?
+              "could not load system variables. socket connected: No" : "could not load system variables. socket connected: Yes", "08000").Throw();
         }
       }
 
     }catch (SQLException& sqlException){
-      throw *exceptionFactory->create("could not load system variables", &sqlException);
+      exceptionFactory->create("could not load system variables", &sqlException).Throw();
     }
   }
 
@@ -950,7 +950,8 @@ namespace capi
     }
     else
     {
-      throw *exceptionFactory->create(SQLString("Could not connect: ") + mysql_error(connection.get()), mysql_sqlstate(connection.get()), mysql_errno(connection.get()));
+      exceptionFactory->create(SQLString("Could not connect: ") + mysql_error(connection.get()),
+        mysql_sqlstate(connection.get()), mysql_errno(connection.get()), true).Throw();
     }
   }
 
@@ -1044,14 +1045,14 @@ namespace capi
         createConnection(NULL, username);
         return;
       }catch (SQLException& exception){
-        throw *ExceptionFactory::INSTANCE.create(
+        ExceptionFactory::INSTANCE.create(
             "Could not connect to named pipe '"
             +options->pipe
             +"' : "
             +exception.getMessage()
             +getTraces(),
             "08000",
-            &exception);
+            &exception).Throw();
       }
     }
 
@@ -1064,7 +1065,7 @@ namespace capi
       }catch (SQLException& e){
         if (hosts.empty()){
           if (!e.getSQLState().empty()){
-            throw *ExceptionFactory::INSTANCE.create(
+            ExceptionFactory::INSTANCE.create(
                 "Could not connect to "
                 + HostAddress::toString(addrs)
                 + " : "
@@ -1072,10 +1073,10 @@ namespace capi
                 + getTraces(),
                 e.getSQLState(),
                 e.getErrorCode(),
-                &e);
+                &e).Throw();
           }
-          throw *ExceptionFactory::INSTANCE.create(
-              "Could not connect to " + currentHost.toString() +". "+e.getMessage()+getTraces(), "08000", &e);
+          ExceptionFactory::INSTANCE.create(
+              "Could not connect to " + currentHost.toString() +". "+e.getMessage()+getTraces(), "08000", &e).Throw();
         }
       }
     }

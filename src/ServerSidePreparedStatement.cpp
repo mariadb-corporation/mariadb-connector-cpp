@@ -112,7 +112,7 @@ namespace sql
       catch (std::exception&) {
       }
       logger->error("error preparing query", e);
-      throw *exceptionFactory->raiseStatementError(connection, stmt.get())->create(e);
+      exceptionFactory->raiseStatementError(connection, stmt.get())->create(e).Throw();
     }
   }
 
@@ -162,7 +162,7 @@ namespace sql
       }
       error.append(" - \"");
       logger->error(error);
-      throw *ExceptionFactory::INSTANCE.create(error);
+      ExceptionFactory::INSTANCE.create(error).Throw();
     }
   }
 
@@ -359,7 +359,7 @@ namespace sql
       if (currentParameterHolder.find(i) == currentParameterHolder.end())
       {
         logger->error("Parameter at position " + std::to_string(i + 1) + " is not set" );
-        throw *exceptionFactory->raiseStatementError(connection, stmt.get())->create("Parameter at position "+ std::to_string(i+1) + " is not set", "07004");
+        exceptionFactory->raiseStatementError(connection, stmt.get())->create("Parameter at position "+ std::to_string(i+1) + " is not set", "07004").Throw();
       }
     }
   }
@@ -406,7 +406,7 @@ namespace sql
     catch (SQLException& exception) {
       stmt->executeEpilogue();
       localScopeLock.unlock();
-      throw executeExceptionEpilogue(exception);
+      executeExceptionEpilogue(exception).Throw();
     }
     //To please compilers etc
     return false;
