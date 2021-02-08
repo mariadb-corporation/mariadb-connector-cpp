@@ -48,7 +48,7 @@ private:
     int32_t iv;
     int64_t lv;
     bool    bv;
-    /* Do we really need it here? looks like haveing something like unique_ptr in a union is not the best idea. should
+    /* Do we really need it here? looks like having something like unique_ptr in a union is not the best idea. should
        be fairly easy to take care of a plain pointer here */
     std::unique_ptr<SQLString> sv;
     void*   pv;

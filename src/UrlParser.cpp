@@ -156,6 +156,7 @@ namespace mariadb
     }
     catch (std::exception &i)
     {
+      delete &urlParser;
       throw SQLException(std::string("Error parsing url: ") + i.what());
     }
   }

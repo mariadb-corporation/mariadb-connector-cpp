@@ -382,6 +382,8 @@ namespace mariadb
         + (protocol->isMasterConnection() ? "M" : "S")
         + ") ");
 
+      delete holder;
+
       if (stmt->options->maxQuerySizeToLog > 0) {
         error.append(" - \"");
         if (sqlQuery.size() < stmt->options->maxQuerySizeToLog) {

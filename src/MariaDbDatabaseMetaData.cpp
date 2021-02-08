@@ -508,7 +508,7 @@ namespace sql
 
   ResultSet* MariaDbDatabaseMetaData::executeQuery(const SQLString& sql)
   {
-    Statement* stmt= connection->createStatement();
+    Unique::Statement stmt(connection->createStatement());
     SelectResultSet* rs= dynamic_cast<SelectResultSet*>(stmt->executeQuery(sql));
     rs->setStatement(NULL);
     rs->setForceTableAlias();

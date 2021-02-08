@@ -30,7 +30,11 @@ namespace sql
 {
 namespace mariadb
 {
-
+  ServerPrepareResult::~ServerPrepareResult()
+  {
+    std::lock_guard<std::mutex> localScopeLock(lock);
+    capi::mysql_stmt_close(statementId);
+  }
   /**
     * PrepareStatement Result object.
     *
@@ -46,7 +50,6 @@ namespace mariadb
     std::vector<Shared::ColumnDefinition>& _columns,
     std::vector<Shared::ColumnDefinition>& _parameters,
     Protocol* _unProxiedProtocol)
-
     : sql(_sql)
     , statementId(_statementId)
     , columns(_columns)

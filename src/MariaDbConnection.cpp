@@ -64,7 +64,9 @@ namespace mariadb
     sessionStateAware(protocol->sessionStateAware()),
     nullCatalogMeansCurrent(options->nullCatalogMeansCurrent),
     savepointCount(0),
-    exceptionFactory(ExceptionFactory::of(this->getServerThreadId(), options))
+    exceptionFactory(ExceptionFactory::of(this->getServerThreadId(), options)),
+    warningsCleared(true),
+    lowercaseTableNames(-1)
   {
     if (options->cacheCallableStmts)
     {
@@ -833,14 +835,14 @@ namespace mariadb
 
     if (!protocol->isServerMariaDb())
     {
-      if ((protocol->getMajorServerVersion()>=8 &&protocol->versionGreaterOrEqual(8, 0, 3))
-        ||(protocol->getMajorServerVersion()<8 &&protocol->versionGreaterOrEqual(5, 7, 20)))
+      if ((protocol->getMajorServerVersion() >= 8 && protocol->versionGreaterOrEqual(8, 0, 3))
+        ||(protocol->getMajorServerVersion() < 8 && protocol->versionGreaterOrEqual(5, 7, 20)))
       {
         sql= "SELECT @@transaction_isolation";
       }
     }
     //executeQuery has its locking
-    ResultSet* rs= stmt->executeQuery(sql);
+    Unique::ResultSet rs(stmt->executeQuery(sql));
     std::lock_guard<std::mutex> localScopeLock(*lock);
 
     if (rs->next())
@@ -919,11 +921,11 @@ namespace mariadb
   {
     if (warningsCleared || isClosed() || !protocol->hasWarnings())
     {
-      return NULL;
+      return nullptr;
     }
 
-    SQLWarning* last= NULL;
-    SQLWarning* first= NULL;
+    SQLWarning* last= nullptr;
+    SQLWarning* first= nullptr;
 
     Unique::Statement st(this->createStatement());
     Unique::ResultSet rs(st->executeQuery("show warnings"));
@@ -935,7 +937,7 @@ namespace mariadb
 
       SQLWarning* warning= new MariaDBWarning(message, "", code);
 
-      if (first == NULL)
+      if (first == nullptr)
       {
         first= warning;
         last= warning;
@@ -1554,7 +1556,7 @@ namespace mariadb
     * @throws SQLException if a connection error occur
     */
   int32_t MariaDbConnection::getLowercaseTableNames() {
-    if (lowercaseTableNames ==-1) {
+    if (lowercaseTableNames == -1) {
       std::unique_ptr<Statement> st(createStatement()); {
         std::unique_ptr<ResultSet> rs(st->executeQuery("select @@lower_case_table_names")); {
           rs->next();

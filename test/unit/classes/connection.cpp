@@ -2302,7 +2302,8 @@ void connection::rollback()
       try
       {
         con->setAutoCommit(true);
-        con->rollback(con->setSavepoint("foo"));
+        std::unique_ptr<sql::Savepoint> spoint(con->setSavepoint("foo"));
+        con->rollback(spoint.get());
         FAIL("autoCommit mode not detected");
       }
       catch (sql::InvalidArgumentException &e)

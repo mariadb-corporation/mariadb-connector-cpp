@@ -39,6 +39,9 @@ namespace mariadb
   CmdInformationBatch::CmdInformationBatch(std::size_t _expectedSize, int32_t _autoIncrement)
     : expectedSize(_expectedSize)
     , autoIncrement(_autoIncrement)
+    , rewritten(false)
+    , insertIdNumber(0)
+    , hasException(false)
   {
   }
 

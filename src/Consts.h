@@ -172,6 +172,7 @@ namespace mariadb
     typedef std::shared_ptr<sql::mariadb::Results> Results;
     typedef std::shared_ptr<sql::mariadb::Buffer> Buffer;
     typedef std::shared_ptr<sql::mariadb::ClientPrepareResult> ClientPrepareResult;
+    typedef std::shared_ptr<sql::mariadb::ServerPrepareResult> ServerPrepareResult;
     typedef std::shared_ptr<sql::mariadb::MariaDbResultSetMetaData> MariaDbResultSetMetaData;
     typedef std::shared_ptr<sql::mariadb::MariaDbParameterMetaData> MariaDbParameterMetaData;
     typedef std::shared_ptr<sql::mariadb::CallableParameterMetaData> CallableParameterMetaData;

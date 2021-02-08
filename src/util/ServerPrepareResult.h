@@ -56,20 +56,21 @@ class ServerPrepareResult  : public PrepareResult {
   std::mutex lock;
 
 public:
+  ~ServerPrepareResult();
 
- ServerPrepareResult(
-  SQLString sql,
-  capi::MYSQL_STMT* statementId,
-  std::vector<Shared::ColumnDefinition>& columns,
-  std::vector<Shared::ColumnDefinition>& parameters,
-  Protocol* unProxiedProtocol);
-
- ServerPrepareResult(
-   SQLString sql,
-   capi::MYSQL_STMT* statementId,
+  ServerPrepareResult(
+    SQLString sql,
+    capi::MYSQL_STMT* statementId,
+    std::vector<Shared::ColumnDefinition>& columns,
+    std::vector<Shared::ColumnDefinition>& parameters,
     Protocol* unProxiedProtocol);
 
- void reReadColumnInfo();
+  ServerPrepareResult(
+    SQLString sql,
+    capi::MYSQL_STMT* statementId,
+    Protocol* unProxiedProtocol);
+
+  void reReadColumnInfo();
 
   void resetParameterTypeHeader();
   void failover(capi::MYSQL_STMT* statementId, Shared::Protocol& unProxiedProtocol);

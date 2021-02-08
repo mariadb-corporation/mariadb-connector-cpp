@@ -426,7 +426,7 @@ static void test_connection_3(std::unique_ptr<sql::Connection> & conn, std::stri
 {
   ENTER_FUNCTION();
   try {
-    sql::DatabaseMetaData * meta = conn->getMetaData();
+    std::unique_ptr<sql::DatabaseMetaData> meta(conn->getMetaData());
     ensure("getUserName() failed", user == meta->getUserName().substr(0, user.length()));
   } catch (sql::SQLException &e) {
     printf("\n# ERR: Caught sql::SQLException at %s::%d  [%s] (%d/%s)\n", CPPCONN_FUNC, __LINE__, e.what(), e.getErrorCode(), e.getSQLStateCStr());
@@ -895,7 +895,7 @@ static void test_statement_10(std::unique_ptr<sql::Connection> & conn, std::uniq
 
     std::unique_ptr<sql::ResultSet> res(stmt->executeQuery("SELECT * FROM test_function"));
     ensure("ResultSet is empty", res->rowsCount() > 0);
-    sql::ResultSetMetaData * meta = res->getMetaData();
+    std::unique_ptr<sql::ResultSetMetaData> meta(res->getMetaData());
     ensure("Error while reading a row ", res->next());
     ensure_equal_str("Table name differs", meta->getTableName(1), std::string("test_function"));
     res->close();
@@ -1492,7 +1492,7 @@ static void test_result_set_11(std::unique_ptr<sql::Connection> & conn, std::str
     ensure("res1 is empty", rset1->next() != false);
     stmt1->execute("set @old_charset_res=@@session.character_set_results");
     stmt1->execute("set character_set_results=NULL");
-    sql::ResultSetMetaData * meta1 = rset1->getMetaData();
+    std::unique_ptr<sql::ResultSetMetaData> meta1(rset1->getMetaData());
     ensure("column name differs", !meta1->getColumnName(1).compare("a"));
     ensure("column name differs", !meta1->getColumnName(2).compare("b"));
     ensure("column name differs", !meta1->getColumnName(3).compare("c"));
@@ -2218,7 +2218,7 @@ static void test_not_implemented_connection(std::unique_ptr<sql::Connection> & c
     // setSavepoint()
     try {
       ++total_tests;
-      conn->setSavepoint();
+      std::unique_ptr<sql::Savepoint> sp(conn->setSavepoint());
       ensure("Exception not thrown", true);
     } catch (sql::MethodNotImplementedException &) {}
 

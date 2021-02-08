@@ -415,6 +415,10 @@ namespace mariadb
 
   Value::~Value()
   {
+    if (type==VSTRING && !isPtr)
+    {
+      value.sv.reset();
+    }
   }
 
 }

@@ -61,13 +61,14 @@ namespace capi
     , database(_urlParser->getDatabase())
     , username(_urlParser->getUsername())
     , globalInfo(globalInfo)
-    , connection(NULL, &mysql_close)
+    , connection(nullptr, &mysql_close)
     , currentHost(localhost, 3306)
     , explicitClosed(false)
     , majorVersion(0)
     , minorVersion(0)
     , patchVersion(0)
     , proxy(nullptr)
+    , connected(false)
   {
     urlParser->auroraPipelineQuirks();
     if (options->cachePrepStmts && options->useServerPrepStmts){

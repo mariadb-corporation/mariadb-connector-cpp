@@ -23,7 +23,6 @@
 #include "ServerSidePreparedStatement.h"
 #include "logger/LoggerFactory.h"
 #include "ExceptionFactory.h"
-#include "util/ServerPrepareResult.h"
 #include "Results.h"
 #include "MariaDbParameterMetaData.h"
 #include "MariaDbResultSetMetaData.h"
@@ -102,7 +101,7 @@ namespace sql
   void ServerSidePreparedStatement::prepare(const SQLString& sql)
   {
     try {
-      serverPrepareResult= protocol->prepare(sql, mustExecuteOnMaster);
+      serverPrepareResult.reset(protocol->prepare(sql, mustExecuteOnMaster));
       setMetaFromResult();
     }
     catch (SQLException& e) {
@@ -235,7 +234,7 @@ namespace sql
     stmt->setExecutingFlag();
 
     try {
-      executeQueryPrologue(serverPrepareResult);
+      executeQueryPrologue(serverPrepareResult.get());
 
       if (stmt->getQueryTimeout() !=0) {
         stmt->setTimerTask(true);
@@ -258,12 +257,12 @@ namespace sql
 
       if ((protocol->getOptions()->useBatchMultiSend || protocol->getOptions()->useBulkStmts)
        && (protocol->executeBatchServer(
-                                                        mustExecuteOnMaster,
-                                                        serverPrepareResult,
-                                                        stmt->getInternalResults(),
-                                                        sql,
-                                                        queryParameters,
-                                                        hasLongData)))
+                                          mustExecuteOnMaster,
+                                          serverPrepareResult.get(),
+                                          stmt->getInternalResults(),
+                                          sql,
+                                          queryParameters,
+                                          hasLongData)))
       {
         if (!metadata) {
           setMetaFromResult();
@@ -283,7 +282,7 @@ namespace sql
           try {
             protocol->stopIfInterrupted();
             serverPrepareResult->resetParameterTypeHeader();
-            protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult, stmt->getInternalResults(), parameterHolder);
+            protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults(), parameterHolder);
           }
           catch (SQLException& queryException)
           {
@@ -308,7 +307,7 @@ namespace sql
           try {
             serverPrepareResult->resetParameterTypeHeader();
             protocol->executePreparedQuery(
-              mustExecuteOnMaster, serverPrepareResult, stmt->getInternalResults(), parameterHolder);
+              mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults(), parameterHolder);
           }
           catch (SQLException& queryException) {
             if (protocol->getOptions()->continueBatchOnError) {
@@ -371,7 +370,7 @@ namespace sql
 
     std::unique_lock<std::mutex> localScopeLock(*protocol->getLock());
     try {
-      executeQueryPrologue(serverPrepareResult);
+      executeQueryPrologue(serverPrepareResult.get());
       if (stmt->getQueryTimeout() !=0) {
         stmt->setTimerTask(false);
       }
@@ -396,7 +395,7 @@ namespace sql
 
       serverPrepareResult->resetParameterTypeHeader();
       protocol->executePreparedQuery(
-        mustExecuteOnMaster, serverPrepareResult, stmt->getInternalResults(), parameterHolders);
+        mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults(), parameterHolders);
 
       stmt->getInternalResults()->commandEnd();
       stmt->executeEpilogue();
@@ -429,7 +428,7 @@ namespace sql
 
     if (serverPrepareResult != nullptr && protocol) {
       try {
-        serverPrepareResult->getUnProxiedProtocol()->releasePrepareStatement(serverPrepareResult);
+        serverPrepareResult->getUnProxiedProtocol()->releasePrepareStatement(serverPrepareResult.get());
       }
       catch (SQLException&) {
       }

@@ -67,11 +67,12 @@ namespace capi
    * @param lock the lock for thread synchronisation
    */
   QueryProtocol::QueryProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo, Shared::mutex& lock)
-    : super(urlParser,globalInfo,lock)
+    : super(urlParser, globalInfo, lock)
     , logQuery(new LogQueryTool(options))
     , activeFutureTask(nullptr)
     , statementIdToRelease(nullptr)
     , maxRows(0)
+    , transactionIsolationLevel(0)
   {
     if (!urlParser->getOptions()->galeraAllowedState.empty())
     {
@@ -616,7 +617,7 @@ namespace capi
 
       ServerPrepareResult* cachedServerPrepareResult= addPrepareInCache(key, res);
 
-      if (cachedServerPrepareResult != NULL)
+      if (cachedServerPrepareResult != nullptr)
       {
         delete res;
         res= cachedServerPrepareResult;

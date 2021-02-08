@@ -23,6 +23,7 @@
 
 #include "Consts.h"
 
+#include "util/ServerPrepareResult.h"
 #include "parameters/ParameterHolder.h"
 #include "BasePrepareStatement.h"
 
@@ -30,7 +31,6 @@ namespace sql
 {
 namespace mariadb
 {
-class ServerPrepareResult;
 class MariaDbResultSetMetaData;
 
 /* For the sake of speeed(of initial development), leaving it derived from BasePreparedStatement and it's partial PS implementation
@@ -46,7 +46,7 @@ protected:
 private:
   SQLString sql;
 
-  ServerPrepareResult* serverPrepareResult; /*NULL*/
+  Unique::ServerPrepareResult serverPrepareResult; /*NULL*/
 
   Shared::MariaDbResultSetMetaData metadata;
   Shared::MariaDbParameterMetaData parameterMetaData;
@@ -107,7 +107,7 @@ public:
 public:
   SQLString toString();
   int64_t getServerThreadId();
-  inline ServerPrepareResult* getPrepareResult() { return serverPrepareResult; }
+  inline ServerPrepareResult* getPrepareResult() { return serverPrepareResult.get(); }
   };
 }
 }
