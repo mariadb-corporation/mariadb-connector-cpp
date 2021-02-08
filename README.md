@@ -5,7 +5,7 @@
   </a>
 </p>
 
-This is a RC release of the MariaDB Connector/C++.
+This is a GA release of the MariaDB Connector/C++.
 
 MariaDB Connector/C++ is released under version 2.1 of the
 GNU Lesser Public License.
@@ -25,7 +25,7 @@ reductions of methods, that do not make sense in C++
 To be able to use API, a program should include its definition in ConnCpp.h
 header
 ```script
-#include  <ConnCpp.h>
+#include  <mariadb/conncpp.hpp>
 ```
 To obtain driver instance:
 ```script
