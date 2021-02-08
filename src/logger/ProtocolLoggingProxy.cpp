@@ -705,6 +705,9 @@ namespace mariadb
 	}
 
 
-
+	void ProtocolLoggingProxy::reconnect()
+	{
+		protocol->reconnect();
+	}
 }
 }

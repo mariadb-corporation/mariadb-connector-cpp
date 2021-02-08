@@ -36,7 +36,7 @@ namespace mariadb
 {
 namespace capi
 {
-  const char OptionSelected= 1;
+  const char OptionSelected= 1, OptionNotSelected= 0;
   const SQLString localhost("localhost");
 
   const SQLString ConnectProtocol::SESSION_QUERY("SELECT @@max_allowed_packet,"
@@ -1393,6 +1393,25 @@ namespace capi
     if (capi::mysql_real_query(connection.get(), sql.c_str(), static_cast<unsigned long>(sql.length()))) {
       throw SQLException(capi::mysql_error(connection.get()), capi::mysql_sqlstate(connection.get()),
                         capi::mysql_errno(connection.get()));
+    }
+  }
+
+  void ConnectProtocol::reconnect()
+  {
+    std::lock_guard<std::mutex> localScopeLock(*lock);
+
+    if (!options->autoReconnect)
+    {
+      mysql_optionsv(connection.get(), MYSQL_OPT_RECONNECT, &OptionSelected);
+    }
+    if (capi::mariadb_reconnect(connection.get()) != 0) {
+      throw SQLException(capi::mysql_error(connection.get()), capi::mysql_sqlstate(connection.get()),
+        capi::mysql_errno(connection.get()));
+    }
+    connected= true;
+    if (!options->autoReconnect)
+    {
+      mysql_optionsv(connection.get(), MYSQL_OPT_RECONNECT, &OptionNotSelected);
     }
   }
 }

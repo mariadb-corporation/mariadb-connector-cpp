@@ -151,7 +151,7 @@ public:
   SQLString getTraces();
   bool isInterrupted();
   void stopIfInterrupted();
-
+  void reconnect();
   };
 
 }

@@ -28,8 +28,15 @@ namespace mariadb
 {
   extern const SQLString emptyStr;
 
-  Value::Value(const Value& other) : type(other.type), isPtr(other.isPtr)
+  Value::Value(const Value& other) 
   {
+    if (type == VSTRING)
+    {
+      value.sv.reset(nullptr);
+    }
+    type= other.type;
+    isPtr= other.isPtr;
+
     if (isPtr)
     {
       value.pv= other.value.pv;

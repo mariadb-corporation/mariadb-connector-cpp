@@ -129,7 +129,7 @@ namespace capi
       }
       throw logQuery->exceptionWithQuery(sql, sqlException, explicitClosed);
     }catch (std::runtime_error& e){
-      throw handleIoException(e);
+      handleIoException(e).Throw();
     }
   }
 

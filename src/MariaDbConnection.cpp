@@ -1157,18 +1157,23 @@ namespace mariadb
 
   void MariaDbConnection::checkClientReconnect(const SQLString& name)
   {
-    if (protocol->isClosed() && protocol->getProxy() != nullptr )
-    {
-      std::lock_guard<std::mutex> localScopeLock(*lock);
-      try
-      {
-        protocol->getProxy()->reconnect();
+    if (protocol->isClosed()) {
+      if (protocol->getProxy() != nullptr) {
+
+        std::lock_guard<std::mutex> localScopeLock(*lock);
+        try
+        {
+          protocol->getProxy()->reconnect();
+        }
+        catch (SQLException& /*sqle*/)
+        {
+          std::map<SQLString, ClientInfoStatus>failures;
+          failures.insert({ name, ClientInfoStatus::_REASON_UNKNOWN });
+          throw SQLException("ClientInfoException: Connection* closed");// SQLClientInfoException("Connection* closed", failures, sqle);
+        }
       }
-      catch (SQLException& /*sqle*/)
-      {
-        std::map<SQLString, ClientInfoStatus>failures;
-        failures.insert({name, ClientInfoStatus::_REASON_UNKNOWN});
-        throw SQLException("ClientInfoException: Connection* closed");// SQLClientInfoException("Connection* closed", failures, sqle);
+      else {
+        protocol->reconnect();
       }
     }
   }

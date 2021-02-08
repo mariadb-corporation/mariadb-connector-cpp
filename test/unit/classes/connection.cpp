@@ -2919,6 +2919,7 @@ void connection::reconnect()
     catch (sql::SQLException &/*e*/)
     {
       ASSERT(con->reconnect());
+      stmt.reset(con->createStatement());
       res.reset(stmt->executeQuery("SELECT 1;"));
       ASSERT(res->next());
       ASSERT_EQUALS(res->getInt(1), 1);

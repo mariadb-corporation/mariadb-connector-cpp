@@ -310,8 +310,7 @@ namespace mariadb
     {
       executeEpilogue();
       localScopeLock.unlock();
-
-      if (exception.getSQLState().compare("70100") == 0 && 1927 == exception.getErrorCode()) {
+      if (exception.getSQLState().compare("70100") == 0 && 1927 == exception.getErrorCode() || 2013 == exception.getErrorCode()) {
         
         protocol->handleIoException(exception, true);
       }

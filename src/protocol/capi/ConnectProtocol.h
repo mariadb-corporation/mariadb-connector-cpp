@@ -237,6 +237,7 @@ namespace capi
     bool isEofDeprecated();
     bool sessionStateAware();
     SQLString getTraces();
+    void reconnect();
   };
 } // capi
 } // mariadb

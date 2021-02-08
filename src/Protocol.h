@@ -160,7 +160,7 @@ public:
   virtual SQLString getTraces()=0;
   virtual bool isInterrupted()=0;
   virtual void stopIfInterrupted()=0;
-
+  virtual void reconnect()=0;
   /* I guess at some point we will need it */
   //virtual Protocol* clone();
   };
