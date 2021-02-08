@@ -1,28 +1,28 @@
-SET(MARIADBCPP_PUBLIC_API   ${CMAKE_SOURCE_DIR}/include/Driver.h
-                            ${CMAKE_SOURCE_DIR}/include/DriverManager.h
-                            ${CMAKE_SOURCE_DIR}/include/Connection.h
-                            ${CMAKE_SOURCE_DIR}/include/Statement.h
-                            ${CMAKE_SOURCE_DIR}/include/PreparedStatement.h
-                            ${CMAKE_SOURCE_DIR}/include/ResultSet.h
-                            ${CMAKE_SOURCE_DIR}/include/DatabaseMetaData.h
-                            ${CMAKE_SOURCE_DIR}/include/ResultSetMetaData.h
-                            ${CMAKE_SOURCE_DIR}/include/CallableStatement.h
-                            ${CMAKE_SOURCE_DIR}/include/Exception.h
-                            ${CMAKE_SOURCE_DIR}/include/SQLString.h
-                            ${CMAKE_SOURCE_DIR}/include/Warning.h
-                            ${CMAKE_SOURCE_DIR}/include/ParameterMetaData.h
-                            ${CMAKE_SOURCE_DIR}/include/Savepoint.h
-                            ${CMAKE_SOURCE_DIR}/include/Types.h
-                            ${CMAKE_SOURCE_DIR}/include/jdbccompat.h
-                            ${CMAKE_SOURCE_DIR}/include/ConnCpp.h
-                            ${CMAKE_SOURCE_DIR}/include/buildconf.h
-                            ${CMAKE_SOURCE_DIR}/include/CArray.h
+SET(MARIADBCPP_PUBLIC_API   ${CMAKE_SOURCE_DIR}/include/conncpp/Driver.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/DriverManager.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/Connection.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/Statement.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/PreparedStatement.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/ResultSet.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/DatabaseMetaData.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/ResultSetMetaData.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/CallableStatement.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/Exception.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/SQLString.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/Warning.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/ParameterMetaData.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/Savepoint.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/Types.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/jdbccompat.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/buildconf.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/CArray.hpp
                             )
-SET(MARIADBCPP_COMPAT_STUBS ${CMAKE_SOURCE_DIR}/include/compat/Array.h
-                            ${CMAKE_SOURCE_DIR}/include/compat/Executor.h
-                            ${CMAKE_SOURCE_DIR}/include/compat/Object.h
-                            ${CMAKE_SOURCE_DIR}/include/compat/SQLType.h
-                            ${CMAKE_SOURCE_DIR}/include/compat/Struct.h
+SET(MARIADBCPP_COMPAT_STUBS ${CMAKE_SOURCE_DIR}/include/conncpp/compat/Array.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/compat/Executor.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/compat/Object.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/compat/SQLType.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/compat/Struct.hpp
    )
 IF(WIN32)
   SET(WIX_INCLUDES ${MARIADBCPP_PUBLIC_API} {MARIADBCPP_COMPAT_STUBS} PARENT_SCOPE)
