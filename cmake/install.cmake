@@ -135,6 +135,7 @@ IF(INSTALL_INCLUDEDIR)
 ENDIF()
 
 IF(INSTALL_BINDIR)
+    message(STATUS "-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-")
   SET(INSTALL_BINDIR_${INSTALL_LAYOUT} ${INSTALL_BINDIR})
 ENDIF()
 

@@ -1,5 +1,5 @@
 # ************************************************************************************
-#   Copyright (C) 2013,2019 MariaDB Corporation AB
+#   Copyright (C) 2013,2021 MariaDB Corporation AB
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Library General Public
@@ -393,9 +393,10 @@ ELSE()
   MESSAGE(STATUS "Configuring to build without SSL support")
 ENDIF()
 
-### Setting installation paths - should go before C/C subproject sets its own. We need to have control over those 
+### Setting installation paths - should go before C/C subproject sets its own. We need to have control over those
 INCLUDE("${CMAKE_SOURCE_DIR}/cmake/install.cmake")
 
+ADD_CUSTOM_TARGET(DEPENDENCIES_FOR_PACKAGE)
 ### Including C/C subproject
 IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
   IF(GIT_BUILD_SRCPKG)
@@ -407,8 +408,28 @@ IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
   INCLUDE(${CMAKE_SOURCE_DIR}/cmake/connector_c.cmake)
   INSTALL(FILES
           $<TARGET_FILE:libmariadb>
-          DESTINATION ./${INSTALL_LIB_SUFFIX}/mariadb
-  	  COMPONENT ConCLib)
+          DESTINATION ./${INSTALL_LIBDIR}
+ 	        COMPONENT ConCLib)
+  MESSAGE(STATUS "Configuring to install libmariadb to ${INSTALL_LIBDIR}")
+
+  SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password)
+  IF (PLUGINS_DYNAMIC)
+    # The list from CC is visible for us
+    SET(PLUGINS_LIST ${PLUGINS_DYNAMIC})
+  ELSE()
+    SET(PLUGINS_LIST ${OWN_PLUGINS_LIST})
+  ENDIF()
+  FOREACH(CC_PLUGIN ${PLUGINS_LIST})
+    IF(NOT PLUGINS_DYNAMIC OR "${PLUGIN_${CC_PLUGIN}_TYPE}" STREQUAL "MARIADB_CLIENT_PLUGIN_AUTH")
+      MESSAGE(STATUS "Configuring to install ${CC_PLUGIN} to ${INSTALL_PLUGINDIR}")
+      ADD_DEPENDENCIES(DEPENDENCIES_FOR_PACKAGE ${CC_PLUGIN})
+      INSTALL(FILES
+              $<TARGET_FILE:${CC_PLUGIN}>
+              DESTINATION ./${INSTALL_PLUGINDIR}
+ 	            COMPONENT ConCPlugins)
+    ENDIF()
+  ENDFOREACH()
+#  ADD_DEPENDENCIES(libmariadb DEPENDENCIES_FOR_PACKAGE)
 ELSE()
   SET(USE_SYSTEM_INSTALLED_LIB TRUE)
   MESSAGE(STATUS "There is no Connector/C sub-project folder, linking against libmariadb installed on the system")
@@ -464,6 +485,7 @@ ELSE()
 ENDIF()
 
 TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${MARIADB_CLIENT_TARGET_NAME} ${PLATFORM_DEPENDENCIES})
+ADD_DEPENDENCIES(${LIBRARY_NAME} DEPENDENCIES_FOR_PACKAGE)
 
 ########## Packaging ##########
 
@@ -527,6 +549,8 @@ ELSE()
   SET(CPACK_PACKAGE_FILE_NAME "mariadb-connector-cpp-${CPACK_PACKAGE_VERSION}-${MACPP_VERSION_QUALITY}-${SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 ENDIF()
 MESSAGE(STATUS "Package Name: ${CPACK_PACKAGE_FILE_NAME}")
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/install_test/CMakeLists.txt.in
+               ${CMAKE_SOURCE_DIR}/install_test/CMakeLists.txt @ONLY)
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
 SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
 SET(CPACK_PACKAGE_API_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/")
