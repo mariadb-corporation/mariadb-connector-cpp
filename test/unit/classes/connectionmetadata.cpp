@@ -274,22 +274,61 @@ void connectionmetadata::getColumnPrivileges()
   int rows=0;
   bool got_warning=false;
   std::stringstream msg;
+  DatabaseMetaData  dbmeta;
+  sql::SQLString userLocation("");
+
   try
   {
-
+    dbmeta.reset(con->getMetaData());
     stmt.reset(con->createStatement());
-    stmt->execute("DROP TABLE IF EXISTS test");
-    stmt->execute("CREATE TABLE test(col1 INT, col2 INT)");
+    stmt->execute("DROP TABLE IF EXISTS test_getcolpriv");
+    stmt->execute("CREATE TABLE test_getcolpriv(col1 INT, col2 INT)");
+  }
+  catch (sql::SQLException & e)
+  {
+    logErr(e.what());
+    logErr("SQLState: " + std::string(e.getSQLState()));
+    fail(e.what(), __FILE__, __LINE__);
+  }
+  try
+  {
+    stmt->execute("GRANT SELECT (col1,col2) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+    stmt->execute("GRANT INSERT (col1) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+  }
+  catch (sql::SQLException & e)
+  {
+    logErr(e.what());
+    logErr("SQLState: " + std::string(e.getSQLState()));
+    try
+    {
+      userLocation= "@'localhost'";
 
-    stmt->execute("GRANT SELECT (col1,col2) ON test TO '" + this->user + "'");
-    stmt->execute("GRANT INSERT (col1) ON test TO '" + this->user + "'");
-
-    DatabaseMetaData  dbmeta(con->getMetaData());
-
-    res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test", "id"));
+      stmt->execute("GRANT SELECT (col1,col2) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+      stmt->execute("GRANT INSERT (col1) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+    }
+    catch (sql::SQLException & e)
+    {
+      sql::SQLString failMsg("User: " + this->user + " [" + e.getSQLState() + "] ");
+      logErr(e.what());
+      logErr("SQLState: " + e.getSQLState());
+      failMsg.append(e.what());
+      fail(failMsg.c_str(), __FILE__, __LINE__);
+    }
+  }
+  try
+  {
+    res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test_getcolpriv", "id"));
     ASSERT_EQUALS(false, res->next());
-
-    res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test", "col1"));
+  }
+  catch (sql::SQLException & e)
+  {
+    logErr(e.what());
+    logErr("SQLState: " + std::string(e.getSQLState()));
+    fail(e.what(), __FILE__, __LINE__);
+  }
+  try
+  {
+    res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test_getcolpriv", "col1"));
     checkResultSetScrolling(res);
     rows=0;
     while (res->next())
@@ -308,7 +347,7 @@ void connectionmetadata::getColumnPrivileges()
 
       ASSERT_EQUALS(con->getSchema(), res->getString(2));
       ASSERT_EQUALS(res->getString(2), res->getString("TABLE_SCHEM"));
-      ASSERT_EQUALS("test", res->getString(3));
+      ASSERT_EQUALS("test_getcolpriv", res->getString(3));
 
       ASSERT_EQUALS(res->getString(3), res->getString("TABLE_NAME"));
       ASSERT_EQUALS(res->getString(4), res->getString("COLUMN_NAME"));
@@ -329,17 +368,33 @@ void connectionmetadata::getColumnPrivileges()
     {
       TODO("See --verbose warnings");
     }
-
-    res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test", "col2"));
+  }
+  catch (sql::SQLException & e)
+  {
+    logErr(e.what());
+    logErr("SQLState: " + std::string(e.getSQLState()));
+    fail(e.what(), __FILE__, __LINE__);
+  }
+  try
+  {
+    res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test_getcolpriv", "col2"));
     ASSERT_EQUALS(true, res->next());
     ASSERT_EQUALS("col2", res->getString("COLUMN_NAME"));
     ASSERT_EQUALS(res->getString(4), res->getString("COLUMN_NAME"));
+  }
+  catch (sql::SQLException & e)
+  {
+    logErr(e.what());
+    logErr("SQLState: " + std::string(e.getSQLState()));
+    fail(e.what(), __FILE__, __LINE__);
+  }
+  try
+  {
+    stmt->execute("DROP TABLE IF EXISTS test_getcolpriv");
+    stmt->execute("REVOKE SELECT (col1,col2) ON test_getcolpriv FROM '" + this->user + "'" + userLocation);
+    stmt->execute("REVOKE INSERT (col1) ON test_getcolpriv FROM '" + this->user + "'" + userLocation);
 
-    stmt->execute("DROP TABLE IF EXISTS test");
-    stmt->execute("REVOKE SELECT (col1,col2) ON test FROM '" + this->user + "'");
-    stmt->execute("REVOKE INSERT (col1) ON test FROM '" + this->user + "'");
-
-    res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test", "col2"));
+    res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test_getcolpriv", "col2"));
     ASSERT(!res->next());
   }
   catch (sql::SQLException &e)

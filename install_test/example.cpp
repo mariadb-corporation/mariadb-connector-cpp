@@ -23,14 +23,23 @@
 
 #include "mariadb/conncpp.hpp"
 
-int main()
+int main(int argc, char** argv)
 {
     // Instantiate Driver
     sql::Driver* driver = sql::mariadb::get_driver_instance();
 
   // Configure Connection
-  sql::SQLString url("jdbc:mariadb://localhost:3306/test");
-  sql::Properties properties({ {"user", "root"}, {"password", ""} });
+  sql::SQLString url("jdbc:mariadb://localhost/test");
+  sql::Properties properties({ {"user", argc > 1 ? argv[1] : "root"}, {"password", argc > 2 ? argv[2] : ""} });
+
+  std::cerr << "Connecting using url: " << url << "with user " << properties["user"] << " and " << properties["password"].length();
+  if (argc > 3) {
+    properties["localSocket"]= argv[3];
+    std::cerr << " via local socket " << argv[3] << std::endl;
+  }
+  else {
+    std::cerr << " via default tcp port" << std::endl;
+  }
 
   // Establish Connection
   try {
