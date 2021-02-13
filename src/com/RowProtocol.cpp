@@ -65,6 +65,18 @@ namespace mariadb
 #endif
 
 
+  long double RowProtocol::stringToDouble(const char* str, uint32_t len)
+  {
+    std::string doubleAsString(str, len);
+    std::istringstream convStream(doubleAsString);
+    std::locale C("C");
+    long double result;
+    convStream.imbue(C);
+    convStream >> result;
+
+    return result;
+  }
+
   RowProtocol::RowProtocol(uint32_t _maxFieldSize, Shared::Options options)
     : maxFieldSize(_maxFieldSize)
     , options(options)

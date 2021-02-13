@@ -186,7 +186,6 @@ namespace sql
   void ServerSidePreparedStatement::clearBatch()
   {
     queryParameters.clear();
-    hasLongData= false;
   }
 
   ParameterMetaData* ServerSidePreparedStatement::getParameterMetaData()
@@ -348,6 +347,8 @@ namespace sql
   void ServerSidePreparedStatement::clearParameters()
   {
     currentParameterHolder.clear();
+    //currentParameterHolder.assign(serverPrepareResult->getParamCount(), Shared::ParameterHolder());
+    hasLongData= false;
   }
 
 

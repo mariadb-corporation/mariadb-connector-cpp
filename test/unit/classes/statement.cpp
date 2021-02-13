@@ -639,9 +639,31 @@ void statement::addBatch()
   ASSERT_EQUALS(6, res->getInt(3));
   ASSERT_EQUALS(3, res->getInt(4));
   ASSERT_EQUALS(3ULL, static_cast<uint64_t>(batchRes.size()));
-  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[0]);
-  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[1]);
-  ASSERT_EQUALS(static_cast<int32_t>(sql::Statement::SUCCESS_NO_INFO), batchRes[2]);
+  ASSERT_EQUALS(1, batchRes[0]);
+  ASSERT_EQUALS(1, batchRes[1]);
+  ASSERT_EQUALS(1, batchRes[2]);
+
+  ////// The same, but for executeLargeBatch
+  st2->executeUpdate("DELETE FROM testAddBatch");
+  stmt->clearBatch();
+  stmt->addBatch("INSERT INTO testAddBatch VALUES(4),(11)");
+  stmt->addBatch("INSERT INTO testAddBatch VALUES(5)");
+  stmt->addBatch("INSERT INTO testAddBatch VALUES(6)");
+
+  const sql::Longs& batchLRes = stmt->executeLargeBatch();
+
+  res.reset(st2->executeQuery("SELECT MIN(id), MAX(id), SUM(id), count(*) FROM testAddBatch"));
+
+  ASSERT(res->next());
+
+  ASSERT_EQUALS(4, res->getInt(1));
+  ASSERT_EQUALS(11, res->getInt(2));
+  ASSERT_EQUALS(26, res->getInt(3));
+  ASSERT_EQUALS(4, res->getInt(4));
+  ASSERT_EQUALS(3ULL, static_cast<uint64_t>(batchLRes.size()));
+  ASSERT_EQUALS(2LL, batchLRes[0]);
+  ASSERT_EQUALS(1LL, batchLRes[1]);
+  ASSERT_EQUALS(1LL, batchLRes[2]);
 
   stmt->executeUpdate("DROP TABLE IF EXISTS testAddBatch");
 }

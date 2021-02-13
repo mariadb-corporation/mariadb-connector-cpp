@@ -20,13 +20,16 @@
 #include <iostream>
 #include <memory>
 #include <regex>
+#include <string>
+#include <sstream>
+#include <cmath>
 
 #include "mariadb/conncpp.hpp"
 
 int main(int argc, char** argv)
 {
-    // Instantiate Driver
-    sql::Driver* driver = sql::mariadb::get_driver_instance();
+  // Instantiate Driver
+  sql::Driver* driver = sql::mariadb::get_driver_instance();
 
   // Configure Connection
   sql::SQLString url("jdbc:mariadb://localhost/test");

@@ -104,14 +104,15 @@ namespace mariadb
 
     batchRes.reserve(std::max(updateCounts.size(), expectedSize));
 
-    size_t pos= 0;
+    size_t pos= updateCounts.size();
 
     for (auto& updCnt : updateCounts) {
-      batchRes[pos++]= static_cast<int32_t>(updCnt);
+      batchRes.push_back(static_cast<int32_t>(updCnt));
     }
 
     while (pos < expectedSize) {
-      batchRes[pos++]= Statement::EXECUTE_FAILED;
+      batchRes.push_back(Statement::EXECUTE_FAILED);
+      ++pos;
     }
 
     return batchRes;
@@ -122,10 +123,9 @@ namespace mariadb
   {
     batchRes.clear();
     batchRes.reserve(updateCounts.size());
-    size_t pos= 0;
 
     for (auto& updCnt : updateCounts) {
-      batchRes[pos++]= static_cast<int32_t>(updCnt);
+      batchRes.push_back(static_cast<int32_t>(updCnt));
     }
     return batchRes;
   }
@@ -159,13 +159,14 @@ namespace mariadb
 
     largeBatchRes.reserve(std::max(updateCounts.size(), expectedSize));
 
-    size_t pos= 0;
+    size_t pos= updateCounts.size();
     for (auto& updCnt : updateCounts) {
-      largeBatchRes[pos++] = updCnt;
+      largeBatchRes.push_back(updCnt);
     }
 
     while (pos < expectedSize) {
-      largeBatchRes[pos++]= Statement::EXECUTE_FAILED;
+      largeBatchRes.push_back(Statement::EXECUTE_FAILED);
+      ++pos;
     }
 
     return largeBatchRes;

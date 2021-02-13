@@ -68,6 +68,7 @@ public:
     TEST_CASE(getWarnings);
     TEST_CASE(blob);
     TEST_CASE(executeQuery);
+    TEST_CASE(addBatch);
   }
 
   /**
@@ -142,7 +143,7 @@ public:
    */
   void executeQuery();
 
-
+  void addBatch();
 };
 
 REGISTER_FIXTURE(preparedstatement);

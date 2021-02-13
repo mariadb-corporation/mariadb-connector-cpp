@@ -162,7 +162,7 @@ namespace mariadb
   void ClientSidePreparedStatement::addBatch()
   {
     std::vector<Shared::ParameterHolder> holder(prepareResult->getParamCount());
-    for (int32_t i= 0; i <holder.size(); i++) {
+    for (int32_t i= 0; i < holder.size(); i++) {
       holder[i]= parameters[i];
       if (!holder[i]) {
         logger->error(
@@ -182,8 +182,6 @@ namespace mariadb
   void ClientSidePreparedStatement::clearBatch()
   {
     parameterList.clear();
-    hasLongData= false;
-    this->parameters.clear(); // clear() doesn't change capacity
   }
 
   /** {inheritdoc}. */
@@ -454,6 +452,7 @@ namespace mariadb
   {
     parameters.clear();
     parameters.assign(prepareResult->getParamCount(), Shared::ParameterHolder());
+    hasLongData= false;
   }
 
   void ClientSidePreparedStatement::close()

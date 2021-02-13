@@ -80,6 +80,7 @@ public:
   static std::regex dateRegex;
   static std::regex timeRegex;
   static std::regex timestampRegex;
+  static long double stringToDouble(const char* str, uint32_t len);
 
 protected:
   static int32_t NULL_LENGTH_ ; /*-1*/

@@ -370,6 +370,8 @@ namespace capi
      }
 
      std::ostringstream timestamp;
+     std::locale C("C");
+     timestamp.imbue(C);
 
      timestamp << timestampsPart[0] << "-";
      timestamp << (timestampsPart[1] < 10 ? "0" : "") << timestampsPart[1] << "-";
@@ -933,7 +935,7 @@ namespace capi
    case MYSQL_TYPE_DECIMAL:
    case MYSQL_TYPE_LONGLONG:
      try {
-       return std::stold(std::string(fieldBuf.arr + pos, length));
+       return stringToDouble(fieldBuf.arr + pos, length);
      }
      // Common parent for std::invalid_argument and std::out_of_range
      catch (std::logic_error& nfe) {

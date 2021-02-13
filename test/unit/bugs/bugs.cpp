@@ -34,6 +34,7 @@
 #include <locale>
 #include <sstream>
 #include <limits>
+#include <cmath>
 //#include "driver/mysql_error.h"
 
 //Prevent windows min() macro because of std::numeric_limits<int>::min()
@@ -1100,11 +1101,11 @@ void bugs::bug22292073()
     SKIP("Server does not support tested functionality(JSON type)")
   }
   stmt->execute("DROP TABLE IF EXISTS bug22292073");
-  stmt->execute("create table bug22292073 (jdoc JSON);" );
+  stmt->execute("create table bug22292073 (jdoc JSON);");
   stmt->execute("insert into bug22292073 values('{ \"name\": \"abc\", \"age\": 1 , \"misc\":\
-                1.2}'), ('{ \"name\": \"abcdef\", \"age\": 31 , \"misc\": 1.237843}');" );
-  pstmt.reset( con->prepareStatement("select JSON_EXTRACT(jdoc, '$.age') from bug22292073;") );
-  res.reset( pstmt->executeQuery() );
+                1.2}'), ('{ \"name\": \"abcdef\", \"age\": 31 , \"misc\": 1.237843}');");
+  pstmt.reset(con->prepareStatement("select JSON_EXTRACT(jdoc, '$.age') from bug22292073;"));
+  res.reset(pstmt->executeQuery());
 
   res->next();
 
@@ -1149,14 +1150,14 @@ void bugs::bug22292073()
 
 void bugs::bug23212333()
 {
-  uint64_t charCount= 256*1024+1;
+  uint64_t charCount = 256 * 1024 + 1;
   stmt->executeUpdate("drop table if exists bug23212333");
   stmt->executeUpdate("create table bug23212333(id longtext)");
 
   pstmt.reset(con->prepareStatement("insert into bug23212333 VALUES(?)"));
 
   std::string buffer;
-  buffer.append(charCount,'A');
+  buffer.append(charCount, 'A');
 
   pstmt->setString(1, buffer);
   pstmt->execute();
@@ -1175,12 +1176,12 @@ void bugs::bug17227390()
   {
     std::locale::global(std::locale("fr_CA.UTF-8"));
 
-    for (int i=0; i < 2; ++i)
+    for (int i = 0; i < 2; ++i)
     {
       if (i == 0)
       {
-        pstmt.reset( con->prepareStatement("select 1.001 as number;") );
-        res.reset( pstmt->executeQuery() );
+        pstmt.reset(con->prepareStatement("select 1.001 as number;"));
+        res.reset(pstmt->executeQuery());
       }
       else
       {
@@ -1191,7 +1192,6 @@ void bugs::bug17227390()
 
       ASSERT_EQUALS(1.001L, res->getDouble(1));
       ASSERT_EQUALS(1.001L, res->getDouble("number"));
-
     }
   }
   catch (...) {
@@ -1529,8 +1529,8 @@ void bugs::concpp62()
     res.reset(stmt->executeQuery("SELECT ts, TIME(ts) from concpp62"));
     ASSERT(res->next());
 
-    ASSERT_EQUALS(res->getString(1), "2015-01-20 16:14:36.709649");
-    ASSERT_EQUALS(res->getString(2), "16:14:36.709649");
+    ASSERT_EQUALS("2015-01-20 16:14:36.709649", res->getString(1));
+    ASSERT_EQUALS("16:14:36.709649", res->getString(2));
 
     stmt->execute("DROP TABLE IF EXISTS concpp62");
   }

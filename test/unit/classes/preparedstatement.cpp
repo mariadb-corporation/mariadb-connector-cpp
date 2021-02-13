@@ -1595,5 +1595,66 @@ void preparedstatement::executeQuery()
   }
 }
 
+
+void preparedstatement::addBatch()
+{
+  stmt->executeUpdate("DROP TABLE IF EXISTS testAddBatchPs");
+  stmt->executeUpdate("CREATE TABLE testAddBatchPs "
+    "(id int not NULL)");
+
+  pstmt.reset(con->prepareStatement("INSERT INTO testAddBatchPs VALUES(?)"));
+  pstmt->setInt(1, 1);
+  pstmt->addBatch();
+  pstmt->setInt(1, 2);
+  pstmt->addBatch();
+  pstmt->setInt(1, 3);
+  pstmt->addBatch();
+
+  const sql::Ints& batchRes = pstmt->executeBatch();
+
+  res.reset(stmt->executeQuery("SELECT MIN(id), MAX(id), SUM(id), count(*) FROM testAddBatchPs"));
+
+  ASSERT(res->next());
+
+  ASSERT_EQUALS(1, res->getInt(1));
+  ASSERT_EQUALS(3, res->getInt(2));
+  ASSERT_EQUALS(6, res->getInt(3));
+  ASSERT_EQUALS(3, res->getInt(4));
+  ASSERT_EQUALS(3ULL, static_cast<uint64_t>(batchRes.size()));
+  ASSERT_EQUALS(1, batchRes[0]);
+  ASSERT_EQUALS(1, batchRes[1]);
+  ASSERT_EQUALS(1, batchRes[2]);
+
+  ////// The same, but for executeLargeBatch
+  stmt->executeUpdate("DELETE FROM testAddBatchPs");
+
+  pstmt->clearBatch();
+  pstmt->clearParameters();
+
+  pstmt->setInt(1, 4);
+  pstmt->addBatch();
+  pstmt->setInt(1, 5);
+  pstmt->addBatch();
+  pstmt->setInt(1, 6);
+  pstmt->addBatch();
+
+  const sql::Longs& batchLRes = pstmt->executeLargeBatch();
+
+  res.reset(stmt->executeQuery("SELECT MIN(id), MAX(id), SUM(id), count(*) FROM testAddBatchPs"));
+
+  ASSERT(res->next());
+
+  ASSERT_EQUALS(4, res->getInt(1));
+  ASSERT_EQUALS(6, res->getInt(2));
+  ASSERT_EQUALS(15, res->getInt(3));
+  ASSERT_EQUALS(3, res->getInt(4));
+  ASSERT_EQUALS(3ULL, static_cast<uint64_t>(batchLRes.size()));
+  ASSERT_EQUALS(1LL, batchLRes[0]);
+  ASSERT_EQUALS(1LL, batchLRes[1]);
+  ASSERT_EQUALS(1LL, batchLRes[2]);
+
+  stmt->executeUpdate("DROP TABLE testAddBatchPs");
+}
+
 } /* namespace preparedstatement */
 } /* namespace testsuite */

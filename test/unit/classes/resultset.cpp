@@ -501,7 +501,22 @@ void resultset::getTypes()
       }
       else
       {
-        ASSERT_EQUALS(res->getInt(1), res->getInt(id));
+        try
+        {
+          ASSERT_EQUALS(res->getInt(1), res->getInt(id));
+        }
+        catch (sql::SQLException & e)
+        {
+          if (!isNumber)
+          {
+            ASSERT_EQUALS(1264, e.getErrorCode());
+            ASSERT_EQUALS("22003", e.getSQLState());
+          }
+          else
+          {
+            throw e;
+          }
+        }
       }
 
       try
@@ -542,7 +557,7 @@ void resultset::getTypes()
       }
       res->first();
 
-      if (it->is_negative || !inUintRange)
+      if (!isNumber || it->is_negative || !inUintRange)
       {
         try
         {
@@ -602,7 +617,22 @@ void resultset::getTypes()
       // intValue >= 0 means it's in int64 range
       if (it->is_negative || intValue >= 0)
       {
-        ASSERT_EQUALS(res->getInt64(id), res->getInt64(1));
+        try
+        {
+          ASSERT_EQUALS(res->getInt64(id), res->getInt64(1));
+        }
+        catch (sql::SQLException & e)
+        {
+          if (!isNumber)
+          {
+            ASSERT_EQUALS(1264, e.getErrorCode());
+            ASSERT_EQUALS("22003", e.getSQLState());
+          }
+          else
+          {
+            throw e;
+          }
+        }
       }
       try
       {
@@ -642,7 +672,7 @@ void resultset::getTypes()
       }
       res->first();
 
-      if (it->is_negative)
+      if (it->is_negative || !isNumber)
       {
         try
         {
@@ -720,7 +750,7 @@ void resultset::getTypes()
         }
       }
 
-      if (inIntRange && (pres->getInt(id) != res->getInt(id)))
+      if (isNumber && inIntRange && (pres->getInt(id) != res->getInt(id)))
       {
         msg.str("");
         msg << "... \t\tWARNING - getInt(), PS: '" << pres->getInt(id) << "'";
@@ -729,7 +759,7 @@ void resultset::getTypes()
         got_warning=true;
       }
 
-      if (!it->is_negative && (pres->getUInt64(id) != res->getUInt64(id)))
+      if (isNumber && !it->is_negative && (pres->getUInt64(id) != res->getUInt64(id)))
       {
         msg.str("");
         msg << "... \t\tWARNING - getUInt64(), PS: '" << pres->getUInt64(id) << "'";
@@ -738,12 +768,12 @@ void resultset::getTypes()
         got_warning=true;
       }
 
-      if (inUintRange)
+      if (isNumber && inUintRange)
       {
         ASSERT_EQUALS(pres->getUInt(id), res->getUInt(id));
       }
 
-      if ((it->is_negative || intValue >= 0) && pres->getInt64(id) != res->getInt64(id))
+      if (isNumber && (it->is_negative || intValue >= 0) && pres->getInt64(id) != res->getInt64(id))
       {
         msg.str("");
         msg << "... \t\tWARNING - getInt64(), PS: '" << pres->getInt64(id) << "'";
@@ -753,7 +783,7 @@ void resultset::getTypes()
       }
       // ASSERT_EQUALS(pres->getInt64(id), res->getInt64(id));
 
-      if (!it->is_negative && (pres->getUInt64(id) != res->getUInt64(id)))
+      if (isNumber && !it->is_negative && (pres->getUInt64(id) != res->getUInt64(id)))
       {
         msg.str("");
         msg << "... \t\tWARNING - getUInt64(), PS: '" << pres->getUInt64(id) << "'";
