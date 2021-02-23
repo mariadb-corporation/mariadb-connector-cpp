@@ -44,7 +44,7 @@ public:
   SQLString(const char* str);
   SQLString(const char* str, std::size_t count);
   SQLString();
-  virtual ~SQLString();
+  ~SQLString();
 
   static constexpr std::size_t npos{static_cast<std::size_t>(-1)};
   const char * c_str() const;

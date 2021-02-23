@@ -16,7 +16,7 @@ before_install:
   - .travis/gen-ssl.sh mariadb.example.com tmp
   - export PROJ_PATH=`pwd`
   - export SSLCERT=$PROJ_PATH/tmp
-
+  - case $TRAVIS_OS_NAME in windows) choco install mariadb; esac
 matrix:
   allow_failures:
     - env: DB=mysql:5.6
@@ -27,6 +27,8 @@ matrix:
     - env: DB=mariadb:10.5 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
     - env: SKYSQL=true
     - env: SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
+    - os: windows
+      env: DB=mariadb:10.5
   include:
     - env: DB=mariadb:10.5 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
     - env: SKYSQL=true
@@ -51,10 +53,13 @@ matrix:
       #- brew install mariadb
     - env: DB=mysql:5.6
     - env: DB=mysql:5.7
+    - os: windows
+      env: DB=mariadb:10.5
 
 script:
   - if [[ "$DB" == build* ]] ; then .travis/build/build.sh; fi
   - if [[ "$DB" == build* ]] ; then docker build -t build:10.6 --label build .travis/build/; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ] ; then .travis/script.sh; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then .travis/osx.sh; fi
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then .travis/windows.sh; fi
 

@@ -56,7 +56,6 @@ else
   export TEST_UID=bob
   export TEST_PASSWORD=
   export TEST_PORT=3305
-  export COMPOSE_FILE=.travis/docker-compose.yml
 
   if [ -n "$MAXSCALE_VERSION" ] ; then
       # maxscale ports:

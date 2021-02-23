@@ -111,44 +111,45 @@ main () {
     -out "${tmpKeystoreFile}" \
     -name "mysqlAlias" \
     -passout pass:kspass
+      # there is no keytool on windows (atm)
+  if [ -z "$WINDIR" ]; then
+    # convert PKSC12 to JKS
+    keytool \
+      -importkeystore \
+      -deststorepass kspass \
+      -destkeypass kspass \
+      -destkeystore "${clientKeystoreFile}" \
+      -srckeystore ${tmpKeystoreFile} \
+      -srcstoretype PKCS12 \
+      -srcstorepass kspass \
+      -alias "mysqlAlias"
 
-  # convert PKSC12 to JKS
-  keytool \
-    -importkeystore \
-    -deststorepass kspass \
-    -destkeypass kspass \
-    -destkeystore "${clientKeystoreFile}" \
-    -srckeystore ${tmpKeystoreFile} \
-    -srcstoretype PKCS12 \
-    -srcstorepass kspass \
-    -alias "mysqlAlias"
-
-  # Now generate a full keystore with the client cert & key + trust certificates
-  log "Generating full client keystore"
-  openssl pkcs12 \
-    -export \
-    -in "${clientCertFile}" \
-    -inkey "${clientKeyFile}" \
-    -out "${pcks12FullKeystoreFile}" \
-    -name "mysqlAlias" \
-    -passout pass:kspass
+    # Now generate a full keystore with the client cert & key + trust certificates
+    log "Generating full client keystore"
+    openssl pkcs12 \
+      -export \
+      -in "${clientCertFile}" \
+      -inkey "${clientKeyFile}" \
+      -out "${pcks12FullKeystoreFile}" \
+      -name "mysqlAlias" \
+      -passout pass:kspass
 
 
-  # convert PKSC12 to JKS
-  keytool \
-    -importkeystore \
-    -deststorepass kspass \
-    -destkeypass kspasskey \
-    -deststoretype JKS \
-    -destkeystore "${fullClientKeystoreFile}" \
-    -srckeystore ${pcks12FullKeystoreFile} \
-    -srcstoretype PKCS12 \
-    -srcstorepass kspass \
-    -alias "mysqlAlias"
+    # convert PKSC12 to JKS
+    keytool \
+      -importkeystore \
+      -deststorepass kspass \
+      -destkeypass kspasskey \
+      -deststoretype JKS \
+      -destkeystore "${fullClientKeystoreFile}" \
+      -srckeystore ${pcks12FullKeystoreFile} \
+      -srcstoretype PKCS12 \
+      -srcstorepass kspass \
+      -alias "mysqlAlias"
 
-  log "Generating trustStore"
-  keytool -import -file "${certFile}" -alias CA -keystore "${fullClientKeystoreFile}" -storepass kspass -keypass kspasskey -noprompt
-
+    log "Generating trustStore"
+    keytool -import -file "${certFile}" -alias CA -keystore "${fullClientKeystoreFile}" -storepass kspass -keypass kspasskey -noprompt
+  fi
   # Clean up CSR file:
   rm "$csrFile"
   rm "$clientReqFile"

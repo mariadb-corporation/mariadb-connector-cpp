@@ -30,10 +30,6 @@ namespace mariadb
 
   Value::Value(const Value& other) 
   {
-    if (type == VSTRING)
-    {
-      value.sv.reset(nullptr);
-    }
     type= other.type;
     isPtr= other.isPtr;
 
@@ -46,7 +42,7 @@ namespace mariadb
       switch (type)
       {
       case VSTRING:
-        value.sv.reset(new SQLString(*other.value.sv));
+        new (&value.sv) SQLString(other.value.sv);
         break;
       case VINT32:
         value.iv= other.value.iv;
@@ -83,13 +79,13 @@ namespace mariadb
 
   Value::Value(const SQLString &v) : type(VSTRING), isPtr(false)
   {
-    value.sv.reset(new SQLString(v));
+    new (&value.sv) SQLString(v);
   }
 
 
   Value::Value(const char* v) : type(VSTRING), isPtr(false)
   {
-    value.sv.reset(new SQLString(v));
+    new (&value.sv) SQLString(v);
   }
 
 
@@ -118,15 +114,27 @@ namespace mariadb
 
   SQLString & Value::operator=(const SQLString &str)
   {
-    isPtr= false;
-    type= VSTRING;
-    value.sv.reset(new SQLString(str));
 
-    return *value.sv;
+    if (type != VSTRING || isPtr)
+    {
+      type=  VSTRING;
+      isPtr= false;
+      new (&value.sv) SQLString(str);
+    }
+    else
+    {
+      value.sv= str;
+    }
+
+    return value.sv;
   }
 
   int32_t & Value::operator=(int32_t num)
   {
+    if (type == VSTRING && !isPtr)
+    {
+      value.sv.~SQLString();
+    }
     isPtr= false;
     type= VINT32;
     value.iv= num;
@@ -136,6 +144,10 @@ namespace mariadb
 
   int64_t & Value::operator=(int64_t num)
   {
+    if (type == VSTRING && !isPtr)
+    {
+      value.sv.~SQLString();
+    }
     isPtr= false;
     type= VINT64;
     value.lv= num;
@@ -145,6 +157,10 @@ namespace mariadb
 
   bool & Value::operator=(bool v)
   {
+    if (type == VSTRING && !isPtr)
+    {
+      value.sv.~SQLString();
+    }
     isPtr= false;
     type= VBOOL;
     value.bv= v;
@@ -154,6 +170,10 @@ namespace mariadb
 
   SQLString * Value::operator=(SQLString *str)
   {
+    if (type == VSTRING && !isPtr)
+    {
+      value.sv.~SQLString();
+    }
     isPtr= true;
     type= VSTRING;
     value.pv= str;
@@ -173,7 +193,7 @@ namespace mariadb
     case sql::mariadb::Value::VBOOL:
       return (isPtr ? *static_cast<bool*>(value.pv) : value.bv) ? 1 : 0;
     case sql::mariadb::Value::VSTRING:
-      return std::stoi(StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv));
+      return std::stoi(StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : value.sv));
     case sql::mariadb::Value::VNONE:
       // or exception if empty?
       return 0;
@@ -202,7 +222,7 @@ namespace mariadb
     case sql::mariadb::Value::VBOOL:
       return (isPtr ? *static_cast<bool*>(value.pv) : value.bv) ? 1 : 0;
     case sql::mariadb::Value::VSTRING:
-      return std::stoll(StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv));
+      return std::stoll(StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : value.sv));
     case sql::mariadb::Value::VNONE:
       return 0;
     }
@@ -233,7 +253,7 @@ namespace mariadb
       return (isPtr ? *static_cast<bool*>(value.pv) : value.bv);
     case sql::mariadb::Value::VSTRING:
     {
-      SQLString &str= isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv;
+      const SQLString &str= isPtr ? *static_cast<SQLString*>(value.pv) : value.sv;
       if (str.compare("true") == 0)
       {
         return true;
@@ -272,7 +292,7 @@ namespace mariadb
     case sql::mariadb::Value::VBOOL:
       return (isPtr ? *static_cast<bool*>(value.pv) : value.bv) ? "true" : "false";
     case sql::mariadb::Value::VSTRING:
-      return isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv;
+      return isPtr ? *static_cast<SQLString*>(value.pv) : value.sv;
     case sql::mariadb::Value::VNONE:
       return emptyStr;
     }
@@ -289,7 +309,7 @@ namespace mariadb
   {
     if (type == VSTRING)
     {
-      return isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv;
+      return isPtr ? *static_cast<SQLString*>(value.pv) : value.sv;
     }
 
     throw std::runtime_error("Wrong lvalue type requested - the type is not string");
@@ -300,7 +320,7 @@ namespace mariadb
   {
     if (type == VSTRING)
     {
-      return StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : *value.sv);
+      return StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : value.sv);
     }
 
     throw std::invalid_argument("Wrong lvalue type requested - the type is not string");
@@ -344,7 +364,7 @@ namespace mariadb
   {
     if (type == VSTRING)
     {
-      return isPtr ? static_cast<SQLString*>(value.pv) : value.sv.get();
+      return isPtr ? static_cast<SQLString*>(value.pv) : &value.sv;
     }
 
     throw std::invalid_argument("Wrong lvalue type requested - the type is not string");
@@ -355,7 +375,7 @@ namespace mariadb
   {
     if (type == VSTRING)
     {
-      return isPtr ? static_cast<SQLString*>(value.pv)->c_str() : value.sv->c_str();
+      return isPtr ? static_cast<SQLString*>(value.pv)->c_str() : value.sv.c_str();
     }
 
     throw std::invalid_argument("Wrong lvalue type requested - the type is not string");
@@ -370,6 +390,10 @@ namespace mariadb
 
   void Value::reset()
   {
+    if (type == VSTRING && !isPtr)
+    {
+      value.sv.~SQLString();
+    }
     type= VNONE;
   }
 
@@ -394,14 +418,14 @@ namespace mariadb
             return (static_cast<const SQLString*>(this->value.pv)->compare(*static_cast<const SQLString*>(other.value.pv)) == 0);
           }
           else {
-            return (static_cast<const SQLString*>(this->value.pv)->compare(*other.value.sv) == 0);
+            return (static_cast<const SQLString*>(this->value.pv)->compare(other.value.sv) == 0);
           }
         }
         else {
           //it (other.isPtr) {
           //}
           //else {
-            return this->value.sv->compare(static_cast<const char*>(other)) == 0;
+            return this->value.sv.compare(static_cast<const char*>(other)) == 0;
           //}
         }
       case sql::mariadb::Value::VNONE:
@@ -415,9 +439,9 @@ namespace mariadb
 
   Value::~Value()
   {
-    if (type==VSTRING && !isPtr)
+    if (type == VSTRING && !isPtr)
     {
-      value.sv.reset();
+      value.sv.~SQLString();
     }
   }
 
