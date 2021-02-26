@@ -378,6 +378,13 @@ ENDIF()
 ### Setting installation paths - should go before C/C subproject sets its own. We need to have control over those
 INCLUDE("${CMAKE_SOURCE_DIR}/cmake/install.cmake")
 
+IF(WIN32)
+  ADD_OPTION(WITH_MSI "Build MSI installation package" ON)
+  ADD_OPTION(WITH_SIGNCODE "Digitally sign files" OFF)
+  MESSAGE(STATUS "Generate MSI package: ${WITH_MSI}")
+  MESSAGE(STATUS "Sign MSI package: ${WITH_SIGNCODE}")
+ENDIF()
+
 ADD_CUSTOM_TARGET(DEPENDENCIES_FOR_PACKAGE)
 ### Including C/C subproject
 IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
@@ -416,12 +423,8 @@ ELSE()
   SET(USE_SYSTEM_INSTALLED_LIB TRUE)
   MESSAGE(STATUS "There is no Connector/C sub-project folder, linking against libmariadb installed on the system")
 ENDIF()
-IF(WIN32)
-  #ADD_OPTION(WITH_MSI "Build MSI installation package" OFF)
-  ADD_OPTION(WITH_SIGNCODE "Digitally sign files" OFF)
-ENDIF()
 
-IF(WITH_SIGNCODE)
+IF(WITH_MSI AND WITH_SIGNCODE)
   IF(WIN32 AND NOT SIGN_OPTIONS)
     SET(SIGN_OPTIONS /a /t http://timestamp.verisign.com/scripts/timstamp.dll)
   ELSE()
@@ -473,15 +476,17 @@ ADD_DEPENDENCIES(${LIBRARY_NAME} DEPENDENCIES_FOR_PACKAGE)
 
 # MSI
 IF(WIN32)
-  ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} ARGS -DDRIVER_LIB_DIR=$<TARGET_FILE_DIR:${LIBRARY_NAME}>
-                                  -DPLUGINS_LIB_DIR=$<TARGET_FILE_DIR:dialog>
-                                  -DPLUGINS_SUBDIR_NAME=${MARIADB_DEFAULT_PLUGINS_SUBDIR}
-                                  -DFILE_IN=${CMAKE_SOURCE_DIR}/wininstall/binaries_dir.xml.in
-                                  -DFILE_OUT=${CMAKE_SOURCE_DIR}/wininstall/binaries_dir.xml
-                                  -P ${CMAKE_SOURCE_DIR}/cmake/ConfigureFile.cmake
-                     )
-  ADD_SUBDIRECTORY(wininstall)
+  IF(WITH_MSI)
+    ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} ARGS -DDRIVER_LIB_DIR=$<TARGET_FILE_DIR:${LIBRARY_NAME}>
+                                    -DPLUGINS_LIB_DIR=$<TARGET_FILE_DIR:dialog>
+                                    -DPLUGINS_SUBDIR_NAME=${MARIADB_DEFAULT_PLUGINS_SUBDIR}
+                                    -DFILE_IN=${CMAKE_SOURCE_DIR}/wininstall/binaries_dir.xml.in
+                                    -DFILE_OUT=${CMAKE_SOURCE_DIR}/wininstall/binaries_dir.xml
+                                    -P ${CMAKE_SOURCE_DIR}/cmake/ConfigureFile.cmake
+                       )
+    ADD_SUBDIRECTORY(wininstall)
+  ENDIF()
 ELSE()
   IF(APPLE)
     #MESSAGE(STATUS "Configuring to generate PKG package")
