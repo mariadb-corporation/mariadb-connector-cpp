@@ -16,45 +16,44 @@ before_install:
   - .travis/gen-ssl.sh mariadb.example.com tmp
   - export PROJ_PATH=`pwd`
   - export SSLCERT=$PROJ_PATH/tmp
-  - case $TRAVIS_OS_NAME in windows) choco install mariadb; esac
+  - case $TRAVIS_OS_NAME in windows) choco install mariadb -y; esac
+  # choco install wixtoolset -y;
 matrix:
   allow_failures:
-    - env: DB=mysql:5.6
-    - env: DB=mysql:5.7
-    - os: osx
-      compiler: gcc
-      env: DB=mariadb:10.5
-    - env: DB=mariadb:10.5 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
-    - env: SKYSQL=true
-    - env: SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
+    #- env: DB=mysql:5.6
+    #- env: DB=mysql:5.7
+    #- os: osx
+    #  compiler: gcc
+    #  env: DB=mariadb:10.5
+    #- env: DB=mariadb:10.5 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
+    #- env: SKYSQL=true
+    #- env: SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
     - os: windows
-      env: DB=mariadb:10.5
   include:
-    - env: DB=mariadb:10.5 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
-    - env: SKYSQL=true
-    - env: SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
-    - env: DB=build:10.6
-    - env: DB=mariadb:10.1
-    - env: DB=mariadb:10.2
-    - env: DB=mariadb:10.3
-    - env: DB=mariadb:10.4
-    - compiler: gcc
-      env: DB=mariadb:10.5
-    - compiler: clang
-      env: DB=mariadb:10.5
-    - os: osx
-      compiler: gcc
-      env: DB=mariadb:10.5
-      addons:
-        mariadb: '10.5'
-      before_script:
-        - brew update
-        - brew install openssl
-      #- brew install mariadb
-    - env: DB=mysql:5.6
-    - env: DB=mysql:5.7
+    #- env: DB=mariadb:10.5 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
+    #- env: SKYSQL=true
+    #- env: SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
+    #- env: DB=build:10.6
+    #- env: DB=mariadb:10.1
+    #- env: DB=mariadb:10.2
+    #- env: DB=mariadb:10.3
+    #- env: DB=mariadb:10.4
+    #- compiler: gcc
+    #  env: DB=mariadb:10.5
+    #- compiler: clang
+    #  env: DB=mariadb:10.5
+    #- os: osx
+    #  compiler: gcc
+    #  env: DB=mariadb:10.5
+    #  addons:
+    #    mariadb: '10.5'
+    #  before_script:
+    #    - brew update
+    #    - brew install openssl
+    #  #- brew install mariadb
+    #- env: DB=mysql:5.6
+    #- env: DB=mysql:5.7
     - os: windows
-      env: DB=mariadb:10.5
 
 script:
   - if [[ "$DB" == build* ]] ; then .travis/build/build.sh; fi

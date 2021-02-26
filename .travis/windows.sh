@@ -56,22 +56,28 @@ else
   export TEST_PASSWORD=
   export TEST_PORT=3306
 
-  ls /c/Program\ Files/MariaDB*/bin/
+  set -x
+  ls /c/Program\ Files/
   MDBPATH=$(find /c/Program\ Files/MariaDB\ 1* -maxdepth 0 | tail -1)
   PATH=$PATH:$MDBPATH/bin
 
-  set -x
-  # create test database
-  $MDBPATH/bin/mariadb -e "CREATE DATABASE testcpp" --user=$TEST_UID -p"$TEST_PASSWORD"
+  if [-z "$WIX"] ; then
+    echo "WIX was not set at installation time"
+  fi
 
-  mariadb=( mariadb --protocol=TCP -u${TEST_UID} -h${TEST_SERVER} --port=${TEST_PORT} ${TEST_SCHEMA})
+  # create test database
+  mariadb -e "DROP SCHEMA IF EXISTS $TEST_SCHEMA" --user=$TEST_UID --password="$TEST_PASSWORD"
+  mariadb -e "CREATE DATABASE $TEST_SCHEMA" --user=$TEST_UID --password="$TEST_PASSWORD"
+
+  mariadb=( mariadb --protocol=TCP --user=${TEST_UID} -h${TEST_SERVER} --port=${TEST_PORT} ${TEST_SCHEMA})
 
   #list ssl certificates
   ls -lrt ${SSLCERT}
 
 fi
 
-cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=SCHANNEL -DTEST_HOST="tcp://$TEST_SERVER:$TEST_PORT" .
+cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DWITH_MSI=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=SCHANNEL .
+#-DTEST_HOST="tcp://$TEST_SERVER:$TEST_PORT" .
 # In Travis we are interested in tests with latest C/C version, while for release we must use only latest release tag
 #git submodule update --remote
 set -x
