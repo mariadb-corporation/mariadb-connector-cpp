@@ -28,7 +28,6 @@ matrix:
     - env: DB=mariadb:10.5 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
     - env: SKYSQL=true
     - env: SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
-    - os: windows
   include:
     - env: DB=mariadb:10.5 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
     - env: SKYSQL=true
