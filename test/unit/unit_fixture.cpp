@@ -679,4 +679,17 @@ void unit_fixture::checkResultSetScrolling(ResultSet &res_ref)
   ASSERT_EQUALS(before, (int) res_ref->getRow());
 }
 
+
+bool unit_fixture::isSkySqlHA() const
+{
+  static bool SkySqlHAinTravis= (std::getenv("SKYSQL_HA") != nullptr);
+  return SkySqlHAinTravis;
+}
+
+
+bool unit_fixture::isMaxScale() const
+{
+  static bool MaxScaleOnTravis= (std::getenv("MAXSCALE_TEST_DISABLE") != nullptr);
+  return MaxScaleOnTravis;
+}
 } /* namespace testsuite */

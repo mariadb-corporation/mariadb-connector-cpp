@@ -1563,6 +1563,8 @@ void connectionmetadata::getProcedures()
   logMsg("connectionmetadata::getProcedures() - MySQL_ConnectionMetaData::getProcedures");
   bool got_warning=false;
   std::stringstream msg;
+  bool autoCommit = con->getAutoCommit();
+
   try
   {
     DatabaseMetaData  dbmeta(con->getMetaData());
@@ -1577,6 +1579,11 @@ void connectionmetadata::getProcedures()
       SKIP("Cannot create procedure");
     }
 
+    
+    if (isSkySqlHA())
+    {
+      con->setAutoCommit(false);
+    }
     // Verify if the procedure creally has been created...
     stmt->execute("SET @myvar = -1");
     stmt->execute("CALL p1(@myvar)");
@@ -1613,9 +1620,19 @@ void connectionmetadata::getProcedures()
     ASSERT(sql::DatabaseMetaData::procedureReturnsResult != res->getInt(8));
     ASSERT(sql::DatabaseMetaData::procedureResultUnknown != res->getInt(8));
     ASSERT(!res->next());
+    if (isSkySqlHA())
+    {
+      con->commit();
+      con->setAutoCommit(autoCommit);
+    }
   }
   catch (sql::SQLException &e)
   {
+    if (isSkySqlHA())
+    {
+      con->rollback();
+      con->setAutoCommit(autoCommit);
+    }
     logErr(e.what());
     logErr("SQLState: " + std::string(e.getSQLState()));
     fail(e.what(), __FILE__, __LINE__);
@@ -1623,7 +1640,6 @@ void connectionmetadata::getProcedures()
 
   if (got_warning)
   {
-
     TODO("See --verbose warnings!");
     FAIL("TODO - see --verbose warnings!");
   }

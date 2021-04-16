@@ -54,6 +54,9 @@ void bugs::net_write_timeout39878()
   logMsg(" --nwtPause=<val> for the length of pause test shoud take while fetching rows (default 2)");
   logMsg(" --nwtRows=<val> for the number of rows to insert into table (default 9230)");
 
+  if (std::getenv("TRAVIS") && (std::getenv("SKYSQL") != nullptr || isSkySqlHA())){
+    SKIP("This tests times out atm in automated tests against SKYSQL");
+  }
   int timeout = 1;
   int pause = 2;
   int rows = 9230;

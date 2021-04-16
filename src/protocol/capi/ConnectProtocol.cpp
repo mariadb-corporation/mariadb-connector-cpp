@@ -156,19 +156,19 @@ namespace capi
       | MariaDbServerCapabilities::CLIENT_SESSION_TRACK;
 
     if (options->allowLocalInfile){
-      capabilities |=MariaDbServerCapabilities::LOCAL_FILES;
+      capabilities|= MariaDbServerCapabilities::LOCAL_FILES;
     }
 
     if (!options->useAffectedRows){
-      capabilities |=MariaDbServerCapabilities::FOUND_ROWS;
+      capabilities|= MariaDbServerCapabilities::FOUND_ROWS;
     }
 
     if (options->allowMultiQueries || (options->rewriteBatchedStatements)){
-      capabilities |=MariaDbServerCapabilities::MULTI_STATEMENTS;
+      capabilities|= MariaDbServerCapabilities::MULTI_STATEMENTS;
     }
 
-    if ((serverCapabilities &MariaDbServerCapabilities::CLIENT_DEPRECATE_EOF)!=0){
-      capabilities |=MariaDbServerCapabilities::CLIENT_DEPRECATE_EOF;
+    if ((serverCapabilities & MariaDbServerCapabilities::CLIENT_DEPRECATE_EOF)!=0){
+      capabilities|= MariaDbServerCapabilities::CLIENT_DEPRECATE_EOF;
     }
 
     if (options->useCompression){
@@ -176,17 +176,17 @@ namespace capi
 
         options->useCompression= false;
       }else {
-        capabilities |=MariaDbServerCapabilities::COMPRESS;
+        capabilities|= MariaDbServerCapabilities::COMPRESS;
       }
     }
 
     if (options->interactiveClient){
-      capabilities |=MariaDbServerCapabilities::CLIENT_INTERACTIVE_;
+      capabilities|= MariaDbServerCapabilities::CLIENT_INTERACTIVE_;
     }
 
 
     if (!database.empty() && !options->createDatabaseIfNotExist){
-      capabilities |=MariaDbServerCapabilities::CONNECT_WITH_DB;
+      capabilities|= MariaDbServerCapabilities::CONNECT_WITH_DB;
     }
 
     return capabilities;
@@ -520,7 +520,7 @@ namespace capi
 
     if (options->useTls)
     {
-      clientCapabilities |= MariaDbServerCapabilities::SSL;
+      clientCapabilities|=  MariaDbServerCapabilities::SSL;
       mysql_optionsv(connection.get(), MYSQL_OPT_SSL_ENFORCE, (const char*)&safeCApiTrue);
     }
 

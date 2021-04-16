@@ -1040,6 +1040,15 @@ void preparedstatement::callSP()
 {
   logMsg("preparedstatement::callSP() - MySQL_PreparedStatement::*()");
   std::string sp_code("CREATE PROCEDURE p(OUT ver_param VARCHAR(250)) BEGIN SELECT VERSION() INTO ver_param; END;");
+  DatabaseMetaData dbmeta(con->getMetaData());
+  bool autoCommit= con->getAutoCommit();
+
+  /* Version on the server can be different from the one reported by MaxScale. And we are testing here SP, not the connection metadata */
+  if (isSkySqlHA() || isMaxScale())
+  {
+    sp_code= "CREATE PROCEDURE p(OUT ver_param VARCHAR(250)) BEGIN SELECT '" + dbmeta->getDatabaseProductVersion() + "' INTO ver_param; END;";
+  }
+
   try
   {
     if (!createSP(sp_code))
@@ -1047,16 +1056,23 @@ void preparedstatement::callSP()
       logMsg("... skipping:");
       return;
     }
-
-    DatabaseMetaData dbmeta(con->getMetaData());
+    if (isSkySqlHA() || isMaxScale())
+    {
+      con->setAutoCommit(false);
+    }
     try
     {
       pstmt.reset(con->prepareStatement("CALL p(@version)"));
       ASSERT(!pstmt->execute());
       ASSERT(!pstmt->execute());
     }
-    catch (sql::SQLException &e)
+    catch (sql::SQLException & e)
     {
+      if (isSkySqlHA() || isMaxScale())
+      {
+        con->rollback();
+        con->setAutoCommit(autoCommit);
+      }
       if (e.getErrorCode() != 1295)
       {
         logErr(e.what());
@@ -1083,9 +1099,19 @@ void preparedstatement::callSP()
     res.reset(pstmt->executeQuery());
     ASSERT(res->next());
     ASSERT_EQUALS(dbmeta->getDatabaseProductVersion(), res->getString("_version"));
+    if (isSkySqlHA() || isMaxScale())
+    {
+      con->commit();
+      con->setAutoCommit(autoCommit);
+    }
   }
   catch (sql::SQLException &e)
   {
+    if (isSkySqlHA() || isMaxScale())
+    {
+      con->rollback();
+      con->setAutoCommit(autoCommit);
+    }
     logErr(e.what());
     std::stringstream msg;
     msg.str("");
@@ -1099,13 +1125,25 @@ void preparedstatement::callSPInOut()
 {
   logMsg("preparedstatement::callSPInOut() - MySQL_PreparedStatement::*()");
   std::string sp_code("CREATE PROCEDURE p(IN ver_in VARCHAR(25), OUT ver_out VARCHAR(25)) BEGIN SELECT ver_in INTO ver_out; END;");
+  bool autoCommit = con->getAutoCommit();
+
+  /* Version on the server can be different from the one reported by MaxScale. And we are testing here SP, not the connection metadata */
+  if (isSkySqlHA() || isMaxScale())
+  {
+    con->setAutoCommit(false);
+  }
   try
   {
     if (!createSP(sp_code))
     {
       logMsg("... skipping: cannot create SP");
+      if (isSkySqlHA() || isMaxScale())
+      {
+        con->setAutoCommit(autoCommit);
+      }
       return;
     }
+
     try
     {
       cstmt.reset(con->prepareCall("CALL p('myver', @version)"));
@@ -1113,6 +1151,10 @@ void preparedstatement::callSPInOut()
     }
     catch (sql::SQLException &e)
     {
+      if (isSkySqlHA() || isMaxScale())
+      {
+        con->setAutoCommit(autoCommit);
+      }
       if (e.getErrorCode() != 1295)
       {
         logErr(e.what());
@@ -1130,9 +1172,18 @@ void preparedstatement::callSPInOut()
     res.reset(pstmt->executeQuery());
     ASSERT(res->next());
     ASSERT_EQUALS("myver", res->getString("_version"));
+
+    if (isSkySqlHA() || isMaxScale())
+    {
+      con->setAutoCommit(autoCommit);
+    }
   }
   catch (sql::SQLException &e)
   {
+    if (isSkySqlHA() || isMaxScale())
+    {
+      con->setAutoCommit(autoCommit);
+    }
     logErr(e.what());
     std::stringstream msg2;
     msg2.str("");

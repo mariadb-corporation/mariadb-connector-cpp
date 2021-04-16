@@ -256,6 +256,11 @@ void statement::callSP()
       ASSERT_EQUALS(dbmeta->getDatabaseProductVersion(), res->getString("_version"));
     }
 
+    bool autoCommit= con->getAutoCommit();
+    if (isSkySqlHA() && autoCommit) {
+      con->setAutoCommit(false);
+    }
+
     stmt->execute("DROP PROCEDURE IF EXISTS p");
     ASSERT(!stmt->execute("CREATE PROCEDURE p(IN ver_in VARCHAR(250), OUT ver_out VARCHAR(250)) BEGIN SELECT ver_in INTO ver_out; END;"));
     ASSERT(!stmt->execute("CALL p('myver', @version)"));
@@ -263,6 +268,10 @@ void statement::callSP()
     res.reset(stmt->getResultSet());
     ASSERT(res->next());
     ASSERT_EQUALS("myver", res->getString("_version"));
+    con->commit();
+    if (isSkySqlHA() && autoCommit) {
+      con->setAutoCommit(autoCommit);
+    }
 
     stmt->execute("DROP TABLE IF EXISTS test");
     stmt->execute("CREATE TABLE test(id INT, label CHAR(1))");

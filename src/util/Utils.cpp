@@ -236,7 +236,7 @@ namespace mariadb
     }
 
     for (;
-        ((input[index] >='a' && input[index] <='z') || (input[index] >='A' && input[index] <='Z'))
+        ((input[index] >= 'a' && input[index] <= 'z') || (input[index] >= 'A' && input[index] <= 'Z'))
         && index < functionString.length();
         ++index)
     {
@@ -397,7 +397,7 @@ namespace mariadb
     {
       return nativeSql(escaped.substr(1,endIndex), protocol);
     }
-    else if (escaped.startsWith("{ ")||escaped.startsWith("{\n"))
+    else if (escaped.startsWith("{ ") || escaped.startsWith("{\n"))
     {
       for (size_t i= 2;i < escaped.size();i++)
       {
@@ -445,7 +445,7 @@ namespace mariadb
     for (size_t i= 0;i <charArray.size();i++)
     {
       char car= charArray[i];
-      if (lastChar =='\\'&&!protocol->noBackslashEscapes()){
+      if (lastChar == '\\' && !protocol->noBackslashEscapes()){
         sqlBuffer.append(car);
         lastChar = 0;
         continue;
@@ -469,7 +469,7 @@ namespace mariadb
           break;
 
         case '*':
-          if (!inQuote &&!inComment &&lastChar =='/'){
+          if (!inQuote && !inComment && lastChar =='/'){
             inComment= true;
             isSlashSlashComment= false;
           }
@@ -495,8 +495,7 @@ namespace mariadb
           }
           break;
         case '\n':
-          if (inComment &&isSlashSlashComment){
-
+          if (inComment && isSlashSlashComment){
             inComment= false;
           }
           break;
@@ -509,7 +508,7 @@ namespace mariadb
         case '}':
           if (!inQuote &&!inComment){
             inEscapeSeq--;
-            if (inEscapeSeq ==0){
+            if (inEscapeSeq == 0){
               escapeSequenceBuf.append(car);
               sqlBuffer.append(resolveEscapes(escapeSequenceBuf, protocol));
               escapeSequenceBuf= "";
@@ -522,13 +521,13 @@ namespace mariadb
           break;
       }
       lastChar= car;
-      if (inEscapeSeq >0){
+      if (inEscapeSeq > 0){
         escapeSequenceBuf.append(car);
       }else {
         sqlBuffer.append(car);
       }
     }
-    if (inEscapeSeq >0){
+    if (inEscapeSeq > 0){
       throw SQLException(
           "Invalid escape sequence , missing closing '}' character in '"+sqlBuffer);
     }

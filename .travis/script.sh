@@ -140,7 +140,7 @@ else
 
 fi
 
-cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_OPENSSL=ON -DWITH_SSL=OPENSSL -DTEST_HOST="tcp://$TEST_SERVER:$TEST_PORT" .
+cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=OPENSSL -DTEST_HOST="tcp://$TEST_SERVER:$TEST_PORT" .
 # In Travis we are interested in tests with latest C/C version, while for release we must use only latest release tag
 #git submodule update --remote
 set -x

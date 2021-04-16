@@ -399,6 +399,8 @@ public:
    */
   virtual void tearDown();
 
+  bool isSkySqlHA() const;
+  bool isMaxScale() const;
 };
 
 } /* namespace testsuite */
