@@ -729,6 +729,7 @@ namespace sql
       completeOptionsMap.emplace("rsaKey",                     &OptionsMap["serverRsaPublicKeyFile"]);
       completeOptionsMap.emplace("OPT_READ_TIMEOUT",           &OptionsMap["socketTimeout"]);
       completeOptionsMap.emplace("OPT_RECONNECT",              &OptionsMap["autoReconnect"]);
+      completeOptionsMap.emplace("CLIENT_COMPRESS",            &OptionsMap["useCompression"]);
       return true;
     }
 
