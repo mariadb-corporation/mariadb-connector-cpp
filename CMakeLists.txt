@@ -387,7 +387,8 @@ ENDIF()
 
 ADD_CUSTOM_TARGET(DEPENDENCIES_FOR_PACKAGE)
 IF("${WITH_SSL}" STREQUAL "")
-  SET(WITH_SSL ON)
+  MESSAGE(STATUS "Setting deafault value for WITH_SSL for libmariadb build to ON")
+  SET(CONC_WITH_SSL ON)
 ENDIF()
 ### Including C/C subproject
 IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
@@ -400,7 +401,7 @@ IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
   INCLUDE(${CMAKE_SOURCE_DIR}/cmake/connector_c.cmake)
   INSTALL(FILES
           $<TARGET_FILE:libmariadb>
-          DESTINATION ./${INSTALL_LIBDIR}
+          DESTINATION ${INSTALL_LIBDIR}
  	        COMPONENT ConCLib)
   MESSAGE(STATUS "Configuring to install libmariadb to ${INSTALL_LIBDIR}")
 
@@ -417,7 +418,7 @@ IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
       ADD_DEPENDENCIES(DEPENDENCIES_FOR_PACKAGE ${CC_PLUGIN})
       INSTALL(FILES
               $<TARGET_FILE:${CC_PLUGIN}>
-              DESTINATION ./${INSTALL_PLUGINDIR}
+              DESTINATION ${INSTALL_PLUGINDIR}
  	            COMPONENT ConCPlugins)
     ENDIF()
   ENDFOREACH()
@@ -497,7 +498,7 @@ ELSE()
   ENDIF()
   INSTALL(TARGETS
           ${LIBRARY_NAME} 
-          LIBRARY DESTINATION ./${INSTALL_LIB_SUFFIX}/mariadb
+          LIBRARY DESTINATION ${INSTALL_LIB_SUFFIX}/mariadb
           COMPONENT CppLibs)
 
   MESSAGE(STATUS "Documentation installed to ${INSTALL_DOCDIR}")
