@@ -32,7 +32,7 @@ namespace sql
   {
     static const int32_t SocketTimeoutDefault[]= {30000, 0, 0, 0, 0, 0};
     std::map<std::string, DefaultOptions> OptionsMap{
-      { "user", {"user", "0.9.1", "Database user name", false} },
+      {"user",     {"user",      "0.9.1", "Database user name",            false} },
       {"password", {"password",  "0.9.1", "Password of the database user", false} },
 
       /**
@@ -882,7 +882,7 @@ namespace sql
       {
         for (auto& it : properties)
         {
-          const std::string& key= StringImp::get(it.first);
+          std::string key(it.first.c_str(), it.first.length());
           SQLString propertyValue(it.second);
 
           auto cit= OPTIONS_MAP.find(key);

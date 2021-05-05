@@ -3225,5 +3225,20 @@ void connection::bugConCpp21()
 }
 
 
+void connection::unknownPropertyConnect()
+{
+  sql::Properties p;
+
+  p["user"]= user;
+ 
+  con.reset(driver->connect(url + "?password=" + passwd + "&notExistentPropery=blahblah", p));
+  ASSERT(con.get() == nullptr);
+  p["hostName"]= url;
+  p["password"]= passwd;
+  p["notExistentPropery"]= "blahblah";
+  con.reset(driver->connect(p));
+  ASSERT(con.get() == nullptr);
+}
+
 } /* namespace connection */
 } /* namespace testsuite */

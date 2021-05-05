@@ -87,6 +87,7 @@ public:
   TEST_CASE(tls_version);
   TEST_CASE(cached_sha2_auth);
   TEST_CASE(bugConCpp21);
+  TEST_CASE(unknownPropertyConnect);
   }
 
   /**
@@ -266,6 +267,9 @@ public:
    * URL overrides properties instead of the opposite
    */
   void bugConCpp21();
+
+  /* Unknown properties cause nullptr for connect() and exception for getConnection() */
+  void unknownPropertyConnect();
 };
 
 
