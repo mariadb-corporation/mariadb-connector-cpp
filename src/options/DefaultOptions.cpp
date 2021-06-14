@@ -738,6 +738,8 @@ namespace sql
       completeOptionsMap.emplace("OPT_READ_TIMEOUT",           &OptionsMap["socketTimeout"]);
       completeOptionsMap.emplace("OPT_RECONNECT",              &OptionsMap["autoReconnect"]);
       completeOptionsMap.emplace("CLIENT_COMPRESS",            &OptionsMap["useCompression"]);
+      completeOptionsMap.emplace("OPT_SET_CHARSET_NAME",       &OptionsMap["useCharacterEncoding"]);
+      completeOptionsMap.emplace("useCharset",                 &OptionsMap["useCharacterEncoding"]);
       return true;
     }
 

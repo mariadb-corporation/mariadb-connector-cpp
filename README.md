@@ -90,7 +90,7 @@ Not complete list of supported options - mostly newly added or with new aliases:
 | **`serverRsaPublicKeyFile`** |The name of the file which contains the RSA public key of the database server. The format of this file must be in PEM format. This option is used by the caching_sha2_password client authentication plugin.|*string* ||rsaKey|
 | **`useCompression`** |Compresses the exchange with the database|*bool* |false|CLIENT_COMPRESS|
 | **`jdbcCompliantTruncation`** |Truncation error will be thrown as error, and not as warning|*bool* |true||
-| **`useCharacterEncoding`** |Character set used for text encoding.|*string* |||
+| **`useCharacterEncoding`** |Character set used for text encoding.|*string* ||OPT_SET_CHARSET_NAME,useCharset|
 
 
 Properties is map of strings, and is another way to pass optional parameters.
