@@ -137,6 +137,11 @@ namespace capi
       mysql_optionsv(socket, MYSQL_OPT_PROTOCOL, (void*)&protocol);
     }
 
+    if (!options->useCharacterEncoding.empty())
+    {
+      mysql_optionsv(socket, MYSQL_SET_CHARSET_NAME, options->useCharacterEncoding.c_str());
+    }
+
     return socket;
   }
 

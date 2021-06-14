@@ -504,7 +504,15 @@ namespace sql
         "passwordCharacterEncoding", {"passwordCharacterEncoding",
         "0.9.1",
         "Indicate password encoding charset. If not set, driver use platform's default charset.",
-        false}},
+        false}
+      },
+      {
+        "useCharacterEncoding", {"useCharacterEncoding",
+        "1.0.1",
+        "String data encoding charset. The driver will assume, that all input strings are encoded using this"
+        "character set, and will use it for communication with the server",
+        false}
+      },
       {
         "usePipelineAuth", {"usePipelineAuth",
         "0.9.1",
@@ -882,7 +890,7 @@ namespace sql
       {
         for (auto& it : properties)
         {
-          std::string key(it.first.c_str(), it.first.length());
+          const std::string& key= StringImp::get(it.first);
           SQLString propertyValue(it.second);
 
           auto cit= OPTIONS_MAP.find(key);
@@ -1052,6 +1060,10 @@ namespace sql
 
       if (options->usePipelineAuth) {
         SQLFeatureNotSupportedException("Pipe identification is not supported yet");
+      }
+
+      if (options->useCharacterEncoding.compare("utf8") == 0) {
+        options->useCharacterEncoding = "utf8mb4";
       }
     }
 

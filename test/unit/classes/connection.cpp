@@ -3230,15 +3230,55 @@ void connection::unknownPropertyConnect()
   sql::Properties p;
 
   p["user"]= user;
+  p["useTls"] = useTls ? "true" : "false";
  
   con.reset(driver->connect(url + "?password=" + passwd + "&notExistentPropery=blahblah", p));
-  ASSERT(con.get() == nullptr);
+  ASSERT(con.get());
   p["hostName"]= url;
   p["password"]= passwd;
   p["notExistentPropery"]= "blahblah";
   con.reset(driver->connect(p));
-  ASSERT(con.get() == nullptr);
+  ASSERT(con.get());
 }
 
+void checkCharsetVariables(sql::Connection* con, const sql::SQLString& charset)
+{
+  testsuite::Statement st(con->createStatement());
+  testsuite::ResultSet rs(st->executeQuery("select @@character_set_client, @@character_set_connection, @@character_set_results"));
+
+  ASSERT(rs->next());
+  ASSERT_EQUALS(charset, rs->getString(1));
+  ASSERT_EQUALS(charset, rs->getString(2));
+  ASSERT_EQUALS(charset, rs->getString(3));
+}
+
+void connection::useCharacterSet()
+{
+  sql::Properties p;
+  const sql::SQLString utf8mb4("utf8mb4");
+
+  p["user"]= user;
+  p["password"]= passwd;
+  p["useTls"] = useTls ? "true" : "false";
+
+  con.reset(driver->connect(url + "?useCharacterEncoding=utf8", p));
+  ASSERT(con.get());
+  checkCharsetVariables(con.get(), utf8mb4);
+  p["hostName"]= url;
+  p["useCharacterEncoding"]= "utf8";
+  con.reset(driver->connect(p));
+  ASSERT(con.get());
+  checkCharsetVariables(con.get(), utf8mb4);
+  p["useCharacterEncoding"] = "boguscs";
+  try
+  {
+    con.reset(driver->connect(p));
+    FAIL("Exception was expected");
+  }
+  catch (sql::SQLException&)
+  {
+    // All is fine
+  }
+}
 } /* namespace connection */
 } /* namespace testsuite */

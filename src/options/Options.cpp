@@ -78,6 +78,7 @@ namespace mariadb
     OPTIONS_FIELD(useCompression),
     OPTIONS_FIELD(interactiveClient),
     OPTIONS_FIELD(passwordCharacterEncoding),
+    OPTIONS_FIELD(useCharacterEncoding),
     OPTIONS_FIELD(blankTableNameMeta),
     OPTIONS_FIELD(credentialType),
     OPTIONS_FIELD(useTls),
@@ -486,6 +487,14 @@ namespace mariadb
     else if (!opt->passwordCharacterEncoding.empty()) {
       return false;
     }
+    if (!useCharacterEncoding.empty()) {
+      if (useCharacterEncoding.compare(opt->useCharacterEncoding) != 0) {
+        return false;
+      }
+    }
+    else if (!opt->useCharacterEncoding.empty()) {
+      return false;
+    }
     if (!(enabledTlsCipherSuites.compare(opt->enabledTlsCipherSuites) == 0)) {
       return false;
     }
@@ -574,6 +583,7 @@ namespace mariadb
     result= 31 *result + (useCompression ? 1 : 0);
     result= 31 *result + (interactiveClient ? 1 : 0);
     result= 31 *result + (!passwordCharacterEncoding.empty() ? passwordCharacterEncoding.hashCode() : 0);
+    result= 31 *result + (!useCharacterEncoding.empty() ? useCharacterEncoding.hashCode() : 0);
     result= 31 *result + (useTls ? 1 : 0);
     result= 31 *result + (!enabledTlsCipherSuites.empty() ? enabledTlsCipherSuites.hashCode() : 0);
     result= 31 *result + (!sessionVariables.empty() ? sessionVariables.hashCode() : 0);

@@ -73,6 +73,7 @@ struct Options
   bool      useCompression;
   bool      interactiveClient;
   SQLString passwordCharacterEncoding;
+  SQLString useCharacterEncoding;
   bool      blankTableNameMeta;
   SQLString credentialType;
   bool      useTls;

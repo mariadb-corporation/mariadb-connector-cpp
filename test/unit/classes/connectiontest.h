@@ -88,6 +88,7 @@ public:
   TEST_CASE(cached_sha2_auth);
   TEST_CASE(bugConCpp21);
   TEST_CASE(unknownPropertyConnect);
+  TEST_CASE(useCharacterSet);
   }
 
   /**
@@ -268,8 +269,11 @@ public:
    */
   void bugConCpp21();
 
-  /* Unknown properties cause nullptr for connect() and exception for getConnection() */
+  /* Unknown properties */
   void unknownPropertyConnect();
+
+  /* useCharacterSet property */
+  void useCharacterSet();
 };
 
 
