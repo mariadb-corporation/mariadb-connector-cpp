@@ -27,6 +27,7 @@
 #include "MariaDbProcedureStatement.h"
 #include "MariaDbFunctionStatement.h"
 #include "MariaDbDatabaseMetaData.h"
+#include "CallableParameterMetaData.h"
 
 #include "logger/LoggerFactory.h"
 #include "pool/Pools.h"
@@ -1732,5 +1733,19 @@ namespace mariadb
     return options->includeThreadDumpInDeadlockExceptions;
   }
 
+  CallableParameterMetaData* MariaDbConnection::getInternalParameterMetaData(const SQLString& procedureName, const SQLString& databaseName, bool isFunction)
+  {
+    SQLString sql("SELECT * from INFORMATION_SCHEMA.PARAMETERS WHERE SPECIFIC_NAME=? AND SPECIFIC_SCHEMA=");
+    sql.append(!databaseName.empty() ? "?" : "DATABASE()");
+    sql.append(" ORDER BY ORDINAL_POSITION");
+    std::unique_ptr<PreparedStatement> preparedStatement(this->prepareStatement(sql));
+
+    preparedStatement->setString(1, procedureName);
+    if (!databaseName.empty()) {
+      preparedStatement->setString(2, databaseName);
+    }
+
+    return new CallableParameterMetaData(preparedStatement->executeQuery(), isFunction);
+  }
 }
 }

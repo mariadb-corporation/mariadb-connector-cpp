@@ -47,10 +47,10 @@ class MariaDbProcedureStatement  : public CloneableCallableStatement
   Shared::CallableParameterMetaData parameterMetadata;
   bool hasInOutParameters;
   Unique::ServerSidePreparedStatement stmt;
-
+  SQLString database;
+  SQLString procedureName;
 
 public:
-
    MariaDbProcedureStatement(
     const SQLString& query,
     MariaDbConnection* connection, const SQLString& procedureName, const SQLString& database,
@@ -64,40 +64,32 @@ public:
    ~MariaDbProcedureStatement() {}
 
 private:
-
   void setParamsAccordingToSetArguments();
   void setInputOutputParameterMap();
 
 protected:
-
   SelectResultSet* getOutputResult();
 
 public:
-
   MariaDbProcedureStatement* clone(MariaDbConnection* connection);
 
-
 private:
-
   void retrieveOutputResult();
 
 public:
-
   void setParameter(int32_t parameterIndex, ParameterHolder& holder);
   bool execute();
 
-
 private:
-
   void validAllParameters();
   int32_t nameToIndex(const SQLString& parameterName);
   int32_t nameToOutputIndex(const SQLString& parameterName);
   int32_t indexToOutputIndex(uint32_t parameterIndex);
   CallParameter& getParameter(uint32_t index);
   Shared::Results& getResults();
+  void readMetadataFromDbIfRequired();
 
 public:
-
   const sql::Ints& executeBatch();
   const sql::Longs& executeLargeBatch();
   void setParametersVariables();

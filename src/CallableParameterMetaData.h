@@ -21,9 +21,6 @@
 #ifndef _CALLABLEPARAMETERMETADATA_H_
 #define _CALLABLEPARAMETERMETADATA_H_
 
-#include <regex>
-#include <tuple>
-
 #include "CallParameter.h"
 #include "Consts.h"
 
@@ -32,52 +29,29 @@ namespace sql
 namespace mariadb
 {
 
-
-class CallableParameterMetaData : public ParameterMetaData {
-
-  static std::regex PARAMETER_PATTERN ; /*Pattern.compile(
-"\\s*(IN\\s+|OUT\\s+|INOUT\\s+)?([\\w\\d]+)\\s+(UNSIGNED\\s+)?(\\w+)\\s*(\\([\\d,]+\\))?\\s*",
-Pattern.CASE_INSENSITIVE)*/
-
- static std::regex RETURN_PATTERN ; /*Pattern.compile(
-"\\s*(UNSIGNED\\s+)?(\\w+)\\s*(\\([\\d,]+\\))?\\s*(CHARSET\\s+)?(\\w+)?\\s*",
-Pattern.CASE_INSENSITIVE)*/
-
-  MariaDbConnection* con;
-  const SQLString name;
-  std::vector<CallParameter> params;
-  SQLString database;
-  bool valid;
+class CallableParameterMetaData : public ParameterMetaData
+{
+  Unique::ResultSet rs;
+  uint32_t parameterCount;
   bool isFunction;
 
-public:
-  CallableParameterMetaData(MariaDbConnection* con, const SQLString& database, const SQLString& name,bool isFunction);
-  void readMetadataFromDbIfRequired();
-
-private:
-  int32_t mapMariaDbTypeToJdbc(const SQLString& str);
-  std::tuple<SQLString, SQLString> queryMetaInfos(bool isFunction);
-  void parseFunctionReturnParam(const SQLString& functionReturn);
-  void parseParamList(bool isFunction, const SQLString& paramList);
-  void readMetadata();
+  void setIndex(uint32_t index);
 
 public:
+  CallableParameterMetaData(ResultSet* _rs, bool _isFunction);
+
   uint32_t getParameterCount();
-
-private:
-  CallParameter& getParam(uint32_t index);
-
-public:
   int32_t isNullable(uint32_t param);
   bool isSigned(uint32_t param);
   int32_t getPrecision(uint32_t param);
   int32_t getScale(uint32_t param);
+  SQLString getParameterName(int32_t index);
   int32_t getParameterType(uint32_t param);
   SQLString getParameterTypeName(uint32_t param);
   SQLString getParameterClassName(uint32_t param);
   int32_t getParameterMode(uint32_t param);
-  const SQLString& getName(uint32_t param);
-  };
+};
+
 }
 }
 #endif

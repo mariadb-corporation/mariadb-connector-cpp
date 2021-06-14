@@ -49,17 +49,19 @@ namespace mariadb
     */
   MariaDbFunctionStatement::MariaDbFunctionStatement(
     MariaDbConnection* _connection,
-    const SQLString& databaseName, const SQLString& procedureName, const SQLString& arguments,
+    const SQLString& _databaseName, const SQLString& _functionName, const SQLString& arguments,
     int32_t resultSetType,
     int32_t resultSetConcurrency,
     Shared::ExceptionFactory& exptnFactory)
     : connection(_connection),
       stmt(new ClientSidePreparedStatement(
       _connection,
-      "SELECT "+procedureName +(arguments.empty() ? "()" : arguments),
+      "SELECT "+ _functionName +(arguments.empty() ? "()" : arguments),
       resultSetType,
       resultSetConcurrency, Statement::NO_GENERATED_KEYS, exptnFactory)),
-      parameterMetadata(new CallableParameterMetaData(_connection, databaseName, procedureName, true))
+      parameterMetadata(nullptr),
+      databaseName(_databaseName),
+      functionName(_functionName)
   {
     initFunctionData(stmt->getParameterCount() + 1);
   }
@@ -145,7 +147,7 @@ namespace mariadb
   int32_t MariaDbFunctionStatement::nameToOutputIndex(const SQLString & parameterName)
   {
     for (uint32_t i= 0; i < parameterMetadata->getParameterCount(); i++) {
-      const SQLString& name= parameterMetadata->getName(i +1);
+      const SQLString& name= parameterMetadata->getParameterName(i+1);
       if (!name.empty() && equalsIgnoreCase(name, parameterName)) {
         return i;
       }
@@ -155,10 +157,10 @@ namespace mariadb
 
   int32_t MariaDbFunctionStatement::nameToIndex(const SQLString & parameterName)
   {
-    parameterMetadata->readMetadataFromDbIfRequired();
+    readMetadataFromDbIfRequired();
 
     for (uint32_t i= 1; i <= parameterMetadata->getParameterCount(); i++) {
-      const SQLString& name= parameterMetadata->getName(i);
+      const SQLString& name= parameterMetadata->getParameterName(i);
 
       if (!name.empty() && equalsIgnoreCase(name, parameterName))
       {
@@ -306,9 +308,15 @@ namespace mariadb
   }
 
 
+  void MariaDbFunctionStatement::readMetadataFromDbIfRequired() {
+    if (!parameterMetadata) {
+      parameterMetadata.reset(connection->getInternalParameterMetaData(functionName, databaseName, true));
+    }
+  }
+
   ParameterMetaData * MariaDbFunctionStatement::getParameterMetaData()
   {
-    parameterMetadata->readMetadataFromDbIfRequired();
+    readMetadataFromDbIfRequired();
     return parameterMetadata.get();;
   }
 

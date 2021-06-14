@@ -216,6 +216,7 @@ public:
   bool reconnect();
   bool includeDeadLockInfo();
   bool includeThreadsTraces();
+  CallableParameterMetaData* getInternalParameterMetaData(const SQLString& procedureName, const SQLString& databaseName, bool isFunction);
 };
 
 }

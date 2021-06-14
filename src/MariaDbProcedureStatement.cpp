@@ -48,15 +48,17 @@ namespace mariadb
     */
   MariaDbProcedureStatement::MariaDbProcedureStatement(
     const SQLString& query,
-    MariaDbConnection* _connection, const SQLString& procedureName, const SQLString& database,
+    MariaDbConnection* _connection, const SQLString& _procedureName, const SQLString& _database,
     int32_t resultSetType,
     int32_t resultSetConcurrency,
     Shared::ExceptionFactory& factory)
     : outputResultSet(nullptr),
       connection(_connection),
-      parameterMetadata(new CallableParameterMetaData(_connection, database, procedureName, false)),
+      parameterMetadata(nullptr),
       stmt(new ServerSidePreparedStatement(_connection, query, resultSetType, resultSetConcurrency, Statement::NO_GENERATED_KEYS, factory)),
-      hasInOutParameters(false)
+      hasInOutParameters(false),
+      database(_database),
+      procedureName(_procedureName)
   {
     //super(connection, query, resultSetType, resultSetConcurrency);
     setParamsAccordingToSetArguments();
@@ -220,9 +222,15 @@ namespace mariadb
     }
   }
 
+  void MariaDbProcedureStatement::readMetadataFromDbIfRequired() {
+    if (!parameterMetadata) {
+      parameterMetadata.reset(connection->getInternalParameterMetaData(procedureName, database, false));
+    }
+  }
+
   ParameterMetaData* MariaDbProcedureStatement::getParameterMetaData()
   {
-    parameterMetadata->readMetadataFromDbIfRequired();
+    readMetadataFromDbIfRequired();
     return parameterMetadata.get();
   }
 
@@ -235,10 +243,10 @@ namespace mariadb
   */
   int32_t MariaDbProcedureStatement::nameToIndex(const SQLString& parameterName)
   {
-    parameterMetadata->readMetadataFromDbIfRequired();
+    readMetadataFromDbIfRequired();
 
     for (uint32_t i= 1; i <= parameterMetadata->getParameterCount(); i++) {
-      const SQLString& name= parameterMetadata->getName(i);
+      const SQLString& name= parameterMetadata->getParameterName(i);
 
       if (!name.empty() && equalsIgnoreCase(name, parameterName))
       {
@@ -257,9 +265,9 @@ namespace mariadb
   */
   int32_t MariaDbProcedureStatement::nameToOutputIndex(const SQLString& parameterName)
   {
-    parameterMetadata->readMetadataFromDbIfRequired();
+    readMetadataFromDbIfRequired();
     for (uint32_t i= 0; i <parameterMetadata->getParameterCount(); i++) {
-      const SQLString& name= parameterMetadata->getName(i +1);
+      const SQLString& name= parameterMetadata->getParameterName(i + 1);
       if (!name.empty() && equalsIgnoreCase(name, parameterName)) {
         if (outputParameterMapper[i] ==-1) {
 

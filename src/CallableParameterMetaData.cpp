@@ -27,12 +27,6 @@ namespace sql
 {
 namespace mariadb
 {
-
-  std::regex CallableParameterMetaData::PARAMETER_PATTERN("\\s*(IN\\s+|OUT\\s+|INOUT\\s+)?([\\w\\d]+)\\s+(UNSIGNED\\s+)?(\\w+)\\s*(\\([\\d,]+\\))?\\s*",
-    std::regex_constants::ECMAScript | std::regex_constants::icase);
-
-  std::regex CallableParameterMetaData::RETURN_PATTERN("\\s*(UNSIGNED\\s+)?(\\w+)\\s*(\\([\\d,]+\\))?\\s*(CHARSET\\s+)?(\\w+)?\\s*",
-    std::regex_constants::ECMAScript | std::regex_constants::icase);
   /**
     * Retrieve Callable metaData.
     *
@@ -41,330 +35,136 @@ namespace mariadb
     * @param name procedure/function name
     * @param isFunction is it a function
     */
-  CallableParameterMetaData::CallableParameterMetaData(MariaDbConnection* conn, const SQLString& _database, const SQLString& _name, bool _isFunction)
-    :  con(conn)
-    , database(_database)
-    , name(_name)
+  CallableParameterMetaData::CallableParameterMetaData(ResultSet* _rs, bool _isFunction)
+    : rs(_rs)
     , isFunction(_isFunction)
   {
-    if (!database.empty()) {
-      replace(database, "`", "");
-    }
-    replace(name, "`", "");
+    uint32_t count= 0;
+    while (rs->next()) ++count;
+    this->parameterCount= count;
   }
 
-  /**
-    * Search metaData if not already loaded.
-    *
-    * @throws SQLException if error append during loading metaData
-    */
-  void CallableParameterMetaData::readMetadataFromDbIfRequired()
-  {
-    if (valid) {
-      return;
-    }
-    readMetadata();
-    valid= true;
-  }
-
-  int32_t CallableParameterMetaData::mapMariaDbTypeToJdbc(const SQLString& str)
-  {
-    SQLString type(str);
-
-    type.toUpperCase();
-
-    if (type.compare("BIT") == 0) {
-      return Types::BIT;
-    }
-    else if (type.compare("TINYINT") == 0) {
-      return Types::TINYINT;
-    }
-    else if (type.compare("SMALLINT") == 0) {
-      return Types::SMALLINT;
-    }
-    else if (type.compare("MEDIUMINT") == 0) {
-      return Types::INTEGER;
-    }
-    else if (type.compare("INT") == 0) {
-      return Types::INTEGER;
-    }
-    else if (type.compare("INTEGER") == 0) {
-      return Types::INTEGER;
-    }
-    else if (type.compare("LONG") == 0) {
-      return Types::INTEGER;
-    }
-    else if (type.compare("BIGINT") == 0) {
-      return Types::BIGINT;
-    }
-    else if (type.compare("INT24") == 0) {
-      return Types::INTEGER;
-    }
-    else if (type.compare("REAL") == 0) {
-      return Types::DOUBLE;
-    }
-    else if (type.compare("FLOAT") == 0) {
-      return Types::FLOAT;
-    }
-    else if (type.compare("DECIMAL") == 0) {
-      return Types::DECIMAL;
-    }
-    else if (type.compare("NUMERIC") == 0) {
-      return Types::NUMERIC;
-    }
-    else if (type.compare("DOUBLE") == 0) {
-      return Types::DOUBLE;
-    }
-    else if (type.compare("CHAR") == 0) {
-      return Types::CHAR;
-    }
-    else if (type.compare("VARCHAR") == 0) {
-      return Types::VARCHAR;
-    }
-    else if (type.compare("DATE") == 0) {
-      return Types::DATE;
-    }
-    else if (type.compare("TIME") == 0) {
-      return Types::TIME;
-    }
-    else if (type.compare("YEAR") == 0) {
-      return Types::SMALLINT;
-    }
-    else if (type.compare("TIMESTAMP") == 0) {
-      return Types::TIMESTAMP;
-    }
-    else if (type.compare("DATETIME") == 0) {
-      return Types::TIMESTAMP;
-    }
-    else if (type.compare("TINYBLOB") == 0) {
-      return Types::BINARY;
-    }
-    else if (type.compare("BLOB") == 0) {
-      return Types::LONGVARBINARY;
-    }
-    else if (type.compare("MEDIUMBLOB") == 0) {
-      return Types::LONGVARBINARY;
-    }
-    else if (type.compare("LONGBLOB") == 0) {
-      return Types::LONGVARBINARY;
-    }
-    else if (type.compare("TINYTEXT") == 0) {
-      return Types::VARCHAR;
-    }
-    else if (type.compare("TEXT") == 0) {
-      return Types::LONGVARCHAR;
-    }
-    else if (type.compare("MEDIUMTEXT") == 0) {
-      return Types::LONGVARCHAR;
-    }
-    else if (type.compare("LONGTEXT") == 0) {
-      return Types::LONGVARCHAR;
-    }
-    else if (type.compare("ENUM") == 0) {
-      return Types::VARCHAR;
-    }
-    else if (type.compare("SET") == 0) {
-      return Types::VARCHAR;
-    }
-    else if (type.compare("GEOMETRY") == 0) {
-      return Types::LONGVARBINARY;
-    }
-    else if (type.compare("VARBINARY") == 0) {
-      return Types::VARBINARY;
-    }
-    else {
-      return Types::OTHER;
-    }
-  }
-
-  std::tuple<SQLString, SQLString> CallableParameterMetaData::queryMetaInfos(bool isFunction)
-  {
-    SQLString paramList;
-    SQLString functionReturn;
-
-    try {
-      SQLString sql("select param_list, returns, db, type from mysql.proc where name=? and db=");
-      sql.append(!database.empty() ? "?" : "DATABASE()");
-      std::unique_ptr<PreparedStatement> preparedStatement(con->prepareStatement(sql));
-
-      preparedStatement->setString(1, name);
-      if (!database.empty()) {
-        preparedStatement->setString(2, database);
-      }
-
-      std::unique_ptr<ResultSet> rs(preparedStatement->executeQuery()); {
-        if (!rs->next()) {
-          throw SQLException(
-            (isFunction ? "function `" : "procedure `") + name + "` does not exist");
-        }
-        paramList= rs->getString(1);
-        functionReturn= rs->getString(2);
-        database= rs->getString(3);
-
-        this->isFunction= (rs->getString(4).compare("FUNCTION") == 0);
-        return std::make_tuple(paramList, functionReturn);
-      }
-
-    }
-    catch (SQLException &/*sqlSyntaxErrorException*/) {
-      throw SQLException("Access to metaData informations not granted for current user. Consider grant select access to mysql.proc "
-        " or avoid using parameter by name");// , sqlSyntaxErrorException);
-    }
-  }
-
-  void CallableParameterMetaData::parseFunctionReturnParam(const SQLString& functionReturn)
-  {
-    if (functionReturn.empty()) {
-      throw SQLException(name +"is not a function returning value");
-    }
-
-    std::smatch matcher;
-    if (!std::regex_search(StringImp::get(functionReturn), matcher, RETURN_PATTERN)) {
-      throw SQLException("can not parse return value definition :"+functionReturn);
-    }
-    CallParameter& callParameter= params[0];
-    callParameter.setOutput(true);
-    callParameter.setSigned(matcher[1].str().empty());
-    SQLString typeName(matcher[2].str());
-    callParameter.setTypeName(typeName.trim());
-    callParameter.setSqlType(mapMariaDbTypeToJdbc(callParameter.getTypeName()));
-    SQLString scale(matcher[3].str());
-    if (!scale.empty()) {
-      scale= replace(scale, "(", "");
-      scale= replace(scale, ")", "");
-      scale= replace(scale, " ", "");
-      callParameter.setScale(std::stoi(StringImp::get(scale)));
-    }
-  }
-
-  void CallableParameterMetaData::parseParamList(bool isFunction, const SQLString& paramList)
-  {
-    params.clear();
-    if (isFunction) {
-      // output parameter
-      params.push_back(CallParameter());
-    }
-
-    std::smatch matcher2;
-    std::string pList(StringImp::get(paramList));
-
-    while (std::regex_search(pList, matcher2, PARAMETER_PATTERN))
-    {
-      CallParameter callParameter;
-
-      SQLString match(matcher2[1].str());
-
-      match.trim().toUpperCase();
-
-      /* Direction */
-      if (match.empty() || match.compare("IN") == 0) {
-        callParameter.setInput(true);
-      }
-      else if (match.compare("OUT") == 0) {
-        callParameter.setOutput(true);
-      }
-      else if (match.compare("INOUT") == 0) {
-        callParameter.setInput(true);
-        callParameter.setOutput(true);
-      }
-      else {
-        throw SQLException("unknown parameter direction "+ match +"for "+ matcher2[2].str());
-      }
-
-      match= matcher2[2].str();
-      callParameter.setName(match.trim());
-      callParameter.setSigned(matcher2[3].str().empty());
-      match= matcher2[4].str();
-      callParameter.setTypeName(match.trim().toUpperCase());
-      callParameter.setSqlType(mapMariaDbTypeToJdbc(callParameter.getTypeName()));
-
-      SQLString scale= matcher2[5].str();
-      scale.trim();
-
-      if (!scale.empty()) {
-        scale= replace(scale, "(", "");
-        scale= replace(scale, ")", "");
-        scale= replace(scale, " ", "");
-        if ((scale.find_first_of(",") != std::string::npos)) {
-          scale= scale.substr(0, scale.find_first_of(","));
-        }
-        callParameter.setScale(std::stoi(StringImp::get(scale)));
-      }
-      params.push_back(callParameter);
-      pList= matcher2.suffix();
-    }
-  }
-
-  /**
-    * Read procedure metadata from mysql.proc table(column param_list).
-    *
-    * @throws SQLException if data doesn't correspond.
-    */
-  void CallableParameterMetaData::readMetadata()
-  {
-    if (valid) {
-      return;
-    }
-
-    std::tuple<SQLString, SQLString> metaInfos= queryMetaInfos(isFunction);
-    SQLString paramList= std::get<0>(metaInfos);
-    SQLString functionReturn= std::get<1>(metaInfos);
-
-    parseParamList(isFunction, paramList);
-
-
-    if (isFunction) {
-      parseFunctionReturnParam(functionReturn);
-    }
-  }
 
   uint32_t CallableParameterMetaData::getParameterCount()
   {
-    return static_cast<uint32_t>(params.size());
+    return parameterCount;
   }
 
-  CallParameter& CallableParameterMetaData::getParam(uint32_t index)
+  int32_t CallableParameterMetaData::isNullable(uint32_t index)
   {
-    if (index < 1 || index > params.size()) {
-      throw SQLException("invalid parameter index " + std::to_string(index));
+    setIndex(index);
+    return ParameterMetaData::parameterNullableUnknown;
+  }
+
+  void CallableParameterMetaData::setIndex(uint32_t index)
+  {
+    if (index < 1 || index > parameterCount) {
+      throw SQLException("invalid parameter index " + index);
     }
-    readMetadataFromDbIfRequired();
-    return params[index - 1];
+    rs->absolute(index);
+  }
+  bool CallableParameterMetaData::isSigned(uint32_t index)
+  {
+    setIndex(index);
+    SQLString paramDetail(rs->getString("DTD_IDENTIFIER"));
+    return paramDetail.find_first_of(" unsigned") == std::string::npos;
   }
 
-  int32_t CallableParameterMetaData::isNullable(uint32_t param)
+  int32_t CallableParameterMetaData::getPrecision(uint32_t index)
   {
-    return getParam(param).getCanBeNull();
+    setIndex(index);
+    int32_t characterMaxLength= rs->getInt("CHARACTER_MAXIMUM_LENGTH");
+    int32_t numericPrecision= rs->getInt("NUMERIC_PRECISION");
+    return (numericPrecision > 0) ? numericPrecision : characterMaxLength;
   }
 
-  bool CallableParameterMetaData::isSigned(uint32_t param)
+  int32_t CallableParameterMetaData::getScale(uint32_t index)
   {
-    return getParam(param).isSigned();
+    setIndex(index);
+    return rs->getInt("NUMERIC_SCALE");
   }
 
-  int32_t CallableParameterMetaData::getPrecision(uint32_t param)
+
+  SQLString CallableParameterMetaData::getParameterName(int32_t index)
   {
-    return getParam(param).getPrecision();
+    setIndex(index);
+    return rs->getString("PARAMETER_NAME");
   }
 
-  int32_t CallableParameterMetaData::getScale(uint32_t param)
+
+  int32_t CallableParameterMetaData::getParameterType(uint32_t index)
   {
-    return getParam(param).getScale();
+    setIndex(index);
+    SQLString str = rs->getString("DATA_TYPE").toUpperCase();
+    if (str.compare("BIT") == 0) {
+      return Types::BIT;
+    }
+    else if (str.compare("TINYINT") == 0) {
+      return Types::TINYINT;
+    }
+    else if (str.compare("SMALLINT") == 0 || str.compare("YEAR") == 0) {
+      return Types::SMALLINT;
+    }
+    else if (str.compare("MEDIUMINT") == 0 ||
+            str.compare("INT") == 0 ||
+            str.compare("INT24") == 0 ||
+            str.compare("INTEGER") == 0) {
+      return Types::INTEGER;
+    }
+    else if (str.compare("LONG") == 0 || str.compare("BIGINT") == 0) {
+      return Types::BIGINT;
+    }
+    else if (str.compare("REAL") == 0 || str.compare("DOUBLE") == 0) {
+      return Types::DOUBLE;
+    }
+    else if (str.compare("FLOAT") == 0) {
+      return Types::FLOAT;
+    }
+    else if (str.compare("DECIMAL") == 0) {
+      return Types::DECIMAL;
+    }
+    else if (str.compare("CHAR") == 0) {
+      return Types::CHAR;
+    }
+    else if (str.compare("VARCHAR") == 0 || str.compare("ENUM") == 0 || str.compare("TINYTEXT") == 0 || str.compare("SET") == 0) {
+      return Types::VARCHAR;
+    }
+    else if (str.compare("DATE") == 0) {
+      return Types::DATE;
+    }
+    else if (str.compare("TIME") == 0) {
+      return Types::TIME;
+    }
+    else if (str.compare("TIMESTAMP") == 0 || str.compare("DATETIME") == 0) {
+      return Types::TIMESTAMP;
+    }
+    else if (str.compare("BINARY") == 0) {
+      return Types::BINARY;
+    }
+    else if (str.compare("VARBINARY") == 0) {
+      return Types::VARBINARY;
+    }
+    else if (str.compare("TINYBLOB") == 0 || str.compare("BLOB") == 0 || str.compare("MEDIUMBLOB") == 0 ||
+      str.compare("LONGBLOB") == 0 || str.compare("GEOMETRY") == 0) {
+      return Types::BLOB;
+    }
+    else if (str.compare("TEXT") == 0 || str.compare("MEDIUMTEXT") == 0 || str.compare("LONGTEXT") == 0) {
+      return Types::CLOB;
+    }
+    return Types::OTHER;
   }
 
-  int32_t CallableParameterMetaData::getParameterType(uint32_t param)
+
+  SQLString CallableParameterMetaData::getParameterTypeName(uint32_t index)
   {
-    return getParam(param).getSqlType();
+    setIndex(index);
+    return rs->getString("DATA_TYPE").toUpperCase();
   }
 
-  SQLString CallableParameterMetaData::getParameterTypeName(uint32_t param)
-  {
-    return getParam(param).getTypeName();
-  }
 
-  SQLString CallableParameterMetaData::getParameterClassName(uint32_t param)
+  SQLString CallableParameterMetaData::getParameterClassName(uint32_t index)
   {
-    return getParam(param).getClassName();
+    return emptyStr;
   }
 
   /**
@@ -381,24 +181,22 @@ namespace mariadb
     * @return mode information
     * @throws SQLException if index is wrong
     */
-  int32_t CallableParameterMetaData::getParameterMode(uint32_t param)
+  int32_t CallableParameterMetaData::getParameterMode(uint32_t index)
   {
-    CallParameter callParameter= getParam(param);
-    if (callParameter.isInput()&&callParameter.isOutput()) {
-      return parameterModeInOut;
+    setIndex(index);
+    if (isFunction)return ParameterMetaData::parameterModeOut;
+    SQLString str = rs->getString("PARAMETER_MODE");
+    if (str.compare("IN") == 0) {
+      return ParameterMetaData::parameterModeIn;
     }
-    if (callParameter.isInput()) {
-      return parameterModeIn;
+    else if (str.compare("OUT") == 0) {
+      return ParameterMetaData::parameterModeOut;
     }
-    if (callParameter.isOutput()) {
-      return parameterModeOut;
+    else if (str.compare("INOUT") == 0) {
+      return ParameterMetaData::parameterModeInOut;
     }
-    return parameterModeUnknown;
+    return ParameterMetaData::parameterModeUnknown;
   }
 
-  const SQLString& CallableParameterMetaData::getName(uint32_t param)
-  {
-    return getParam(param).getName();
-  }
 }
 }

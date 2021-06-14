@@ -42,6 +42,8 @@ class MariaDbFunctionStatement  : public  CloneableCallableStatement
   Shared::CallableParameterMetaData parameterMetadata;
   MariaDbConnection* connection;
   std::vector<CallParameter> params;
+  SQLString databaseName;
+  SQLString functionName;
 
   MariaDbFunctionStatement(const MariaDbFunctionStatement &other, MariaDbConnection* connection);
 public:
@@ -66,6 +68,8 @@ private:
   int32_t nameToIndex(const SQLString& parameterName);
   CallParameter& getParameter(uint32_t index);
   Shared::Results& getResults();
+  void readMetadataFromDbIfRequired();
+
 public:
   void initFunctionData(int32_t parametersCount);
   void setParameter(int32_t parameterIndex, ParameterHolder& holder);
