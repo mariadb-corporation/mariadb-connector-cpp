@@ -104,6 +104,7 @@ serverRsaPublicKeyFile  The name of the file which contains the RSA public key o
 useCompression           Compresses the exchange with the database                    bool  CLIENT_COMPRESS
 jdbcCompliantTruncation  Truncation error will be thrown as error, and not as warning bool(default=true)
 useCharacterEncoding     Character set used for text encoding                         string OPT_SET_CHARSET_NAME,useCharset
+credentialType           Default authentication client-side plugin to use.            string defaultAuth|
 
 
 Properties is map of strings, and is another way to pass optional parameters.

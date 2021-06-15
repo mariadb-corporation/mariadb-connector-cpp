@@ -405,6 +405,7 @@ namespace capi
     }
 
     connection.reset(createSocket(host, port, options));
+
     assignStream(options);
 
     try {
@@ -583,6 +584,9 @@ namespace capi
     mysql_optionsv(connection.get(), MARIADB_OPT_USER, (void*)credential->getUser().c_str());
     mysql_optionsv(connection.get(), MARIADB_OPT_PASSWORD, (void*)credential->getPassword().c_str());
     mysql_optionsv(connection.get(), MARIADB_OPT_SCHEMA, (void*)database.c_str());
+    if (!options->credentialType.empty()) {
+      mysql_optionsv(connection.get(), MYSQL_DEFAULT_AUTH, (void*)options->credentialType.c_str());
+    }
   }
 
   void ConnectProtocol::compressionHandler(const Shared::Options& options)

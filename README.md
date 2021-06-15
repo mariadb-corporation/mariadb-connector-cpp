@@ -91,6 +91,7 @@ Not complete list of supported options - mostly newly added or with new aliases:
 | **`useCompression`** |Compresses the exchange with the database|*bool* |false|CLIENT_COMPRESS|
 | **`jdbcCompliantTruncation`** |Truncation error will be thrown as error, and not as warning|*bool* |true||
 | **`useCharacterEncoding`** |Character set used for text encoding.|*string* ||OPT_SET_CHARSET_NAME,useCharset|
+| **`credentialType`** |Default authentication client-side plugin to use.|*string* ||defaultAuth|
 
 
 Properties is map of strings, and is another way to pass optional parameters.

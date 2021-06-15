@@ -689,7 +689,8 @@ namespace sql
         "force DatabaseMetadata.getDatabaseProductName() "
         "to return \"MySQL\" as database, not real database type",
         false,
-        false}},
+        false}
+      },
       {
         "blankTableNameMeta", {"blankTableNameMeta",
         "0.9.1",
@@ -700,7 +701,7 @@ namespace sql
       {
         "credentialType", {"credentialType",
         "0.9.1",
-        "Indicate the credential plugin type to use. Plugin must be present in classpath",
+        "Default authentication client-side plugin to use",
         false,
         ""}
       }
@@ -740,6 +741,7 @@ namespace sql
       completeOptionsMap.emplace("CLIENT_COMPRESS",            &OptionsMap["useCompression"]);
       completeOptionsMap.emplace("OPT_SET_CHARSET_NAME",       &OptionsMap["useCharacterEncoding"]);
       completeOptionsMap.emplace("useCharset",                 &OptionsMap["useCharacterEncoding"]);
+      completeOptionsMap.emplace("defaultAuth",                &OptionsMap["credentialType"]);
       return true;
     }
 

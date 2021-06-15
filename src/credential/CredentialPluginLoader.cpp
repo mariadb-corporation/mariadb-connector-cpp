@@ -23,6 +23,7 @@ namespace sql
 {
 namespace mariadb
 {
+  static std::shared_ptr<CredentialPlugin> nullPlugin(nullptr);
   std::map<std::string, std::shared_ptr<CredentialPlugin>> CredentialPluginLoader::plugin;
 
   void CredentialPluginLoader::RegisterPlugin(CredentialPlugin* aPlugin)
@@ -45,7 +46,11 @@ namespace mariadb
     if (PluginTypeHandler != plugin.end()){
       return PluginTypeHandler->second;
     }
-    throw sql::SQLException(SQLString("No identity plugin registered with the type \"") + type + "\".", "08004", 1251);
+    /* As auth plugins are currently cared by C/C we cannot check if named plugin is available. We will later let C/C to do that.
+       So far just returning "null" plugin as we do not need to throw exception now.
+    */
+    return nullPlugin;
+    //throw sql::SQLException(SQLString("No identity plugin registered with the type \"") + type + "\".", "08004", 1251);
   }
 }
 }
