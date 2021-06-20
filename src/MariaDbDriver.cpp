@@ -39,12 +39,12 @@ namespace mariadb
 
   void mapLegacyProps(Properties& props)
   {
-    auto it = props.begin();
+    auto it= props.begin();
     while (it != props.end()) {
       auto cit = legacyPropKeyMapping.find(it->first);
       if (cit != legacyPropKeyMapping.end()) {
         props.emplace(cit->second, it->second);
-        it = props.erase(it);
+        it= props.erase(it);
       }
       else {
         ++it;

@@ -23,6 +23,7 @@
 
 #include "buildconf.hpp"
 #include "SQLString.hpp"
+#include "Properties.hpp"
 #include "Savepoint.hpp"
 #include "jdbccompat.hpp"
 

@@ -37,10 +37,6 @@ namespace sql
   {
   }
 
-  /*SQLString::SQLString(const std::string& other) : theString(new StringImp(other.c_str(), other.length()))
-  {
-
-  }*/
 
   //TODO: not sure if it's not better to throw on null pointer
   SQLString::SQLString(const char* str) : theString(new StringImp(str != nullptr ? str : ""))

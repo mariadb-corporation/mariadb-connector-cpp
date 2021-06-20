@@ -88,7 +88,5 @@ namespace sql
     virtual Object* getObject()=0;
     virtual void setObject()=0;
   };
-
-  typedef std::map<SQLString, SQLString> Properties;
 }
 #endif

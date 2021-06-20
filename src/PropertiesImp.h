@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -17,32 +17,34 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
-#ifndef _STRINGIMP_H_
-#define _STRINGIMP_H_
+#ifndef _PROPERTIESIMP_H_
+#define _PROPERTIESIMP_H_
 
-#include <string>
-
+#include <map>
 #include "SQLString.hpp"
+#include "Properties.hpp"
 
 namespace sql
 {
-class StringImp
-{
-  std::string realStr;
+  class PropertiesImp
+  {
+  public:
+    using ImpType = std::map<SQLString, SQLString>;
 
-public:
-  static std::string& get(SQLString& str);
-  static const std::string& get(const SQLString& str);
+    ImpType realMap;
 
-  StringImp(const char* str);
-  StringImp(const char* str, std::size_t count);
-  StringImp()=default; //or delete?
-  ~StringImp()=default;
+  public:
+    static ImpType& get(Properties& props);
+    static const ImpType& get(const Properties& props);
 
-  std::string* operator ->() { return &realStr; }
+    PropertiesImp(const ImpType& other);
+    PropertiesImp()= default;
+    ~PropertiesImp()= default;
 
-  std::string& get() { return realStr; }
+    ImpType* operator ->() { return &realMap; }
+
+    ImpType& get() { return realMap; }
+  };
 };
 
-}
 #endif

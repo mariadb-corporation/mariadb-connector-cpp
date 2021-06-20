@@ -158,6 +158,7 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/StringImp.cpp
                    src/CArray.cpp
                    src/SimpleParameterMetaData.cpp
+                   src/Properties.cpp
                    ####CPP####
                    )
 
@@ -249,6 +250,7 @@ IF(WIN32)
                    "include/conncpp/Types.hpp"
                    "include/conncpp/buildconf.hpp"
                    "include/conncpp/CArray.hpp"
+                   "include/conncpp/Properties.hpp"
 
                    src/SelectResultSet.h
                    src/com/capi/SelectResultSetCapi.h
@@ -310,6 +312,7 @@ IF(WIN32)
                    src/StringImp.h
                    src/CArrayImp.h
                    src/SimpleParameterMetaData.h
+                   src/PropertiesImp.h
                    ####H####
                        )
   SOURCE_GROUP(Logging REGULAR_EXPRESSION "/logger/")
