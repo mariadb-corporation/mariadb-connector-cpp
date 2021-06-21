@@ -32,65 +32,64 @@ class StringImp;
 #pragma warning(push)
 #pragma warning(disable:4251)
 
-class MARIADB_EXPORTED SQLString final {
+class SQLString final {
 
   friend class StringImp;
 
   std::unique_ptr<StringImp> theString;
 public:
-  SQLString(const SQLString&);
-  SQLString(SQLString&&); //Move constructor
+  MARIADB_EXPORTED SQLString(const SQLString&);
+  MARIADB_EXPORTED SQLString(SQLString&&); //Move constructor
   SQLString(const std::string& str) : SQLString(str.c_str(), str.length()) {}
-  SQLString(const char* str);
-  SQLString(const char* str, std::size_t count);
-  SQLString();
-  ~SQLString();
+  MARIADB_EXPORTED SQLString(const char* str);
+  MARIADB_EXPORTED SQLString(const char* str, std::size_t count);
+  MARIADB_EXPORTED SQLString();
+  MARIADB_EXPORTED ~SQLString();
 
   static constexpr std::size_t npos{static_cast<std::size_t>(-1)};
-  const char * c_str() const;
-  SQLString& operator=(const SQLString&);
-  //operator std::string() { return std::string(this->c_str(), this->length()); }
-  operator const char* () const;
-  SQLString& operator=(const char * right);
-  bool operator <(const SQLString&) const;
+  MARIADB_EXPORTED const char * c_str() const;
+  MARIADB_EXPORTED SQLString& operator=(const SQLString&);
+  MARIADB_EXPORTED operator const char* () const;
+  MARIADB_EXPORTED SQLString& operator=(const char * right);
+  MARIADB_EXPORTED bool operator <(const SQLString&) const;
 
-  bool empty() const;
-  int compare(const SQLString& str) const;
-  int compare(std::size_t pos1, std::size_t count1, const char* s, std::size_t count2) const;
-  int caseCompare(const SQLString& other) const;
-  SQLString & append(const SQLString& addition);
-  SQLString & append(const char * const addition);
-  SQLString & append(const char * const addition, std::size_t len);
-  SQLString & append(char c);
-  SQLString substr(std::size_t pos= 0, size_t count=npos) const;
-  std::size_t find_first_of(const SQLString& str, std::size_t pos = 0) const;
-  std::size_t find_first_of(const char* str, std::size_t pos = 0) const;
-  std::size_t find_first_of(const char ch, std::size_t pos = 0) const;
-  std::size_t find_last_of(const SQLString& str, std::size_t pos=npos) const;
-  std::size_t find_last_of(const char* str, std::size_t pos=npos) const;
-  std::size_t find_last_of(const char ch, std::size_t pos=npos) const;
-  std::size_t size() const;
-  std::size_t length() const;
-  void reserve(std::size_t n= 0);
-  char& at(std::size_t pos);
-  const char& at(std::size_t pos) const;
-  std::string::iterator begin();
-  std::string::iterator end();
-  std::string::const_iterator begin() const;
-  std::string::const_iterator end() const;
-  std::string::const_iterator cbegin() const { return begin(); }
-  std::string::const_iterator cend() const { return end(); }
-  void clear();
+  MARIADB_EXPORTED bool empty() const;
+  MARIADB_EXPORTED int compare(const SQLString& str) const;
+  MARIADB_EXPORTED int compare(std::size_t pos1, std::size_t count1, const char* s, std::size_t count2) const;
+  MARIADB_EXPORTED int caseCompare(const SQLString& other) const;
+  MARIADB_EXPORTED SQLString & append(const SQLString& addition);
+  MARIADB_EXPORTED SQLString & append(const char * const addition);
+  MARIADB_EXPORTED SQLString & append(const char * const addition, std::size_t len);
+  MARIADB_EXPORTED SQLString & append(char c);
+  MARIADB_EXPORTED SQLString substr(std::size_t pos= 0, size_t count=npos) const;
+  MARIADB_EXPORTED std::size_t find_first_of(const SQLString& str, std::size_t pos = 0) const;
+  MARIADB_EXPORTED std::size_t find_first_of(const char* str, std::size_t pos = 0) const;
+  MARIADB_EXPORTED std::size_t find_first_of(const char ch, std::size_t pos = 0) const;
+  MARIADB_EXPORTED std::size_t find_last_of(const SQLString& str, std::size_t pos=npos) const;
+  MARIADB_EXPORTED std::size_t find_last_of(const char* str, std::size_t pos=npos) const;
+  MARIADB_EXPORTED std::size_t find_last_of(const char ch, std::size_t pos=npos) const;
+  MARIADB_EXPORTED std::size_t size() const;
+  MARIADB_EXPORTED std::size_t length() const;
+  MARIADB_EXPORTED void reserve(std::size_t n= 0);
+  MARIADB_EXPORTED char& at(std::size_t pos);
+  MARIADB_EXPORTED const char& at(std::size_t pos) const;
+  MARIADB_EXPORTED std::string::iterator begin();
+  MARIADB_EXPORTED std::string::iterator end();
+  MARIADB_EXPORTED std::string::const_iterator begin() const;
+  MARIADB_EXPORTED std::string::const_iterator end() const;
+  MARIADB_EXPORTED std::string::const_iterator cbegin() const { return begin(); }
+  MARIADB_EXPORTED std::string::const_iterator cend() const { return end(); }
+  MARIADB_EXPORTED void clear();
 
   /* Few extensions to mimic some java's String functionality. Probably should be moved to standalone functions */
-  int64_t hashCode() const;
-  bool startsWith(const SQLString &str) const;
-  bool endsWith(const SQLString &str) const;
-  SQLString& toUpperCase();
-  SQLString& toLowerCase();
-  SQLString& ltrim();
-  SQLString& rtrim();
-  SQLString& trim();
+  MARIADB_EXPORTED int64_t hashCode() const;
+  MARIADB_EXPORTED bool startsWith(const SQLString &str) const;
+  MARIADB_EXPORTED bool endsWith(const SQLString &str) const;
+  MARIADB_EXPORTED SQLString& toUpperCase();
+  MARIADB_EXPORTED SQLString& toLowerCase();
+  MARIADB_EXPORTED SQLString& ltrim();
+  MARIADB_EXPORTED SQLString& rtrim();
+  MARIADB_EXPORTED SQLString& trim();
 };
 
 MARIADB_EXPORTED SQLString operator+(const SQLString& str1, const SQLString & str2);

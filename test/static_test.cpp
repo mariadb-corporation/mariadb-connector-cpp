@@ -47,15 +47,14 @@ get_connection(const std::string& host, const std::string& user, const std::stri
   if (loops % 2 && !useTls) {
     return driver->connect(host, /*port,*/ user, pass);
   } else {
-    sql::ConnectOptionsMap connection_properties;
-    connection_properties["hostName"]= host;
-    connection_properties["userName"]= user;
-    connection_properties["password"]= pass;
-    connection_properties["useTls"]=   useTls ? "true" : "false";
-    /* We need to run tests for client- and server-side prepared statements. That also gives
-       much more sense for these tests to be run twice */
-    connection_properties["useServerPrepStmts"]= "true";
-
+    sql::ConnectOptionsMap connection_properties= {{"hostName", host},
+                                                   {"userName", user},
+                                                   {"password", pass},
+                                                   {"useTls", (useTls ? "true" : "false")},
+                                                   {"useServerPrepStmts", "true"} /* We need to run tests for client- and
+                                                                                   server-side prepared statements. That also gives
+                                                                                   much more sense for these tests to be run twice */
+                                                  };
     return driver->connect(connection_properties);
   }
 }
