@@ -73,7 +73,7 @@ public:
 
   ResultSet* getPrimaryKeys(const SQLString& catalog, const SQLString& schema, const SQLString& table);
 
-  ResultSet* getTables(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& tableNamePattern, std::list<SQLString>& types);
+  ResultSet* getTables(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& tableNamePattern, const sql::List& types);
 
   ResultSet* getColumns(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& tableNamePattern,
                        const SQLString& columnNamePattern);
@@ -234,7 +234,7 @@ public:
   bool deletesAreDetected(int32_t type);
   bool insertsAreDetected(int32_t type);
   bool supportsBatchUpdates();
-  ResultSet* getUDTs(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& typeNamePattern, std::list<int32_t>& types);
+  ResultSet* getUDTs(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& typeNamePattern, const std::list<int32_t>& types);
   Connection* getConnection();
   bool supportsSavepoints();
   bool supportsNamedParameters();

@@ -28,7 +28,7 @@
 #include "StringImp.h"
 #include "Options.h"
 #include "credential/CredentialPlugin.h"
-
+#include "PropertiesImp.h"
 namespace sql
 {
 namespace mariadb
@@ -69,12 +69,12 @@ public:
   public:
     static void parse(enum HaMode haMode, const SQLString& urlParameters, Shared::Options options);
   private:
-    static Shared::Options parse(enum HaMode haMode, const SQLString& urlParameters, Properties& properties);
+    static Shared::Options parse(enum HaMode haMode, const SQLString& urlParameters, PropertiesImp::ImpType& properties);
 
   public:
-    static Shared::Options parse(enum HaMode haMode, const SQLString& urlParameters, Properties& properties, Shared::Options options);
+    static Shared::Options parse(enum HaMode haMode, const SQLString& urlParameters, PropertiesImp::ImpType& properties, Shared::Options options);
   private:
-    static Shared::Options parse(enum HaMode haMode, const Properties& properties, Shared::Options paramOptions);
+    static Shared::Options parse(enum HaMode haMode, const PropertiesImp::ImpType& properties, Shared::Options paramOptions);
 
   public:
     static void postOptionProcess(const Shared::Options options, CredentialPlugin* credentialPlugin);

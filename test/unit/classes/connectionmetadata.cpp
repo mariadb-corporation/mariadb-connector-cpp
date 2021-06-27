@@ -2513,6 +2513,9 @@ void connectionmetadata::bugCpp25()
     verFromServer= verFromServer.substr(0, dash);
   }
   // More to test connector's split
+#ifndef _WIN32
+  // In case of mixing relese/debug versions, split may crash on Windows. Thus leaving it to be tested on other platforms
+  // On Windows doing testing the same without split
   sql::mariadb::Tokens verParts(sql::mariadb::split(verFromServer, "."));
 
   ASSERT_EQUALS(3ULL, static_cast<uint64_t>(verParts->size()));
@@ -2533,6 +2536,20 @@ void connectionmetadata::bugCpp25()
   ASSERT_EQUALS("22", (*csv)[3]);
   ASSERT_EQUALS("", (*csv)[4]);
   ASSERT_EQUALS("", (*csv)[5]);
+#else
+  List verParts;
+  StringUtils::split(verParts, verFromServer.c_str(), ".", true, true);
+
+  ASSERT_EQUALS(3ULL, static_cast<uint64_t>(verParts.size()));
+  ASSERT_EQUALS(major, std::stoul(verParts[0].c_str()));
+  ASSERT_EQUALS(minor, std::stoul(verParts[1].c_str()));
+
+  std::size_t dashPos = verParts[2].find_first_of("-");
+  if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+    ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? verParts[2].c_str() : verParts[2].substr(0, dashPos).c_str()));
+  }
+#endif // !_WIN32
+
 }
 
 } /* namespace connectionmetadata */

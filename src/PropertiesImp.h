@@ -29,7 +29,7 @@ namespace sql
   class PropertiesImp
   {
   public:
-    using ImpType = std::map<SQLString, SQLString>;
+    using ImpType= std::map<SQLString, SQLString>;
 
     ImpType realMap;
 
@@ -42,9 +42,57 @@ namespace sql
     ~PropertiesImp()= default;
 
     ImpType* operator ->() { return &realMap; }
-
     ImpType& get() { return realMap; }
+
+    Properties::iterator erase(Properties::const_iterator pos);
+    Properties::iterator find(const Properties::key_type& key);
+    Properties::const_iterator cfind(const Properties::key_type& key) const;
+    Properties::iterator begin();
+    Properties::iterator end();
+    Properties::const_iterator cbegin();
+    Properties::const_iterator cend();
   };
-};
+
+  class iteratorImp
+  {
+  public:
+    using ImpType= PropertiesImp::ImpType::iterator;
+
+    ImpType real;
+
+  public:
+    static ImpType& get(Properties::iterator& it);
+    static const ImpType& get(const Properties::iterator& it);
+
+    iteratorImp(const ImpType& other) : real(other) {}
+    iteratorImp() = default;
+    ~iteratorImp() = default;
+
+    ImpType* operator ->() { return &real; }
+
+    ImpType& get() { return real; }
+  };
+
+  class const_iteratorImp
+  {
+  public:
+    using ImpType = PropertiesImp::ImpType::const_iterator;
+
+    ImpType real;
+
+  public:
+    static ImpType& get(Properties::const_iterator& it);
+    static const ImpType& get(const Properties::const_iterator& it);
+
+    const_iteratorImp(const ImpType& other) : real(other) {}
+    const_iteratorImp() = default;
+    ~const_iteratorImp() = default;
+
+    ImpType* operator ->() { return &real; }
+
+    ImpType& get() { return real; }
+  };
+
+}
 
 #endif

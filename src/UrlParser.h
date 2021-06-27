@@ -29,6 +29,7 @@
 #include "StringImp.h"
 #include "HostAddress.h"
 #include "credential/CredentialPlugin.h"
+#include "PropertiesImp.h"
 
 namespace sql
 {
@@ -55,11 +56,11 @@ public:
   UrlParser(SQLString& database, std::vector<HostAddress>& addresses, Shared::Options options, enum HaMode haMode);
   static bool acceptsUrl(const SQLString& url);
   static UrlParser* parse(const SQLString& url);
-  static UrlParser* parse(const SQLString& url, Properties& prop);
+  static UrlParser* parse(const SQLString& url, PropertiesImp::ImpType & prop);
 
 private:
-  static void parseInternal(UrlParser& urlParser, const SQLString& url, Properties& properties);
-  static void defineUrlParserParameters(UrlParser &urlParser, Properties& properties,
+  static void parseInternal(UrlParser& urlParser, const SQLString& url, PropertiesImp::ImpType& properties);
+  static void defineUrlParserParameters(UrlParser &urlParser, PropertiesImp::ImpType& properties,
   const SQLString& hostAddressesString, const SQLString& additionalParameters);
   static enum HaMode parseHaMode(const SQLString& url, size_t separator);
   static void setDefaultHostAddressType(UrlParser& urlParser);

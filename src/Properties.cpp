@@ -22,6 +22,28 @@
 
 namespace sql
 {
+  /**************** iteratorImp *******************/
+  iteratorImp::ImpType& iteratorImp::get(Properties::iterator& it)
+  {
+    return it.it->real;
+  }
+
+  const iteratorImp::ImpType& iteratorImp::get(const Properties::iterator& it)
+  {
+    return it.it->real;
+  }
+  ////////////// iteratorImp - End /////////////////
+  /**************** const_iteratorImp *******************/
+  const_iteratorImp::ImpType& const_iteratorImp::get(Properties::const_iterator& cit)
+  {
+    return cit.cit->real;
+  }
+
+  const const_iteratorImp::ImpType& const_iteratorImp::get(const Properties::const_iterator& cit)
+  {
+    return cit.cit->real;
+  }
+  ////////////// iteratorImp - End ///////////////// 
   /*********** PropertiesImp - 2 static methods and constructor ******/
   PropertiesImp::ImpType& PropertiesImp::get(Properties& props)
   {
@@ -37,9 +59,159 @@ namespace sql
   PropertiesImp::PropertiesImp(const PropertiesImp::ImpType& other) :
     realMap(other)
   {
+  }
 
+
+  Properties::iterator PropertiesImp::erase(Properties::const_iterator pos)
+  {
+    return realMap.erase(pos.cit->real);
+  }
+
+  Properties::iterator PropertiesImp::find(const Properties::key_type& key)
+  {
+    return realMap.find(key);
+  }
+
+  Properties::const_iterator PropertiesImp::cfind(const Properties::key_type& key) const
+  {
+    return realMap.find(key);
+  }
+
+  Properties::iterator PropertiesImp::begin()
+  {
+    return realMap.begin();
+  }
+
+  Properties::iterator PropertiesImp::end()
+  {
+    return realMap.end();
+  }
+
+  Properties::const_iterator PropertiesImp::cbegin()
+  {
+    return realMap.cbegin();
+  }
+
+  Properties::const_iterator PropertiesImp::cend()
+  {
+    return realMap.cend();
   }
   ///////////// PropertiesImp - End ////////////////
+
+  /************ Properties::iterator **************/
+  Properties::iterator::iterator(const std::map<SQLString, SQLString>::iterator& _it) : iterator()
+  {
+    *it= _it;
+  }
+
+  Properties::iterator::iterator() : it(new iteratorImp())
+  {}
+
+  Properties::iterator::iterator(const iterator& other): it(new iteratorImp(*other.it))
+  {}
+
+  Properties::iterator::~iterator()
+  {}
+
+  Properties::iterator& Properties::iterator::operator ++()
+  {
+    ++(it->real);
+    return *this;
+  }
+
+  Properties::iterator& Properties::iterator::operator --()
+  {
+    --(it->real);
+    return *this;
+  }
+
+  Properties::iterator Properties::iterator::operator ++(int dummy)
+  {
+    Properties::iterator current(*this);
+    ++(*this);
+    return current;
+  }
+
+  Properties::iterator Properties::iterator::operator --(int dummy)
+  {
+    Properties::iterator current(*this);
+    --(*this);
+    return current;
+  }
+
+  Properties::value_type& Properties::iterator::operator*()
+  {
+    return *(it->real);
+  }
+
+  const Properties::value_type& Properties::iterator::operator*() const
+  {
+    return *(it->real);
+  }
+
+  Properties::value_type* Properties::iterator::operator->()
+  {
+    return &*(it->real);
+  }
+
+  const Properties::value_type* Properties::iterator::operator->() const
+  {
+    return &*(it->real);
+  }
+  /////////// Properties::iterator - End ///////////
+  /************ Properties::const_iterator **************/
+  Properties::const_iterator::const_iterator(const std::map<SQLString, SQLString>::const_iterator& _it) : const_iterator()
+  {
+    *cit = _it;
+  }
+
+  Properties::const_iterator::const_iterator() : cit(new const_iteratorImp())
+  {}
+
+  Properties::const_iterator::const_iterator(const const_iterator& other) : cit(new const_iteratorImp(*other.cit))
+  {}
+
+  Properties::const_iterator::~const_iterator()
+  {}
+
+  Properties::const_iterator& Properties::const_iterator::operator ++()
+  {
+    ++(cit->real);
+    return *this;
+  }
+
+  Properties::const_iterator& Properties::const_iterator::operator --()
+  {
+    --(cit->real);
+    return *this;
+  }
+
+  Properties::const_iterator Properties::const_iterator::operator ++(int dummy)
+  {
+    Properties::const_iterator current(*this);
+    ++(*this);
+    return current;
+  }
+
+  Properties::const_iterator Properties::const_iterator::operator --(int dummy)
+  {
+    Properties::const_iterator current(*this);
+    --(*this);
+    return current;
+  }
+
+
+  const Properties::value_type& Properties::const_iterator::operator*() const
+  {
+    return *(cit->real);
+  }
+
+
+  const Properties::value_type* Properties::const_iterator::operator->() const
+  {
+    return &*(cit->real);
+  }
+  /////////// Properties::const_iterator - End ///////////
   /**************** Properties ********************/
   Properties::Properties(const Properties& other)
   {
@@ -138,41 +310,50 @@ namespace sql
 
   Properties::iterator Properties::erase(Properties::const_iterator pos)
   {
-    return (*theMap)->erase(pos);
+    return theMap->erase(pos);
   }
 
 
   Properties::iterator Properties::find(const key_type& key)
   {
-    return (*theMap)->find(key);
+    return theMap->find(key);
   }
 
   Properties::const_iterator Properties::find(const key_type& key) const
   {
-    return (*theMap)->find(key);
+    return theMap->cfind(key);
   }
 
 
-  Properties::iterator Properties::begin() noexcept
+  Properties::iterator Properties::begin()
   {
-    return (*theMap)->begin();
+    return theMap->begin();
   }
 
   Properties::iterator Properties::end()
   {
-    return (*theMap)->end();
+    return theMap->end();
   }
 
-  Properties::const_iterator Properties::begin() const noexcept
+  Properties::const_iterator Properties::begin() const
   {
-    return (*theMap)->begin();
+    return theMap->cbegin();
   }
 
   Properties::const_iterator Properties::end() const
   {
-    return (*theMap)->end();
+    return theMap->cend();
   }
 
+  Properties::const_iterator Properties::cbegin() const
+  {
+    return theMap->cbegin();
+  }
+
+  Properties::const_iterator Properties::cend() const
+  {
+    return theMap->cend();
+  }
 
   void Properties::clear()
   {
@@ -180,6 +361,24 @@ namespace sql
   }
 
 
+  /** Standalone operators/functions */
+  bool operator==(const Properties::iterator& left, const Properties::iterator& right)
+  {
+    return (iteratorImp::get(left) == iteratorImp::get(right));
+  }
 
+  bool operator!=(Properties::iterator& left, Properties::iterator& right)
+  {
+    return (iteratorImp::get(left) != iteratorImp::get(right));
+  }
+
+  bool operator==(Properties::const_iterator& left, Properties::const_iterator& right)
+  {
+    return (const_iteratorImp::get(left) == const_iteratorImp::get(right));
+  }
+  bool operator!=(Properties::const_iterator& left, Properties::const_iterator& right)
+  {
+    return (const_iteratorImp::get(left) != const_iteratorImp::get(right));
+  }
 };
 

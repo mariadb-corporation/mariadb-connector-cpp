@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 3.1)
 CMAKE_POLICY(SET CMP0048 NEW)
 
 PROJECT(mariadb_connector_cpp
-        VERSION 1.0.1
+        VERSION 1.1.0
 #        DESCRIPTION "MariaDB Connector/C++"
         LANGUAGES CXX C)
 
@@ -30,8 +30,8 @@ IF(CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
   MESSAGE(FATAL_ERROR "GCC version >=4.9 is required")
 ENDIF()
 
-SET(MACPP_VERSION_QUALITY "ga") #Empty also means GA
-SET(MACPP_VERSION "1.00.0001")
+SET(MACPP_VERSION_QUALITY "alpha") #Empty also means GA
+SET(MACPP_VERSION "1.01.0000")
 SET(MARIADB_DEFAULT_PLUGINS_SUBDIR "plugin")
 
 SET(CMAKE_CXX_STANDARD 11)
@@ -159,6 +159,7 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/CArray.cpp
                    src/SimpleParameterMetaData.cpp
                    src/Properties.cpp
+                   "src/List.cpp"
                    ####CPP####
                    )
 
@@ -251,6 +252,7 @@ IF(WIN32)
                    "include/conncpp/buildconf.hpp"
                    "include/conncpp/CArray.hpp"
                    "include/conncpp/Properties.hpp"
+                   "include/conncpp/List.hpp"
 
                    src/SelectResultSet.h
                    src/com/capi/SelectResultSetCapi.h
@@ -313,6 +315,7 @@ IF(WIN32)
                    src/CArrayImp.h
                    src/SimpleParameterMetaData.h
                    src/PropertiesImp.h
+                   src/ListImp.h
                    ####H####
                        )
   SOURCE_GROUP(Logging REGULAR_EXPRESSION "/logger/")

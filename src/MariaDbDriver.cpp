@@ -27,30 +27,14 @@
 #include "Consts.h"
 #include "util/ClassField.h"
 #include "MariaDbDatabaseMetaData.h"
+#include "PropertiesImp.h"
 
 namespace sql
 {
 namespace mariadb
 {
   static MariaDbDriver theInstance;
-  static const Properties legacyPropKeyMapping{ {"userName", "user"},
-                                               {"socket",   "localSocket"} };
   extern const SQLString mysqlTcp, mysqlSocket, mysqlPipe;
-
-  void mapLegacyProps(Properties& props)
-  {
-    auto it= props.begin();
-    while (it != props.end()) {
-      auto cit = legacyPropKeyMapping.find(it->first);
-      if (cit != legacyPropKeyMapping.end()) {
-        props.emplace(cit->second, it->second);
-        it= props.erase(it);
-      }
-      else {
-        ++it;
-      }
-    }
-  }
 
 
   Driver* get_driver_instance()
@@ -59,9 +43,10 @@ namespace mariadb
   }
 
 
-  Connection* MariaDbDriver::connect(const SQLString& url, Properties& props)
+  Connection* MariaDbDriver::connect(const SQLString& url, const Properties& props)
   {
-    UrlParser* urlParser= UrlParser::parse(url, props);
+    PropertiesImp::ImpType propsCopy(PropertiesImp::get(props));
+    UrlParser* urlParser= UrlParser::parse(url, propsCopy);
 
     if (urlParser == nullptr || urlParser->getHostAddresses().empty())
     {
@@ -74,24 +59,25 @@ namespace mariadb
   }
 
 
-  void normalizeLegacyUri(SQLString& url, Properties* prop= nullptr) {
+  void normalizeLegacyUri(SQLString& url, Properties* properties= nullptr) {
 
     //Making TCP default with legacy uri
     if (url.find_first_of("://") == std::string::npos) {
       url= "tcp://" + url;
     }
 
-    if (prop != nullptr)
+    // Looks like in the only use of the normalizeLegacyUri propeties are not passed, i.e. it's nullptr
+    // TODO: Something is wrong
+    if (properties != nullptr)
     {
+      PropertiesImp::ImpType& prop= PropertiesImp::get(*properties);
       std::string key;
       std::size_t offset= 0;
       
-      mapLegacyProps(*prop);
-
       if (url.startsWith(mysqlTcp))
       {
-        auto cit= prop->find("port");
-        if (cit != prop->end()) {
+        auto cit= prop.find("port");
+        if (cit != prop.end()) {
           SQLString host(url.substr(mysqlTcp.length()));
           std::size_t colon= host.find_first_of(':');
           std::size_t schemaSlash= schemaSlash= host.find_first_of('/');
@@ -115,17 +101,14 @@ namespace mariadb
         return;
       }
 
-      if (prop != nullptr) {
-        std::string name(StringImp::get(url.substr(offset)));
-        std::size_t slashPos = name.find_first_of('/');
+      std::string name(StringImp::get(url.substr(offset)));
+      std::size_t slashPos = name.find_first_of('/');
 
-        if (slashPos != std::string::npos) {
-          name = name.substr(0, slashPos);
-        }
-
-        (*prop)[key] = name;
-        mapLegacyProps(*prop);
+      if (slashPos != std::string::npos) {
+        name= name.substr(0, slashPos);
       }
+
+      prop[key]= name;
     }
   }
 
@@ -144,9 +127,9 @@ namespace mariadb
   Connection * MariaDbDriver::connect(const Properties &initProps)
   {
     SQLString uri;
-    Properties props(initProps);
+    auto localCopy(initProps);
+    PropertiesImp::ImpType &props= PropertiesImp::get(localCopy);
     auto cit= props.find("hostName");
-    
 
     if (cit != props.end())
     {
@@ -180,9 +163,7 @@ namespace mariadb
       uri.append(cit->second);
     }
 
-    mapLegacyProps(props);
-
-    return connect(uri, props);
+    return connect(uri, localCopy);
   }
 
   bool MariaDbDriver::acceptsURL(const SQLString& url) {
@@ -194,10 +175,10 @@ namespace mariadb
   {
     std::unique_ptr<std::vector<DriverPropertyInfo>> result;
     Shared::Options options;
-
+    PropertiesImp::ImpType& realInfo = PropertiesImp::get(info);
     if (!url.empty())
     {
-      UrlParser *urlParser= UrlParser::parse(url, info);
+      UrlParser *urlParser= UrlParser::parse(url, realInfo);
       if (urlParser == NULL)// urlParser->getOptions())
       {
         return result;
@@ -206,7 +187,7 @@ namespace mariadb
     }
     else
     {
-      options= DefaultOptions::parse(HaMode::NONE, emptyStr, info, options);
+      options= DefaultOptions::parse(HaMode::NONE, emptyStr, realInfo, options);
     }
     for (auto o : OptionsMap)
     {

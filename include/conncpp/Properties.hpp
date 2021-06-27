@@ -33,52 +33,100 @@ class PropertiesImp;
 #pragma warning(push)
 #pragma warning(disable:4251)
 
-class MARIADB_EXPORTED Properties final {
+class Properties final {
 
   friend class PropertiesImp;
   
   std::unique_ptr<PropertiesImp> theMap;
 
 public:
+  using value_type= std::pair<const SQLString, SQLString>;
+  class iterator final {
+    friend class PropertiesImp;
+    friend class iteratorImp;
+    std::unique_ptr<iteratorImp> it;
+
+    iterator(const std::map<SQLString, SQLString>::iterator& _it);
+  public:
+    MARIADB_EXPORTED iterator();
+    MARIADB_EXPORTED iterator(const iterator& other);
+    MARIADB_EXPORTED ~iterator();
+
+    MARIADB_EXPORTED iterator& operator ++();
+    MARIADB_EXPORTED iterator& operator --();
+    // Postfix
+    MARIADB_EXPORTED iterator operator ++(int);
+    MARIADB_EXPORTED iterator operator --(int);
+
+    MARIADB_EXPORTED value_type& operator*();
+    MARIADB_EXPORTED const value_type& operator*() const;
+    MARIADB_EXPORTED value_type* operator->();
+    MARIADB_EXPORTED const value_type* operator->() const;
+  };
   using key_type= typename SQLString;
   using mapped_type= typename SQLString ;
-  using iterator= std::map<SQLString, SQLString>::iterator;
-  using const_iterator= std::map<SQLString, SQLString>::const_iterator;
-  using value_type= std::pair<const SQLString, SQLString>;
 
-  Properties(const Properties& other);
-  Properties(Properties&&); //Move constructor
-  Properties();
-  Properties(std::initializer_list<value_type> init);
-  ~Properties();
+  class const_iterator final {
+    friend class PropertiesImp;
+    friend class const_iteratorImp;
+    std::unique_ptr<const_iteratorImp> cit;
 
-  Properties& operator=(const Properties& other);
-  Properties& operator=(std::initializer_list<std::pair<const char*, const char*>> init);
+    const_iterator(const std::map<SQLString, SQLString>::const_iterator& _it);
+  public:
+    MARIADB_EXPORTED const_iterator();
+    MARIADB_EXPORTED const_iterator(const const_iterator& other);
+    MARIADB_EXPORTED ~const_iterator();
 
-  mapped_type& operator[](const key_type& key);
+    MARIADB_EXPORTED const_iterator& operator ++();
+    MARIADB_EXPORTED const_iterator& operator --();
+    // Postfix
+    MARIADB_EXPORTED const_iterator operator ++(int);
+    MARIADB_EXPORTED const_iterator operator --(int);
 
-  bool empty() const;
-  SQLString& at(const SQLString& key);
+    MARIADB_EXPORTED const value_type& operator*() const;
+    MARIADB_EXPORTED const value_type* operator->() const;
+  };
+
+  MARIADB_EXPORTED Properties(const Properties& other);
+  MARIADB_EXPORTED Properties(Properties&&); //Move constructor
+  MARIADB_EXPORTED Properties();
+  MARIADB_EXPORTED Properties(std::initializer_list<value_type> init);
+  MARIADB_EXPORTED ~Properties();
+  // Should not be exported
+  Properties(std::map<SQLString, SQLString> other) : Properties() {
+    for (auto it : other) this->emplace(it.first, it.second);
+  }
+  MARIADB_EXPORTED Properties& operator=(const Properties& other);
+  MARIADB_EXPORTED Properties& operator=(std::initializer_list<std::pair<const char*, const char*>> init);
+
+  MARIADB_EXPORTED mapped_type& operator[](const key_type& key);
+
+  MARIADB_EXPORTED bool empty() const;
+  MARIADB_EXPORTED SQLString& at(const SQLString& key);
   /* Not quite what std::map has - just to keep things simple */
-  bool insert(const key_type& key, const mapped_type& value);
-  bool insert(const value_type& value);
-  bool emplace(const key_type& key, const mapped_type& value);
+  MARIADB_EXPORTED bool insert(const key_type& key, const mapped_type& value);
+  MARIADB_EXPORTED bool insert(const value_type& value);
+  MARIADB_EXPORTED bool emplace(const key_type& key, const mapped_type& value);
 
-  std::size_t size() const;
-  std::size_t erase(const key_type& key);
-  Properties::iterator erase(Properties::const_iterator pos);
+  MARIADB_EXPORTED std::size_t size() const;
+  MARIADB_EXPORTED std::size_t erase(const key_type& key);
+  MARIADB_EXPORTED Properties::iterator erase(Properties::const_iterator pos);
 
-  Properties::iterator find(const key_type& key);
-  Properties::const_iterator find(const key_type& key) const;
-  Properties::iterator begin() noexcept;
-  Properties::iterator end();
-  Properties::const_iterator begin() const noexcept;
-  Properties::const_iterator end() const;
-  Properties::const_iterator cbegin() const noexcept { return begin(); }
-  Properties::const_iterator cend() const { return end(); }
-  void clear();
+  MARIADB_EXPORTED Properties::iterator find(const key_type& key);
+  MARIADB_EXPORTED Properties::const_iterator find(const key_type& key) const;
+  MARIADB_EXPORTED Properties::iterator begin();
+  MARIADB_EXPORTED Properties::iterator end();
+  MARIADB_EXPORTED Properties::const_iterator begin() const;
+  MARIADB_EXPORTED Properties::const_iterator end() const;
+  MARIADB_EXPORTED Properties::const_iterator cbegin() const;
+  MARIADB_EXPORTED Properties::const_iterator cend() const;
+  MARIADB_EXPORTED void clear();
 };
 
+MARIADB_EXPORTED bool operator==(Properties::iterator& left, Properties::iterator& right);
+MARIADB_EXPORTED bool operator!=(Properties::iterator& left, Properties::iterator& right);
+MARIADB_EXPORTED bool operator==(Properties::const_iterator& left, Properties::const_iterator& right);
+MARIADB_EXPORTED bool operator!=(Properties::const_iterator& left, Properties::const_iterator& right);
 }
 #pragma warning(pop)
 #endif

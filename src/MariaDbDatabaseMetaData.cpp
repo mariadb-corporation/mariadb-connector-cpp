@@ -30,6 +30,7 @@
 #include "SelectResultSet.h"
 #include "ColumnDefinition.h"
 #include "util/Utils.h"
+#include "ListImp.h"
 
 #define IMPORTED_KEYS_COLUMN_COUNT 14
 #define TYPE_INFO_COLUMN_COUNT 18
@@ -662,8 +663,9 @@ ResultSet* MariaDbDatabaseMetaData::getPrimaryKeys(const SQLString& catalog, con
  * @see #getSearchStringEscape
  */
 ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& tableNamePattern,
-  std::list<SQLString>& types)
+  const sql::List& wrappedTypes)
 {
+  const ListImp::ImpType& types = ListImp::get(wrappedTypes);
   SQLString sql(
       "SELECT NULL TABLE_CAT, TABLE_SCHEMA TABLE_SCHEM,  TABLE_NAME,"
       " IF(TABLE_TYPE='BASE TABLE', 'TABLE', TABLE_TYPE) as TABLE_TYPE,"
@@ -3530,7 +3532,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
     return true;
   }
 
-  ResultSet* MariaDbDatabaseMetaData::getUDTs(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& typeNamePattern, std::list<int32_t>& types)  {
+  ResultSet* MariaDbDatabaseMetaData::getUDTs(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& typeNamePattern, const std::list<int32_t>& types)  {
     SQLString sql =
       "SELECT ' ' TYPE_CAT, NULL TYPE_SCHEM, ' ' TYPE_NAME, ' ' CLASS_NAME, 0 DATA_TYPE, ' ' REMARKS, 0 BASE_TYPE"
       " FROM DUAL WHERE 1=0";

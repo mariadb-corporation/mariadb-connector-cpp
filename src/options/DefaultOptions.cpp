@@ -25,7 +25,6 @@
 #include "Consts.h"
 #include "Exception.hpp"
 
-
 namespace sql
 {
   namespace mariadb
@@ -713,6 +712,8 @@ namespace sql
         completeOptionsMap.emplace(defaultOption.first, &defaultOption.second);
       }
 
+      completeOptionsMap.emplace("userName",                   &OptionsMap["user"]);
+      completeOptionsMap.emplace("socket",                     &OptionsMap["localSocket"]);
       completeOptionsMap.emplace("createDB",                   &OptionsMap["createDatabaseIfNotExist"]);
       completeOptionsMap.emplace("useSSL",                     &OptionsMap["useTls"]);
       completeOptionsMap.emplace("useSsl",                     &OptionsMap["useTls"]);
@@ -812,7 +813,7 @@ namespace sql
 
     Shared::Options DefaultOptions::defaultValues(HaMode haMode)
     {
-      Properties properties;
+      PropertiesImp::ImpType properties;
       return parse(haMode, emptyStr, properties);
     }
     /**
@@ -824,7 +825,7 @@ namespace sql
      */
     Shared::Options DefaultOptions::defaultValues(HaMode haMode, bool pool)
     {
-      Properties properties;
+      PropertiesImp::ImpType  properties;
       properties.insert({ "pool", pool ? "true" : "false" });
       Shared::Options options= parse(haMode, emptyStr, properties);
       postOptionProcess(options, nullptr);
@@ -840,13 +841,13 @@ namespace sql
      */
     void DefaultOptions::parse(const enum HaMode haMode, const SQLString& urlParameters, Shared::Options options)
     {
-      Properties prop;
+      PropertiesImp::ImpType prop;
       parse(haMode, urlParameters, prop, options);
       postOptionProcess(options, nullptr);
     }
 
 
-    Shared::Options DefaultOptions::parse( const enum HaMode haMode,const SQLString& urlParameters, Properties& properties) {
+    Shared::Options DefaultOptions::parse( const enum HaMode haMode,const SQLString& urlParameters, PropertiesImp::ImpType& properties) {
       Shared::Options options= parse(haMode, urlParameters, properties, nullptr);
       postOptionProcess(options, nullptr);
       return options;
@@ -861,7 +862,7 @@ namespace sql
      * @param options initial options
      * @return options
      */
-    Shared::Options DefaultOptions::parse(enum HaMode haMode, const SQLString& urlParameters, Properties& properties,
+    Shared::Options DefaultOptions::parse(enum HaMode haMode, const SQLString& urlParameters, PropertiesImp::ImpType& properties,
       Shared::Options options)
     {
       if (/*urlParameters !=NULL &&*/ !urlParameters.empty())
@@ -886,7 +887,7 @@ namespace sql
     }
 
 
-    Shared::Options DefaultOptions::parse(enum HaMode haMode, const Properties& properties, Shared::Options paramOptions)
+    Shared::Options DefaultOptions::parse(enum HaMode haMode, const PropertiesImp::ImpType& properties, Shared::Options paramOptions)
     {
       Options &options= *paramOptions;
 

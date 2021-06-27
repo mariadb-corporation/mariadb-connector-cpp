@@ -90,12 +90,12 @@ namespace mariadb
 
 
   UrlParser* UrlParser::parse(const SQLString& url) {
-    Properties emptyProps;
+    PropertiesImp::ImpType emptyProps;
     return parse(url, emptyProps);
   }   
 
 
-  UrlParser* UrlParser::parse(const SQLString& url, Properties& prop)
+  UrlParser* UrlParser::parse(const SQLString& url, PropertiesImp::ImpType& prop)
   {
     if ((url.startsWith("jdbc:mariadb:")
       || (url.startsWith("jdbc:mysql:") && url.find_first_of(DISABLE_MYSQL_URL) == std::string::npos))
@@ -111,7 +111,7 @@ namespace mariadb
   }
 
 
-  void UrlParser::parseInternal(UrlParser& urlParser, const SQLString& url, Properties &properties)
+  void UrlParser::parseInternal(UrlParser& urlParser, const SQLString& url, PropertiesImp::ImpType& properties)
   {
     try
     {
@@ -162,7 +162,7 @@ namespace mariadb
   }
 
 
-  void UrlParser::defineUrlParserParameters(UrlParser &urlParser, Properties& properties,
+  void UrlParser::defineUrlParserParameters(UrlParser &urlParser, PropertiesImp::ImpType& properties,
     const SQLString& hostAddressesString, const SQLString& additionalParameters)
   {
     if (!additionalParameters.empty())
@@ -314,7 +314,7 @@ namespace mariadb
   void UrlParser::parseUrl(const SQLString& url)
   {
     if (acceptsUrl(url)) {
-      Properties dummy;
+      PropertiesImp::ImpType dummy;
       parseInternal(*this, url, dummy);
     }
   }

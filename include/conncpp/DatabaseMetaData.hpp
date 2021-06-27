@@ -21,8 +21,8 @@
 #ifndef _DatabaseMetaData_H_
 #define _DatabaseMetaData_H_
 
-#include <list>
 #include "buildconf.hpp"
+#include "List.hpp"
 
 namespace sql
 {
@@ -150,7 +150,7 @@ public:
   virtual ResultSet* getImportedKeys(const SQLString& catalog, const SQLString& schema, const SQLString& table)=0;
   virtual ResultSet* getPrimaryKeys(const SQLString& catalog, const SQLString& schema, const SQLString& table)=0;
   virtual ResultSet* getTables(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& tableNamePattern,
-                      std::list<SQLString>& types)=0;
+                      const List& types)=0;
   virtual ResultSet* getColumns(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& tableNamePattern, const SQLString& columnNamePattern)=0;
   virtual ResultSet* getExportedKeys(const SQLString& catalog, const SQLString& schema, const SQLString& table)=0;
   virtual ResultSet* getBestRowIdentifier(const SQLString& catalog, const SQLString& schema, const SQLString& table, int32_t scope, bool nullable)=0;
@@ -301,7 +301,7 @@ public:
   virtual bool deletesAreDetected(int32_t type)=0;
   virtual bool insertsAreDetected(int32_t type)=0;
   virtual bool supportsBatchUpdates()=0;
-  virtual ResultSet* getUDTs(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& typeNamePattern, std::list<int32_t>& types)=0;
+  virtual ResultSet* getUDTs(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& typeNamePattern, const std::list<int32_t>& types)=0;
   virtual Connection* getConnection()=0;
   virtual bool supportsSavepoints()=0;
   virtual bool supportsNamedParameters()=0;

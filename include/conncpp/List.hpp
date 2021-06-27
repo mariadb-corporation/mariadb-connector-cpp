@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -17,45 +17,43 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
+/* Simplified std::map wrapper used for connection properties*/
+#ifndef _SQLLIST_H_
+#define _SQLLIST_H_
 
-#ifndef _DRIVER_H_
-#define _DRIVER_H_
-
+#include <memory>
+#include <list>
+#include <SQLString.hpp>
 #include "buildconf.hpp"
-#include "SQLString.hpp"
-#include "Connection.hpp"
-#include "jdbccompat.hpp"
 
 namespace sql
 {
-typedef Properties ConnectOptionsMap;
 
-class MARIADB_EXPORTED Driver {
-  Driver(const Driver &);
-  void operator=(Driver &);
+#pragma warning(push)
+#pragma warning(disable:4251)
+
+class List final {
+
+  friend class ListImp;
+  
+  std::unique_ptr<ListImp> list;
+
 public:
-  Driver() {}
-  virtual ~Driver(){}
 
-  virtual Connection* connect(const SQLString& url, const Properties& props)=0;
-  virtual Connection* connect(const SQLString& host, const SQLString& user, const SQLString& pwd)=0;
-  virtual Connection* connect(const Properties& props)=0;
-  virtual bool acceptsURL(const SQLString& url)=0;
-  virtual uint32_t getMajorVersion()=0;
-  virtual uint32_t getMinorVersion()=0;
-  virtual bool jdbcCompliant()=0;
-  //Not in the classic API
-  virtual const SQLString& getName()=0;
-#ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
-  virtual Logger* getParentLogger()= 0;
-#endif
-  };
+  MARIADB_EXPORTED List(const List& other);
+  MARIADB_EXPORTED List(List&&); //Move constructor
+  MARIADB_EXPORTED List();
+  MARIADB_EXPORTED List(std::initializer_list<SQLString> init);
+  MARIADB_EXPORTED ~List();
+  // Should not be exported
+  List(const std::list<SQLString> other) : List() {
+    for (auto it : other) this->push_back(it);
+  }
+  MARIADB_EXPORTED List& operator=(const List& other);
+  MARIADB_EXPORTED List& operator=(std::initializer_list<SQLString> init);
+  MARIADB_EXPORTED void push_back(const SQLString& value);
+};
 
-namespace mariadb
-{
-  MARIADB_EXPORTED Driver* get_driver_instance();
 }
-}
-
-
+#pragma warning(pop)
 #endif

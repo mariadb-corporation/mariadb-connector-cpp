@@ -18,6 +18,8 @@ SET(MARIADBCPP_PUBLIC_CLASSES ${CMAKE_SOURCE_DIR}/include/conncpp/Driver.hpp
                             ${CMAKE_SOURCE_DIR}/include/conncpp/jdbccompat.hpp
                             ${CMAKE_SOURCE_DIR}/include/conncpp/buildconf.hpp
                             ${CMAKE_SOURCE_DIR}/include/conncpp/CArray.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/Properties.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/List.hpp
                             )
 
 SET(MARIADBCPP_COMPAT_STUBS ${CMAKE_SOURCE_DIR}/include/conncpp/compat/Array.hpp

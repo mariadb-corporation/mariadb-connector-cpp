@@ -420,8 +420,8 @@ unit_fixture::getConnection(sql::ConnectOptionsMap *additional_options)
 
   if (additional_options != nullptr)
   {
-    for (sql::ConnectOptionsMap::const_iterator cit= additional_options->begin();
-         cit != additional_options->end(); ++cit)
+    for (sql::ConnectOptionsMap::const_iterator cit= additional_options->cbegin();
+         cit != additional_options->cend(); ++cit)
     {
       connection_properties[cit->first]= cit->second;
     }

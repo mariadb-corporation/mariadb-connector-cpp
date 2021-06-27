@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -17,34 +17,33 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
-#ifndef _MARIADBDRIVER_H_
-#define _MARIADBDRIVER_H_
+#ifndef _LISTIMP_H_
+#define _LISTIMP_H_
 
-#include <vector>
-#include <memory>
-
-#include "Driver.hpp"
-#include "options/DriverPropertyInfo.h"
-#include "logger/Logger.h"
+#include "List.hpp"
 
 namespace sql
 {
-namespace mariadb
-{
-  class MariaDbDriver final : public sql::Driver {
-    public:
-      Connection* connect(const SQLString& url, const Properties& props);
-      Connection* connect(const SQLString& host, const SQLString& user, const SQLString& pwd);
-      Connection* connect(const Properties& props);
+  class ListImp
+  {
+  public:
+    using ImpType= std::list<SQLString>;
 
-      bool acceptsURL(const SQLString& url);
-      std::unique_ptr<std::vector<DriverPropertyInfo>> getPropertyInfo(SQLString& url, Properties& info);
-      uint32_t getMajorVersion();
-      uint32_t getMinorVersion();
-      bool jdbcCompliant();
-      const SQLString& getName();
-      Logger* getParentLogger();
+    ImpType real;
+
+  public:
+    static ImpType& get(List& props);
+    static const ImpType& get(const List& props);
+
+    ListImp(const ImpType& other);
+    ListImp()= default;
+    ~ListImp()= default;
+
+    ImpType* operator ->() { return &real; }
+    ImpType& get() { return real; }
+
   };
-}
-}
+
+};
+
 #endif

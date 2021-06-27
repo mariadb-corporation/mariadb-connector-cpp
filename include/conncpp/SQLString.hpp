@@ -40,6 +40,7 @@ class SQLString final {
 public:
   MARIADB_EXPORTED SQLString(const SQLString&);
   MARIADB_EXPORTED SQLString(SQLString&&); //Move constructor
+  // Should not be exported
   SQLString(const std::string& str) : SQLString(str.c_str(), str.length()) {}
   MARIADB_EXPORTED SQLString(const char* str);
   MARIADB_EXPORTED SQLString(const char* str, std::size_t count);
