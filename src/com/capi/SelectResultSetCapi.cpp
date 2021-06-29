@@ -311,7 +311,7 @@ namespace capi
     }
   }
 
-  void SelectResultSetCapi::handleIoException(std::exception& ioe)
+  void SelectResultSetCapi::handleIoException(std::exception& ioe) const
   {
     ExceptionFactory::INSTANCE.create(
         "Server has closed the connection. \n"
@@ -349,9 +349,9 @@ namespace capi
 
     int32_t fetchSizeTmp= fetchSize;
     while (fetchSizeTmp > 0 && readNextValue()) {
-      fetchSizeTmp--;
+      --fetchSizeTmp;
     }
-    dataFetchTime++;
+    ++dataFetchTime;
   }
 
 
@@ -627,8 +627,8 @@ namespace capi
     }
   }
 
-
-  void SelectResultSetCapi::resetRow()
+  // It has to be const, because it's called by getters, and properties it changes are mutable
+  void SelectResultSetCapi::resetRow() const
   {
     if (data.size() > 0) {
       row->resetRow(data[rowPointer]);
@@ -643,7 +643,7 @@ namespace capi
   }
 
 
-  void SelectResultSetCapi::checkObjectRange(int32_t position) {
+  void SelectResultSetCapi::checkObjectRange(int32_t position) const {
     if (rowPointer < 0) {
       throw SQLDataException("Current position is before the first row", "22023");
     }
@@ -675,7 +675,7 @@ namespace capi
     }
   }
 
-  bool SelectResultSetCapi::isBeforeFirst() {
+  bool SelectResultSetCapi::isBeforeFirst() const {
     checkClose();
     return (dataFetchTime >0) ? rowPointer == -1 && dataSize > 0 : rowPointer == -1;
   }
@@ -713,7 +713,7 @@ namespace capi
     }
   }
 
-  bool SelectResultSetCapi::isFirst() {
+  bool SelectResultSetCapi::isFirst() const {
     checkClose();
     return /*dataFetchTime == 1 && */rowPointer == 0 && dataSize > 0;
   }
@@ -861,7 +861,7 @@ namespace capi
     return false;
   }
 
-  int32_t SelectResultSetCapi::getFetchDirection() {
+  int32_t SelectResultSetCapi::getFetchDirection() const {
     return FETCH_UNKNOWN;
   }
 
@@ -872,7 +872,7 @@ namespace capi
     }
   }
 
-  int32_t SelectResultSetCapi::getFetchSize() {
+  int32_t SelectResultSetCapi::getFetchSize() const {
     return this->fetchSize;
   }
 
@@ -893,21 +893,21 @@ namespace capi
     this->fetchSize= fetchSize;
   }
 
-  int32_t SelectResultSetCapi::getType() {
+  int32_t SelectResultSetCapi::getType()  const {
     return resultSetScrollType;
   }
 
-  int32_t SelectResultSetCapi::getConcurrency() {
+  int32_t SelectResultSetCapi::getConcurrency() const {
     return CONCUR_READ_ONLY;
   }
 
-  void SelectResultSetCapi::checkClose() {
+  void SelectResultSetCapi::checkClose() const {
     if (isClosedFlag) {
       throw SQLException("Operation not permit on a closed resultSet", "HY000");
     }
   }
 
-  bool SelectResultSetCapi::isCallableResult() {
+  bool SelectResultSetCapi::isCallableResult() const {
     return callableResult;
   }
 
@@ -925,17 +925,17 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  bool SelectResultSetCapi::wasNull() {
+  bool SelectResultSetCapi::wasNull() const {
     return row->wasNull();
   }
 
-  bool SelectResultSetCapi::isNull(int32_t columnIndex)
+  bool SelectResultSetCapi::isNull(int32_t columnIndex) const
   {
     checkObjectRange(columnIndex);
     return row->lastValueWasNull();
   }
 
-  bool SelectResultSetCapi::isNull(const SQLString & columnLabel)
+  bool SelectResultSetCapi::isNull(const SQLString & columnLabel) const
   {
     return isNull(findColumn(columnLabel));
   }
@@ -958,7 +958,7 @@ namespace capi
 #endif
 
   /** {inheritDoc}. */
-  SQLString SelectResultSetCapi::getString(int32_t columnIndex)
+  SQLString SelectResultSetCapi::getString(int32_t columnIndex) const
   {
     checkObjectRange(columnIndex);
     std::unique_ptr<SQLString> res= row->getInternalString(columnsInformation[columnIndex -1].get());
@@ -972,7 +972,7 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  SQLString SelectResultSetCapi::getString(const SQLString& columnLabel) {
+  SQLString SelectResultSetCapi::getString(const SQLString& columnLabel) const {
     return getString(findColumn(columnLabel));
   }
 
@@ -991,63 +991,59 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  std::istream* SelectResultSetCapi::getBinaryStream(int32_t columnIndex) {
+  std::istream* SelectResultSetCapi::getBinaryStream(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     blobBuffer[columnIndex].reset(new memBuf(row->fieldBuf.arr + row->pos, row->fieldBuf.arr + row->pos + row->getLengthMaxFieldSize()));
     return new std::istream(blobBuffer[columnIndex].get());
   }
 
   /** {inheritDoc}. */
-  std::istream* SelectResultSetCapi::getBinaryStream(const SQLString& columnLabel) {
+  std::istream* SelectResultSetCapi::getBinaryStream(const SQLString& columnLabel) const {
     return getBinaryStream(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  int32_t SelectResultSetCapi::getInt(int32_t columnIndex) {
+  int32_t SelectResultSetCapi::getInt(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     return row->getInternalInt(columnsInformation[columnIndex -1].get());
   }
 
-  /** {inheritDoc}. */  int32_t SelectResultSetCapi::getInt(const SQLString& columnLabel) {
+  /** {inheritDoc}. */  int32_t SelectResultSetCapi::getInt(const SQLString& columnLabel) const {
     return getInt(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  int64_t SelectResultSetCapi::getLong(const SQLString& columnLabel) {
+  int64_t SelectResultSetCapi::getLong(const SQLString& columnLabel) const {
     return getLong(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  int64_t SelectResultSetCapi::getLong(int32_t columnIndex) {
+  int64_t SelectResultSetCapi::getLong(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     return row->getInternalLong(columnsInformation[columnIndex -1].get());
   }
 
 
-  uint64_t SelectResultSetCapi::getUInt64(const SQLString & columnLabel)
-  {
+  uint64_t SelectResultSetCapi::getUInt64(const SQLString & columnLabel) const {
     return getUInt64(findColumn(columnLabel));
   }
 
 
-  uint64_t SelectResultSetCapi::getUInt64(int32_t columnIndex)
-  {
+  uint64_t SelectResultSetCapi::getUInt64(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     return static_cast<uint64_t>(row->getInternalULong(columnsInformation[columnIndex -1].get()));
   }
 
 
-  uint32_t SelectResultSetCapi::getUInt(const SQLString& columnLabel)
-  {
+  uint32_t SelectResultSetCapi::getUInt(const SQLString& columnLabel) const {
     return getUInt(findColumn(columnLabel));
   }
 
 
-  uint32_t SelectResultSetCapi::getUInt(int32_t columnIndex)
-  {
+  uint32_t SelectResultSetCapi::getUInt(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
 
     ColumnDefinition* columnInfo= columnsInformation[columnIndex - 1].get();
@@ -1060,23 +1056,23 @@ namespace capi
 
 
   /** {inheritDoc}. */
-  float SelectResultSetCapi::getFloat(const SQLString& columnLabel) {
+  float SelectResultSetCapi::getFloat(const SQLString& columnLabel) const {
     return getFloat(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  float SelectResultSetCapi::getFloat(int32_t columnIndex) {
+  float SelectResultSetCapi::getFloat(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     return row->getInternalFloat(columnsInformation[columnIndex -1].get());
   }
 
   /** {inheritDoc}. */
-  long double SelectResultSetCapi::getDouble(const SQLString& columnLabel) {
+  long double SelectResultSetCapi::getDouble(const SQLString& columnLabel) const {
     return getDouble(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  long double SelectResultSetCapi::getDouble(int32_t columnIndex) {
+  long double SelectResultSetCapi::getDouble(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     return row->getInternalDouble(columnsInformation[columnIndex -1].get());
   }
@@ -1195,12 +1191,12 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  sql::ResultSetMetaData* SelectResultSetCapi::getMetaData() {
+  sql::ResultSetMetaData* SelectResultSetCapi::getMetaData() const {
     return new MariaDbResultSetMetaData(columnsInformation, options, forceAlias);
   }
 
   /** {inheritDoc}. */
-  int32_t SelectResultSetCapi::findColumn(const SQLString& columnLabel) {
+  int32_t SelectResultSetCapi::findColumn(const SQLString& columnLabel) const {
     return columnNameMap->getIndex(columnLabel) + 1;
   }
 
@@ -1485,55 +1481,55 @@ namespace capi
 #endif
 
   /** {inheritDoc}. */
-  Blob* SelectResultSetCapi::getBlob(int32_t columnIndex) {
+  Blob* SelectResultSetCapi::getBlob(int32_t columnIndex) const {
     return getBinaryStream(columnIndex);
   }
 
   /** {inheritDoc}. */
-  Blob* SelectResultSetCapi::getBlob(const SQLString& columnLabel) {
+  Blob* SelectResultSetCapi::getBlob(const SQLString& columnLabel) const {
     return getBlob(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  RowId* SelectResultSetCapi::getRowId(int32_t columnIndex) {
+  RowId* SelectResultSetCapi::getRowId(int32_t columnIndex) const {
     throw ExceptionFactory::INSTANCE.notSupported("RowIDs not supported");
   }
 
   /** {inheritDoc}. */
-  RowId* SelectResultSetCapi::getRowId(const SQLString& columnLabel) {
+  RowId* SelectResultSetCapi::getRowId(const SQLString& columnLabel) const {
     throw ExceptionFactory::INSTANCE.notSupported("RowIDs not supported");
   }
 
   /** {inheritDoc}. */
-  bool SelectResultSetCapi::getBoolean(int32_t index) {
+  bool SelectResultSetCapi::getBoolean(int32_t index) const {
     checkObjectRange(index);
     return row->getInternalBoolean(columnsInformation[static_cast<std::size_t>(index) -1].get());
   }
 
   /** {inheritDoc}. */
-  bool SelectResultSetCapi::getBoolean(const SQLString& columnLabel) {
+  bool SelectResultSetCapi::getBoolean(const SQLString& columnLabel) const {
     return getBoolean(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  int8_t SelectResultSetCapi::getByte(int32_t index) {
+  int8_t SelectResultSetCapi::getByte(int32_t index) const {
     checkObjectRange(index);
     return row->getInternalByte(columnsInformation[static_cast<std::size_t>(index) - 1].get());
   }
 
   /** {inheritDoc}. */
-  int8_t SelectResultSetCapi::getByte(const SQLString& columnLabel) {
+  int8_t SelectResultSetCapi::getByte(const SQLString& columnLabel) const {
     return getByte(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  short SelectResultSetCapi::getShort(int32_t index) {
+  short SelectResultSetCapi::getShort(int32_t index) const {
     checkObjectRange(index);
     return row->getInternalShort(columnsInformation[static_cast<std::size_t>(index) - 1].get());
   }
 
   /** {inheritDoc}. */
-  short SelectResultSetCapi::getShort(const SQLString& columnLabel) {
+  short SelectResultSetCapi::getShort(const SQLString& columnLabel) const {
     return getShort(findColumn(columnLabel));
   }
 
@@ -1586,7 +1582,7 @@ namespace capi
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  std::size_t sql::mariadb::capi::SelectResultSetCapi::rowsCount()
+  std::size_t sql::mariadb::capi::SelectResultSetCapi::rowsCount() const
   {
     return dataSize;
   }
@@ -1951,7 +1947,7 @@ namespace capi
 #endif
 
   /** {inheritDoc}. */
-  int32_t SelectResultSetCapi::getHoldability() {
+  int32_t SelectResultSetCapi::getHoldability() const {
     return ResultSet::HOLD_CURSORS_OVER_COMMIT;
   }
 

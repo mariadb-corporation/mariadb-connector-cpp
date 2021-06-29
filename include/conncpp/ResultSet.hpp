@@ -64,12 +64,16 @@ public:
 
   virtual void close()=0;
   virtual bool next()=0;
+
   virtual SQLWarning* getWarnings()=0;
   virtual void clearWarnings()=0;
-  virtual bool isBeforeFirst()=0;
-  virtual bool isAfterLast()=0;
-  virtual bool isFirst()=0;
+
+  virtual bool isBeforeFirst() const=0;
+  virtual bool isFirst() const=0;
+  // In case of the ResultSet streaming, these two methods might need to fetch row from server, and thus can not be const
   virtual bool isLast()=0;
+  virtual bool isAfterLast()=0;
+
   virtual void beforeFirst()=0;
   virtual void afterLast()=0;
   virtual bool first()=0;
@@ -78,109 +82,105 @@ public:
   virtual bool absolute(int32_t row)=0;
   virtual bool relative(int32_t rows)=0;
   virtual bool previous()=0;
-  virtual int32_t getFetchDirection()=0;
+
+  virtual int32_t getFetchDirection() const=0;
   virtual void setFetchDirection(int32_t direction)=0;
-  virtual int32_t getFetchSize()=0;
+  virtual int32_t getFetchSize() const=0;
   virtual void setFetchSize(int32_t fetchSize)=0;
-  virtual int32_t getType()=0;
-  virtual int32_t getConcurrency()=0;
+  virtual int32_t getType() const=0;
+  virtual int32_t getConcurrency() const=0;
   virtual bool isClosed() const=0;
   virtual Statement* getStatement()=0;
-  virtual bool wasNull()=0;
+  virtual bool wasNull() const=0;
 
-  virtual bool isNull(int32_t columnIndex)=0;
-  virtual bool isNull(const SQLString& columnLabel)=0;
-  virtual SQLString getString(int32_t columnIndex)=0;
-  virtual SQLString getString(const SQLString& columnLabel)=0;
-  virtual int32_t getInt(int32_t columnIndex)=0;
-  virtual int32_t getInt(const SQLString& columnLabel)=0;
-  virtual uint32_t getUInt(int32_t columnIndex)=0;
-  virtual uint32_t getUInt(const SQLString& columnLabel)=0;
-  virtual int64_t getLong(const SQLString& columnLabel)=0;
-  virtual int64_t getLong(int32_t columnIndex)=0;
+  virtual bool isNull(int32_t columnIndex) const=0;
+  virtual bool isNull(const SQLString& columnLabel) const=0;
+  virtual SQLString getString(int32_t columnIndex) const=0;
+  virtual SQLString getString(const SQLString& columnLabel) const=0;
+  virtual int32_t getInt(int32_t columnIndex) const=0;
+  virtual int32_t getInt(const SQLString& columnLabel) const=0;
+  virtual uint32_t getUInt(int32_t columnIndex) const=0;
+  virtual uint32_t getUInt(const SQLString& columnLabel) const=0;
+  virtual int64_t getLong(const SQLString& columnLabel) const=0;
+  virtual int64_t getLong(int32_t columnIndex) const=0;
   /* getInt64 are aliases for getLong */
-  virtual int64_t getInt64(const SQLString& columnLabel)=0;
-  virtual int64_t getInt64(int32_t columnIndex)=0;
-  virtual uint64_t getUInt64(const SQLString& columnLabel)=0;
-  virtual uint64_t getUInt64(int32_t columnIndex)=0;
-  virtual float getFloat(const SQLString& columnLabel)=0;
-  virtual float getFloat(int32_t columnIndex)=0;
-  virtual long double getDouble(const SQLString& columnLabel)=0;
-  virtual long double getDouble(int32_t columnIndex)=0;
-  virtual bool getBoolean(int32_t index)=0;
-  virtual bool getBoolean(const SQLString& columnLabel)=0;
-  virtual int8_t getByte(int32_t index)=0;
-  virtual int8_t getByte(const SQLString& columnLabel)=0;
-  virtual int16_t getShort(int32_t index)=0;
-  virtual int16_t getShort(const SQLString& columnLabel)=0;
+  virtual int64_t getInt64(const SQLString& columnLabel) const=0;
+  virtual int64_t getInt64(int32_t columnIndex) const=0;
+  virtual uint64_t getUInt64(const SQLString& columnLabel) const=0;
+  virtual uint64_t getUInt64(int32_t columnIndex) const=0;
+  virtual float getFloat(const SQLString& columnLabel) const=0;
+  virtual float getFloat(int32_t columnIndex) const=0;
+  virtual long double getDouble(const SQLString& columnLabel) const=0;
+  virtual long double getDouble(int32_t columnIndex) const=0;
+  virtual bool getBoolean(int32_t index) const=0;
+  virtual bool getBoolean(const SQLString& columnLabel) const=0;
+  virtual int8_t getByte(int32_t index) const=0;
+  virtual int8_t getByte(const SQLString& columnLabel) const=0;
+  virtual int16_t getShort(int32_t index) const=0;
+  virtual int16_t getShort(const SQLString& columnLabel) const=0;
 
-  /*virtual std::istream* getBlob(int32_t columnIndex)=0;
-  virtual std::istream* getBlob(SQLString& columnLabel)=0;*/
-  virtual std::istream* getBinaryStream(int32_t columnIndex)=0;
-  virtual std::istream* getBinaryStream(const SQLString& columnLabel)=0;
+  virtual std::istream* getBinaryStream(int32_t columnIndex) const=0;
+  virtual std::istream* getBinaryStream(const SQLString& columnLabel) const=0;
 
-  virtual int32_t findColumn(const SQLString& columnLabel)=0;
+  virtual int32_t findColumn(const SQLString& columnLabel) const=0;
   virtual SQLString getCursorName()=0;
-  virtual int32_t getHoldability()=0;
-  virtual ResultSetMetaData* getMetaData()=0;
-  virtual Blob* getBlob(int32_t columnIndex)=0;
-  virtual Blob* getBlob(const SQLString& columnLabel)=0;
+  virtual int32_t getHoldability() const=0;
+  virtual ResultSetMetaData* getMetaData() const=0;
+  virtual Blob* getBlob(int32_t columnIndex) const=0;
+  virtual Blob* getBlob(const SQLString& columnLabel) const=0;
 
-#ifdef MAYBE_IN_BETA
-  virtual Blob* getBlob(int32_t columnIndex)=0;
-  virtual Blob* getBlob(const SQLString& columnLabel)=0;
-  virtual sql::bytes* getBytes(const SQLString& columnLabel)=0;
-  virtual sql::bytes* getBytes(int32_t columnIndex)=0;
-  virtual SQLString getNString(int32_t columnIndex)=0;
-  virtual SQLString getNString(SQLString& columnLabel)=0;
-  virtual Date* getDate(int32_t columnIndex)=0;
-  virtual Date* getDate(SQLString& columnLabel)=0;
-  virtual Time* getTime(int32_t columnIndex)=0;
-  virtual Time* getTime(SQLString& columnLabel)=0;
+#ifdef MAYBE_IN_NEXT_VERSION
+  virtual sql::bytes* getBytes(const SQLString& columnLabel) const=0;
+  virtual sql::bytes* getBytes(int32_t columnIndex) const=0;
+  virtual SQLString getNString(int32_t columnIndex) const=0;
+  virtual SQLString getNString(SQLString& columnLabel) const=0;
+  virtual Date* getDate(int32_t columnIndex) const=0;
+  virtual Date* getDate(SQLString& columnLabel) const=0;
+  virtual Time* getTime(int32_t columnIndex) const=0;
+  virtual Time* getTime(SQLString& columnLabel) const=0;
 
-  virtual std::istream* getAsciiStream(SQLString& columnLabel)=0;
-  virtual std::istream* getAsciiStream(int32_t columnIndex)=0;
-  virtual std::istringstream* getCharacterStream(SQLString& columnLabel)=0;
-  virtual std::istringstream* getCharacterStream(int32_t columnIndex)=0;
-  virtual std::istringstream& getNCharacterStream(int32_t columnIndex)=0;
-  virtual std::istringstream& getNCharacterStream(SQLString& columnLabel)=0;
-  virtual NClob* getNClob(int32_t columnIndex)=0;
-  virtual NClob* getNClob(SQLString& columnLabel)=0;
-  virtual Clob* getClob(int32_t columnIndex)=0;
-  virtual Clob* getClob(SQLString& columnLabel)=0;
-  virtual Timestamp* getTimestamp(int32_t columnIndex)=0;
-  virtual Timestamp* getTimestamp(SQLString& columnLabel)=0;
+  virtual std::istream* getAsciiStream(SQLString& columnLabel) const=0;
+  virtual std::istream* getAsciiStream(int32_t columnIndex) const=0;
+  virtual std::istringstream* getCharacterStream(SQLString& columnLabel) const=0;
+  virtual std::istringstream* getCharacterStream(int32_t columnIndex) const=0;
+  virtual std::istringstream& getNCharacterStream(int32_t columnIndex) const=0;
+  virtual std::istringstream& getNCharacterStream(SQLString& columnLabel) const=0;
+  virtual NClob* getNClob(int32_t columnIndex) const=0;
+  virtual NClob* getNClob(SQLString& columnLabel) const=0;
+  virtual Clob* getClob(int32_t columnIndex) const=0;
+  virtual Clob* getClob(SQLString& columnLabel) const=0;
+  virtual Timestamp* getTimestamp(int32_t columnIndex) const=0;
+  virtual Timestamp* getTimestamp(SQLString& columnLabel) const=0;
 #endif
 
-  virtual RowId* getRowId(int32_t columnIndex)=0;
-  virtual RowId* getRowId(const SQLString& columnLabel)=0;
+  virtual RowId* getRowId(int32_t columnIndex) const=0;
+  virtual RowId* getRowId(const SQLString& columnLabel) const=0;
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
-  virtual BigDecimal* getBigDecimal(SQLString& columnLabel,int32_t scale)=0;
-  virtual BigDecimal* getBigDecimal(int32_t columnIndex,int32_t scale)=0;
-  virtual BigDecimal* getBigDecimal(int32_t columnIndex)=0;
-  virtual BigDecimal* getBigDecimal(SQLString& columnLabel)=0;
-  virtual Date* getDate(int32_t columnIndex,Calendar& cal)=0;
-  virtual Date* getDate(SQLString& columnLabel,Calendar& cal)=0;
-  virtual Time* getTime(int32_t columnIndex,Calendar& cal)=0;
-  virtual Time* getTime(SQLString& columnLabel,Calendar& cal)=0;
-  virtual Timestamp* getTimestamp(int32_t columnIndex,Calendar& cal)=0;
-  virtual Timestamp* getTimestamp(SQLString& columnLabel,Calendar& cal)=0;
+  virtual BigDecimal* getBigDecimal(SQLString& columnLabel,int32_t scale) const=0;
+  virtual BigDecimal* getBigDecimal(int32_t columnIndex,int32_t scale) const=0;
+  virtual BigDecimal* getBigDecimal(int32_t columnIndex) const=0;
+  virtual BigDecimal* getBigDecimal(SQLString& columnLabel) const=0;
+  virtual Date* getDate(int32_t columnIndex,Calendar& cal) const=0;
+  virtual Date* getDate(SQLString& columnLabel,Calendar& cal) const=0;
+  virtual Time* getTime(int32_t columnIndex,Calendar& cal) const=0;
+  virtual Time* getTime(SQLString& columnLabel,Calendar& cal) const=0;
+  virtual Timestamp* getTimestamp(int32_t columnIndex,Calendar& cal) const=0;
+  virtual Timestamp* getTimestamp(SQLString& columnLabel,Calendar& cal) const=0;
 
-  virtual sql::Object* getObject(int32_t columnIndex)=0;
-  virtual sql::Object* getObject(SQLString& columnLabel)=0;
-  /*virtual sql::Object* getObject(SQLString& columnLabel, map<SQLString,Class<?>>map)=0;*/
+  virtual sql::Object* getObject(int32_t columnIndex) const=0;
+  virtual sql::Object* getObject(SQLString& columnLabel) const=0;
 
-  virtual Ref* getRef(int32_t columnIndex)=0;
-  virtual Ref* getRef(SQLString& columnLabel)=0;
+  virtual Ref* getRef(int32_t columnIndex) const=0;
+  virtual Ref* getRef(SQLString& columnLabel) const=0;
 
-  virtual sql::Array* getArray(int32_t columnIndex)=0;
-  virtual sql::Array* getArray(SQLString& columnLabel)=0;
-  virtual URL* getURL(int32_t columnIndex)=0;
-  virtual URL* getURL(SQLString& columnLabel)=0;
+  virtual sql::Array* getArray(int32_t columnIndex) const=0;
+  virtual sql::Array* getArray(SQLString& columnLabel) const=0;
+  virtual URL* getURL(int32_t columnIndex) const=0;
+  virtual URL* getURL(SQLString& columnLabel) const=0;
 
-  virtual SQLXML* getSQLXML(int32_t columnIndex)=0;
-  virtual SQLXML* getSQLXML(SQLString& columnLabel)=0;
+  virtual SQLXML* getSQLXML(int32_t columnIndex) const=0;
+  virtual SQLXML* getSQLXML(SQLString& columnLabel) const=0;
 #endif
 
   virtual bool rowUpdated()=0;
@@ -192,7 +192,7 @@ public:
   virtual void insertRow()=0;
   virtual void refreshRow()=0;
 
-  virtual std::size_t rowsCount()=0;
+  virtual std::size_t rowsCount() const=0;
 
 #ifdef RS_UPDATE_FUNCTIONALITY_IMPLEMENTED
 

@@ -89,7 +89,7 @@ protected:
 
 public:
   int32_t lastValueNull;
-  std::vector<sql::bytes>* buf;
+  const std::vector<sql::bytes>* buf;
   sql::bytes& fieldBuf;
   int32_t pos;
   uint32_t length;
@@ -101,7 +101,7 @@ public:
   RowProtocol(uint32_t maxFieldSize, Shared::Options options);
   virtual ~RowProtocol() {}
 
-  void resetRow(std::vector<sql::bytes>& buf);
+  void resetRow(const std::vector<sql::bytes>& buf);
   virtual void setPosition(int32_t position)=0;
   uint32_t getLengthMaxFieldSize();
   uint32_t getMaxFieldSize();

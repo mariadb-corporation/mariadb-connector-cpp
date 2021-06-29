@@ -90,7 +90,7 @@ namespace mariadb
   }
 
 
-  void RowProtocol::resetRow(std::vector<sql::bytes>& _buf)
+  void RowProtocol::resetRow(const std::vector<sql::bytes>& _buf)
   {
     buf= &_buf;
   }

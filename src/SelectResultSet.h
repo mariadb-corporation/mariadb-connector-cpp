@@ -129,10 +129,9 @@ public:
   //virtual sql::bytes* getBytes(const SQLString& columnLabel)=0;
   //virtual sql::bytes* getBytes(int32_t columnIndex)=0;
   virtual void abort()=0;
-  virtual bool isCallableResult()=0;
+  virtual bool isCallableResult() const=0;
   virtual MariaDbStatement* getStatement()=0;
   virtual void setStatement(MariaDbStatement* statement)=0;
-  virtual bool wasNull()=0;
 
   virtual void setForceTableAlias()=0;
 

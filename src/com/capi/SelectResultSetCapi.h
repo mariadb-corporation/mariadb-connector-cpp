@@ -61,14 +61,15 @@ class SelectResultSetCapi : public SelectResultSet
   std::vector<Shared::ColumnDefinition> columnsInformation;
   int32_t columnInformationLength;
   bool noBackslashEscapes;
-  std::map<int32_t, std::unique_ptr<memBuf>> blobBuffer;
+  // we don't create buffers for all columns without call. Thus has to be mutable while getters are const
+  mutable std::map<int32_t, std::unique_ptr<memBuf>> blobBuffer;
 
   Protocol* protocol;
   bool isEof;
   bool callableResult;
   /* Shared? */
   MariaDbStatement* statement;
-  Unique::RowProtocol row;
+  mutable Unique::RowProtocol row;
 
   MYSQL *capiConnHandle;
   MYSQL_STMT *capiStmtHandle;
@@ -86,7 +87,7 @@ class SelectResultSetCapi : public SelectResultSet
 
   std::unique_ptr<ColumnNameMap> columnNameMap;
 
-  int32_t lastRowPointer; /*-1*/
+  mutable int32_t lastRowPointer; /*-1*/
   bool isClosedFlag;
   bool eofDeprecated;
   Shared::mutex lock;
@@ -126,7 +127,7 @@ public:
   void fetchRemaining();
 
 private:
-  void handleIoException(std::exception& ioe);
+  void handleIoException(std::exception& ioe) const;
   void nextStreamingValue();
   void addStreamingValue();
   bool readNextValue();
@@ -150,14 +151,14 @@ public:
   bool fetchNext();
   bool next();
 private:
-  void resetRow();
-  void checkObjectRange(int32_t position);
+  void resetRow() const;
+  void checkObjectRange(int32_t position) const;
 public:
   SQLWarning* getWarnings();
   void clearWarnings();
-  bool isBeforeFirst();
+  bool isBeforeFirst() const;
   bool isAfterLast();
-  bool isFirst();
+  bool isFirst() const;
   bool isLast();
   void beforeFirst();
   void afterLast();
@@ -167,57 +168,57 @@ public:
   bool absolute(int32_t row);
   bool relative(int32_t rows);
   bool previous();
-  int32_t getFetchDirection();
+  int32_t getFetchDirection() const;
   void setFetchDirection(int32_t direction);
-  int32_t getFetchSize();
+  int32_t getFetchSize() const;
   void setFetchSize(int32_t fetchSize);
-  int32_t getType();
-  int32_t getConcurrency();
+  int32_t getType() const;
+  int32_t getConcurrency() const;
 private:
-  void checkClose();
+  void checkClose() const;
 public:
-  bool isCallableResult();
+  bool isCallableResult() const;
   bool isClosed() const;
   MariaDbStatement* getStatement();
   void setStatement(MariaDbStatement* statement);
-  bool wasNull();
+  bool wasNull() const;
 
-  bool isNull(int32_t columnIndex);
-  bool isNull(const SQLString& columnLabel);
-  SQLString getString(int32_t columnIndex);
-  SQLString getString(const SQLString& columnLabel);
+  bool isNull(int32_t columnIndex) const;
+  bool isNull(const SQLString& columnLabel) const;
+  SQLString getString(int32_t columnIndex) const;
+  SQLString getString(const SQLString& columnLabel) const;
 private:
   SQLString zeroFillingIfNeeded(const SQLString& value, ColumnDefinition* columnInformation);
 public:
-  std::istream* getBinaryStream(int32_t columnIndex);
-  std::istream* getBinaryStream(const SQLString& columnLabel);
-  int32_t getInt(int32_t columnIndex);
-  int32_t getInt(const SQLString& columnLabel);
-  int64_t getLong(const SQLString& columnLabel);
-  int64_t getLong(int32_t columnIndex);
-  int64_t getInt64(const SQLString& columnLabel)  { return getLong(columnLabel); }
-  int64_t getInt64(int32_t columnIndex)           { return getLong(columnIndex); }
-  uint64_t getUInt64(const SQLString& columnLabel);
-  uint64_t getUInt64(int32_t columnIndex);
-  uint32_t getUInt(const SQLString& columnLabel);
-  uint32_t getUInt(int32_t columnIndex);
-  float getFloat(const SQLString& columnLabel);
-  float getFloat(int32_t columnIndex);
-  long double getDouble(const SQLString& columnLabel);
-  long double getDouble(int32_t columnIndex);
-  bool getBoolean(int32_t index);
-  bool getBoolean(const SQLString& columnLabel);
-  int8_t getByte(int32_t index);
-  int8_t getByte(const SQLString& columnLabel);
-  int16_t getShort(int32_t index);
-  int16_t getShort(const SQLString& columnLabel);
+  std::istream* getBinaryStream(int32_t columnIndex) const;
+  std::istream* getBinaryStream(const SQLString& columnLabel) const;
+  int32_t getInt(int32_t columnIndex) const;
+  int32_t getInt(const SQLString& columnLabel) const;
+  int64_t getLong(const SQLString& columnLabel) const;
+  int64_t getLong(int32_t columnIndex) const;
+  int64_t getInt64(const SQLString& columnLabel) const { return getLong(columnLabel); }
+  int64_t getInt64(int32_t columnIndex)          const { return getLong(columnIndex); }
+  uint64_t getUInt64(const SQLString& columnLabel) const;
+  uint64_t getUInt64(int32_t columnIndex) const;
+  uint32_t getUInt(const SQLString& columnLabel) const;
+  uint32_t getUInt(int32_t columnIndex) const;
+  float getFloat(const SQLString& columnLabel) const;
+  float getFloat(int32_t columnIndex) const;
+  long double getDouble(const SQLString& columnLabel) const;
+  long double getDouble(int32_t columnIndex) const;
+  bool getBoolean(int32_t index) const;
+  bool getBoolean(const SQLString& columnLabel) const;
+  int8_t getByte(int32_t index) const;
+  int8_t getByte(const SQLString& columnLabel) const;
+  int16_t getShort(int32_t index) const;
+  int16_t getShort(const SQLString& columnLabel) const;
 
-  int32_t findColumn(const SQLString& columnLabel);
+  int32_t findColumn(const SQLString& columnLabel) const;
   SQLString getCursorName();
-  int32_t getHoldability();
-  sql::ResultSetMetaData* getMetaData();
-  Blob* getBlob(int32_t columnIndex);
-  Blob* getBlob(const SQLString& columnLabel);
+  int32_t getHoldability() const;
+  sql::ResultSetMetaData* getMetaData() const;
+  Blob* getBlob(int32_t columnIndex) const;
+  Blob* getBlob(const SQLString& columnLabel) const;
 
 #ifdef MAYBE_IN_BETA
 
@@ -234,8 +235,8 @@ public:
   SQLString getNString(const SQLString& columnLabel);
 #endif
 
-  RowId* getRowId(int32_t columnIndex);
-  RowId* getRowId(const SQLString& columnLabel);
+  RowId* getRowId(int32_t columnIndex) const;
+  RowId* getRowId(const SQLString& columnLabel) const;
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   BigDecimal getBigDecimal(const SQLString& columnLabel,int32_t scale);
@@ -280,7 +281,7 @@ public:
   void moveToCurrentRow();
   void cancelRowUpdates();
 
-  std::size_t rowsCount();
+  std::size_t rowsCount() const;
 
 #ifdef RS_UPDATE_FUNCTIONALITY_IMPLEMENTED
   void updateNull(int32_t columnIndex);
