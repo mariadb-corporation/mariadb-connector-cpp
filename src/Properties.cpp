@@ -362,23 +362,24 @@ namespace sql
 
 
   /** Standalone operators/functions */
-  bool operator==(const Properties::iterator& left, const Properties::iterator& right)
+  bool Properties::iterator::operator==(const Properties::iterator& right) const
   {
-    return (iteratorImp::get(left) == iteratorImp::get(right));
+    return (it->real == iteratorImp::get(right));
   }
 
-  bool operator!=(Properties::iterator& left, Properties::iterator& right)
+  bool Properties::iterator::operator!=(const Properties::iterator& right) const
   {
-    return (iteratorImp::get(left) != iteratorImp::get(right));
+    return (it->real != iteratorImp::get(right));
   }
 
-  bool operator==(Properties::const_iterator& left, Properties::const_iterator& right)
+  bool Properties::const_iterator::operator==(const Properties::const_iterator& right) const
   {
-    return (const_iteratorImp::get(left) == const_iteratorImp::get(right));
+    return (cit->real == const_iteratorImp::get(right));
   }
-  bool operator!=(Properties::const_iterator& left, Properties::const_iterator& right)
+
+  bool Properties::const_iterator::operator!=(const Properties::const_iterator& right) const
   {
-    return (const_iteratorImp::get(left) != const_iteratorImp::get(right));
+    return (cit->real != const_iteratorImp::get(right));
   }
 };
 

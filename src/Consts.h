@@ -34,6 +34,7 @@
 #include <sstream>
 
 #include "StringImp.h"
+#include "PropertiesImp.h"
 #include "Version.h"
 #include "util/ServerStatus.h"
 #include "util/String.h"
@@ -55,7 +56,7 @@
 
 /* Helper to write ClassField map initializer list */
 #define CLASS_FIELD(_CLASS, _FIELD) {#_FIELD, &_CLASS::_FIELD}
-#define INSTANCEOF(OBJ, CLASSNAME) (OBJ != nullptr && dynamic_cast<CLASSNAME>(OBJ) != nullptr)
+#define INSTANCEOF(OBJ, CLASSNAME) (OBJ != nullptr && dynamic_cast<CLASSNAME>(OBJ) != NULL)
 
 namespace sql
 {
@@ -158,10 +159,6 @@ namespace mariadb
 
     return result;
   }
-  namespace Weak
-  {
-    typedef std::weak_ptr<sql::mariadb::Results> Results;
-  }
 
   namespace Shared
   {
@@ -194,7 +191,6 @@ namespace mariadb
   namespace Unique
   {
     /* Unique sql classes */
-    /* atm I doubt we need these three */
     typedef std::unique_ptr<sql::Statement> Statement;
     typedef std::unique_ptr<sql::ResultSet> ResultSet;
     typedef std::unique_ptr<sql::SQLException> SQLException;
@@ -212,7 +208,7 @@ namespace mariadb
 
   namespace Weak
   {
-    typedef std::weak_ptr<MariaDbConnection> MariaDbConnection;
+    typedef std::weak_ptr<Results> Results;
   }
 } //---- namespace mariadb
 

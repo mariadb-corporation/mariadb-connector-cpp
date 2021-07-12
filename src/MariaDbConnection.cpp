@@ -32,6 +32,7 @@
 #include "logger/LoggerFactory.h"
 #include "pool/Pools.h"
 #include "util/Utils.h"
+#include "Properties.hpp"
 #include "jdbccompat.hpp"
 #include "ExceptionFactory.h"
 
@@ -517,7 +518,7 @@ namespace mariadb
           /* Do we need a clone? */
           CloneableCallableStatement* cloneable= dynamic_cast<CloneableCallableStatement*>(callableStatement.get());
 
-          if (cloneable == nullptr)
+          if (cloneable == NULL)
           {
             throw std::runtime_error("Cached statement is not cloneable");
           }
@@ -641,7 +642,7 @@ namespace mariadb
 
     if (stmt)
     {
-      stateFlag|= ConnectionState::STATE_AUTOCOMMIT;
+      stateFlag |=ConnectionState::STATE_AUTOCOMMIT;
       stmt->executeUpdate(SQLString("set autocommit=").append((autoCommit) ? '1' : '0'));
     }
   }
@@ -775,7 +776,7 @@ namespace mariadb
       protocol->setReadonly(readOnly);
     }
     catch (SQLException &e) {
-      throw e;// ExceptionMapper.getException(e, this, nullptr, false);
+      throw e;// ExceptionMapper.getException(e, this, NULL, false);
     }
   }
   /**
@@ -899,7 +900,7 @@ namespace mariadb
       protocol->setTransactionIsolation(level);
     }
     catch (SQLException& e) {
-      throw e;//ExceptionMapper.getException(e, this, nullptr, false);
+      throw e;//ExceptionMapper.getException(e, this, NULL, false);
     }
   }
   /**
@@ -1541,7 +1542,7 @@ namespace mariadb
   /** If failover is not activated, will close connection when a connection error occur. */
   void MariaDbConnection::setHostFailed()
   {
-    if (protocol->getProxy() == nullptr) {
+    if (protocol->getProxy() == NULL) {
       protocol->setHostFailedWithoutProxy();
     }
   }
@@ -1584,10 +1585,10 @@ namespace mariadb
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
     SQLPermission sqlPermission= new SQLPermission("callAbort");
     SecurityManager securityManager= System.getSecurityManager();
-    if (securityManager != nullptr) {
+    if (securityManager !=NULL) {
       securityManager.checkPermission(sqlPermission);
     }
-    if (executor == nullptr) {
+    if (executor ==NULL) {
       throw ExceptionMapper.getSqlException("Cannot abort the connection: NULL executor passed");
     }
     executor.execute(protocol->abort());
@@ -1619,7 +1620,7 @@ namespace mariadb
       protocol->setCatalog(schema);
     }
     catch (SQLException &e) {
-      throw e;// ExceptionMapper.getException(e, this, nullptr, false);
+      throw e;// ExceptionMapper.getException(e, this, NULL, false);
     }
   }
 
@@ -1645,7 +1646,7 @@ namespace mariadb
     }
     SQLPermission sqlPermission= new SQLPermission("setNetworkTimeout");
     SecurityManager securityManager= System.getSecurityManager();
-    if (securityManager != nullptr) {
+    if (securityManager !=NULL) {
       securityManager.checkPermission(sqlPermission);
     }
     try {
@@ -1694,7 +1695,7 @@ namespace mariadb
     if (stateFlag !=0) {
       try {
         if ((stateFlag &ConnectionState::STATE_NETWORK_TIMEOUT)!=0) {
-          setNetworkTimeout(nullptr, options->socketTimeout);
+          setNetworkTimeout(NULL, options->socketTimeout);
         }
         if ((stateFlag &ConnectionState::STATE_AUTOCOMMIT)!=0) {
           setAutoCommit(options->autocommit);

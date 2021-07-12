@@ -33,6 +33,10 @@ class PropertiesImp;
 #pragma warning(push)
 #pragma warning(disable:4251)
 
+class PropertiesImp;
+class iteratorImp;
+class const_iteratorImp;
+
 class Properties final {
 
   friend class PropertiesImp;
@@ -62,9 +66,12 @@ public:
     MARIADB_EXPORTED const value_type& operator*() const;
     MARIADB_EXPORTED value_type* operator->();
     MARIADB_EXPORTED const value_type* operator->() const;
+    MARIADB_EXPORTED bool operator==(const Properties::iterator& right) const;
+    MARIADB_EXPORTED bool operator!=(const Properties::iterator& right) const;
+
   };
-  using key_type= typename SQLString;
-  using mapped_type= typename SQLString ;
+  using key_type= SQLString;
+  using mapped_type= SQLString ;
 
   class const_iterator final {
     friend class PropertiesImp;
@@ -85,6 +92,9 @@ public:
 
     MARIADB_EXPORTED const value_type& operator*() const;
     MARIADB_EXPORTED const value_type* operator->() const;
+
+    MARIADB_EXPORTED bool operator==(const Properties::const_iterator& right) const;
+    MARIADB_EXPORTED bool operator!=(const Properties::const_iterator& right) const;
   };
 
   MARIADB_EXPORTED Properties(const Properties& other);
@@ -123,10 +133,6 @@ public:
   MARIADB_EXPORTED void clear();
 };
 
-MARIADB_EXPORTED bool operator==(Properties::iterator& left, Properties::iterator& right);
-MARIADB_EXPORTED bool operator!=(Properties::iterator& left, Properties::iterator& right);
-MARIADB_EXPORTED bool operator==(Properties::const_iterator& left, Properties::const_iterator& right);
-MARIADB_EXPORTED bool operator!=(Properties::const_iterator& left, Properties::const_iterator& right);
 }
 #pragma warning(pop)
 #endif
