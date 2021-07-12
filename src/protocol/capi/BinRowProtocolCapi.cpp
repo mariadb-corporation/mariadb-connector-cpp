@@ -120,7 +120,7 @@ namespace capi
   SQLString* BinRowProtocolCapi::convertToString(const char* asChar, ColumnDefinition* columnInfo)
   {
     if ((lastValueNull & BIT_LAST_FIELD_NULL)!=0) {
-      return NULL;
+      return nullptr;
     }
 
     switch (columnInfo->getColumnType().getType()) {
@@ -1132,7 +1132,7 @@ namespace capi
   sql::Object* BinRowProtocolCapi::getInternalObject(ColumnDefinition* columnInfo, TimeZone* timeZone)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
 
     switch (columnInfo->getColumnType().getType()) {
@@ -1168,12 +1168,12 @@ namespace capi
           memcpy(dataBit + 0, buf + pos, length));
     return data;
         }
-        return getInternalString(columnInfo, NULL, timeZone);
+        return getInternalString(columnInfo, nullptr, timeZone);
       case MYSQL_TYPE_TIMESTAMP:
       case MYSQL_TYPE_DATETIME:
-        return getInternalTimestamp(columnInfo, NULL, timeZone);
+        return getInternalTimestamp(columnInfo, nullptr, timeZone);
       case MYSQL_TYPE_DATE:
-        return getInternalDate(columnInfo, NULL, timeZone);
+        return getInternalDate(columnInfo, nullptr, timeZone);
       case MYSQL_TYPE_NEWDECIMAL:
         return getInternalBigDecimal(columnInfo);
       case MYSQL_TYPE_BLOB:
@@ -1184,10 +1184,10 @@ namespace capi
         memcpy(dataBit + 0, buf + pos, length));
       return dataBlob;
       case NULL:
-        return NULL;
+        return nullptr;
       case MYSQL_TYPE_YEAR:
         if (options->yearIsDateType) {
-          return getInternalDate(columnInfo, NULL, timeZone);
+          return getInternalDate(columnInfo, nullptr, timeZone);
         }
         return getInternalShort(columnInfo);
       case MYSQL_TYPE_SHORT:
@@ -1196,10 +1196,10 @@ namespace capi
       case MYSQL_TYPE_FLOAT:
         return getInternalFloat(columnInfo);
       case MYSQL_TYPE_TIME:
-        return getInternalTime(columnInfo, NULL, timeZone);
+        return getInternalTime(columnInfo, nullptr, timeZone);
       case MYSQL_TYPE_DECIMAL:
       case JSON:
-        return getInternalString(columnInfo, NULL, timeZone);
+        return getInternalString(columnInfo, nullptr, timeZone);
       case MYSQL_TYPE_GEOMETRY:
         int8_t[] data= new int8_t[length];
         memcpy(dataBit + 0, buf + pos, length);
@@ -1228,7 +1228,7 @@ namespace capi
   BigInteger BinRowProtocolCapi::getInternalBigInteger(ColumnDefinition* columnInfo)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     switch (columnInfo->getColumnType().getType()) {
     case MYSQL_TYPE_BIT:
@@ -1301,11 +1301,11 @@ namespace capi
   ZonedDateTime BinRowProtocolCapi::getInternalZonedDateTime(ColumnDefinition* columnInfo, Class* clazz, TimeZone* timeZone)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     if (length == 0) {
       lastValueNull |=BIT_LAST_FIELD_NULL;
-      return NULL;
+      return nullptr;
     }
 
     switch (columnInfo->getColumnType().getSqlType()) {
@@ -1343,7 +1343,7 @@ namespace capi
       SQLString raw;
       raw.reserve(buf, pos, length);
       if (raw.startsWith("0000-00-00 00:00:00")) {
-        return NULL;
+        return nullptr;
       }
       try {
         return ZonedDateTime::parse(raw, TEXT_ZONED_DATE_TIME);
@@ -1376,11 +1376,11 @@ namespace capi
   OffsetTime BinRowProtocolCapi::getInternalOffsetTime(ColumnDefinition* columnInfo, TimeZone* timeZone)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     if (length == 0) {
       lastValueNull |=BIT_LAST_FIELD_NULL;
-      return NULL;
+      return nullptr;
     }
 
     ZoneId zoneId= timeZone.toZoneId().normalized();
@@ -1502,11 +1502,11 @@ namespace capi
   LocalTime BinRowProtocolCapi::getInternalLocalTime(ColumnDefinition* columnInfo, TimeZone* timeZone)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     if (length == 0) {
       lastValueNull |=BIT_LAST_FIELD_NULL;
-      return NULL;
+      return nullptr;
     }
 
     switch (columnInfo->getColumnType().getSqlType()) {
@@ -1566,7 +1566,7 @@ namespace capi
       ZonedDateTime zonedDateTime =
         getInternalZonedDateTime(columnInfo, typeid(LocalTime), timeZone);
       return zonedDateTime/*.empty() == true*/
-        ? NULL
+        ? nullptr
         : zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalTime();
 
     default:
@@ -1588,11 +1588,11 @@ namespace capi
   LocalDate BinRowProtocolCapi::getInternalLocalDate(ColumnDefinition* columnInfo, TimeZone* timeZone)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     if (length == 0) {
       lastValueNull |=BIT_LAST_FIELD_NULL;
-      return NULL;
+      return nullptr;
     }
 
     switch (columnInfo->getColumnType().getSqlType()) {
@@ -1606,7 +1606,7 @@ namespace capi
       ZonedDateTime zonedDateTime =
         getInternalZonedDateTime(columnInfo, typeid(LocalDate), timeZone);
       return zonedDateTime/*.empty() == true*/
-        ? NULL
+        ? nullptr
         : zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDate();
 
     case Types::MYSQL_TYPE_VARCHAR:
@@ -1616,7 +1616,7 @@ namespace capi
       SQLString raw;
       raw.reserve(buf, pos, length);
       if (raw.startsWith("0000-00-00")) {
-        return NULL;
+        return nullptr;
       }
       try {
         return LocalDate::parse(

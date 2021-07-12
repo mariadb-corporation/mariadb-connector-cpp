@@ -181,7 +181,6 @@ namespace mariadb
 
   Shared::Results & MariaDbFunctionStatement::getResults()
   {
-    //TODO can it be casted?
     MariaDbStatement* mstmt= static_cast<MariaDbStatement*>(*stmt);
     return mstmt->getInternalResults();
   }

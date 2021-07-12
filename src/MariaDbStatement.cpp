@@ -108,12 +108,16 @@ namespace mariadb
 
   MariaDbStatement::~MariaDbStatement()
   {
+    // We need to close associated resultset(the last one, previous should be closed once next result is requested)
+    if (results) {
+      results->close();
+    }
   }
 
   // Part of query prolog - setup timeout timer
   void MariaDbStatement::setTimerTask(bool isBatch)
   {
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
     assert(!timerTaskFuture);
     if (!timeoutScheduler)
     {
@@ -176,7 +180,7 @@ namespace mariadb
 
         }
       }
-      timerTaskFuture= NULL;
+      timerTaskFuture= nullptr;
     }
 #endif
   }
@@ -708,17 +712,16 @@ namespace mariadb
    */
   void MariaDbStatement::close()
   {
-    std::lock_guard<std::mutex> localScopeLock(*lock);
-
     try {
+      // skipMoreResults acquires mutex, thux no need to do that here
       closed = true;
       if (results) {
         if (results->getFetchSize() != 0) {
           skipMoreResults();
         }
-
         results->close();
       }
+      std::lock_guard<std::mutex> localScopeLock(*lock);
 
       if (protocol->isClosed()
         || !connection->pooledConnection
@@ -934,7 +937,7 @@ namespace mariadb
     if (!warningsCleared){
       return this->connection->getWarnings();
     }
-    return NULL;
+    return nullptr;
   }
 
   /**
@@ -1350,7 +1353,7 @@ namespace mariadb
           resultSetConcurrency,
           Statement::RETURN_GENERATED_KEYS,
           protocol->getAutoIncrementIncrement(),
-          NULL,
+          nullptr,
           dummy));
     protocol->executeBatchStmt(protocol->isMasterConnection(),results,batchQueries);
     results->commandEnd();
@@ -1440,7 +1443,7 @@ namespace mariadb
   void MariaDbStatement::markClosed()
   {
     closed= true;
-    connection= NULL;
+    connection= nullptr;
   }
 }
 }

@@ -126,7 +126,7 @@ namespace capi
   SQLString ColumnDefinitionCapi::getCollation() const {
     MARIADB_CHARSET_INFO *cs= mariadb_get_charset_by_nr(metadata->charsetnr);
 
-    if (cs != NULL) {
+    if (cs != nullptr) {
       return cs->name;
     }
 

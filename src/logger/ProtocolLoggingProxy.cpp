@@ -532,7 +532,7 @@ namespace mariadb
   }
 
 
-  Shared::Results& ProtocolLoggingProxy::getActiveStreamingResult()
+  Shared::Results ProtocolLoggingProxy::getActiveStreamingResult()
 	{
 		/* Add here logging if needed */
 	  return protocol->getActiveStreamingResult();

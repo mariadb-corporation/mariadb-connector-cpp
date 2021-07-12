@@ -65,6 +65,7 @@ protected:
 
   static int32_t TINYINT1_IS_BIT; /*1*/
   static int32_t YEAR_IS_DATE_TYPE; /*2*/
+  bool released=  false;
 
 public:
   static SelectResultSet* create(
@@ -113,12 +114,13 @@ public:
   static ResultSet* createResultSet(std::vector<SQLString>& columnNames, std::vector<ColumnType>& columnTypes,
     std::vector<std::vector<sql::bytes>>& data, Protocol* protocol);
 
-  virtual ~SelectResultSet() {}
+  virtual ~SelectResultSet();
 
   virtual bool isFullyLoaded() const=0;
   virtual void fetchRemaining()=0;
-
+ 
 protected:
+  //SelectResultSet() : released(false) {}
   virtual std::vector<sql::bytes>& getCurrentRowData()=0;
   virtual void updateRowData(std::vector<sql::bytes>& rawData)=0;
   virtual void deleteCurrentRowData()=0;
@@ -132,18 +134,22 @@ public:
   virtual bool isCallableResult() const=0;
   virtual MariaDbStatement* getStatement()=0;
   virtual void setStatement(MariaDbStatement* statement)=0;
-
   virtual void setForceTableAlias()=0;
-
-public:
   virtual int32_t getRowPointer()=0;
 
 protected:
   virtual void setRowPointer(int32_t pointer)=0;
-
+  
 public:
+  /* Some classes(Results) may hold pointer to this object - it may be required in case of RS streaming to
+     to fetch remaining rows in order to unblock connection for new queries, or to close RS, if next RS is requested or statements is destructed.
+     After releasing the RS by API methods, it's owned by application. If app destructs the RS, this method is called by destructor, and
+     implementation should do the job on checking out of the object, so it can't be attempted to use any more */
+  virtual void checkOut()= 0;
   virtual std::size_t getDataSize()=0;
   virtual bool isBinaryEncoded()=0;
+  virtual ResultSet* release();
+  virtual void realClose(bool noLock=false)=0;
   };
 
 }

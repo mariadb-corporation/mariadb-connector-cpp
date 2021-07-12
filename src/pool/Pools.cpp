@@ -30,7 +30,7 @@ namespace mariadb
   HashMap<UrlParser, Shared::Pool> Pools::poolMap;
 
   //const std::map<UrlParser&, Pool>poolMap;// =new ConcurrentHashMap<>();
-  /* ScheduledThreadPoolExecutor* Pools::poolExecutor= NULL; */
+  /* ScheduledThreadPoolExecutor* Pools::poolExecutor= nullptr; */
 
   /**
     * Get existing pool for a configuration. Create it if doesn't exists.
@@ -149,7 +149,7 @@ namespace mariadb
     catch (std::exception&)
     {
     }
-    poolExecutor= NULL;
+    poolExecutor= nullptr;
   }
 
 }

@@ -43,7 +43,7 @@ namespace capi
   {
     typedef capi::ConnectProtocol super;
 
-    static const Shared::Logger logger; /*LoggerFactory.getLogger(typeid(AbstractQueryProtocol))*/
+    static const Shared::Logger logger;
     static const SQLString CHECK_GALERA_STATE_QUERY; /*"show status like 'wsrep_local_state'"*/
     std::unique_ptr<LogQueryTool> logQuery;
     Tokens galeraAllowedStates;

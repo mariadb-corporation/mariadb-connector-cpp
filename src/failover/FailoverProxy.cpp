@@ -131,7 +131,7 @@ namespace mariadb
         return listener.isValid((int32_t)args[0]);
       case METHOD_PROLOG:
         listener.prolog((int64_t)args[0],(MariaDbConnection)args[2],(MariaDbStatement)args[3]);
-        return NULL;
+        return nullptr;
       case METHOD_EXECUTE_QUERY:
         bool isClosed= this->listener.isClosed();
         try {
@@ -146,7 +146,7 @@ namespace mariadb
         break;
       case METHOD_SET_READ_ONLY:
         this->listener.switchReadOnlyConnection((Boolean)args[0]);
-        return NULL;
+        return nullptr;
       case METHOD_GET_READ_ONLY:
         return this->listener.isReadOnly();
       case METHOD_IN_TRANSACTION:
@@ -155,10 +155,10 @@ namespace mariadb
         return this->listener.isMasterConnection();
       case METHOD_ABORT:
         this->listener.preAbort();
-        return NULL;
+        return nullptr;
       case METHOD_CLOSED_EXPLICIT:
         this->listener.preClose();
-        return NULL;
+        return nullptr;
       case METHOD_COM_MULTI_PREPARE_EXECUTES:
       case METHOD_EXECUTE_PREPARED_QUERY:
         bool mustBeOnMaster= Boolean)args[0];
@@ -206,7 +206,7 @@ namespace mariadb
             return listener.invoke(
                 method,args,((ServerPrepareResult)args[0]).getUnProxiedProtocol());
           }
-          return NULL;
+          return nullptr;
         }catch (SQLException& e){
           if (e.getTargetException().empty() != true){
             if (e.getTargetException()instanceof SQLException
@@ -225,7 +225,7 @@ namespace mariadb
       case METHOD_RESET:
 
         listener.reset();
-        return NULL;
+        return nullptr;
       default:
     }
 
@@ -254,7 +254,7 @@ namespace mariadb
 
           if (killCmd){
             handleFailOver(queryException,method,args,protocol,isClosed);
-            return NULL;
+            return nullptr;
           }
 
           if (hasToHandleFailover(queryException)){
@@ -278,7 +278,7 @@ namespace mariadb
             std::lock_guard<std::mutex> localScopeLock(lock);
             try {
               protocol.close();
-              isReconnected= listener.primaryFail(NULL,NULL,false,isClosed).isReconnected;
+              isReconnected= listener.primaryFail(nullptr,nullptr,false,isClosed).isReconnected;
             }/* TODO: something with the finally was once here */ {
               lock.unlock();
             }
@@ -309,7 +309,7 @@ namespace mariadb
    * @throws Throwable throwable
    */
   sql::Object* FailoverProxy::handleFailOver( SQLException qe, Method method,sql::sql::Object** args,Protocol& protocol,bool isClosed)  {
-    HostAddress failHostAddress= NULL;
+    HostAddress failHostAddress= nullptr;
     bool failIsMaster= true;
     if (protocol.empty() != true){
       failHostAddress= protocol.getHostAddress();
@@ -357,7 +357,7 @@ namespace mariadb
     }
     catch (SQLException& e)
     {
-      throw e; // ExceptionMapper.throwException(e, NULL, NULL);
+      throw e; // ExceptionMapper.throwException(e, nullptr, nullptr);
     }
   }
 

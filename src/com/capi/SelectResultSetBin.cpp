@@ -22,7 +22,7 @@
 #include <array>
 #include <sstream>
 
-#include "SelectResultSetCapi.h"
+#include "SelectResultSetBin.h"
 #include "Results.h"
 
 #include "MariaDbResultSetMetaData.h"
@@ -31,7 +31,6 @@
 #include "ColumnDefinitionCapi.h"
 #include "ExceptionFactory.h"
 #include "SqlStates.h"
-//#include "com/Packet.h"
 #include "com/RowProtocol.h"
 #include "protocol/capi/BinRowProtocolCapi.h"
 #include "protocol/capi/TextRowProtocolCapi.h"
@@ -43,116 +42,67 @@ namespace mariadb
 {
 namespace capi
 {
-  SelectResultSetCapi::SelectResultSetCapi(Results * results,
-                                           Protocol * _protocol,
-                                           MYSQL* capiConnHandle,
-                                           bool eofDeprecated)
+  /**
+    * Create Streaming resultSet.
+    *
+    * @param results results
+    * @param protocol current protocol
+    * @param spr ServerPrepareResult
+    * @param callableResult is it from a callableStatement ?
+    * @param eofDeprecated is EOF deprecated
+    */
+  SelectResultSetBin::SelectResultSetBin(Results* results,
+                                         Protocol* protocol,
+                                         ServerPrepareResult* spr,
+                                         bool callableResult,
+                                         bool eofDeprecated)
     : statement(results->getStatement()),
       isClosedFlag(false),
-      protocol(_protocol),
-      options(_protocol->getOptions()),
-      noBackslashEscapes(_protocol->noBackslashEscapes()),
+      protocol(protocol),
+      options(protocol->getOptions()),
+      noBackslashEscapes(protocol->noBackslashEscapes()),
+      columnsInformation(spr->getColumns()),
+      columnNameMap(new ColumnNameMap(columnsInformation)),
+      columnInformationLength(static_cast<int32_t>(columnsInformation.size())),
       fetchSize(results->getFetchSize()),
       dataSize(0),
       resultSetScrollType(results->getResultSetScrollType()),
       dataFetchTime(0),
       rowPointer(-1),
-      callableResult(false),
+      callableResult(callableResult),
       eofDeprecated(eofDeprecated),
       isEof(false),
-      capiConnHandle(capiConnHandle),
+      capiStmtHandle(spr->getStatementId()),
       timeZone(nullptr),
       forceAlias(false),
       lastRowPointer(-1)
+    //      timeZone(protocol->getTimeZone(),
   {
-    MYSQL_RES* textNativeResults= nullptr;
     if (fetchSize == 0 || callableResult) {
       data.reserve(10);//= new char[10]; // This has to be array of arrays. Need to decide what to use for its representation
-      textNativeResults= mysql_store_result(capiConnHandle);
-
-      if (textNativeResults == nullptr && mysql_errno(capiConnHandle) != 0) {
-        throw SQLException(mysql_error(capiConnHandle), mysql_sqlstate(capiConnHandle), mysql_errno(capiConnHandle));
+      if (mysql_stmt_store_result(capiStmtHandle)) {
+        throwStmtError(capiStmtHandle);
       }
-      dataSize= static_cast<size_t>(textNativeResults != nullptr ? mysql_num_rows(textNativeResults) : 0);
+      dataSize= static_cast<std::size_t>(mysql_stmt_num_rows(capiStmtHandle));
       streaming= false;
       resetVariables();
+      row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
     }
     else {
+      lock= protocol->getLock();
 
-      lock = protocol->getLock();
       protocol->setActiveStreamingResult(statement->getInternalResults());
 
       protocol->removeHasMoreResults();
       data.reserve(std::max(10, fetchSize)); // Same
-      textNativeResults= mysql_use_result(capiConnHandle);
-
+      row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
+      nextStreamingValue();
       streaming= true;
     }
-    uint32_t fieldCnt= mysql_field_count(capiConnHandle);
-
-    columnsInformation.reserve(fieldCnt);
-
-    for (size_t i= 0; i < fieldCnt; ++i) {
-      columnsInformation.emplace_back(new ColumnDefinitionCapi(mysql_fetch_field(textNativeResults)));
-    }
-    row.reset(new capi::TextRowProtocolCapi(results->getMaxFieldSize(), options, textNativeResults));
-
-    columnNameMap.reset(new ColumnNameMap(columnsInformation));
-    columnInformationLength= static_cast<int32_t>(columnsInformation.size());
-
-    if (streaming) {
-      nextStreamingValue();
-    }
   }
 
-  /**
-    * Create filled result-set.
-    *
-    * @param columnInformation column information
-    * @param resultSet result-set data
-    * @param protocol current protocol
-    * @param resultSetScrollType one of the following <code>ResultSet</code> constants: <code>
-    *     ResultSet.TYPE_FORWARD_ONLY</code>, <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-    *     <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-    */
-  SelectResultSetCapi::SelectResultSetCapi(
-    std::vector<Shared::ColumnDefinition>& columnInformation,
-    std::vector<std::vector<sql::bytes>>& resultSet,
-    Protocol* _protocol,
-    int32_t resultSetScrollType)
-    : statement(nullptr),
-      protocol(_protocol),
-      row(new capi::TextRowProtocolCapi(0, this->options, nullptr)),
-      data(std::move(resultSet)),
-      dataSize(data.size()),
-      isClosedFlag(false),
-      columnsInformation(columnInformation),
-      columnNameMap(new ColumnNameMap(columnsInformation)),
-      columnInformationLength(static_cast<int32_t>(columnInformation.size())),
-      isEof(true),
-      fetchSize(0),
-      resultSetScrollType(resultSetScrollType),
-      dataFetchTime(0),
-      rowPointer(-1),
-      callableResult(false),
-      streaming(false),
-      capiConnHandle(nullptr),
-      timeZone(nullptr),
-      forceAlias(false),
-      lastRowPointer(-1),
-      eofDeprecated(false),
-      noBackslashEscapes(false)
-  {
-    if (protocol != nullptr) {
-      this->options= protocol->getOptions();
-      this->timeZone= protocol->getTimeZone();
-    }
-    else {
-      // this->timeZone= TimeZone.getDefault();
-    }
-  }
 
-  SelectResultSetCapi::~SelectResultSetCapi()
+  SelectResultSetBin::~SelectResultSetBin()
   {
     if (!isFullyLoaded()) {
       //close();
@@ -166,54 +116,39 @@ namespace capi
     *
     * @return true if streaming is finished
     */
-  bool SelectResultSetCapi::isFullyLoaded() const {
+  bool SelectResultSetBin::isFullyLoaded() const {
     // result-set is fully loaded when reaching EOF packet.
     return isEof;
   }
 
-  void SelectResultSetCapi::fetchAllResults()
+
+  void SelectResultSetBin::fetchAllResults()
   {
-    dataSize= 0;
+    dataSize = 0;
     while (readNextValue()) {
     }
     ++dataFetchTime;
   }
 
-  const char * SelectResultSetCapi::getErrMessage()
+  const char * SelectResultSetBin::getErrMessage()
   {
-    if (capiConnHandle != nullptr)
-    {
-      return mysql_error(capiConnHandle);
-    }
-    return "";
+    return mysql_stmt_error(capiStmtHandle);
   }
 
 
-  const char * SelectResultSetCapi::getSqlState()
+  const char * SelectResultSetBin::getSqlState()
   {
-    if (capiConnHandle != nullptr)
-    {
-      return mysql_error(capiConnHandle);
-    }
-    return "HY000";
+    return mysql_stmt_error(capiStmtHandle);
   }
 
-  uint32_t SelectResultSetCapi::getErrNo()
+  uint32_t SelectResultSetBin::getErrNo()
   {
-    if (capiConnHandle != nullptr)
-    {
-      return mysql_errno(capiConnHandle);
-    }
-    return 0;
+    return mysql_stmt_errno(capiStmtHandle);
   }
 
-  uint32_t SelectResultSetCapi::warningCount()
+  uint32_t SelectResultSetBin::warningCount()
   {
-    if (capiConnHandle != nullptr)
-    {
-      return mysql_warning_count(capiConnHandle);
-    }
-    return 0;
+    return mysql_stmt_warning_count(capiStmtHandle);
   }
 
   /**
@@ -222,102 +157,14 @@ namespace capi
     *
     * @throws SQLException if any error occur
     */
-  void SelectResultSetCapi::fetchRemaining() {
+  void SelectResultSetBin::fetchRemaining() {
     if (!isEof) {
-      try {
-        lastRowPointer= -1;
-        while (!isEof) {
-          addStreamingValue();
-        }
+      lastRowPointer= -1;
+      if (mysql_stmt_store_result(capiStmtHandle) != 0) {
+        throwStmtError(capiStmtHandle);
       }
-      catch (SQLException& queryException) {
-        ExceptionFactory::INSTANCE.create(queryException).Throw();
-      }
-      catch (std::exception& ioe) {
-        handleIoException(ioe);
-      }
-      dataFetchTime++;
-    }
-  }
 
-  void SelectResultSetCapi::handleIoException(std::exception& ioe) const
-  {
-    ExceptionFactory::INSTANCE.create(
-        "Server has closed the connection. \n"
-        "Please check net_read_timeout/net_write_timeout/wait_timeout server variables. "
-        "If result set contain huge amount of data, Server expects client to"
-        " read off the result set relatively fast. "
-        "In this case, please consider increasing net_read_timeout session variable"
-        " / processing your result set faster (check Streaming result sets documentation for more information)",
-        CONNECTION_EXCEPTION.getSqlState(), &ioe).Throw();
-  }
-
-  /**
-    * This permit to replace current stream results by next ones.
-    *
-    * @throws IOException if socket exception occur
-    * @throws SQLException if server return an unexpected error
-    */
-  void SelectResultSetCapi::nextStreamingValue() {
-    lastRowPointer= -1;
-
-    if (resultSetScrollType == TYPE_FORWARD_ONLY) {
-      dataSize= 0;
-    }
-
-    addStreamingValue();
-  }
-
-  /**
-    * This permit to add next streaming values to existing resultSet.
-    *
-    * @throws IOException if socket exception occur
-    * @throws SQLException if server return an unexpected error
-    */
-  void SelectResultSetCapi::addStreamingValue() {
-
-    int32_t fetchSizeTmp= fetchSize;
-    while (fetchSizeTmp > 0 && readNextValue()) {
-      --fetchSizeTmp;
-    }
-    ++dataFetchTime;
-  }
-
-
-  /**
-    * Read next value.
-    *
-    * @return true if have a new value
-    * @throws IOException exception
-    * @throws SQLException exception
-    */
-  bool SelectResultSetCapi::readNextValue()
-  {
-    switch (row->fetchNext()) {
-    case 1: {
-      SQLString err("Internal error: most probably fetch on not yet executed statment handle. ");
-      unsigned int nativeErrno = capiConnHandle != nullptr ? mysql_errno(capiConnHandle) : 0;
-      err.append(capiConnHandle != nullptr ? mysql_error(capiConnHandle) : "");
-      throw SQLException(err, "HY000", nativeErrno );
-    }
-    case MYSQL_DATA_TRUNCATED: {
-      /*protocol->removeActiveStreamingResult();
-      protocol->removeHasMoreResults();*/
-      protocol->setHasWarnings(true);
-      break;
-
-      /*resetVariables();
-      throw *ExceptionFactory::INSTANCE.create(
-        getErrMessage(),
-        getSqlState(),
-        getErrNo(),
-        nullptr,
-        false);*/
-    }
-
-    case MYSQL_NO_DATA: {
       uint32_t serverStatus;
-
       if (!eofDeprecated) {
         protocol->readEofPacket();
         serverStatus= protocol->getServerStatus();
@@ -338,10 +185,121 @@ namespace capi
         // OK_Packet with a 0xFE header
         //protocol->readOkPacket();
         serverStatus= protocol->getServerStatus();
-        callableResult= (serverStatus & PS_OUT_PARAMETERS)!=0;
+        callableResult= (serverStatus & PS_OUT_PARAMETERS) != 0;
       }
       protocol->setServerStatus(serverStatus);
       protocol->setHasWarnings(warningCount() > 0);
+      isEof= true;
+    }
+
+    dataFetchTime++;
+  }
+
+  void SelectResultSetBin::handleIoException(std::exception& ioe) const
+  {
+    ExceptionFactory::INSTANCE.create(
+        "Server has closed the connection. \n"
+        "Please check net_read_timeout/net_write_timeout/wait_timeout server variables. "
+        "If result set contain huge amount of data, Server expects client to"
+        " read off the result set relatively fast. "
+        "In this case, please consider increasing net_read_timeout session variable"
+        " / processing your result set faster (check Streaming result sets documentation for more information)",
+        CONNECTION_EXCEPTION.getSqlState(), &ioe).Throw();
+  }
+
+  /**
+    * This permit to replace current stream results by next ones.
+    *
+    * @throws IOException if socket exception occur
+    * @throws SQLException if server return an unexpected error
+    */
+  void SelectResultSetBin::nextStreamingValue() {
+    lastRowPointer= -1;
+
+    if (resultSetScrollType == TYPE_FORWARD_ONLY) {
+      dataSize= 0;
+    }
+
+    addStreamingValue();
+  }
+
+  /**
+    * This permit to add next streaming values to existing resultSet.
+    *
+    * @throws IOException if socket exception occur
+    * @throws SQLException if server return an unexpected error
+    */
+  void SelectResultSetBin::addStreamingValue() {
+
+    int32_t fetchSizeTmp= fetchSize;
+    while (fetchSizeTmp > 0 && readNextValue()) {
+      --fetchSizeTmp;
+    }
+    ++dataFetchTime;
+  }
+
+
+  /**
+    * Read next value.
+    *
+    * @return true if have a new value
+    * @throws IOException exception
+    * @throws SQLException exception
+    */
+  bool SelectResultSetBin::readNextValue()
+  {
+    switch (row->fetchNext()) {
+    case 1: {
+      SQLString err("Internal error: most probably fetch on not yet executed statment handle. ");
+      unsigned int nativeErrno = getErrNo();
+      err.append(getErrMessage());
+      throw SQLException(err, "HY000", nativeErrno );
+    }
+    case MYSQL_DATA_TRUNCATED: {
+      /*protocol->removeActiveStreamingResult();
+      protocol->removeHasMoreResults();*/
+      protocol->setHasWarnings(true);
+      break;
+
+      /*resetVariables();
+      throw *ExceptionFactory::INSTANCE.create(
+        getErrMessage(),
+        getSqlState(),
+        getErrNo(),
+        nullptr,
+        false);*/
+    }
+
+    case MYSQL_NO_DATA: {
+      uint32_t serverStatus;
+      uint32_t warnings;
+
+      if (!eofDeprecated) {
+        protocol->readEofPacket();
+        warnings= warningCount();
+        serverStatus= protocol->getServerStatus();
+
+        // CallableResult has been read from intermediate EOF server_status
+        // and is mandatory because :
+        //
+        // - Call query will have an callable resultSet for OUT parameters
+        //   this resultSet must be identified and not listed in JDBC statement.getResultSet()
+        //
+        // - after a callable resultSet, a OK packet is send,
+        //   but mysql before 5.7.4 doesn't send MORE_RESULTS_EXISTS flag
+        if (callableResult) {
+          serverStatus|= MORE_RESULTS_EXISTS;
+        }
+      }
+      else {
+        // OK_Packet with a 0xFE header
+        // protocol->readOkPacket()?
+        serverStatus= protocol->getServerStatus();
+        warnings= warningCount();;
+        callableResult= (serverStatus & PS_OUT_PARAMETERS)!=0;
+      }
+      protocol->setServerStatus(serverStatus);
+      protocol->setHasWarnings(warnings > 0);
 
       if ((serverStatus & MORE_RESULTS_EXISTS) == 0) {
         protocol->removeActiveStreamingResult();
@@ -365,7 +323,7 @@ namespace capi
     *
     * @return row's raw bytes
     */
-  std::vector<sql::bytes>& SelectResultSetCapi::getCurrentRowData() {
+  std::vector<sql::bytes>& SelectResultSetBin::getCurrentRowData() {
     return data[rowPointer];
   }
 
@@ -375,7 +333,7 @@ namespace capi
     *
     * @param rawData new row's raw data.
     */
-  void SelectResultSetCapi::updateRowData(std::vector<sql::bytes>& rawData)
+  void SelectResultSetBin::updateRowData(std::vector<sql::bytes>& rawData)
   {
     data[rowPointer]= rawData;
     row->resetRow(data[rowPointer]);
@@ -386,7 +344,7 @@ namespace capi
     *
     * @throws SQLException if previous() fail.
     */
-  void SelectResultSetCapi::deleteCurrentRowData() {
+  void SelectResultSetBin::deleteCurrentRowData() {
 
     data.erase(data.begin()+lastRowPointer);
     dataSize--;
@@ -394,7 +352,7 @@ namespace capi
     previous();
   }
 
-  void SelectResultSetCapi::addRowData(std::vector<sql::bytes>& rawData) {
+  void SelectResultSetBin::addRowData(std::vector<sql::bytes>& rawData) {
     if (dataSize +1 >= data.size()) {
       growDataArray();
     }
@@ -403,7 +361,7 @@ namespace capi
     ++dataSize;
   }
 
-  /*int32_t SelectResultSetCapi::skipLengthEncodedValue(std::string& buf, int32_t pos) {
+  /*int32_t SelectResultSetBin::skipLengthEncodedValue(std::string& buf, int32_t pos) {
     int32_t type= buf[pos++] &0xff;
     switch (type) {
     case 251:
@@ -435,7 +393,7 @@ namespace capi
   }*/
 
   /** Grow data array. */
-  void SelectResultSetCapi::growDataArray() {
+  void SelectResultSetBin::growDataArray() {
     int32_t newCapacity= static_cast<int32_t>(data.size() + (data.size() >>1));
 
     if (newCapacity - MAX_ARRAY_SIZE > 0) {
@@ -450,7 +408,7 @@ namespace capi
     *
     * @throws SQLException exception
     */
-  void SelectResultSetCapi::abort() {
+  void SelectResultSetBin::abort() {
     isClosedFlag= true;
     resetVariables();
 
@@ -465,18 +423,44 @@ namespace capi
   }
 
   /** Close resultSet. */
-  void SelectResultSetCapi::close() {
-    realClose(false);
+  void SelectResultSetBin::close() {
+    isClosedFlag= true;
+    if (!isEof) {
+      std::unique_lock<std::mutex> localScopeLock(*lock);
+      try {
+        while (!isEof) {
+          dataSize= 0; // to avoid storing data
+          readNextValue();
+        }
+      }
+      catch (SQLException& queryException) {
+        ExceptionFactory::INSTANCE.create(queryException).Throw();
+      }
+      catch (std::runtime_error& ioe) {
+        resetVariables();
+        handleIoException(ioe);
+      }
+    }
+
+    checkOut();
+    resetVariables();
+
+    data.clear();
+
+    if (statement != nullptr) {
+      statement->checkCloseOnCompletion(this);
+      statement= nullptr;
+    }
   }
 
 
-  void SelectResultSetCapi::resetVariables() {
+  void SelectResultSetBin::resetVariables() {
     protocol= nullptr;
     isEof= true;
   }
 
 
-  bool SelectResultSetCapi::fetchNext()
+  bool SelectResultSetBin::fetchNext()
   {
     ++rowPointer;
     if (data.size() > 0) {
@@ -491,7 +475,7 @@ namespace capi
     return true;
   }
 
-  bool SelectResultSetCapi::next()
+  bool SelectResultSetBin::next()
   {
     if (isClosedFlag) {
       throw SQLException("Operation not permit on a closed resultSet", "HY000");
@@ -530,7 +514,7 @@ namespace capi
   }
 
   // It has to be const, because it's called by getters, and properties it changes are mutable
-  void SelectResultSetCapi::resetRow() const
+  void SelectResultSetBin::resetRow() const
   {
     if (data.size() > 0) {
       row->resetRow(data[rowPointer]);
@@ -547,7 +531,7 @@ namespace capi
   }
 
 
-  void SelectResultSetCapi::checkObjectRange(int32_t position) const {
+  void SelectResultSetBin::checkObjectRange(int32_t position) const {
     if (rowPointer < 0) {
       throw SQLDataException("Current position is before the first row", "22023");
     }
@@ -566,25 +550,25 @@ namespace capi
     row->setPosition(position - 1);
   }
 
-  SQLWarning* SelectResultSetCapi::getWarnings() {
+  SQLWarning* SelectResultSetBin::getWarnings() {
     if (this->statement == nullptr) {
       return nullptr;
     }
     return this->statement->getWarnings();
   }
 
-  void SelectResultSetCapi::clearWarnings() {
+  void SelectResultSetBin::clearWarnings() {
     if (this->statement != nullptr) {
       this->statement->clearWarnings();
     }
   }
 
-  bool SelectResultSetCapi::isBeforeFirst() const {
+  bool SelectResultSetBin::isBeforeFirst() const {
     checkClose();
     return (dataFetchTime >0) ? rowPointer == -1 && dataSize > 0 : rowPointer == -1;
   }
 
-  bool SelectResultSetCapi::isAfterLast() {
+  bool SelectResultSetBin::isAfterLast() {
     checkClose();
     if (rowPointer < 0 || static_cast<std::size_t>(rowPointer) < dataSize) {
       // has remaining results
@@ -617,12 +601,12 @@ namespace capi
     }
   }
 
-  bool SelectResultSetCapi::isFirst() const {
+  bool SelectResultSetBin::isFirst() const {
     checkClose();
     return /*dataFetchTime == 1 && */rowPointer == 0 && dataSize > 0;
   }
 
-  bool SelectResultSetCapi::isLast() {
+  bool SelectResultSetBin::isLast() {
     checkClose();
     if (static_cast<std::size_t>(rowPointer + 1) < dataSize) {
       return false;
@@ -652,7 +636,7 @@ namespace capi
     }
   }
 
-  void SelectResultSetCapi::beforeFirst() {
+  void SelectResultSetBin::beforeFirst() {
     checkClose();
 
     if (streaming &&resultSetScrollType == TYPE_FORWARD_ONLY) {
@@ -661,14 +645,14 @@ namespace capi
     rowPointer= -1;
   }
 
-  void SelectResultSetCapi::afterLast() {
+  void SelectResultSetBin::afterLast() {
     checkClose();
     std::lock_guard<std::mutex> localScopeLock(*lock);
     fetchRemaining();
     rowPointer= static_cast<int32_t>(dataSize);
   }
 
-  bool SelectResultSetCapi::first() {
+  bool SelectResultSetBin::first() {
     checkClose();
 
     if (streaming && resultSetScrollType == TYPE_FORWARD_ONLY) {
@@ -679,7 +663,7 @@ namespace capi
     return dataSize > 0;
   }
 
-  bool SelectResultSetCapi::last() {
+  bool SelectResultSetBin::last() {
     checkClose();
     std::lock_guard<std::mutex> localScopeLock(*lock);
     fetchRemaining();
@@ -687,7 +671,7 @@ namespace capi
     return dataSize > 0;
   }
 
-  int32_t SelectResultSetCapi::getRow() {
+  int32_t SelectResultSetBin::getRow() {
     checkClose();
     if (streaming && resultSetScrollType == TYPE_FORWARD_ONLY) {
       return 0;
@@ -695,7 +679,7 @@ namespace capi
     return rowPointer + 1;
   }
 
-  bool SelectResultSetCapi::absolute(int32_t rowPos) {
+  bool SelectResultSetBin::absolute(int32_t rowPos) {
     checkClose();
 
     if (streaming && resultSetScrollType == TYPE_FORWARD_ONLY) {
@@ -731,7 +715,7 @@ namespace capi
   }
 
 
-  bool SelectResultSetCapi::relative(int32_t rows) {
+  bool SelectResultSetBin::relative(int32_t rows) {
     checkClose();
     if (streaming &&resultSetScrollType == TYPE_FORWARD_ONLY) {
       throw SQLException("Invalid operation for result set type TYPE_FORWARD_ONLY");
@@ -751,7 +735,7 @@ namespace capi
     }
   }
 
-  bool SelectResultSetCapi::previous() {
+  bool SelectResultSetBin::previous() {
     checkClose();
     if (streaming && resultSetScrollType == TYPE_FORWARD_ONLY) {
       throw SQLException("Invalid operation for result set type TYPE_FORWARD_ONLY");
@@ -763,22 +747,22 @@ namespace capi
     return false;
   }
 
-  int32_t SelectResultSetCapi::getFetchDirection() const {
+  int32_t SelectResultSetBin::getFetchDirection() const {
     return FETCH_UNKNOWN;
   }
 
-  void SelectResultSetCapi::setFetchDirection(int32_t direction) {
+  void SelectResultSetBin::setFetchDirection(int32_t direction) {
     if (direction == FETCH_REVERSE) {
       throw SQLException(
         "Invalid operation. Allowed direction are ResultSet::FETCH_FORWARD and ResultSet::FETCH_UNKNOWN");
     }
   }
 
-  int32_t SelectResultSetCapi::getFetchSize() const {
+  int32_t SelectResultSetBin::getFetchSize() const {
     return this->fetchSize;
   }
 
-  void SelectResultSetCapi::setFetchSize(int32_t fetchSize) {
+  void SelectResultSetBin::setFetchSize(int32_t fetchSize) {
     if (streaming &&fetchSize == 0) {
       std::lock_guard<std::mutex> localScopeLock(*lock);
       try {
@@ -795,61 +779,61 @@ namespace capi
     this->fetchSize= fetchSize;
   }
 
-  int32_t SelectResultSetCapi::getType()  const {
+  int32_t SelectResultSetBin::getType()  const {
     return resultSetScrollType;
   }
 
-  int32_t SelectResultSetCapi::getConcurrency() const {
+  int32_t SelectResultSetBin::getConcurrency() const {
     return CONCUR_READ_ONLY;
   }
 
-  void SelectResultSetCapi::checkClose() const {
+  void SelectResultSetBin::checkClose() const {
     if (isClosedFlag) {
       throw SQLException("Operation not permit on a closed resultSet", "HY000");
     }
   }
 
-  bool SelectResultSetCapi::isCallableResult() const {
+  bool SelectResultSetBin::isCallableResult() const {
     return callableResult;
   }
 
-  bool SelectResultSetCapi::isClosed() const {
+  bool SelectResultSetBin::isClosed() const {
     return isClosedFlag;
   }
 
-  MariaDbStatement* SelectResultSetCapi::getStatement() {
+  MariaDbStatement* SelectResultSetBin::getStatement() {
     return statement;
   }
 
-  void SelectResultSetCapi::setStatement(MariaDbStatement* statement)
+  void SelectResultSetBin::setStatement(MariaDbStatement* statement)
   {
     this->statement= statement;
   }
 
   /** {inheritDoc}. */
-  bool SelectResultSetCapi::wasNull() const {
+  bool SelectResultSetBin::wasNull() const {
     return row->wasNull();
   }
 
-  bool SelectResultSetCapi::isNull(int32_t columnIndex) const
+  bool SelectResultSetBin::isNull(int32_t columnIndex) const
   {
     checkObjectRange(columnIndex);
     return row->lastValueWasNull();
   }
 
-  bool SelectResultSetCapi::isNull(const SQLString & columnLabel) const
+  bool SelectResultSetBin::isNull(const SQLString & columnLabel) const
   {
     return isNull(findColumn(columnLabel));
   }
 
 #ifdef MAYBE_IN_BETA
   /** {inheritDoc}. */
-  std::istream* SelectResultSetCapi::getAsciiStream(const SQLString& columnLabel) {
+  std::istream* SelectResultSetBin::getAsciiStream(const SQLString& columnLabel) {
     return getAsciiStream(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  std::istream* SelectResultSetCapi::getAsciiStream(int32_t columnIndex) {
+  std::istream* SelectResultSetBin::getAsciiStream(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
       return nullptr;
@@ -860,7 +844,7 @@ namespace capi
 #endif
 
   /** {inheritDoc}. */
-  SQLString SelectResultSetCapi::getString(int32_t columnIndex) const
+  SQLString SelectResultSetBin::getString(int32_t columnIndex) const
   {
     checkObjectRange(columnIndex);
     std::unique_ptr<SQLString> res= row->getInternalString(columnsInformation[columnIndex -1].get());
@@ -874,12 +858,12 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  SQLString SelectResultSetCapi::getString(const SQLString& columnLabel) const {
+  SQLString SelectResultSetBin::getString(const SQLString& columnLabel) const {
     return getString(findColumn(columnLabel));
   }
 
 
-  SQLString SelectResultSetCapi::zeroFillingIfNeeded(const SQLString& value, ColumnDefinition* columnInformation)
+  SQLString SelectResultSetBin::zeroFillingIfNeeded(const SQLString& value, ColumnDefinition* columnInformation)
   {
     if (columnInformation->isZeroFill()) {
       SQLString zeroAppendStr;
@@ -893,7 +877,7 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  std::istream* SelectResultSetCapi::getBinaryStream(int32_t columnIndex) const {
+  std::istream* SelectResultSetBin::getBinaryStream(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
       return nullptr;
@@ -903,49 +887,49 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  std::istream* SelectResultSetCapi::getBinaryStream(const SQLString& columnLabel) const {
+  std::istream* SelectResultSetBin::getBinaryStream(const SQLString& columnLabel) const {
     return getBinaryStream(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  int32_t SelectResultSetCapi::getInt(int32_t columnIndex) const {
+  int32_t SelectResultSetBin::getInt(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     return row->getInternalInt(columnsInformation[columnIndex -1].get());
   }
 
-  /** {inheritDoc}. */  int32_t SelectResultSetCapi::getInt(const SQLString& columnLabel) const {
+  /** {inheritDoc}. */  int32_t SelectResultSetBin::getInt(const SQLString& columnLabel) const {
     return getInt(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  int64_t SelectResultSetCapi::getLong(const SQLString& columnLabel) const {
+  int64_t SelectResultSetBin::getLong(const SQLString& columnLabel) const {
     return getLong(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  int64_t SelectResultSetCapi::getLong(int32_t columnIndex) const {
+  int64_t SelectResultSetBin::getLong(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     return row->getInternalLong(columnsInformation[columnIndex -1].get());
   }
 
 
-  uint64_t SelectResultSetCapi::getUInt64(const SQLString & columnLabel) const {
+  uint64_t SelectResultSetBin::getUInt64(const SQLString & columnLabel) const {
     return getUInt64(findColumn(columnLabel));
   }
 
 
-  uint64_t SelectResultSetCapi::getUInt64(int32_t columnIndex) const {
+  uint64_t SelectResultSetBin::getUInt64(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     return static_cast<uint64_t>(row->getInternalULong(columnsInformation[columnIndex -1].get()));
   }
 
 
-  uint32_t SelectResultSetCapi::getUInt(const SQLString& columnLabel) const {
+  uint32_t SelectResultSetBin::getUInt(const SQLString& columnLabel) const {
     return getUInt(findColumn(columnLabel));
   }
 
 
-  uint32_t SelectResultSetCapi::getUInt(int32_t columnIndex) const {
+  uint32_t SelectResultSetBin::getUInt(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
 
     ColumnDefinition* columnInfo= columnsInformation[columnIndex - 1].get();
@@ -958,57 +942,57 @@ namespace capi
 
 
   /** {inheritDoc}. */
-  float SelectResultSetCapi::getFloat(const SQLString& columnLabel) const {
+  float SelectResultSetBin::getFloat(const SQLString& columnLabel) const {
     return getFloat(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  float SelectResultSetCapi::getFloat(int32_t columnIndex) const {
+  float SelectResultSetBin::getFloat(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     return row->getInternalFloat(columnsInformation[columnIndex -1].get());
   }
 
   /** {inheritDoc}. */
-  long double SelectResultSetCapi::getDouble(const SQLString& columnLabel) const {
+  long double SelectResultSetBin::getDouble(const SQLString& columnLabel) const {
     return getDouble(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  long double SelectResultSetCapi::getDouble(int32_t columnIndex) const {
+  long double SelectResultSetBin::getDouble(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
     return row->getInternalDouble(columnsInformation[columnIndex -1].get());
   }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   /** {inheritDoc}. */
-  BigDecimal SelectResultSetCapi::getBigDecimal(const SQLString& columnLabel, int32_t scale) {
+  BigDecimal SelectResultSetBin::getBigDecimal(const SQLString& columnLabel, int32_t scale) {
     return getBigDecimal(findColumn(columnLabel), scale);
   }
 
   /** {inheritDoc}. */
-  BigDecimal SelectResultSetCapi::getBigDecimal(int32_t columnIndex, int32_t scale) {
+  BigDecimal SelectResultSetBin::getBigDecimal(int32_t columnIndex, int32_t scale) {
     checkObjectRange(columnIndex);
     return row->getInternalBigDecimal(columnsInformation[columnIndex -1]);
   }
 
   /** {inheritDoc}. */
-  BigDecimal SelectResultSetCapi::getBigDecimal(int32_t columnIndex) {
+  BigDecimal SelectResultSetBin::getBigDecimal(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     return row->getInternalBigDecimal(columnsInformation[columnIndex -1]);
   }
 
   /** {inheritDoc}. */
-  BigDecimal SelectResultSetCapi::getBigDecimal(const SQLString& columnLabel) {
+  BigDecimal SelectResultSetBin::getBigDecimal(const SQLString& columnLabel) {
     return getBigDecimal(findColumn(columnLabel));
   }
 #endif
 #ifdef MAYBE_IN_BETA
   /** {inheritDoc}. */
-  SQLString SelectResultSetCapi::getBytes(const SQLString& columnLabel) {
+  SQLString SelectResultSetBin::getBytes(const SQLString& columnLabel) {
     return getBytes(findColumn(columnLabel));
   }
   /** {inheritDoc}. */
-  SQLString SelectResultSetCapi::getBytes(int32_t columnIndex) {
+  SQLString SelectResultSetBin::getBytes(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
       return nullptr;
@@ -1020,33 +1004,33 @@ namespace capi
 
 
   /** {inheritDoc}. */
-  Date* SelectResultSetCapi::getDate(int32_t columnIndex) {
+  Date* SelectResultSetBin::getDate(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     return row->getInternalDate(columnsInformation[columnIndex -1], nullptr, timeZone);
   }
 
   /** {inheritDoc}. */
-  Date* SelectResultSetCapi::getDate(const SQLString& columnLabel) {
+  Date* SelectResultSetBin::getDate(const SQLString& columnLabel) {
     return getDate(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  Time* SelectResultSetCapi::getTime(int32_t columnIndex) {
+  Time* SelectResultSetBin::getTime(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     return row->getInternalTime(columnsInformation[columnIndex -1], nullptr, timeZone);
   }
 
-  /** {inheritDoc}. */  Time SelectResultSetCapi::getTime(const SQLString& columnLabel) {
+  /** {inheritDoc}. */  Time SelectResultSetBin::getTime(const SQLString& columnLabel) {
     return getTime(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  Timestamp* SelectResultSetCapi::getTimestamp(const SQLString& columnLabel) {
+  Timestamp* SelectResultSetBin::getTimestamp(const SQLString& columnLabel) {
     return getTimestamp(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  Timestamp* SelectResultSetCapi::getTimestamp(int32_t columnIndex) {
+  Timestamp* SelectResultSetBin::getTimestamp(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     return row->getInternalTimestamp(columnsInformation[columnIndex -1], nullptr, timeZone);
   }
@@ -1054,64 +1038,64 @@ namespace capi
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   /** {inheritDoc}. */
-  Date* SelectResultSetCapi::getDate(int32_t columnIndex, Calendar& cal) {
+  Date* SelectResultSetBin::getDate(int32_t columnIndex, Calendar& cal) {
     checkObjectRange(columnIndex);
     return row->getInternalDate(columnsInformation[columnIndex -1], cal, timeZone);
   }
 
   /** {inheritDoc}. */
-  Date* SelectResultSetCapi::getDate(const SQLString& columnLabel, Calendar& cal) {
+  Date* SelectResultSetBin::getDate(const SQLString& columnLabel, Calendar& cal) {
     return getDate(findColumn(columnLabel), cal);
   }
 
   /** {inheritDoc}. */
-  Time* SelectResultSetCapi::getTime(int32_t columnIndex, Calendar& cal) {
+  Time* SelectResultSetBin::getTime(int32_t columnIndex, Calendar& cal) {
     checkObjectRange(columnIndex);
     return row->getInternalTime(columnsInformation[columnIndex -1], cal, timeZone);
   }
 
   /** {inheritDoc}. */
-  Time* SelectResultSetCapi::getTime(const SQLString& columnLabel, Calendar& cal) {
+  Time* SelectResultSetBin::getTime(const SQLString& columnLabel, Calendar& cal) {
     return getTime(findColumn(columnLabel), cal);
   }
 
   /** {inheritDoc}. */
-  Timestamp* SelectResultSetCapi::getTimestamp(int32_t columnIndex, Calendar& cal) {
+  Timestamp* SelectResultSetBin::getTimestamp(int32_t columnIndex, Calendar& cal) {
     checkObjectRange(columnIndex);
     return row->getInternalTimestamp(columnsInformation[columnIndex -1], cal, timeZone);
   }
 
   /** {inheritDoc}. */
-  Timestamp* SelectResultSetCapi::getTimestamp(const SQLString& columnLabel, Calendar& cal) {
+  Timestamp* SelectResultSetBin::getTimestamp(const SQLString& columnLabel, Calendar& cal) {
     return getTimestamp(findColumn(columnLabel), cal);
   }
 #endif
 
   /** {inheritDoc}. */
-  SQLString SelectResultSetCapi::getCursorName() {
+  SQLString SelectResultSetBin::getCursorName() {
     throw ExceptionFactory::INSTANCE.notSupported("Cursors not supported");
   }
 
   /** {inheritDoc}. */
-  sql::ResultSetMetaData* SelectResultSetCapi::getMetaData() const {
+  sql::ResultSetMetaData* SelectResultSetBin::getMetaData() const {
     return new MariaDbResultSetMetaData(columnsInformation, options, forceAlias);
   }
 
   /** {inheritDoc}. */
-  int32_t SelectResultSetCapi::findColumn(const SQLString& columnLabel) const {
+  int32_t SelectResultSetBin::findColumn(const SQLString& columnLabel) const {
     return columnNameMap->getIndex(columnLabel) + 1;
   }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
 
   /** {inheritDoc}. */
-  sql::Object* SelectResultSetCapi::getObject(int32_t columnIndex) {
+  sql::Object* SelectResultSetBin::getObject(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     return row->getInternalObject(columnsInformation[columnIndex -1], timeZone);
   }
 
   /** {inheritDoc}. */
-  sql::Object* SelectResultSetCapi::getObject(const SQLString& columnLabel) {
+  sql::Object* SelectResultSetBin::getObject(const SQLString& columnLabel) {
     return getObject(findColumn(columnLabel));
   }
 
@@ -1271,12 +1255,12 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  std::istringstream* SelectResultSetCapi::getCharacterStream(const SQLString& columnLabel) {
+  std::istringstream* SelectResultSetBin::getCharacterStream(const SQLString& columnLabel) {
     return getCharacterStream(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  std::istringstream* SelectResultSetCapi::getCharacterStream(int32_t columnIndex) {
+  std::istringstream* SelectResultSetBin::getCharacterStream(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     SQLString value= row->getInternalString(columnsInformation[columnIndex -1], nullptr, timeZone);
     if (value.empty() == true) {
@@ -1286,28 +1270,28 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  std::istringstream* SelectResultSetCapi::getNCharacterStream(int32_t columnIndex) {
+  std::istringstream* SelectResultSetBin::getNCharacterStream(int32_t columnIndex) {
     return getCharacterStream(columnIndex);
   }
 
   /** {inheritDoc}. */
-  std::istringstream* SelectResultSetCapi::getNCharacterStream(const SQLString& columnLabel) {
+  std::istringstream* SelectResultSetBin::getNCharacterStream(const SQLString& columnLabel) {
     return getCharacterStream(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  Ref* SelectResultSetCapi::getRef(int32_t columnIndex) {
+  Ref* SelectResultSetBin::getRef(int32_t columnIndex) {
 
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  Ref* SelectResultSetCapi::getRef(const SQLString& columnLabel) {
+  Ref* SelectResultSetBin::getRef(const SQLString& columnLabel) {
     throw ExceptionFactory::INSTANCE.notSupported("Getting REFs not supported");
   }
 
   /** {inheritDoc}. */
-  Clob* SelectResultSetCapi::getClob(int32_t columnIndex) {
+  Clob* SelectResultSetBin::getClob(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
       return nullptr;
@@ -1316,22 +1300,22 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  Clob* SelectResultSetCapi::getClob(const SQLString& columnLabel) {
+  Clob* SelectResultSetBin::getClob(const SQLString& columnLabel) {
     return getClob(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  sql::Array* SelectResultSetCapi::getArray(int32_t columnIndex) {
+  sql::Array* SelectResultSetBin::getArray(int32_t columnIndex) {
     throw ExceptionFactory::INSTANCE.notSupported("Arrays are not supported");
   }
 
   /** {inheritDoc}. */
-  sql::Array* SelectResultSetCapi::getArray(const SQLString& columnLabel) {
+  sql::Array* SelectResultSetBin::getArray(const SQLString& columnLabel) {
     return getArray(findColumn(columnLabel));
   }
 
 
-  URL* SelectResultSetCapi::getURL(int32_t columnIndex)
+  URL* SelectResultSetBin::getURL(int32_t columnIndex)
   {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
@@ -1345,13 +1329,13 @@ namespace capi
     }
   }
 
-  URL* SelectResultSetCapi::getURL(const SQLString& columnLabel) {
+  URL* SelectResultSetBin::getURL(const SQLString& columnLabel) {
     return getURL(findColumn(columnLabel));
   }
 
 
   /** {inheritDoc}. */
-  NClob* SelectResultSetCapi::getNClob(int32_t columnIndex) {
+  NClob* SelectResultSetBin::getNClob(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
       return nullptr;
@@ -1360,512 +1344,512 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  NClob* SelectResultSetCapi::getNClob(const SQLString& columnLabel) {
+  NClob* SelectResultSetBin::getNClob(const SQLString& columnLabel) {
     return getNClob(findColumn(columnLabel));
   }
 
-  SQLXML* SelectResultSetCapi::getSQLXML(int32_t columnIndex) {
+  SQLXML* SelectResultSetBin::getSQLXML(int32_t columnIndex) {
     throw ExceptionFactory::INSTANCE.notSupported("SQLXML not supported");
   }
 
-  SQLXML* SelectResultSetCapi::getSQLXML(const SQLString& columnLabel) {
+  SQLXML* SelectResultSetBin::getSQLXML(const SQLString& columnLabel) {
     throw ExceptionFactory::INSTANCE.notSupported("SQLXML not supported");
   }
 
-  /** {inheritDoc}. */  SQLString SelectResultSetCapi::getNString(int32_t columnIndex) {
+  /** {inheritDoc}. */  SQLString SelectResultSetBin::getNString(int32_t columnIndex) {
     return getString(columnIndex);
   }
 
   /** {inheritDoc}. */
-  SQLString SelectResultSetCapi::getNString(const SQLString& columnLabel) {
+  SQLString SelectResultSetBin::getNString(const SQLString& columnLabel) {
     return getString(findColumn(columnLabel));
   }
 #endif
 
   /** {inheritDoc}. */
-  Blob* SelectResultSetCapi::getBlob(int32_t columnIndex) const {
+  Blob* SelectResultSetBin::getBlob(int32_t columnIndex) const {
     return getBinaryStream(columnIndex);
   }
 
   /** {inheritDoc}. */
-  Blob* SelectResultSetCapi::getBlob(const SQLString& columnLabel) const {
+  Blob* SelectResultSetBin::getBlob(const SQLString& columnLabel) const {
     return getBlob(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  RowId* SelectResultSetCapi::getRowId(int32_t columnIndex) const {
+  RowId* SelectResultSetBin::getRowId(int32_t columnIndex) const {
     throw ExceptionFactory::INSTANCE.notSupported("RowIDs not supported");
   }
 
   /** {inheritDoc}. */
-  RowId* SelectResultSetCapi::getRowId(const SQLString& columnLabel) const {
+  RowId* SelectResultSetBin::getRowId(const SQLString& columnLabel) const {
     throw ExceptionFactory::INSTANCE.notSupported("RowIDs not supported");
   }
 
   /** {inheritDoc}. */
-  bool SelectResultSetCapi::getBoolean(int32_t index) const {
+  bool SelectResultSetBin::getBoolean(int32_t index) const {
     checkObjectRange(index);
     return row->getInternalBoolean(columnsInformation[static_cast<std::size_t>(index) -1].get());
   }
 
   /** {inheritDoc}. */
-  bool SelectResultSetCapi::getBoolean(const SQLString& columnLabel) const {
+  bool SelectResultSetBin::getBoolean(const SQLString& columnLabel) const {
     return getBoolean(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  int8_t SelectResultSetCapi::getByte(int32_t index) const {
+  int8_t SelectResultSetBin::getByte(int32_t index) const {
     checkObjectRange(index);
     return row->getInternalByte(columnsInformation[static_cast<std::size_t>(index) - 1].get());
   }
 
   /** {inheritDoc}. */
-  int8_t SelectResultSetCapi::getByte(const SQLString& columnLabel) const {
+  int8_t SelectResultSetBin::getByte(const SQLString& columnLabel) const {
     return getByte(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  short SelectResultSetCapi::getShort(int32_t index) const {
+  short SelectResultSetBin::getShort(int32_t index) const {
     checkObjectRange(index);
     return row->getInternalShort(columnsInformation[static_cast<std::size_t>(index) - 1].get());
   }
 
   /** {inheritDoc}. */
-  short SelectResultSetCapi::getShort(const SQLString& columnLabel) const {
+  short SelectResultSetBin::getShort(const SQLString& columnLabel) const {
     return getShort(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  bool SelectResultSetCapi::rowUpdated() {
+  bool SelectResultSetBin::rowUpdated() {
     throw ExceptionFactory::INSTANCE.notSupported(
       "Detecting row updates are not supported");
   }
 
   /** {inheritDoc}. */
-  bool SelectResultSetCapi::rowInserted() {
+  bool SelectResultSetBin::rowInserted() {
     throw ExceptionFactory::INSTANCE.notSupported("Detecting inserts are not supported");
   }
 
   /** {inheritDoc}. */
-  bool SelectResultSetCapi::rowDeleted() {
+  bool SelectResultSetBin::rowDeleted() {
     throw ExceptionFactory::INSTANCE.notSupported("Row deletes are not supported");
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::insertRow() {
+  void SelectResultSetBin::insertRow() {
     throw ExceptionFactory::INSTANCE.notSupported(
       "insertRow are not supported when using ResultSet::CONCUR_READ_ONLY");
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::deleteRow() {
+  void SelectResultSetBin::deleteRow() {
     throw ExceptionFactory::INSTANCE.notSupported(
       "deleteRow are not supported when using ResultSet::CONCUR_READ_ONLY");
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::refreshRow() {
+  void SelectResultSetBin::refreshRow() {
     throw ExceptionFactory::INSTANCE.notSupported(
       "refreshRow are not supported when using ResultSet::CONCUR_READ_ONLY");
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::moveToInsertRow() {
+  void SelectResultSetBin::moveToInsertRow() {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::moveToCurrentRow() {
+  void SelectResultSetBin::moveToCurrentRow() {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::cancelRowUpdates() {
+  void SelectResultSetBin::cancelRowUpdates() {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  std::size_t sql::mariadb::capi::SelectResultSetCapi::rowsCount() const
+  std::size_t sql::mariadb::capi::SelectResultSetBin::rowsCount() const
   {
     return dataSize;
   }
 
 #ifdef RS_UPDATE_FUNCTIONALITY_IMPLEMENTED
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateNull(int32_t columnIndex) {
+  void SelectResultSetBin::updateNull(int32_t columnIndex) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateNull(const SQLString& columnLabel) {
+  void SelectResultSetBin::updateNull(const SQLString& columnLabel) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateBoolean(int32_t columnIndex, bool _bool) {
+  void SelectResultSetBin::updateBoolean(int32_t columnIndex, bool _bool) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateBoolean(const SQLString& columnLabel, bool value) {
+  void SelectResultSetBin::updateBoolean(const SQLString& columnLabel, bool value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateByte(int32_t columnIndex, char value) {
+  void SelectResultSetBin::updateByte(int32_t columnIndex, char value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateByte(const SQLString& columnLabel, char value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateByte(const SQLString& columnLabel, char value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateShort(int32_t columnIndex, short value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateShort(int32_t columnIndex, short value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateShort(const SQLString& columnLabel, short value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateShort(const SQLString& columnLabel, short value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateInt(int32_t columnIndex, int32_t value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateInt(int32_t columnIndex, int32_t value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateInt(const SQLString& columnLabel, int32_t value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateInt(const SQLString& columnLabel, int32_t value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateFloat(int32_t columnIndex, float value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateFloat(int32_t columnIndex, float value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateFloat(const SQLString& columnLabel, float value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateFloat(const SQLString& columnLabel, float value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateDouble(int32_t columnIndex, double value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateDouble(int32_t columnIndex, double value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateDouble(const SQLString& columnLabel, double value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateDouble(const SQLString& columnLabel, double value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBigDecimal(int32_t columnIndex, BigDecimal value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBigDecimal(int32_t columnIndex, BigDecimal value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBigDecimal(const SQLString& columnLabel, BigDecimal value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBigDecimal(const SQLString& columnLabel, BigDecimal value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateString(int32_t columnIndex, const SQLString& value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateString(int32_t columnIndex, const SQLString& value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateString(const SQLString& columnLabel, const SQLString& value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateString(const SQLString& columnLabel, const SQLString& value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBytes(int32_t columnIndex, std::string& value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBytes(int32_t columnIndex, std::string& value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBytes(const SQLString& columnLabel, std::string& value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBytes(const SQLString& columnLabel, std::string& value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateDate(int32_t columnIndex, Date date) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateDate(int32_t columnIndex, Date date) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateDate(const SQLString& columnLabel, Date value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateDate(const SQLString& columnLabel, Date value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateTime(int32_t columnIndex, Time time) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateTime(int32_t columnIndex, Time time) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateTime(const SQLString& columnLabel, Time value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateTime(const SQLString& columnLabel, Time value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateTimestamp(int32_t columnIndex, Timestamp timeStamp) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateTimestamp(int32_t columnIndex, Timestamp timeStamp) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateTimestamp(const SQLString& columnLabel, Timestamp value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateTimestamp(const SQLString& columnLabel, Timestamp value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateAsciiStream(int32_t columnIndex, std::istream* inputStream, int32_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateAsciiStream(int32_t columnIndex, std::istream* inputStream, int32_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateAsciiStream(const SQLString& columnLabel, std::istream* inputStream) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateAsciiStream(const SQLString& columnLabel, std::istream* inputStream) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateAsciiStream(const SQLString& columnLabel, std::istream* value, int32_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateAsciiStream(const SQLString& columnLabel, std::istream* value, int32_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateAsciiStream(int32_t columnIndex, std::istream* inputStream, int64_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateAsciiStream(int32_t columnIndex, std::istream* inputStream, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateAsciiStream(const SQLString& columnLabel, std::istream* inputStream, int64_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateAsciiStream(const SQLString& columnLabel, std::istream* inputStream, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateAsciiStream(int32_t columnIndex, std::istream* inputStream) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateAsciiStream(int32_t columnIndex, std::istream* inputStream) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBinaryStream(int32_t columnIndex, std::istream* inputStream, int32_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBinaryStream(int32_t columnIndex, std::istream* inputStream, int32_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBinaryStream(int32_t columnIndex, std::istream* inputStream, int64_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBinaryStream(int32_t columnIndex, std::istream* inputStream, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBinaryStream(const SQLString& columnLabel, std::istream* value, int32_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBinaryStream(const SQLString& columnLabel, std::istream* value, int32_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBinaryStream(const SQLString& columnLabel, std::istream* inputStream, int64_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBinaryStream(const SQLString& columnLabel, std::istream* inputStream, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBinaryStream(int32_t columnIndex, std::istream* inputStream) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBinaryStream(int32_t columnIndex, std::istream* inputStream) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBinaryStream(const SQLString& columnLabel, std::istream* inputStream) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBinaryStream(const SQLString& columnLabel, std::istream* inputStream) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateCharacterStream(int32_t columnIndex, std::istringstream& value, int32_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateCharacterStream(int32_t columnIndex, std::istringstream& value, int32_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateCharacterStream(int32_t columnIndex, std::istringstream& value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateCharacterStream(int32_t columnIndex, std::istringstream& value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateCharacterStream(const SQLString& columnLabel, std::istringstream& reader, int32_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateCharacterStream(const SQLString& columnLabel, std::istringstream& reader, int32_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateCharacterStream(int32_t columnIndex, std::istringstream& value, int64_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateCharacterStream(int32_t columnIndex, std::istringstream& value, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateCharacterStream(const SQLString& columnLabel, std::istringstream& reader, int64_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateCharacterStream(const SQLString& columnLabel, std::istringstream& reader, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateCharacterStream(const SQLString& columnLabel, std::istringstream& reader) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateCharacterStream(const SQLString& columnLabel, std::istringstream& reader) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateObject(int32_t columnIndex, sql::Object* value, int32_t scaleOrLength) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateObject(int32_t columnIndex, sql::Object* value, int32_t scaleOrLength) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateObject(int32_t columnIndex, sql::Object* value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateObject(int32_t columnIndex, sql::Object* value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateObject(const SQLString& columnLabel, sql::Object* value, int32_t scaleOrLength) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateObject(const SQLString& columnLabel, sql::Object* value, int32_t scaleOrLength) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateObject(const SQLString& columnLabel, sql::Object* value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateObject(const SQLString& columnLabel, sql::Object* value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateLong(const SQLString& columnLabel, int64_t value) {
-    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
-  }
-
-  /** {inheritDoc}. */
-  void SelectResultSetCapi::updateLong(int32_t columnIndex, int64_t value) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateLong(const SQLString& columnLabel, int64_t value) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateRow() {
+  void SelectResultSetBin::updateLong(int32_t columnIndex, int64_t value) {
+    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
+  }
+
+  /** {inheritDoc}. */
+  void SelectResultSetBin::updateRow() {
     throw ExceptionFactory::INSTANCE.notSupported(
       "updateRow are not supported when using ResultSet::CONCUR_READ_ONLY");
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateRef(int32_t columnIndex, Ref& ref) {
+  void SelectResultSetBin::updateRef(int32_t columnIndex, Ref& ref) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateRef(const SQLString& columnLabel, Ref& ref) {
+  void SelectResultSetBin::updateRef(const SQLString& columnLabel, Ref& ref) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBlob(int32_t columnIndex, Blob& blob) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBlob(int32_t columnIndex, Blob& blob) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBlob(const SQLString& columnLabel, Blob& blob) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBlob(const SQLString& columnLabel, Blob& blob) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBlob(int32_t columnIndex, std::istream* inputStream) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBlob(int32_t columnIndex, std::istream* inputStream) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBlob(const SQLString& columnLabel, std::istream* inputStream) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBlob(const SQLString& columnLabel, std::istream* inputStream) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBlob(int32_t columnIndex, std::istream* inputStream, int64_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBlob(int32_t columnIndex, std::istream* inputStream, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateBlob(const SQLString& columnLabel, std::istream* inputStream, int64_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateBlob(const SQLString& columnLabel, std::istream* inputStream, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateClob(int32_t columnIndex, Clob& clob) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateClob(int32_t columnIndex, Clob& clob) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateClob(const SQLString& columnLabel, Clob& clob) {
-    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
-  }
-
-  /** {inheritDoc}. */
-  void SelectResultSetCapi::updateClob(int32_t columnIndex, std::istringstream& reader, int64_t length) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateClob(const SQLString& columnLabel, Clob& clob) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateClob(const SQLString& columnLabel, std::istringstream& reader, int64_t length) {
+  void SelectResultSetBin::updateClob(int32_t columnIndex, std::istringstream& reader, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateClob(int32_t columnIndex, std::istringstream& reader) {
+  void SelectResultSetBin::updateClob(const SQLString& columnLabel, std::istringstream& reader, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateClob(const SQLString& columnLabel, std::istringstream& reader) {
+  void SelectResultSetBin::updateClob(int32_t columnIndex, std::istringstream& reader) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateArray(int32_t columnIndex, sql::Array& array) {
+  void SelectResultSetBin::updateClob(const SQLString& columnLabel, std::istringstream& reader) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateArray(const SQLString& columnLabel, sql::Array& array) {
+  void SelectResultSetBin::updateArray(int32_t columnIndex, sql::Array& array) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateRowId(int32_t columnIndex, RowId& rowId) {
+  void SelectResultSetBin::updateArray(const SQLString& columnLabel, sql::Array& array) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateRowId(const SQLString& columnLabel, RowId& rowId) {
-    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
-  }
-
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateNString(int32_t columnIndex, const SQLString& nstring) {
-    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
-  }
-
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateNString(const SQLString& columnLabel, const SQLString& nstring) {
-    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
-  }
-
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateNClob(int32_t columnIndex, NClob& nclob) {
-    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
-  }
-
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateNClob(const SQLString& columnLabel, NClob& nclob) {
+  void SelectResultSetBin::updateRowId(int32_t columnIndex, RowId& rowId) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateNClob(int32_t columnIndex, std::istringstream& reader) {
+  void SelectResultSetBin::updateRowId(const SQLString& columnLabel, RowId& rowId) {
+    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
+  }
+
+  /** {inheritDoc}. */  void SelectResultSetBin::updateNString(int32_t columnIndex, const SQLString& nstring) {
+    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
+  }
+
+  /** {inheritDoc}. */  void SelectResultSetBin::updateNString(const SQLString& columnLabel, const SQLString& nstring) {
+    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
+  }
+
+  /** {inheritDoc}. */  void SelectResultSetBin::updateNClob(int32_t columnIndex, NClob& nclob) {
+    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
+  }
+
+  /** {inheritDoc}. */  void SelectResultSetBin::updateNClob(const SQLString& columnLabel, NClob& nclob) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateNClob(const SQLString& columnLabel, std::istringstream& reader) {
+  void SelectResultSetBin::updateNClob(int32_t columnIndex, std::istringstream& reader) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateNClob(int32_t columnIndex, std::istringstream& reader, int64_t length) {
+  void SelectResultSetBin::updateNClob(const SQLString& columnLabel, std::istringstream& reader) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  /** {inheritDoc}. */  void SelectResultSetCapi::updateNClob(const SQLString& columnLabel, std::istringstream& reader, int64_t length) {
+  /** {inheritDoc}. */
+  void SelectResultSetBin::updateNClob(int32_t columnIndex, std::istringstream& reader, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
-  void SelectResultSetCapi::updateSQLXML(int32_t columnIndex, SQLXML& xmlObject) {
+  /** {inheritDoc}. */  void SelectResultSetBin::updateNClob(const SQLString& columnLabel, std::istringstream& reader, int64_t length) {
+    throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
+  }
+
+  void SelectResultSetBin::updateSQLXML(int32_t columnIndex, SQLXML& xmlObject) {
     throw ExceptionFactory::INSTANCE.notSupported("SQLXML not supported");
   }
 
-  void SelectResultSetCapi::updateSQLXML(const SQLString& columnLabel, SQLXML& xmlObject) {
+  void SelectResultSetBin::updateSQLXML(const SQLString& columnLabel, SQLXML& xmlObject) {
     throw ExceptionFactory::INSTANCE.notSupported("SQLXML not supported");
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateNCharacterStream(int32_t columnIndex, std::istringstream& value, int64_t length) {
+  void SelectResultSetBin::updateNCharacterStream(int32_t columnIndex, std::istringstream& value, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateNCharacterStream(const SQLString& columnLabel, std::istringstream& reader, int64_t length) {
+  void SelectResultSetBin::updateNCharacterStream(const SQLString& columnLabel, std::istringstream& reader, int64_t length) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateNCharacterStream(int32_t columnIndex, std::istringstream& reader) {
+  void SelectResultSetBin::updateNCharacterStream(int32_t columnIndex, std::istringstream& reader) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 
   /** {inheritDoc}. */
-  void SelectResultSetCapi::updateNCharacterStream(const SQLString& columnLabel, std::istringstream& reader) {
+  void SelectResultSetBin::updateNCharacterStream(const SQLString& columnLabel, std::istringstream& reader) {
     throw ExceptionFactory::INSTANCE.notSupported(NOT_UPDATABLE_ERROR);
   }
 #endif
 
   /** {inheritDoc}. */
-  int32_t SelectResultSetCapi::getHoldability() const {
+  int32_t SelectResultSetBin::getHoldability() const {
     return ResultSet::HOLD_CURSORS_OVER_COMMIT;
   }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   /** {inheritDoc}. */
-  bool SelectResultSetCapi::isWrapperFor() {
+  bool SelectResultSetBin::isWrapperFor() {
     return iface.isInstance(this);
   }
 #endif
 
   /** Force metadata getTableName to return table alias, not original table name. */
-  void SelectResultSetCapi::setForceTableAlias() {
+  void SelectResultSetBin::setForceTableAlias() {
     this->forceAlias= true;
   }
 
-  void SelectResultSetCapi::rangeCheck(const SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo) {
+  void SelectResultSetBin::rangeCheck(const SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo) {
     if (value < minValue || value > maxValue) {
       throw SQLException(
         "Out of range value for column '"
@@ -1880,34 +1864,35 @@ namespace capi
     }
   }
 
-  int32_t SelectResultSetCapi::getRowPointer() {
+  int32_t SelectResultSetBin::getRowPointer() {
     return rowPointer;
   }
 
-  void SelectResultSetCapi::setRowPointer(int32_t pointer) {
+  void SelectResultSetBin::setRowPointer(int32_t pointer) {
     rowPointer= pointer;
   }
 
-  void sql::mariadb::capi::SelectResultSetCapi::checkOut()
+  void sql::mariadb::capi::SelectResultSetBin::checkOut()
   {
     if (released && statement != nullptr && statement->getInternalResults()) {
       statement->getInternalResults()->checkOut(this);
     }
   }
 
-  std::size_t SelectResultSetCapi::getDataSize() {
+
+  std::size_t SelectResultSetBin::getDataSize() {
     return dataSize;
   }
 
 
-  bool SelectResultSetCapi::isBinaryEncoded() {
+  bool SelectResultSetBin::isBinaryEncoded() {
     return row->isBinaryEncoded();
   }
 
 
-  void SelectResultSetCapi::realClose(bool noLock)
+  void SelectResultSetBin::realClose(bool noLock)
   {
-    isClosedFlag= true;
+    isClosedFlag = true;
     if (!isEof) {
       if (!noLock) {
         lock->lock();
@@ -1937,14 +1922,13 @@ namespace capi
     }
 
     checkOut();
-
     resetVariables();
 
     data.clear();
 
     if (statement != nullptr) {
       statement->checkCloseOnCompletion(this);
-      statement = nullptr;
+      statement= nullptr;
     }
   }
 }

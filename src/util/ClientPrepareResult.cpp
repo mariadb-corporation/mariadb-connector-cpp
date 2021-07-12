@@ -355,9 +355,9 @@ namespace mariadb
 
     SQLString sb("");
 
-    SQLString preValuePart1= NULL;
-    SQLString preValuePart2= NULL;
-    SQLString postValuePart= NULL;
+    SQLString preValuePart1;
+    SQLString preValuePart2;
+    SQLString postValuePart;
 
     bool singleQuotes= false;
 

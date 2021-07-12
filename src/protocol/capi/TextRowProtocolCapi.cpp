@@ -420,7 +420,7 @@ namespace capi
  sql::Object* TextRowProtocolCapi::getInternalObject(ColumnDefinition* columnInfo, TimeZone* timeZone)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
 
    switch (columnInfo->getColumnType().getType()) {
@@ -456,12 +456,12 @@ namespace capi
        memcpy(dataBit + 0, fieldBuf.arr + pos, length));
        return data;
      }
-     return getInternalString(columnInfo, NULL, timeZone);
+     return getInternalString(columnInfo, nullptr, timeZone);
    case MYSQL_TYPE_TIMESTAMP:
    case MYSQL_TYPE_DATETIME:
-     return getInternalTimestamp(columnInfo, NULL, timeZone);
+     return getInternalTimestamp(columnInfo, nullptr, timeZone);
    case MYSQL_TYPE_DATE:
-     return getInternalDate(columnInfo, NULL, timeZone);
+     return getInternalDate(columnInfo, nullptr, timeZone);
    case MYSQL_TYPE_NEWDECIMAL:
      return getInternalBigDecimal(columnInfo);
    case MYSQL_TYPE_BLOB:
@@ -472,10 +472,10 @@ namespace capi
      memcpy(dataBit + 0, fieldBuf.arr + pos, length));
      return dataBlob;
    case MYSQL_TYPE_NULL:
-     return NULL;
+     return nullptr;
    case MYSQL_TYPE_YEAR:
      if (options->yearIsDateType) {
-       return getInternalDate(columnInfo, NULL, timeZone);
+       return getInternalDate(columnInfo, nullptr, timeZone);
      }
      return getInternalShort(columnInfo);
    case MYSQL_TYPE_SHORT:
@@ -484,10 +484,10 @@ namespace capi
    case MYSQL_TYPE_FLOAT:
      return getInternalFloat(columnInfo);
    case MYSQL_TYPE_TIME:
-     return getInternalTime(columnInfo, NULL, timeZone);
+     return getInternalTime(columnInfo, nullptr, timeZone);
    case MYSQL_TYPE_DECIMAL:
    case JSON:
-     return getInternalString(columnInfo, NULL, timeZone);
+     return getInternalString(columnInfo, nullptr, timeZone);
    case MYSQL_TYPE_GEOMETRY:
      int8_t[] data= new int8_t[length];
      memcpy(dataBit + 0, fieldBuf.arr + pos, length);
@@ -516,11 +516,11 @@ namespace capi
  OffsetTime TextRowProtocolCapi::getInternalOffsetTime(ColumnDefinition* columnInfo, TimeZone* timeZone)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
    if (length == 0) {
-     lastValueNull |=BIT_LAST_FIELD_NULL;
-     return NULL;
+     lastValueNull|= BIT_LAST_FIELD_NULL;
+     return nullptr;
    }
 
    ZoneId zoneId= timeZone.toZoneId().normalized();
@@ -531,7 +531,7 @@ namespace capi
      switch (columnInfo->getColumnType().getSqlType()) {
      case Types::MYSQL_TYPE_TIMESTAMP:
        if (raw.startsWith("0000-00-00 00:00:00")) {
-         return NULL;
+         return nullptr;
        }
        try {
          return ZonedDateTime::parse(raw, TEXT_LOCAL_DATE_TIME.withZone(zoneOffset))
@@ -608,11 +608,11 @@ namespace capi
  LocalTime TextRowProtocolCapi::getInternalLocalTime(ColumnDefinition* columnInfo, TimeZone* timeZone)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
    if (length == 0) {
      lastValueNull |=BIT_LAST_FIELD_NULL;
-     return NULL;
+     return nullptr;
    }
 
    SQLString raw;
@@ -639,7 +639,7 @@ namespace capi
      ZonedDateTime zonedDateTime =
        getInternalZonedDateTime(columnInfo, typeid(LocalTime), timeZone);
      return zonedDateTime/*.empty() == true*/
-       ? NULL
+       ? nullptr
        : zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalTime();
 
    default:
@@ -661,11 +661,11 @@ namespace capi
  LocalDate TextRowProtocolCapi::getInternalLocalDate(ColumnDefinition* columnInfo, TimeZone* timeZone)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
    if (length == 0) {
      lastValueNull |=BIT_LAST_FIELD_NULL;
-     return NULL;
+     return nullptr;
    }
 
    SQLString raw;
@@ -677,7 +677,7 @@ namespace capi
    case Types::LONGVARCHAR:
    case Types::CHAR:
      if (raw.startsWith("0000-00-00")) {
-       return NULL;
+       return nullptr;
      }
      try {
        return LocalDate::parse(
@@ -695,7 +695,7 @@ namespace capi
      ZonedDateTime zonedDateTime =
        getInternalZonedDateTime(columnInfo, typeid(LocalDate), timeZone);
      return zonedDateTime/*.empty() == true*/
-       ? NULL
+       ? nullptr
        : zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDate();
 
    default:
@@ -1056,7 +1056,7 @@ namespace capi
    rowData= mysql_fetch_row(capiResults.get());
    lengthArr= mysql_fetch_lengths(capiResults.get());
 
-   return (rowData == NULL ? MYSQL_NO_DATA : 0);
+   return (rowData == nullptr ? MYSQL_NO_DATA : 0);
  }
 
 
@@ -1075,7 +1075,7 @@ namespace capi
  BigInteger TextRowProtocolCapi::getInternalBigInteger(ColumnDefinition* columnInfo)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
    return new BigInteger(new SQLString(fieldBuf.arr + pos, length));
  }
@@ -1092,11 +1092,11 @@ namespace capi
  ZonedDateTime TextRowProtocolCapi::getInternalZonedDateTime(ColumnDefinition* columnInfo, Class clazz, TimeZone* timeZone)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
    if (length == 0) {
      lastValueNull |=BIT_LAST_FIELD_NULL;
-     return NULL;
+     return nullptr;
    }
 
    SQLString raw;
@@ -1105,7 +1105,7 @@ namespace capi
    switch (columnInfo->getColumnType().getSqlType()) {
    case Types::MYSQL_TYPE_TIMESTAMP:
      if (raw.startsWith("0000-00-00 00:00:00")) {
-       return NULL;
+       return nullptr;
      }
      try {
        LocalDateTime localDateTime =
@@ -1122,7 +1122,7 @@ namespace capi
    case Types::LONGVARCHAR:
    case Types::CHAR:
      if (raw.startsWith("0000-00-00 00:00:00")) {
-       return NULL;
+       return nullptr;
      }
      try {
        return ZonedDateTime::parse(raw, TEXT_ZONED_DATE_TIME);

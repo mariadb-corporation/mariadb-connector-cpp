@@ -116,7 +116,7 @@ namespace mariadb
     const auto& otherCit= originalMap.find(lowerName);
 
     if (otherCit == originalMap.end()) {
-      //throw ExceptionMapper::get("No such column: "+name, "42S22", 1054, NULL, false);
+      //throw ExceptionMapper::get("No such column: "+name, "42S22", 1054, nullptr, false);
       throw IllegalArgumentException("No such column: " + name, "42S22", 1054);
     }
     return cit->second;

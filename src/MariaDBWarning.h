@@ -41,8 +41,8 @@ namespace sql
       virtual ~MariaDBWarning();
       MariaDBWarning(const MariaDBWarning&);
       MariaDBWarning(const SQLString& msg);
-      //MariaDBWarning(const SQLString& msg, const SQLString& state, int32_t error= 0, const std::exception* e= NULL);
-      MariaDBWarning(const char* msg, const char* state= "", int32_t error= 0, const std::exception* e= NULL);
+      //MariaDBWarning(const SQLString& msg, const SQLString& state, int32_t error= 0, const std::exception* e= nullptr);
+      MariaDBWarning(const char* msg, const char* state= "", int32_t error= 0, const std::exception* e= nullptr);
 
       SQLWarning* getNextWarning() const;
       void setNextWarning(SQLWarning* nextWarning);

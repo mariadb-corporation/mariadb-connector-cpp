@@ -517,7 +517,7 @@ namespace mariadb
           /* Do we need a clone? */
           CloneableCallableStatement* cloneable= dynamic_cast<CloneableCallableStatement*>(callableStatement.get());
 
-          if (cloneable == NULL)
+          if (cloneable == nullptr)
           {
             throw std::runtime_error("Cached statement is not cloneable");
           }
@@ -641,7 +641,7 @@ namespace mariadb
 
     if (stmt)
     {
-      stateFlag |=ConnectionState::STATE_AUTOCOMMIT;
+      stateFlag|= ConnectionState::STATE_AUTOCOMMIT;
       stmt->executeUpdate(SQLString("set autocommit=").append((autoCommit) ? '1' : '0'));
     }
   }
@@ -775,7 +775,7 @@ namespace mariadb
       protocol->setReadonly(readOnly);
     }
     catch (SQLException &e) {
-      throw e;// ExceptionMapper.getException(e, this, NULL, false);
+      throw e;// ExceptionMapper.getException(e, this, nullptr, false);
     }
   }
   /**
@@ -899,7 +899,7 @@ namespace mariadb
       protocol->setTransactionIsolation(level);
     }
     catch (SQLException& e) {
-      throw e;//ExceptionMapper.getException(e, this, NULL, false);
+      throw e;//ExceptionMapper.getException(e, this, nullptr, false);
     }
   }
   /**
@@ -1541,7 +1541,7 @@ namespace mariadb
   /** If failover is not activated, will close connection when a connection error occur. */
   void MariaDbConnection::setHostFailed()
   {
-    if (protocol->getProxy() == NULL) {
+    if (protocol->getProxy() == nullptr) {
       protocol->setHostFailedWithoutProxy();
     }
   }
@@ -1584,10 +1584,10 @@ namespace mariadb
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
     SQLPermission sqlPermission= new SQLPermission("callAbort");
     SecurityManager securityManager= System.getSecurityManager();
-    if (securityManager !=NULL) {
+    if (securityManager != nullptr) {
       securityManager.checkPermission(sqlPermission);
     }
-    if (executor ==NULL) {
+    if (executor == nullptr) {
       throw ExceptionMapper.getSqlException("Cannot abort the connection: NULL executor passed");
     }
     executor.execute(protocol->abort());
@@ -1619,7 +1619,7 @@ namespace mariadb
       protocol->setCatalog(schema);
     }
     catch (SQLException &e) {
-      throw e;// ExceptionMapper.getException(e, this, NULL, false);
+      throw e;// ExceptionMapper.getException(e, this, nullptr, false);
     }
   }
 
@@ -1645,7 +1645,7 @@ namespace mariadb
     }
     SQLPermission sqlPermission= new SQLPermission("setNetworkTimeout");
     SecurityManager securityManager= System.getSecurityManager();
-    if (securityManager !=NULL) {
+    if (securityManager != nullptr) {
       securityManager.checkPermission(sqlPermission);
     }
     try {
@@ -1694,7 +1694,7 @@ namespace mariadb
     if (stateFlag !=0) {
       try {
         if ((stateFlag &ConnectionState::STATE_NETWORK_TIMEOUT)!=0) {
-          setNetworkTimeout(NULL, options->socketTimeout);
+          setNetworkTimeout(nullptr, options->socketTimeout);
         }
         if ((stateFlag &ConnectionState::STATE_AUTOCOMMIT)!=0) {
           setAutoCommit(options->autocommit);

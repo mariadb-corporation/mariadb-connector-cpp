@@ -264,7 +264,7 @@ namespace mariadb
 
   bool Options::equals(Options* opt)
   {
-    if (opt == NULL) {
+    if (opt == nullptr) {
       return false;
     }
     if (this == opt) {

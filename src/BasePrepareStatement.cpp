@@ -500,7 +500,7 @@ namespace mariadb
     setParameter(
       parameterIndex,
       new DateParameter(
-        date, cal == NULL ? cal.getTimeZone() : TimeZone.getDefault(), getProtocol()->getOptions()));
+        date, cal == nullptr ? cal.getTimeZone() : TimeZone.getDefault(), getProtocol()->getOptions()));
   }
 
  /**
@@ -924,9 +924,9 @@ namespace mariadb
             break;
           case Types::TIMESTAMP:
             if (str.startsWith("0000-00-00")){
-              setTimestamp(parameterIndex,NULL);
+              setTimestamp(parameterIndex, nullptr);
             }else {
-              setTimestamp(parameterIndex,Timestamp.valueOf(str));
+              setTimestamp(parameterIndex, Timestamp.valueOf(str));
             }
             break;
           case Types::TIME:
@@ -1321,7 +1321,7 @@ namespace mariadb
    */
   void BasePrepareStatement::setString(int32_t parameterIndex, const SQLString& str)
   {
-    /*if (str == NULL){
+    /*if (str == nullptr){
       setNull(parameterIndex,ColumnType::VARCHAR);
       return;
     }*/
@@ -1343,7 +1343,7 @@ namespace mariadb
    */
   void BasePrepareStatement::setBytes(int32_t parameterIndex, sql::bytes* bytes)
   {
-    if (bytes == NULL){
+    if (bytes == nullptr){
       setNull(parameterIndex, ColumnType::BLOB);
       return;
     }
@@ -1382,7 +1382,7 @@ namespace mariadb
 
 
   void BasePrepareStatement::setBigInt(int32_t parameterIndex, const SQLString& str) {
-    /*if (str == NULL){
+    /*if (str == nullptr){
       setNull(parameterIndex,ColumnType::VARCHAR);
       return;
     }*/

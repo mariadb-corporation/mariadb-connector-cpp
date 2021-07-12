@@ -18,8 +18,8 @@
 *************************************************************************************/
 
 
-#ifndef _SELECTRESULTSETCAPI_H_
-#define _SELECTRESULTSETCAPI_H_
+#ifndef _SELECTRESULTSETCBIN_H_
+#define _SELECTRESULTSETCBIN_H_
 
 #include <exception>
 #include <vector>
@@ -53,8 +53,9 @@ namespace capi
 {
 #include "mysql.h"
 
-class SelectResultSetCapi : public SelectResultSet
+class SelectResultSetBin : public SelectResultSet
 {
+
   TimeZone* timeZone;
   Shared::Options options;
   std::vector<Shared::ColumnDefinition> columnsInformation;
@@ -66,11 +67,10 @@ class SelectResultSetCapi : public SelectResultSet
   Protocol* protocol;
   bool isEof;
   bool callableResult;
-  /* Shared? */
   MariaDbStatement* statement;
   mutable Unique::RowProtocol row;
 
-  MYSQL *capiConnHandle;
+  MYSQL_STMT *capiStmtHandle;
 
   int32_t dataFetchTime;
   bool streaming;
@@ -93,18 +93,14 @@ class SelectResultSetCapi : public SelectResultSet
 
 public:
 
-  SelectResultSetCapi(
+  SelectResultSetBin(
     Results* results,
     Protocol* protocol,
-    MYSQL* connection,
+    ServerPrepareResult* pr,
+    bool callableResult,
     bool eofDeprecated);
 
-  SelectResultSetCapi(
-    std::vector<Shared::ColumnDefinition>& columnInformation,
-    /*std::unique_ptr<*/std::vector<std::vector<sql::bytes>>& resultSet,
-    Protocol* protocol,
-    int32_t resultSetScrollType);
-  ~SelectResultSetCapi();
+  ~SelectResultSetBin();
 
   bool isFullyLoaded() const;
 
@@ -136,8 +132,6 @@ private:
 public:
   void abort();
   void close();
-  // We 
-  void realClose();
 
 private:
   void resetVariables();

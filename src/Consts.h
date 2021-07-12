@@ -55,7 +55,7 @@
 
 /* Helper to write ClassField map initializer list */
 #define CLASS_FIELD(_CLASS, _FIELD) {#_FIELD, &_CLASS::_FIELD}
-#define INSTANCEOF(OBJ, CLASSNAME) (OBJ != nullptr && dynamic_cast<CLASSNAME>(OBJ) != NULL)
+#define INSTANCEOF(OBJ, CLASSNAME) (OBJ != nullptr && dynamic_cast<CLASSNAME>(OBJ) != nullptr)
 
 namespace sql
 {
@@ -158,6 +158,10 @@ namespace mariadb
 
     return result;
   }
+  namespace Weak
+  {
+    typedef std::weak_ptr<sql::mariadb::Results> Results;
+  }
 
   namespace Shared
   {
@@ -200,7 +204,7 @@ namespace mariadb
     typedef std::unique_ptr<sql::mariadb::Results> Results;
     typedef std::unique_ptr<sql::mariadb::RowProtocol> RowProtocol;
     typedef std::unique_ptr<sql::mariadb::SelectResultSet> SelectResultSet;
-
+    typedef std::unique_ptr<sql::mariadb::CmdInformation> CmdInformation;
     typedef std::unique_ptr<sql::mariadb::ServerSidePreparedStatement> ServerSidePreparedStatement;
     typedef std::unique_ptr<sql::mariadb::ClientSidePreparedStatement> ClientSidePreparedStatement;
     typedef std::unique_ptr<sql::mariadb::ServerPrepareResult> ServerPrepareResult;

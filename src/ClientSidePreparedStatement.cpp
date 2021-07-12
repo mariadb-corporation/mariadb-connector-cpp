@@ -137,10 +137,10 @@ namespace mariadb
       }
       stmt->getInternalResults()->commandEnd();
       stmt->executeEpilogue();
-      return stmt->getInternalResults()->getResultSet()/*.empty() == true*/;
+      return stmt->getInternalResults()->getResultSet();
     }
     catch (SQLException& exception) {
-      if (stmt->getInternalResults()/*.empty() == true*/) {
+      if (stmt->getInternalResults()) {
         stmt->getInternalResults()->commandEnd();
       }
       stmt->executeEpilogue();

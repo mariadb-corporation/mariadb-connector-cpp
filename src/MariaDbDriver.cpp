@@ -179,7 +179,7 @@ namespace mariadb
     if (!url.empty())
     {
       UrlParser *urlParser= UrlParser::parse(url, realInfo);
-      if (urlParser == NULL)// urlParser->getOptions())
+      if (urlParser == nullptr)// urlParser->getOptions())
       {
         return result;
       }

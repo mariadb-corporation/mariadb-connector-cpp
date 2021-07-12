@@ -201,7 +201,7 @@ namespace sql
     SQLString HostAddress::toString(HostAddress* addrs) {
       SQLString str;
       for (int32_t i= 0; i <addrs.length; i++) {
-        if (addrs[i].type !=NULL) {
+        if (addrs[i].type !=nullptr) {
           str.append("address=(host=")
             .append(addrs[i].host)
             .append(")(port=")
@@ -211,7 +211,7 @@ namespace sql
             .append(")");
         }
         else {
-          bool isIPv6= addrs[i].host !=NULL && (addrs[i].host.find_first_of(":") != std::string::npos);
+          bool isIPv6= addrs[i].host !=nullptr && (addrs[i].host.find_first_of(":") != std::string::npos);
           SQLString host= (isIPv6) ? ("["+addrs[i].host +"]") : addrs[i].host;
           str.append(host).append(":").append(addrs[i].port);
         }
@@ -233,7 +233,7 @@ namespace sql
       if (this == obj) {
         return true;
       }
-      if (obj == NULL) {
+      if (obj == nullptr) {
         return false;
       }
       return port == obj->port &&

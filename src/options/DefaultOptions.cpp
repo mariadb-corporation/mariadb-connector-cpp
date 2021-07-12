@@ -188,7 +188,7 @@ namespace sql
         "0.9.1",
         "set buffer size for TCP buffer (SO_RCVBUF).",
         false,
-        (int32_t)0/*(int32_t)NULL*/,
+        (int32_t)0,
         int32_t(0) }},
       {
         "tcpSndBuf", {"tcpSndBuf",
@@ -473,7 +473,7 @@ namespace sql
         "\n"
         "This option is mainly effective when the client is distant from the server.",
         false,
-        false/*(bool*)NULL*/}},
+        false}},
       {
         "useBatchMultiSendNumber", {"useBatchMultiSendNumber",
         "0.9.1",
@@ -520,7 +520,7 @@ namespace sql
         " pipeline (all queries are send, then only all results are reads), permitting faster connection "
         "creation",
         false,
-        false/*(bool*)NULL*/}},
+        false}},
       {
         "enablePacketDebug", {"enablePacketDebug",
         "0.9.1",
@@ -582,7 +582,7 @@ namespace sql
         "indicates the number of physical connections the pool should keep available at all times. Should be less"
         " or equal to maxPoolSize.",
         false,
-        (int32_t)0/*(int32_t)NULL*/,
+        (int32_t)0,
         int32_t(0)}},
       {
         "maxIdleTime", {"maxIdleTime",
@@ -865,7 +865,7 @@ namespace sql
     Shared::Options DefaultOptions::parse(enum HaMode haMode, const SQLString& urlParameters, PropertiesImp::ImpType& properties,
       Shared::Options options)
     {
-      if (/*urlParameters !=NULL &&*/ !urlParameters.empty())
+      if (/*urlParameters != nullptr &&*/ !urlParameters.empty())
       {
         Tokens parameters= split(urlParameters, "&");
 
@@ -1037,7 +1037,7 @@ namespace sql
       if (options->rewriteBatchedStatements){
         options->useServerPrepStmts= false;
       }
-      if (options->pipe.empty()){
+      if (!options->pipe.empty()){
         options->useBatchMultiSend= false;
         options->usePipelineAuth= false;
       }

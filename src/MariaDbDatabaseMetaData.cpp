@@ -286,18 +286,18 @@ namespace sql
 
         f8= std::to_string(i + 1);
 
-        //row[1]= NULL;
+        //row[1]= nullptr;
         BYTES_ASSIGN_STR(row[2], pkTable.name);
         BYTES_ASSIGN_STR(row[3], primaryKeyCols[i].name);
         BYTES_ASSIGN_STR(row[4], catalog);
-        //BYTES_ASSIGN_STR(row[5], NULL);
+        //BYTES_ASSIGN_STR(row[5], nullptr);
         BYTES_ASSIGN_STR(row[6], tableName);
         BYTES_ASSIGN_STR(row[7], foreignKeyCols[i].name);
         BYTES_ASSIGN_STR(row[8], f8);
         BYTES_ASSIGN_STR(row[9], f9);
         BYTES_ASSIGN_STR(row[10], f10);
         BYTES_ASSIGN_STR(row[11], constraintName.name);
-        //BYTES_ASSIGN_STR(row[12], NULL);
+        //BYTES_ASSIGN_STR(row[12], nullptr);
         BYTES_ASSIGN_STR(row[13], f13);
         data.push_back(row);
       }
@@ -510,9 +510,12 @@ namespace sql
   ResultSet* MariaDbDatabaseMetaData::executeQuery(const SQLString& sql)
   {
     Unique::Statement stmt(connection->createStatement());
+    // We are taking responsibility not to stream metadata queries
+    stmt->setFetchSize(0);
     SelectResultSet* rs= dynamic_cast<SelectResultSet*>(stmt->executeQuery(sql));
-    rs->setStatement(NULL);
     rs->setForceTableAlias();
+    rs->checkOut();
+    rs->setStatement(nullptr);
     return rs;
   }
 

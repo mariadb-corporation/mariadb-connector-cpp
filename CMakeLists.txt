@@ -99,8 +99,8 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
 
                    src/SelectResultSet.cpp
                    src/com/capi/SelectResultSetCapi.cpp
+                   src/com/capi/SelectResultSetBin.cpp
                    #src/com/SelectResultSetPacket.cpp
-
                    #src/com/ColumnDefinitionPacket.cpp
 
                    src/com/ColumnNameMap.cpp
@@ -189,8 +189,6 @@ IF(WIN32)
                    src/MariaDbServerCapabilities.h
 
                    src/protocol/MasterProtocol.h
-                   src/protocol/AbstractQueryProtocol.h
-                   src/protocol/AbstractConnectProtocol.h
 
                    src/protocol/capi/QueryProtocol.h
                    src/protocol/capi/ConnectProtocol.h
@@ -256,6 +254,7 @@ IF(WIN32)
 
                    src/SelectResultSet.h
                    src/com/capi/SelectResultSetCapi.h
+                   src/com/capi/SelectResultSetBin.h
                    src/com/SelectResultSetPacket.h
                    src/ColumnType.h
                    src/com/ColumnDefinitionPacket.h

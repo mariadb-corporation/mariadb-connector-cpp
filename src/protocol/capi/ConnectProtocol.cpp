@@ -72,7 +72,7 @@ namespace capi
   {
     urlParser->auroraPipelineQuirks();
     if (options->cachePrepStmts && options->useServerPrepStmts){
-      serverPrepareStatementCache= NULL;
+      serverPrepareStatementCache= nullptr;
         //ServerPrepareStatementCache.newInstance(options->prepStmtCacheSize,this);
     }
   }
@@ -322,10 +322,10 @@ namespace capi
   void ConnectProtocol::abortActiveStream()
   {
     try {
-
-      if (activeStreamingResult){
-        activeStreamingResult->abort();
-        activeStreamingResult= NULL;
+      Shared::Results activeStream= activeStreamingResult.lock();
+      if (activeStream){
+        activeStream->abort();
+        activeStreamingResult.reset();
       }
     }catch (std::runtime_error& ){
 
@@ -341,9 +341,10 @@ namespace capi
    */
   void ConnectProtocol::skip()
   {
-    if (activeStreamingResult){
-      activeStreamingResult->loadFully(true, this);
-      activeStreamingResult= nullptr;
+    Shared::Results activeStream = activeStreamingResult.lock();
+    if (activeStream) {
+      activeStream->loadFully(true, this);
+      activeStreamingResult.reset();
     }
   }
 
@@ -500,7 +501,7 @@ namespace capi
 
     postConnectionQueries();
 
-    activeStreamingResult= NULL;
+    activeStreamingResult.reset();
     hostFailed= false;
   }
 
@@ -653,7 +654,7 @@ namespace capi
         loadCalendar(globalInfo->getTimeZone(), globalInfo->getSystemTimeZone());
       }
 
-      activeStreamingResult= NULL;
+      activeStreamingResult.reset();
       hostFailed= false;
     }catch (SQLException& sqlException){
       destroySocket();
@@ -1052,7 +1053,7 @@ namespace capi
 
     if (hosts.empty() && !options->pipe.empty()){
       try {
-        createConnection(NULL, username);
+        createConnection(nullptr, username);
         return;
       }catch (SQLException& exception){
         ExceptionFactory::INSTANCE.create(
@@ -1302,9 +1303,9 @@ namespace capi
     this->hasWarningsFlag= _hasWarnings;
   }
 
-  Shared::Results& ConnectProtocol::getActiveStreamingResult()
+  Shared::Results ConnectProtocol::getActiveStreamingResult()
   {
-    return activeStreamingResult;
+    return activeStreamingResult.lock();
   }
 
   void ConnectProtocol::setActiveStreamingResult(Shared::Results& _activeStreamingResult)
@@ -1315,8 +1316,9 @@ namespace capi
   /** Remove exception result and since totally fetched, set fetch size to 0. */
   void ConnectProtocol::removeActiveStreamingResult()
   {
-    if (this->activeStreamingResult){
-      this->activeStreamingResult->removeFetchSize();
+    Shared::Results activeStream = getActiveStreamingResult();
+    if (activeStream) {
+      activeStream->removeFetchSize();
       this->activeStreamingResult.reset();
     }
   }

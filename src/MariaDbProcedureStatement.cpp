@@ -138,7 +138,7 @@ namespace mariadb
   MariaDbProcedureStatement* MariaDbProcedureStatement::clone(MariaDbConnection* connection)
   {
     MariaDbProcedureStatement* clone= new MariaDbProcedureStatement(connection);
-    clone->outputResultSet= NULL;
+    clone->outputResultSet= nullptr;
     clone->stmt.reset(stmt->clone(connection));
 
     clone->params= params;

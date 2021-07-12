@@ -492,10 +492,10 @@ std::string unit_fixture::exceptionIsOK(sql::SQLException &e, const std::string&
 
 void unit_fixture::checkResultSetScrolling(ResultSet &res_ref)
 {
-  /*
-    if (res_ref->getType() == sql::ResultSet::TYPE_FORWARD_ONLY)
-      return;
-   */
+  if (res_ref->getType() == sql::ResultSet::TYPE_FORWARD_ONLY) {
+    return;
+  }
+
   int before;
 
   before=static_cast<int> (res_ref->getRow());

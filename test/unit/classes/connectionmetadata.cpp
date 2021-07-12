@@ -245,7 +245,7 @@ void connectionmetadata::getBestRowIdentifier()
       ASSERT_EQUALS(sql::DatabaseMetaData::bestRowNotPseudo, res->getInt(8));
       ASSERT_EQUALS(res->getInt(8), res->getInt("PSEUDO_COLUMN"));
 
-      stmt->execute("DROP TABLE IF EXISTS test");
+      stmt->execute("DROP TABLE test");
     }
     if (got_warning)
     {
@@ -1299,7 +1299,7 @@ void connectionmetadata::getLimitsAndStuff()
     stmt.reset(con->createStatement());
     res.reset(stmt->executeQuery("SELECT @@max_connections AS _max"));
     ASSERT(res->next());
-    ASSERT_EQUALS(res->getInt("_max"), dbmeta->getMaxConnections());
+    ASSERT_EQUALS(dbmeta->getMaxConnections(), res->getInt("_max"));
 
     ASSERT_EQUALS(64, dbmeta->getMaxCursorNameLength());
     ASSERT_EQUALS(256, dbmeta->getMaxIndexLength());

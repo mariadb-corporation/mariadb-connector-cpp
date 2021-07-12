@@ -27,6 +27,7 @@
 #include "util/ServerPrepareResult.h"
 
 #include "com/capi/SelectResultSetCapi.h"
+#include "com/capi/SelectResultSetBin.h"
 #include "com/capi/ColumnDefinitionCapi.h"
 
 namespace sql
@@ -67,7 +68,7 @@ namespace mariadb
 
   SelectResultSet* SelectResultSet::create(Results * results, Protocol * protocol, ServerPrepareResult * spr, bool callableResult, bool eofDeprecated)
   {
-    return new capi::SelectResultSetCapi(results, protocol, spr, callableResult, eofDeprecated);
+    return new capi::SelectResultSetBin(results, protocol, spr, callableResult, eofDeprecated);
   }
 
 
@@ -175,5 +176,13 @@ namespace mariadb
     return create(columns, data, protocol, TYPE_SCROLL_SENSITIVE);
   }
 
+  SelectResultSet::~SelectResultSet()
+  {
+  }
+  ResultSet* SelectResultSet::release()
+  {
+    released= true;
+    return this;
+  }
 }
 }
