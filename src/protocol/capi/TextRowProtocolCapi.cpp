@@ -45,9 +45,6 @@ namespace capi
     , rowData(nullptr)
     , lengthArr(nullptr)
  {
-    if (capiTextResults != nullptr) {
-      fieldBuf= txtFieldBuf;
-    }
  }
 
  /**
@@ -68,8 +65,8 @@ namespace capi
    }
    else if (buf != nullptr)
    {
-     this->lastValueNull= fieldBuf ? BIT_LAST_FIELD_NOT_NULL : BIT_LAST_FIELD_NULL;
-     fieldBuf= (*buf)[index];
+     fieldBuf.wrap((*buf)[index], (*buf)[index].size());
+     this->lastValueNull = fieldBuf ? BIT_LAST_FIELD_NOT_NULL : BIT_LAST_FIELD_NULL;
      length= static_cast<uint32_t>(fieldBuf.size());
    }
    else {
@@ -1056,7 +1053,7 @@ namespace capi
    rowData= mysql_fetch_row(capiResults.get());
    lengthArr= mysql_fetch_lengths(capiResults.get());
 
-   return (rowData == nullptr ? MYSQL_NO_DATA : 0);
+   return (rowData == nullptr ? 1 : 0);
  }
 
 
@@ -1155,6 +1152,14 @@ namespace capi
    return false;
  }
 
+
+ void TextRowProtocolCapi::cacheCurrentRow(std::vector<sql::bytes>& rowDataCache, std::size_t columnCount)
+ {
+   rowDataCache.clear();
+   for (std::size_t i = 0; i < columnCount; ++i) {
+     rowDataCache.emplace_back(const_cast<const char*>(rowData[i]), lengthArr[i]);
+   }
+ }
 }
 }
 }

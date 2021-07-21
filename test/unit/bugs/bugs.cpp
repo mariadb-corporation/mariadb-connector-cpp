@@ -603,8 +603,9 @@ void bugs::bug66871()
   con->close();
   con.reset();
   
-  ASSERT_EQUALS(res->getInt(1), 1);
-  ASSERT(!res->next());
+  // This is not promised any more. But should still work, if resultset was not streamed. With streamed these will throw
+  // ASSERT_EQUALS(res->getInt(1), 1);
+  // ASSERT(!res->next());
 
   try
   {
@@ -1078,12 +1079,16 @@ void bugs::bug21067193()
 
 void bugs::bug21152054()
 {
-
   stmt->execute("DROP TABLE IF EXISTS bug21152054");
   stmt->execute("create table bug21152054(c1 int);" );
   stmt->execute("insert into  bug21152054 values(1), (2), (3), (4);" );
   pstmt.reset( con->prepareStatement("select c1 from bug21152054;") );
   res.reset( pstmt->executeQuery() );
+
+  if (res->getType() == sql::ResultSet::TYPE_FORWARD_ONLY)
+  {
+    SKIP("Test doesn't make sense for ResultSet::TYPE_FORWARD_ONLY resultsets");
+  }
   ASSERT_EQUALS(true, res->absolute(4));
   ASSERT_EQUALS(4, res->getInt(1));
   int line = 4;
@@ -1093,8 +1098,6 @@ void bugs::bug21152054()
     --line;
     ASSERT_EQUALS(line, res->getInt(1));
   }  while(res->relative(-1));
-
-
 }
 
 void bugs::bug22292073()
@@ -1167,7 +1170,14 @@ void bugs::bug23212333()
 
   pstmt.reset(con->prepareStatement("SELECT id FROM bug23212333"));
   res.reset(pstmt->executeQuery());
-  ASSERT(res->relative(1));
+  if (res->getType() == sql::ResultSet::TYPE_FORWARD_ONLY)
+  {
+    ASSERT(res->next());
+  }
+  else
+  {
+    ASSERT(res->relative(1));
+  }
   sql::SQLString str(res->getString(1));
   ASSERT_EQUALS(charCount, static_cast<uint64_t>(str.length()));
 }

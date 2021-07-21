@@ -81,7 +81,7 @@ namespace mariadb
     : maxFieldSize(_maxFieldSize)
     , options(options)
     , buf(nullptr)
-    , fieldBuf(dummy)
+    , fieldBuf(0)
     , length(0)
     , lastValueNull(0)
     , index(0)
@@ -90,7 +90,7 @@ namespace mariadb
   }
 
 
-  void RowProtocol::resetRow(const std::vector<sql::bytes>& _buf)
+  void RowProtocol::resetRow(std::vector<sql::bytes>& _buf)
   {
     buf= &_buf;
   }

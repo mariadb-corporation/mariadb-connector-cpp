@@ -56,7 +56,6 @@ void resultset::getInt()
   logMsg("resultset::getInt - MySQL_ResultSet::getInt*");
   try
   {
-
     stmt.reset(con->createStatement());
     stmt->execute("DROP TABLE IF EXISTS test");
     stmt->execute("CREATE TABLE test(i integer, i_uns integer unsigned, b bigint, b_uns bigint unsigned)");
@@ -272,6 +271,10 @@ void resultset::getTypes()
       {
       }
 
+      if (res->getType() == sql::ResultSet::TYPE_FORWARD_ONLY) {
+        // We can't do beforeFirst and other cursor operation on forward only cursor
+        continue;
+      }
       res->beforeFirst();
       try
       {

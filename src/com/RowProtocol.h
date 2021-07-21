@@ -89,8 +89,8 @@ protected:
 
 public:
   int32_t lastValueNull;
-  const std::vector<sql::bytes>* buf;
-  sql::bytes& fieldBuf;
+  std::vector<sql::bytes>* buf;
+  sql::bytes fieldBuf;
   int32_t pos;
   uint32_t length;
 
@@ -101,7 +101,7 @@ public:
   RowProtocol(uint32_t maxFieldSize, Shared::Options options);
   virtual ~RowProtocol() {}
 
-  void resetRow(const std::vector<sql::bytes>& buf);
+  void resetRow(std::vector<sql::bytes>& buf);
   virtual void setPosition(int32_t position)=0;
   uint32_t getLengthMaxFieldSize();
   uint32_t getMaxFieldSize();
@@ -135,8 +135,8 @@ public:
   virtual int16_t getInternalShort(ColumnDefinition* columnInfo)=0;
   virtual SQLString getInternalTimeString(ColumnDefinition* columnInfo)=0;
 
-
   virtual bool isBinaryEncoded()=0;
+  virtual void cacheCurrentRow(std::vector<sql::bytes>& rowData, std::size_t columnCount)=0;
   bool lastValueWasNull();
 
 protected:

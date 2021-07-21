@@ -72,14 +72,10 @@ class SelectResultSetCapi : public SelectResultSet
 
   MYSQL *capiConnHandle;
 
-  int32_t dataFetchTime;
-  bool streaming;
-
   /*std::unique_ptr<*/
   std::vector<std::vector<sql::bytes>> data;
   std::size_t dataSize; //Should go after data
 
-  int32_t fetchSize;
   int32_t resultSetScrollType;
   int32_t rowPointer;
 
@@ -121,8 +117,7 @@ public:
 private:
   void handleIoException(std::exception& ioe) const;
   void nextStreamingValue();
-  void addStreamingValue();
-  bool readNextValue();
+  bool readNextValue(bool cacheLocally= false);
 
 protected:
   std::vector<sql::bytes>& getCurrentRowData();
@@ -136,8 +131,6 @@ private:
 public:
   void abort();
   void close();
-  // We 
-  void realClose();
 
 private:
   void resetVariables();

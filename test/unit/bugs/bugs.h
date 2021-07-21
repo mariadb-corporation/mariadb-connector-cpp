@@ -54,7 +54,7 @@ public:
 
   EXAMPLE_TEST_FIXTURE(bugs)
   {
-    TEST_CASE(net_write_timeout39878);
+    /*TEST_CASE(net_write_timeout39878);
     TEST_CASE(store_result_error_51562);
     TEST_CASE(getResultSet_54840);
     TEST_CASE(supportIssue_52319);
@@ -65,7 +65,7 @@ public:
     TEST_CASE(bug20085944);
     TEST_CASE(bug19938873_pstmt);
     TEST_CASE(bug19938873_stmt);
-    TEST_CASE(bug68523);
+    TEST_CASE(bug68523);*/
     //TEST_CASE(bug66235);
     //TEST_CASE(bug14520822);
     TEST_CASE(bug17218692);

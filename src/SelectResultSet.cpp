@@ -41,7 +41,7 @@ namespace mariadb
 
   std::vector<Shared::ColumnDefinition> SelectResultSet::INSERT_ID_COLUMNS;
 
-  int32_t SelectResultSet::MAX_ARRAY_SIZE= INT32_MAX - 8;
+  uint64_t SelectResultSet::MAX_ARRAY_SIZE= INT32_MAX - 8;
 
   /**
     * Create Streaming resultSet.
@@ -179,10 +179,26 @@ namespace mariadb
   SelectResultSet::~SelectResultSet()
   {
   }
+
   ResultSet* SelectResultSet::release()
   {
     released= true;
     return this;
+  }
+
+  /**
+    * This permit to add next streaming values to existing resultSet.
+    *
+    * @throws IOException if socket exception occur
+    * @throws SQLException if server return an unexpected error
+    */
+  void SelectResultSet::addStreamingValue(bool cacheLocally) {
+
+    int32_t fetchSizeTmp = fetchSize;
+    while (fetchSizeTmp > 0 && readNextValue(cacheLocally)) {
+      --fetchSizeTmp;
+    }
+    ++dataFetchTime;
   }
 }
 }

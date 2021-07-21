@@ -61,12 +61,18 @@ class SelectResultSet : public ResultSet
 protected:
   static const SQLString NOT_UPDATABLE_ERROR; /*"Updates are not supported when using ResultSet*.CONCUR_READ_ONLY"*/
   static std::vector<Shared::ColumnDefinition> INSERT_ID_COLUMNS;
-  static int32_t MAX_ARRAY_SIZE; /*Integer.MAX_VALUE -8*/
+  static uint64_t MAX_ARRAY_SIZE; /*Integer.MAX_VALUE -8*/
 
   static int32_t TINYINT1_IS_BIT; /*1*/
   static int32_t YEAR_IS_DATE_TYPE; /*2*/
   bool released=  false;
+  int32_t dataFetchTime= 0;
+  bool streaming= false;
+  int32_t fetchSize;
 
+  SelectResultSet(int32_t _fetchSize) :
+    fetchSize(_fetchSize) 
+  {}
 public:
   static SelectResultSet* create(
     std::vector<Shared::ColumnDefinition>& columnInformation,
@@ -125,6 +131,8 @@ protected:
   virtual void updateRowData(std::vector<sql::bytes>& rawData)=0;
   virtual void deleteCurrentRowData()=0;
   virtual void addRowData(std::vector<sql::bytes>& rawData)=0;
+  void addStreamingValue(bool cacheLocally= false);
+  virtual bool readNextValue(bool cacheLocally= false)= 0;
 
 public:
   // These 2 methods are currently hidden in the ResultSet, but used internally. Thus (temporary) adding them here.
@@ -148,7 +156,7 @@ public:
   virtual void checkOut()= 0;
   virtual std::size_t getDataSize()=0;
   virtual bool isBinaryEncoded()=0;
-  virtual ResultSet* release();
+  ResultSet* release();
   virtual void realClose(bool noLock=false)=0;
   };
 

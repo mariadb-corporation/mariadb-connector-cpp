@@ -64,7 +64,6 @@ namespace mariadb
     : connection(_connection),
       protocol(_connection->getProtocol()),
       lock(_connection->lock),
-      resultSetScrollType(_resultSetScrollType),
       resultSetConcurrency(_resultSetConcurrency),
       options(protocol->getOptions()),
       canUseServerTimeout(_connection->canUseServerTimeout()),
@@ -81,12 +80,17 @@ namespace mariadb
       batchRes(0),
       largeBatchRes(0)
   {
+    // This would check and reset fetchSize, if not FORWARD_ONLY
+    setResultSetType(_resultSetScrollType);
   }
 
 
   Statement* MariaDbStatement::setResultSetType(int32_t rsType)
   {
     resultSetScrollType= rsType;
+    if (resultSetScrollType != ResultSet::TYPE_FORWARD_ONLY) {
+      setFetchSize(0);
+    }
     return this;
   }
 
@@ -1193,9 +1197,14 @@ namespace mariadb
    * @see #getFetchSize
    */
   void MariaDbStatement::setFetchSize(int32_t rows) {
-    if (rows <0 &&rows != INT32_MIN){
+    if (rows < 0 && rows != INT32_MIN) {
       exceptionFactory->raiseStatementError(connection, this)->create("invalid fetch size").Throw();
-    }else if (rows == INT32_MIN)
+    }
+    else if (rows != 0 && getResultSetType() != ResultSet::TYPE_FORWARD_ONLY) {
+      exceptionFactory->raiseStatementError(connection, this)->create("ResultSet Streaming is not supported for for ResultSet "
+        "types other than ResultSet::TYPE_FORWARD_ONLY").Throw();
+    }
+    else if (rows == INT32_MIN)
     {
       this->fetchSize= 1;
       return;

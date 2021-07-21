@@ -56,7 +56,8 @@ namespace capi
                                          ServerPrepareResult* spr,
                                          bool callableResult,
                                          bool eofDeprecated)
-    : statement(results->getStatement()),
+    : SelectResultSet(results->getFetchSize()),
+      statement(results->getStatement()),
       isClosedFlag(false),
       protocol(protocol),
       options(protocol->getOptions()),
@@ -64,10 +65,8 @@ namespace capi
       columnsInformation(spr->getColumns()),
       columnNameMap(new ColumnNameMap(columnsInformation)),
       columnInformationLength(static_cast<int32_t>(columnsInformation.size())),
-      fetchSize(results->getFetchSize()),
       dataSize(0),
       resultSetScrollType(results->getResultSetScrollType()),
-      dataFetchTime(0),
       rowPointer(-1),
       callableResult(callableResult),
       eofDeprecated(eofDeprecated),
@@ -223,21 +222,6 @@ namespace capi
     addStreamingValue();
   }
 
-  /**
-    * This permit to add next streaming values to existing resultSet.
-    *
-    * @throws IOException if socket exception occur
-    * @throws SQLException if server return an unexpected error
-    */
-  void SelectResultSetBin::addStreamingValue() {
-
-    int32_t fetchSizeTmp= fetchSize;
-    while (fetchSizeTmp > 0 && readNextValue()) {
-      --fetchSizeTmp;
-    }
-    ++dataFetchTime;
-  }
-
 
   /**
     * Read next value.
@@ -246,7 +230,7 @@ namespace capi
     * @throws IOException exception
     * @throws SQLException exception
     */
-  bool SelectResultSetBin::readNextValue()
+  bool SelectResultSetBin::readNextValue(bool cacheLocally)
   {
     switch (row->fetchNext()) {
     case 1: {
@@ -309,11 +293,12 @@ namespace capi
     }
     }
 
-
-    if (dataSize + 1 >= data.size()) {
-      growDataArray();
+    if (cacheLocally) {
+      if (dataSize + 1 >= data.size()) {
+        growDataArray();
+      }
+      row->cacheCurrentRow(data[dataSize], columnsInformation.size());
     }
-    //data[dataSize++]= ?;
     ++dataSize;
     return true;
   }
@@ -394,13 +379,21 @@ namespace capi
 
   /** Grow data array. */
   void SelectResultSetBin::growDataArray() {
-    int32_t newCapacity= static_cast<int32_t>(data.size() + (data.size() >>1));
+    std::size_t curSize = data.size();
 
-    if (newCapacity - MAX_ARRAY_SIZE > 0) {
-      newCapacity= MAX_ARRAY_SIZE;
+    if (data.capacity() < curSize + 1) {
+      uint64_t newCapacity = static_cast<uint64_t>(curSize + (curSize >> 1));
+
+      if (newCapacity > MAX_ARRAY_SIZE) {
+        newCapacity = MAX_ARRAY_SIZE;
+      }
+
+      data.reserve(newCapacity);
     }
-    // Commenting this out so far as we do not put data from server here, thus growing is in vain
-    //data.reserve(newCapacity);
+    for (std::size_t i = curSize; i < dataSize + 1; ++i) {
+      data.push_back({});
+    }
+    data[dataSize].reserve(columnsInformation.size());
   }
 
   /**
@@ -517,7 +510,7 @@ namespace capi
   void SelectResultSetBin::resetRow() const
   {
     if (data.size() > 0) {
-      row->resetRow(data[rowPointer]);
+      row->resetRow(const_cast<std::vector<sql::bytes> &>(data[rowPointer]));
     }
     else {
       if (rowPointer != lastRowPointer + 1) {
@@ -612,7 +605,7 @@ namespace capi
       return false;
     }
     else if (isEof) {
-      return rowPointer == dataSize -1 && dataSize >0;
+      return rowPointer == dataSize - 1 && dataSize > 0;
     }
     else {
       // when streaming and not having read all results,
@@ -629,7 +622,7 @@ namespace capi
 
       if (isEof) {
 
-        return rowPointer == dataSize -1 &&dataSize >0;
+        return rowPointer == dataSize - 1 && dataSize > 0;
       }
 
       return false;
@@ -647,8 +640,11 @@ namespace capi
 
   void SelectResultSetBin::afterLast() {
     checkClose();
-    std::lock_guard<std::mutex> localScopeLock(*lock);
-    fetchRemaining();
+    if (!isEof) {
+      //SelectResultSet objects only have lock if streaming
+      std::lock_guard<std::mutex> localScopeLock(*lock);
+      fetchRemaining();
+    }
     rowPointer= static_cast<int32_t>(dataSize);
   }
 
@@ -665,8 +661,11 @@ namespace capi
 
   bool SelectResultSetBin::last() {
     checkClose();
-    std::lock_guard<std::mutex> localScopeLock(*lock);
-    fetchRemaining();
+    if (!isEof) {
+      //SelectResultSet objects only have lock if streaming
+      std::lock_guard<std::mutex> localScopeLock(*lock);
+      fetchRemaining();
+    }
     rowPointer= static_cast<int32_t>(dataSize) - 1;
     return dataSize > 0;
   }
@@ -690,9 +689,11 @@ namespace capi
       rowPointer= rowPos - 1;
       return true;
     }
-    std::lock_guard<std::mutex> localScopeLock(*lock);
-    fetchRemaining();
-
+    if (!isEof) {
+      //SelectResultSet objects only have lock if streaming
+      std::lock_guard<std::mutex> localScopeLock(*lock);
+      fetchRemaining();
+    }
     if (rowPos >= 0) {
 
       if (static_cast<uint32_t>(rowPos) <= dataSize) {
@@ -717,7 +718,7 @@ namespace capi
 
   bool SelectResultSetBin::relative(int32_t rows) {
     checkClose();
-    if (streaming &&resultSetScrollType == TYPE_FORWARD_ONLY) {
+    if (streaming && resultSetScrollType == TYPE_FORWARD_ONLY) {
       throw SQLException("Invalid operation for result set type TYPE_FORWARD_ONLY");
     }
     int32_t newPos= rowPointer + rows;
@@ -763,10 +764,10 @@ namespace capi
   }
 
   void SelectResultSetBin::setFetchSize(int32_t fetchSize) {
-    if (streaming &&fetchSize == 0) {
+    if (streaming && fetchSize == 0) {
       std::lock_guard<std::mutex> localScopeLock(*lock);
       try {
-
+        // fetch all results
         while (!isEof) {
           addStreamingValue();
         }

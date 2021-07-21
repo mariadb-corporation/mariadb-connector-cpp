@@ -318,11 +318,15 @@ namespace mariadb
   void Results::loadFully(bool skip, Protocol* protocol) {
     if (fetchSize != 0){
       fetchSize= 0;
-      if (resultSet){
+      SelectResultSet* rs= resultSet;
+      if (rs == nullptr) {
+        rs= currentRs.get();
+      }
+      if (rs){
         if (skip){
-          resultSet->close();
+          rs->close();
         }else {
-          resultSet->fetchRemaining();
+          rs->fetchRemaining();
         }
       }else {
         Unique::SelectResultSet firstResult;
