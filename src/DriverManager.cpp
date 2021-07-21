@@ -62,7 +62,7 @@ namespace sql
   }
 
 
-  Connection* DriverManager::getConnection(const SQLString& url, Properties& props)
+  Connection* DriverManager::getConnection(const SQLString& url, const Properties& props)
   {
     Driver *driver= getDriver(url);
     Connection* conn = driver->connect(url, props);

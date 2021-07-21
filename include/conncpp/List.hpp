@@ -23,8 +23,8 @@
 
 #include <memory>
 #include <list>
-#include <SQLString.hpp>
 #include "buildconf.hpp"
+#include "SQLString.hpp"
 
 namespace sql
 {

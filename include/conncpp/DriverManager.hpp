@@ -42,7 +42,7 @@ class MARIADB_EXPORTED DriverManager
 public:
 
   static Connection* getConnection(const SQLString& url);
-  static Connection* getConnection(const SQLString& url, Properties& props);
+  static Connection* getConnection(const SQLString& url, const Properties& props);
   static Connection* getConnection(const SQLString& url, const SQLString& user, const SQLString& pwd);
 };
 

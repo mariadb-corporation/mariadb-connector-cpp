@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -3280,5 +3280,39 @@ void connection::useCharacterSet()
     // All is fine
   }
 }
+
+
+/* Using 1.0 API types with 1.1 driver. i.e. Properties was just a map, now it's defined in the driver class.
+   getTables used std::list as parameter type.
+   We need this test to be compiled und do not crash */
+void connection::concpp89_10to11upgrade()
+{
+  typedef std::map<sql::SQLString, sql::SQLString> Properties1_0;
+  typedef std::list< sql::SQLString > getTablesListParam1_0;
+  Properties1_0 p;
+
+  p["user"] = user;
+  p["password"] = passwd;
+  p["useTls"] = useTls ? "true" : "false";
+
+  con.reset(driver->connect(url, p));
+  ASSERT(con.get());
+
+  p["hostName"]= url;
+  con.reset(driver->connect(p));
+  ASSERT(con.get());
+
+  con.reset(sql::DriverManager::getConnection(url, p));
+
+  // Also getTables parameter type has been changed. Testing it still can be compiled with parameter type from 1.0
+  getTablesListParam1_0 tableTypes;
+  DatabaseMetaData  dbmeta(con->getMetaData());
+
+  tableTypes.push_back("TABLE");
+  res.reset(dbmeta->getTables("", "%", "%", tableTypes));
+
+  res.reset();
+}
+
 } /* namespace connection */
 } /* namespace testsuite */
