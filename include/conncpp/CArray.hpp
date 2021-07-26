@@ -66,6 +66,7 @@ namespace sql
 
     CArray(std::initializer_list<T> const& initList);
     CArray(const CArray& rhs);
+    //CArray(CArray&& moved);
 
     CArray() : arr(nullptr), length(0)
     {}

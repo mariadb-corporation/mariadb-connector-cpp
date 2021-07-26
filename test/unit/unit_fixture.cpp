@@ -285,7 +285,7 @@ void unit_fixture::init()
   useTls= TestsRunner::theInstance().getStartOptions()->getBool("useTls");
 
   // Normalizing URL
-  std::size_t protocolEnd = url.find_first_of("://"); //5 - length of jdbc: prefix
+  std::size_t protocolEnd = url.find("://"); //5 - length of jdbc: prefix
 
   if (protocolEnd == std::string::npos)
   {
@@ -295,10 +295,10 @@ void unit_fixture::init()
   {
     sql::SQLString protocol(url.substr(0, protocolEnd));
 
-    if (protocol.find_first_of("jdbc:mariadb:") != 0)
+    if (protocol.compare("jdbc:mariadb:") != 0)
     {
       url = url.substr(protocolEnd + 3/*://*/);
-      std::size_t slashPos = url.find_first_of('/');
+      std::size_t slashPos= url.find_first_of('/');
       sql::SQLString hostName(slashPos == std::string::npos ? url : url.substr(0, slashPos));
 
       url= "jdbc:mariadb://" + url;
@@ -315,6 +315,19 @@ void unit_fixture::init()
         commonProperties["pipe"]= hostName;
       }
     }
+  }
+  // Now we are supposed to have jdbc:mariadb:// prefix
+  std::size_t slashPos = url.find_first_of('/', sizeof("jdbc:mariadb://"));
+
+  if (slashPos == std::string::npos)
+  {
+    urlWithoutSchema= url;
+    url.reserve(url.length() + 1 + db.length());
+    url.append("/").append(db);
+  }
+  else
+  {
+    urlWithoutSchema= url.substr(0, slashPos - 1);
   }
 }
 
@@ -339,7 +352,7 @@ void unit_fixture::setUp()
    logDebug("Driver: " + driver->getName());
            + " " + String(driver->getMajorVersion() + driver->getMajorVersion + String(".") + driver->getMinorVersion());*/
 
-  con->setSchema(db);
+  //con->setSchema(db);
 
   stmt.reset(con->createStatement());
 }

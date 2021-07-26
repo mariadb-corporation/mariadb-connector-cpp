@@ -1073,9 +1073,8 @@ void bugs::bug21067193()
 //	Error....
       throw e;
   }
-
-
 }
+
 
 void bugs::bug21152054()
 {
@@ -1099,6 +1098,7 @@ void bugs::bug21152054()
     ASSERT_EQUALS(line, res->getInt(1));
   }  while(res->relative(-1));
 }
+
 
 void bugs::bug22292073()
 {
@@ -1264,7 +1264,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1273,7 +1273,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1282,7 +1282,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1291,7 +1291,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1300,7 +1300,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1309,7 +1309,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1318,7 +1318,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1327,7 +1327,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1336,7 +1336,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1345,7 +1345,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1354,7 +1354,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1363,7 +1363,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1372,7 +1372,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
   try
   {
@@ -1381,7 +1381,7 @@ void bugs::concpp48()
   }
   catch (sql::SQLException & e)
   {
-    ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+    ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
   }
 
   /////////// Now all the same with CallableStatement ///////////
@@ -1400,7 +1400,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1409,7 +1409,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1418,7 +1418,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1427,7 +1427,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1436,7 +1436,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1445,7 +1445,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1454,7 +1454,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1463,7 +1463,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1472,7 +1472,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1481,7 +1481,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1490,7 +1490,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1499,7 +1499,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1508,7 +1508,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
     try
     {
@@ -1517,7 +1517,7 @@ void bugs::concpp48()
     }
     catch (sql::SQLException & e)
     {
-      ASSERT(e.getMessage().find_first_of("cannot be called on PreparedStatement") != std::string::npos);
+      ASSERT(e.getMessage().find("cannot be called on PreparedStatement") != sql::SQLString::npos);
     }
   }
   catch (sql::SQLException &)

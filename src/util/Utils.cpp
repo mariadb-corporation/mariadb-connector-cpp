@@ -427,7 +427,7 @@ namespace mariadb
 
   SQLString Utils::nativeSql(const SQLString& sql, Protocol* protocol)
   {
-    if (!(sql.find_first_of("{") != std::string::npos)){
+    if (!(sql.find_first_of('{') != std::string::npos)){
       return sql;
     }
 

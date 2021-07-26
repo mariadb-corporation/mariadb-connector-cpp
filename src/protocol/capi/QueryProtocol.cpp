@@ -369,7 +369,7 @@ namespace capi
     }
 
 
-    if ((sql.toLowerCase().find_first_of("select") != std::string::npos)){
+    if ((sql.toLowerCase().find("select") != std::string::npos)){
       return false;
     }
 

@@ -125,7 +125,7 @@ struct TestFixtureCommon
 
   String extractVal(const String & sTableName
                     , int count
-                    , Properties & sqlProps
+                    , TestProperties & sqlProps
                     , Connection & conn);
 
   static void logMsg(sql::SQLString message);
@@ -149,7 +149,7 @@ protected:
   static int instanceCount;
 
   static int propsLoaded;
-  static Properties sqlProps;
+  static TestProperties sqlProps;
   static Driver *driver;
 };
 
@@ -162,7 +162,7 @@ class BaseTestFixture : public TestSuite, public TestFixtureCommon
 {
   typedef TestSuite super;
 
-  List createdObjects;
+  TestList createdObjects;
 
   /** My instance number */
   int myInstanceNumber;
@@ -261,7 +261,7 @@ protected:
 
 
   /* throws SQLException */
-  sql::Connection * getAdminConnectionWithProps(Properties props);
+  sql::Connection * getAdminConnectionWithProps(TestProperties props);
 
 
   /* throws SQLException */
@@ -286,12 +286,12 @@ protected:
 
   /* throws SQLException */
 
-  sql::Connection * getConnectionWithProps(const Properties & props);
+  sql::Connection * getConnectionWithProps(const TestProperties & props);
 
 
   /* throws SQLException */
 
-  sql::Connection * getConnectionWithProps(const String & url, const Properties & props);
+  sql::Connection * getConnectionWithProps(const String & url, const TestProperties & props);
   /**
    * Returns the per-instance counter (for messages when multi-threading
    * stress tests)
@@ -417,7 +417,7 @@ protected:
 
   void assertResultSetsEqual(ResultSet & control, ResultSet & test);
 
-  void initTable(const String & sTableName, Properties & sqlProps
+  void initTable(const String & sTableName, TestProperties & sqlProps
                  , Connection & conn);
   void clearTable(const String & sTableName, Connection & conn);
 

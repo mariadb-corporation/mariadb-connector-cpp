@@ -158,40 +158,35 @@ namespace capi
     */
   void SelectResultSetBin::fetchRemaining() {
     if (!isEof) {
-      lastRowPointer= -1;
-      if (mysql_stmt_store_result(capiStmtHandle) != 0) {
-        throwStmtError(capiStmtHandle);
-      }
-
-      uint32_t serverStatus;
-      if (!eofDeprecated) {
-        protocol->readEofPacket();
-        serverStatus= protocol->getServerStatus();
-
-        // CallableResult has been read from intermediate EOF server_status
-        // and is mandatory because :
-        //
-        // - Call query will have an callable resultSet for OUT parameters
-        //   this resultSet must be identified and not listed in JDBC statement.getResultSet()
-        //
-        // - after a callable resultSet, a OK packet is send,
-        //   but mysql before 5.7.4 doesn't send MORE_RESULTS_EXISTS flag
-        if (callableResult) {
-          serverStatus|= MORE_RESULTS_EXISTS;
+      try {
+        lastRowPointer = -1;
+        if (!isEof && dataSize > 0 && fetchSize == 1) {
+          // We need to grow the array till current size. Its main purpose is to create room for newly fetched
+          // fetched row, so it grows till dataSize + 1. But we need to space for already fetched(from server)
+          // row. Thus fooling growDataArray by decrementing dataSize
+          --dataSize;
+          growDataArray();
+          // Since index of the last row is smaller from dataSize by 1, we have correct index
+          row->cacheCurrentRow(data[dataSize], columnsInformation.size());
+          rowPointer = 0;
+          resetRow();
+          ++dataSize;
+        }
+        /*if (mysql_stmt_store_result(capiStmtHandle) != 0) {
+          throwStmtError(capiStmtHandle);
+        }*/
+        while (!isEof) {
+          addStreamingValue(true);
         }
       }
-      else {
-        // OK_Packet with a 0xFE header
-        //protocol->readOkPacket();
-        serverStatus= protocol->getServerStatus();
-        callableResult= (serverStatus & PS_OUT_PARAMETERS) != 0;
+      catch (SQLException & queryException) {
+        ExceptionFactory::INSTANCE.create(queryException).Throw();
       }
-      protocol->setServerStatus(serverStatus);
-      protocol->setHasWarnings(warningCount() > 0);
-      isEof= true;
+      catch (std::exception & ioe) {
+        handleIoException(ioe);
+      }
+      dataFetchTime++;
     }
-
-    dataFetchTime++;
   }
 
   void SelectResultSetBin::handleIoException(std::exception& ioe) const
@@ -219,7 +214,7 @@ namespace capi
       dataSize= 0;
     }
 
-    addStreamingValue();
+    addStreamingValue(fetchSize > 1);
   }
 
 
@@ -500,7 +495,6 @@ namespace capi
         }
       }
 
-
       rowPointer= static_cast<int32_t>(dataSize);
       return false;
     }
@@ -509,7 +503,7 @@ namespace capi
   // It has to be const, because it's called by getters, and properties it changes are mutable
   void SelectResultSetBin::resetRow() const
   {
-    if (data.size() > 0) {
+    if (data.size() > rowPointer) {
       row->resetRow(const_cast<std::vector<sql::bytes> &>(data[rowPointer]));
     }
     else {

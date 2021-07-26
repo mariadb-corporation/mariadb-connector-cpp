@@ -39,7 +39,6 @@ extern const SQLString mysqlTcp, mysqlSocket, mysqlPipe;
 
 class UrlParser
 {
-  static const SQLString DISABLE_MYSQL_URL;
   static std::regex URL_PARAMETER;
   static std::regex AWS_PATTERN;
 

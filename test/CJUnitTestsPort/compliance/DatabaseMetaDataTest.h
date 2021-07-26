@@ -74,7 +74,7 @@ private:
 
   /* throws sql::DbcException */
 
-  bool columnCompare(List & sColumnNames, ResultSet & rs);
+  bool columnCompare(TestList & sColumnNames, ResultSet & rs);
 protected:
 
   /**
@@ -1877,8 +1877,6 @@ public:
   /* throws std::exception * */
   void testGetPrimaryKeys();
 
-
-#ifdef INCLUDE_NOT_IMPLEMENTED_METHODS
   /*
    * @testName:         testGetProcedureColumns
    * @assertion:        The DatabaseMetaData provides information about the database.
@@ -1905,8 +1903,6 @@ public:
 
   /* throws std::exception * */
   void testGetProcedureColumns();
-#endif
-
 
   /*
    * @testName:         testGetProcedureTerm

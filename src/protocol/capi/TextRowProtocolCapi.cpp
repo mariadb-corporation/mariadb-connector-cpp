@@ -58,17 +58,18 @@ namespace capi
 
    pos= 0;
 
-   if (rowData) {
-     this->lastValueNull= (rowData[index] == nullptr ? BIT_LAST_FIELD_NULL : BIT_LAST_FIELD_NOT_NULL);
-     length= lengthArr[newIndex];
-     fieldBuf.wrap(rowData[index], length);
-   }
-   else if (buf != nullptr)
+   if (buf != nullptr)
    {
      fieldBuf.wrap((*buf)[index], (*buf)[index].size());
      this->lastValueNull = fieldBuf ? BIT_LAST_FIELD_NOT_NULL : BIT_LAST_FIELD_NULL;
      length= static_cast<uint32_t>(fieldBuf.size());
    }
+   else if (rowData) {
+     this->lastValueNull= (rowData[index] == nullptr ? BIT_LAST_FIELD_NULL : BIT_LAST_FIELD_NOT_NULL);
+     length= lengthArr[newIndex];
+     fieldBuf.wrap(rowData[index], length);
+   }
+   
    else {
      // TODO: we need some good assert above instead of this
      throw std::runtime_error("Internal error in the TextRow class - data buffers are NULLs");
@@ -1040,8 +1041,8 @@ namespace capi
    }
 
    if (options->maximizeMysqlCompatibility
-     && rawValue.find_first_of(".") != std::string::npos) {
-     return rawValue.substr(0, rawValue.find_first_of("."));
+     && rawValue.find_first_of('.') != std::string::npos) {
+     return rawValue.substr(0, rawValue.find_first_of('.'));
    }
    return rawValue;
  }

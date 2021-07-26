@@ -92,6 +92,7 @@ Not complete list of supported options - mostly newly added or with new aliases:
 | **`jdbcCompliantTruncation`** |Truncation error will be thrown as error, and not as warning|*bool* |true||
 | **`useCharacterEncoding`** |Character set used for text encoding.|*string* ||OPT_SET_CHARSET_NAME,useCharset|
 | **`credentialType`** |Default authentication client-side plugin to use.|*string* ||defaultAuth|
+| **`defaultFetchSize`** |The driver will call setFetchSize(n) with this value on all newly-created Statements|*int* |0||
 
 
 Properties is map of strings, and is another way to pass optional parameters.

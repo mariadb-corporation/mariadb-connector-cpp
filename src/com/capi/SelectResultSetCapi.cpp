@@ -275,7 +275,7 @@ namespace capi
       dataSize= 0;
     }
 
-    addStreamingValue();
+    addStreamingValue(fetchSize > 1);
   }
 
 

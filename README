@@ -105,6 +105,8 @@ useCompression           Compresses the exchange with the database              
 jdbcCompliantTruncation  Truncation error will be thrown as error, and not as warning bool(default=true)
 useCharacterEncoding     Character set used for text encoding                         string OPT_SET_CHARSET_NAME,useCharset
 credentialType           Default authentication client-side plugin to use.            string defaultAuth|
+defaultFetchSize         The driver will call setFetchSize(n) with this value on all
+                         newly-created Statements                                     int
 
 
 Properties is map of strings, and is another way to pass optional parameters.

@@ -62,7 +62,7 @@ namespace mariadb
   void normalizeLegacyUri(SQLString& url, Properties* properties= nullptr) {
 
     //Making TCP default with legacy uri
-    if (url.find_first_of("://") == std::string::npos) {
+    if (url.find("://") == std::string::npos) {
       url= "tcp://" + url;
     }
 

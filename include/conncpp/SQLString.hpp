@@ -63,6 +63,8 @@ public:
   MARIADB_EXPORTED SQLString & append(const char * const addition, std::size_t len);
   MARIADB_EXPORTED SQLString & append(char c);
   MARIADB_EXPORTED SQLString substr(std::size_t pos= 0, size_t count=npos) const;
+  MARIADB_EXPORTED std::size_t find(const SQLString& str, std::size_t pos = 0) const;
+  MARIADB_EXPORTED std::size_t find(const char* str, std::size_t pos, std::size_t n) const;
   MARIADB_EXPORTED std::size_t find_first_of(const SQLString& str, std::size_t pos = 0) const;
   MARIADB_EXPORTED std::size_t find_first_of(const char* str, std::size_t pos = 0) const;
   MARIADB_EXPORTED std::size_t find_first_of(const char ch, std::size_t pos = 0) const;

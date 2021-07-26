@@ -46,12 +46,12 @@ int main(int argc, char** argv)
     , "dbSchema"
     , NULL};
 
-  Properties defaultStringValues;
+  TestProperties defaultStringValues;
 
-  defaultStringValues.insert(Properties::value_type("dbUrl", HOST_ENV_OR_DEFAULT));
-  defaultStringValues.insert(Properties::value_type("dbUser", UID_ENV_OR_DEFAULT));
-  defaultStringValues.insert(Properties::value_type("dbPasswd", PASSWD_ENV_OR_DEFAULT));
-  defaultStringValues.insert(Properties::value_type("dbSchema", SCHEMA_ENV_OR_DEFAULT));
+  defaultStringValues.insert(TestProperties::value_type("dbUrl", HOST_ENV_OR_DEFAULT));
+  defaultStringValues.insert(TestProperties::value_type("dbUser", UID_ENV_OR_DEFAULT));
+  defaultStringValues.insert(TestProperties::value_type("dbPasswd", PASSWD_ENV_OR_DEFAULT));
+  defaultStringValues.insert(TestProperties::value_type("dbSchema", SCHEMA_ENV_OR_DEFAULT));
 
   std::map<String, bool> defaultBoolValues;
 

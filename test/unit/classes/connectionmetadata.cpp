@@ -1056,8 +1056,11 @@ void connectionmetadata::checkForeignKey(Connection &mycon, ResultSet &myres)
   ASSERT("" != myres->getString("FK_NAME"));
   ASSERT_EQUALS(myres->getString(12), myres->getString("FK_NAME"));
 
-  // TODO - not sure what value to expect
-  ASSERT_EQUALS("PRIMARY", myres->getString("PK_NAME"));
+  // We would have PK_NAME only if I_S. By default "SHOW CREATE TABLE" result is parsed, and it doesn't have this info, and thus NULL is returned
+  if (!myres->isNull(13))
+  {
+    ASSERT_EQUALS("PRIMARY", myres->getString("PK_NAME"));
+  }
   ASSERT_EQUALS(myres->getString(13), myres->getString("PK_NAME"));
 
   ASSERT_EQUALS((int64_t) sql::DatabaseMetaData::importedKeyNotDeferrable, myres->getInt64(14));
@@ -2522,7 +2525,7 @@ void connectionmetadata::bugCpp25()
   ASSERT_EQUALS(major, std::stoul((*verParts)[0].c_str()));
   ASSERT_EQUALS(minor, std::stoul((*verParts)[1].c_str()));
 
-  std::size_t dashPos = (*verParts)[2].find_first_of("-");
+  std::size_t dashPos = (*verParts)[2].find_first_of('-');
   if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
     ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? (*verParts)[2].c_str() : (*verParts)[2].substr(0, dashPos).c_str()));
   }
@@ -2537,14 +2540,14 @@ void connectionmetadata::bugCpp25()
   ASSERT_EQUALS("", (*csv)[4]);
   ASSERT_EQUALS("", (*csv)[5]);
 #else
-  List verParts;
+  TestList verParts;
   StringUtils::split(verParts, verFromServer.c_str(), ".", true, true);
 
   ASSERT_EQUALS(3ULL, static_cast<uint64_t>(verParts.size()));
   ASSERT_EQUALS(major, std::stoul(verParts[0].c_str()));
   ASSERT_EQUALS(minor, std::stoul(verParts[1].c_str()));
 
-  std::size_t dashPos = verParts[2].find_first_of("-");
+  std::size_t dashPos = verParts[2].find_first_of('-');
   if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
     ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? verParts[2].c_str() : verParts[2].substr(0, dashPos).c_str()));
   }

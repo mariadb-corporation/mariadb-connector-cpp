@@ -500,7 +500,7 @@ namespace mariadb
           && (query[i + 5] == 't' || query[i + 5] == 'T')) {
 
 
-          if (i > 0 && (query[i - 1] > ' ' && SpecChars.find_first_of(query[i -1]) == std::string::npos)) {
+          if (i > 0 && (query[i - 1] > ' ' && SpecChars.find_first_of(query[i - 1]) == std::string::npos)) {
             break;
           }
           if (query[i + 6] >' '&& SpecChars.find_first_of(query[i + 6]) == std::string::npos) {

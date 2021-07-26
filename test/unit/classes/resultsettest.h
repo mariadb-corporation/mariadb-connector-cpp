@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -29,14 +30,12 @@
  */
 
 
-
 #include "../unit_fixture.h"
 
 /**
  * Test of the JDBC ResultSet class counterpart
  *
  */
-
 namespace testsuite
 {
 namespace classes
@@ -63,6 +62,7 @@ public:
     TEST_CASE(getResultSetType);
     TEST_CASE(getTypesMinorIssues);
     TEST_CASE(JSON_support);
+    TEST_CASE(concpp72_rs_streaming);
 
 #ifdef INCLUDE_NOT_IMPLEMENTED_METHODS
     TEST_CASE(notImplemented);
@@ -123,7 +123,8 @@ public:
    */
   void JSON_support();
 
-
+  /* Test of resultset streaming(aka "use result")*/
+  void concpp72_rs_streaming();
 };
 
 REGISTER_FIXTURE(resultset);

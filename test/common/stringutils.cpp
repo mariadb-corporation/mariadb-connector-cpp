@@ -111,7 +111,7 @@ namespace StringUtils
 
 
   // This function skips empties
-  unsigned  split( List & list, const String &  str, const String &  delim
+  unsigned  split(TestList & list, const String &  str, const String &  delim
     , bool trimItems, bool includeEmpty)
   {
     return _split<String>( list, str, delim, trimItems, includeEmpty );

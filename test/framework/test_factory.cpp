@@ -67,7 +67,7 @@ int TestSuiteFactory::RegisterTestSuite(const String::value_type * name, TestSui
 }
 
 
-List::size_type TestSuiteFactory::getTestsList( std::vector<const String::value_type *> & list ) const
+TestList::size_type TestSuiteFactory::getTestsList( std::vector<const String::value_type *> & list ) const
 {
   for ( TestSuites::const_iterator cit= testSuites.begin(); cit != testSuites.end(); ++cit )
   {

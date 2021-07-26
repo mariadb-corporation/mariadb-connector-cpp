@@ -173,6 +173,18 @@ namespace sql
     return (*theString)->substr(pos, count).c_str();
   }
 
+
+  std::size_t SQLString::find(const SQLString & str, std::size_t pos) const
+  {
+    return (*theString)->find((*str.theString)->c_str(), pos, (*str.theString)->length());
+  }
+
+  std::size_t SQLString::find(const char* str, std::size_t pos, std::size_t n) const
+  {
+    return (*theString)->find(str, pos, n);
+  }
+
+
   std::size_t SQLString::find_first_of(const SQLString & str, std::size_t pos) const
   {
     return (*theString)->find_first_of((*str.theString)->c_str(), pos, (*str.theString)->length());

@@ -642,7 +642,7 @@ namespace mariadb
 
     if (stmt)
     {
-      stateFlag |=ConnectionState::STATE_AUTOCOMMIT;
+      stateFlag|= ConnectionState::STATE_AUTOCOMMIT;
       stmt->executeUpdate(SQLString("set autocommit=").append((autoCommit) ? '1' : '0'));
     }
   }

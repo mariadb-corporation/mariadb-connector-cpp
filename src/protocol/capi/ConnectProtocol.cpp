@@ -213,7 +213,7 @@ namespace capi
     if (!options->enabledTlsProtocolSuites.empty()) {
       Tokens protocols= split(options->enabledTlsProtocolSuites, "[,;\\s]+");
       for (const auto& protocol : *protocols){
-        if (possibleProtocols.find_first_of(protocol) == std::string::npos){
+        if (possibleProtocols.find(protocol) == std::string::npos){
           throw SQLException(
               "Unsupported TLS protocol '"
               +protocol
@@ -237,7 +237,7 @@ namespace capi
       SQLString possibleCiphers;
       Tokens ciphers(split(options->enabledTlsCipherSuites, "[,;\\s]+"));
       for (const auto& cipher : *ciphers){
-        if (!(possibleCiphers.find_first_of(cipher) != std::string::npos)){
+        if (!(possibleCiphers.find(cipher) != std::string::npos)){
           throw SQLException(
               "Unsupported SSL cipher '"
               +cipher
@@ -475,7 +475,7 @@ namespace capi
       serverVersion = serverVersion.substr(MARIADB_RPL_HACK_PREFIX.length());
     }
     else {
-      serverMariaDb = serverVersion.find_first_of("MariaDB") != std::string::npos;
+      serverMariaDb = serverVersion.find("MariaDB") != std::string::npos;
     }
     unsigned long baseCaps, extCaps;
     mariadb_get_infov(connection.get(), MARIADB_CONNECTION_EXTENDED_SERVER_CAPABILITIES, (void*)&extCaps);

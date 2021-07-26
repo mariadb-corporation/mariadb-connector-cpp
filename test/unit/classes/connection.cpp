@@ -1053,7 +1053,7 @@ void connection::connectUsingMap()
   {
     sql::ConnectOptionsMap connection_properties;
 
-    connection_properties["hostName"]=url;
+    connection_properties["hostName"]=urlWithoutSchema;
     connection_properties["userName"]=user;
     connection_properties["password"]=passwd;
     connection_properties["useTls"]= useTls? "true" : "false";
@@ -1195,13 +1195,13 @@ void connection::connectUsingMap()
       {
         logMsg("... schema not set through the URL");
 
-        connection_properties[std::string("schema")]=schema;
+        connection_properties["schema"]= schema;
 
         try
         {
           created_objects.clear();
           con.reset(driver->connect(connection_properties));
-          schema=con->getSchema();
+          schema= con->getSchema();
           if (!schema.empty())
             FAIL("Empty schama specified but certain schema selected upon connect");
         }
@@ -1214,7 +1214,7 @@ void connection::connectUsingMap()
         logMsg("... trying to connect to mysql schema, may or may not work");
 
         connection_properties.erase("schema");
-        connection_properties["schema"]=(myschema);
+        connection_properties["schema"]= (myschema);
 
         try
         {
@@ -2206,7 +2206,8 @@ void connection::setTransactionIsolation()
       /* JDBC documentation: If this method is called while
        in the middle of a transaction, any changes up to that point
        will be committed.*/
-      stmt->execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+      // setTransactionIsolation does SET SESSION ...
+      stmt->execute("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
       // con->setTransactionIsolation(sql::TRANSACTION_REPEATABLE_READ);
       /* According to the JDBC docs the INSERT has been comitted
        and this ROLLBACK must have no impat */

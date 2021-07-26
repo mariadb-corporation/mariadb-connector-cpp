@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -1191,9 +1192,9 @@ void resultset::fetchBitAsInt()
   }
 }
 
+
 void resultset::getResultSetType()
 {
-
   sql::ConnectOptionsMap connection_properties;
 
   logMsg("resultset::getResultSetType - MySQL_ResultSet::*");
@@ -1201,7 +1202,6 @@ void resultset::getResultSetType()
   SKIP("defaultStatementResultType connection option is not supported")
   try
   {
-
     /* user comes from the unit testing framework */
     connection_properties["user"]= user;
 
@@ -1282,6 +1282,7 @@ void resultset::getResultSetType()
   }
 }
 
+
 void resultset::JSON_support()
 {
   std::stringstream msg;
@@ -1335,6 +1336,144 @@ void resultset::JSON_support()
   }
 }
 
+
+void resultset::concpp72_rs_streaming()
+{
+  sql::Properties connection_properties;
+  logMsg("resultset::concpp72_rs_streaming - MySQL_ResultSet::*");
+  std::vector<int32_t> id({ 1, 2, 3, 4, 7 });
+  std::vector<sql::SQLString> strVal({ "string longer", "SHORT", "Some text 3", "midsize", "Another value 5" });
+  std::vector<std::string> binVal({ {"a\0\0b", 4}, {"\0a\0b", 4}, {"z\0o\0b", 5}, {"xz\0\0", 4}, {"xxxxxx", 5} });
+
+  try
+  {
+    /* user comes from the unit testing framework */
+    connection_properties["defaultFetchSize"]= "1";
+    connection_properties["useServerPrepStmts"]= "true";
+
+    logMsg("... testing ResultSet streaming with fetchSize=1");
+
+    try
+    {
+      created_objects.clear();
+      con.reset(getConnection(&connection_properties));
+    }
+    catch (sql::SQLException & e)
+    {
+      fail(e.what(), __FILE__, __LINE__);
+    }
+    stmt.reset(con->createStatement());
+    createSchemaObject("TABLE", "t_concpp72", "(id int unsigned not null primary key, strVal varchar(32) not null, binVal varbinary(8) not null)");
+    stmt->executeUpdate("INSERT INTO t_concpp72 VALUES(1, 'string longer', _binary'a\\0\\0b'),(2, 'SHORT', _binary'\\0a\\0b'),"
+      "(4, 'midsize', _binary'xz\\0\\0')");
+
+    ASSERT_EQUALS(stmt->getResultSetType(), sql::ResultSet::TYPE_FORWARD_ONLY);
+    ASSERT_EQUALS(1, stmt->getFetchSize());
+    res.reset(stmt->executeQuery("SELECT id, strVal, binVal FROM t_concpp72 ORDER BY id"));
+    
+    ASSERT(res->next());
+    ASSERT_EQUALS(1, res->getInt(1));
+    ASSERT_EQUALS("string longer", res->getString(2));
+    sql::SQLString col3(res->getString(3));
+    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT(std::memcmp(col3.c_str(), "a\0\0b", 4) == 0);
+
+    pstmt.reset(con->prepareStatement("SELECT id, strVal, binVal FROM t_concpp72 ORDER BY id DESC"));
+    ASSERT_EQUALS(1, pstmt->getFetchSize());
+    ResultSet rs2(pstmt->executeQuery());
+    ASSERT_EQUALS(pstmt->getResultSetType(), sql::ResultSet::TYPE_FORWARD_ONLY);
+
+    ASSERT_EQUALS(1, res->getInt(1));
+    ASSERT_EQUALS("string longer", res->getString(2));
+    col3= res->getString(3);
+    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT(std::memcmp(col3.c_str(), "a\0\0b", 4) == 0);
+    ASSERT(res->next());
+    ASSERT_EQUALS(2, res->getInt(1));
+    ASSERT_EQUALS("SHORT", res->getString(2));
+    col3= res->getString(3);
+    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT(std::memcmp(col3.c_str(), "\0a\0b", 4) == 0);
+    ASSERT(res->next());
+    ASSERT_EQUALS(4, res->getInt(1));
+    ASSERT_EQUALS("midsize", res->getString(2));
+    col3 = res->getString(3);
+    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT(std::memcmp(col3.c_str(), "xz\0\0", 4) == 0);
+    ASSERT(!res->next());
+
+    // Now the result from PS
+    ASSERT(rs2->next());
+    ASSERT_EQUALS(4, rs2->getInt(1));
+    ASSERT_EQUALS("midsize", rs2->getString(2));
+    col3 = rs2->getString(3);
+    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT(std::memcmp(col3.c_str(), "xz\0\0", 4) == 0);
+    // We just need to send any command. to force driver to cache the data
+    ASSERT_EQUALS(2, stmt->executeUpdate("INSERT INTO t_concpp72 VALUES(3, 'Some text 3', _binary'z\\0o\\0b'),(7, 'Another value 5', _binary'xxxxx')"));
+
+    ASSERT_EQUALS(4, rs2->getInt(1));
+    ASSERT_EQUALS("midsize", rs2->getString(2));
+    col3 = rs2->getString(3);
+    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT(std::memcmp(col3.c_str(), "xz\0\0", 4) == 0);
+
+    ASSERT(rs2->next());
+    ASSERT_EQUALS(2, rs2->getInt(1));
+    ASSERT_EQUALS("SHORT", rs2->getString(2));
+    col3 = rs2->getString(3);
+    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT(std::memcmp(col3.c_str(), "\0a\0b", 4) == 0);
+    ASSERT(rs2->next());
+    ASSERT_EQUALS(1, rs2->getInt(1));
+    ASSERT_EQUALS("string longer", rs2->getString(2));
+    col3 = rs2->getString(3);
+    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT(std::memcmp(col3.c_str(), "a\0\0b", 4) == 0);
+    ASSERT(!res->next());
+
+    stmt->setFetchSize(4);
+    res.reset(stmt->executeQuery("SELECT id, strVal, binVal, CAST(NULL AS VARCHAR(8)) FROM t_concpp72 ORDER BY id"));
+
+    for (std::size_t i = 0; i < id.size(); ++i)
+    {
+      ASSERT(res->next());
+      ASSERT_EQUALS(id[i], res->getInt(1));
+      ASSERT_EQUALS(strVal[i], res->getString(2));
+      col3 = res->getString(3);
+      ASSERT_EQUALS(binVal[i].length(), col3.length());
+      ASSERT(std::memcmp(col3.c_str(), binVal[i].c_str(), col3.length()) == 0);
+      ASSERT(res->isNull(4));
+    }
+    ASSERT(!res->next());
+
+    pstmt.reset(con->prepareStatement("SELECT id, strVal, binVal, CAST(NULL AS VARCHAR(8)), CAST(id AS VARCHAR(24)) FROM t_concpp72 ORDER BY id DESC"));
+    pstmt->setFetchSize(4);
+    rs2.reset(pstmt->executeQuery());
+    for (int64_t i= id.size() - 1; i >= 0; --i)
+    {
+      ASSERT(rs2->next());
+      ASSERT_EQUALS(id[i], rs2->getInt(1));
+      ASSERT_EQUALS(static_cast<int64_t>(id[i]), rs2->getLong(1));
+      ASSERT_EQUALS(strVal[i], rs2->getString(2));
+      col3 = rs2->getString(3);
+      ASSERT_EQUALS(binVal[i].length(), col3.length());
+      ASSERT(std::memcmp(col3.c_str(), binVal[i].c_str(), col3.length()) == 0);
+      ASSERT(rs2->isNull(4));
+      ASSERT_EQUALS(id[i], rs2->getInt(5));
+      ASSERT_EQUALS(static_cast<int64_t>(id[i]), rs2->getLong(5));
+      ASSERT_EQUALS(static_cast<uint64_t>(id[i]), rs2->getUInt64(5));
+      ASSERT_EQUALS(static_cast<uint32_t>(id[i]), rs2->getUInt(5));
+    }
+    ASSERT(!rs2->next());
+  }
+  catch (sql::SQLException & e)
+  {
+    logErr(e.what());
+    logErr("SQLState: " + std::string(e.getSQLState()));
+    fail(e.what(), __FILE__, __LINE__);
+  }
+}
 
 } /* namespace resultset */
 } /* namespace testsuite */

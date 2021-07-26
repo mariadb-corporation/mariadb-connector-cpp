@@ -179,7 +179,7 @@ protected:
    *
    * Used by tearDown() to clean up the database after the test run
    */
-  List created_objects;
+  TestList created_objects;
 
   sql::Properties commonProperties;
   /**
@@ -205,6 +205,8 @@ protected:
    * Fallback to default_url, see also default_url
    */
   String url;
+  // Some tests need it without schema
+  String urlWithoutSchema;
 
   /**
    * Name of the schema to use (USE <db>)
