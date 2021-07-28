@@ -34,7 +34,6 @@ matrix:
     - env: SKYSQL=true
     - env: SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
     - env: DB=build:10.6
-    - env: DB=mariadb:10.1
     - env: DB=mariadb:10.2
     - env: DB=mariadb:10.3
     - env: DB=mariadb:10.4

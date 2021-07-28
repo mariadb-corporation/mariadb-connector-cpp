@@ -87,7 +87,7 @@ namespace mariadb
    *     statement; if a database access error occurs or this method is called on a closed <code>
    *     PreparedStatement</code>
    */
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   void BasePrepareStatement::setCharacterStream(int32_t parameterIndex, const std::istringstream& reader,int32_t length)
   {
     if (!reader){
@@ -1095,7 +1095,7 @@ namespace mariadb
   }
 #endif
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   /**
    * Sets the designated parameter to the given input stream, which will have the specified number
    * of bytes. When a very large ASCII value is input to a <code>LONGVARCHAR</code> parameter, it

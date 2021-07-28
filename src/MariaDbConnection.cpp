@@ -1331,14 +1331,14 @@ namespace mariadb
         setClientInfo(name, cit != properties.cend() ? cit->second : "");
       }
       catch (SQLException& /*e*/) {
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
         propertiesExceptions.putAll(e.getFailedProperties());
 #endif
       }
     }
     if (!propertiesExceptions.empty()) {
       SQLString errorMsg("setClientInfo errors : the following properties where not set : ");
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
         +propertiesExceptions.keySet();
 #endif
       throw SQLException("ClientInfoException: " + errorMsg);//SQLClientInfoException(errorMsg, propertiesExceptions);

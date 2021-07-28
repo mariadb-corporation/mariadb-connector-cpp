@@ -1316,10 +1316,10 @@ void preparedstatement::callSPMultiRes()
     do
     {
       res.reset(pstmt->getResultSet());
-    while (res->next())
-    {
-      msg2 << res->getString(1);
-    }
+      while (res->next())
+      {
+        msg2 << res->getString(1);
+      }
     }
     while (pstmt->getMoreResults());
 
@@ -1709,6 +1709,44 @@ void preparedstatement::addBatch()
   ASSERT_EQUALS(1LL, batchLRes[2]);
 
   stmt->executeUpdate("DROP TABLE testAddBatchPs");
+}
+
+
+void preparedstatement::concpp88()
+{
+  pstmt.reset(con->prepareStatement("SELECT 1"));
+  res.reset(pstmt->executeQuery());
+
+  ResultSet rs2(pstmt->executeQuery());
+
+  // Re-execution should close RS from previous execution
+  ASSERT(res->isClosed());
+  pstmt.reset();
+  // Parent statemetne destruction should close RS
+  ASSERT(res->isClosed());
+
+  createSchemaObject("PROCEDURE", "p_conncpp88", "(OUT outparam int) BEGIN SELECT 2; SELECT 1; SELECT 3 INTO outparam; END;");
+  pstmt.reset(con->prepareStatement("CALL p_conncpp88(@resholder)"));
+  rs2.reset(pstmt->executeQuery());
+  ASSERT(pstmt->getMoreResults());
+  ASSERT(rs2->isClosed());
+  res.reset(pstmt->getResultSet());
+  ASSERT(rs2->isClosed());
+  ASSERT(!pstmt->getMoreResults());
+  ASSERT(res->isClosed());
+
+  cstmt.reset(con->prepareCall("CALL p_conncpp88(@resholder)"));
+  rs2.reset(cstmt->executeQuery());
+  ASSERT(rs2->next());
+  ASSERT_EQUALS(2, rs2->getInt(1));
+  ASSERT(!rs2->next());
+  ASSERT(cstmt->getMoreResults());
+  ASSERT(rs2->isClosed());
+  res.reset(cstmt->getResultSet());
+  ASSERT(res->next());
+  ASSERT_EQUALS(1, res->getInt(1));
+  cstmt.reset();
+  ASSERT(res->isClosed());
 }
 
 } /* namespace preparedstatement */

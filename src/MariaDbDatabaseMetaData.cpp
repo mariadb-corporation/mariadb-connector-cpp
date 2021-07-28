@@ -309,13 +309,21 @@ namespace sql
 
     std::sort(data.begin(), data.end(),
         [](const std::vector<sql::bytes>& row1, const std::vector<sql::bytes>& row2){
-        int32_t result= strcmp(row1[1],row2[1]); // PKTABLE_SCHEM 
+        std::size_t minSize= std::min<std::size_t>(row1[1].size(), row2[1].size());
+        int32_t result= strncmp(row1[1],row2[1], minSize); // PKTABLE_SCHEM 
         if (result == 0){
-          result= strcmp(row1[2], row2[2]); // PKTABLE_NAME
+          if (row1[1].size() != row2[1].size()) {
+            return row1[1].size() < row2[1].size();
+          }
+          minSize = std::min<std::size_t>(row1[2].size(), row2[2].size());
+          result= strncmp(row1[2], row2[2], minSize); // PKTABLE_NAME
         if (result == 0){
+          if (row1[2].size() != row2[2].size()) {
+            return row1[2].size() < row2[2].size();
+          }
           result= static_cast<int32_t>(row1[8].size() - row2[8].size()); // KEY_SEQ
         if (result == 0){
-          result= strcmp(row1[8], row2[8]);
+          result= strncmp(row1[8], row2[8], row1[8].size());
         }
         }
         }

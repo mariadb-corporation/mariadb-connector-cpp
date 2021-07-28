@@ -156,7 +156,7 @@ public:
   std::istringstream* getNCharacterStream(int32_t parameterIndex);
   std::istringstream* getNCharacterStream(const SQLString& parameterName);
 #endif
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   SQLString getNString(int32_t parameterIndex);
   SQLString getNString(const SQLString& parameterName);
 #endif
@@ -192,7 +192,7 @@ public:
   void setBlob(const SQLString& parameterName, const std::istream* inputStream, int64_t length);
   void setBlob(const SQLString& parameterName, const std::istream* inputStream);
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   void setNString(const SQLString& parameterName, const SQLString& value);
   void setAsciiStream(const SQLString& parameterName, std::istream& inputStream, int64_t length);
   void setAsciiStream(const SQLString& parameterName, std::istream& inputStream, int32_t length);

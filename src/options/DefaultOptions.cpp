@@ -680,7 +680,7 @@ namespace sql
         "0.9.1",
         "The driver will call setFetchSize(n) with this value on all newly-created Statements",
         false,
-        int32_t(1),
+        int32_t(0),
         int32_t(0) }},
       {
         "useMysqlMetadata", {"useMysqlMetadata",

@@ -69,6 +69,7 @@ public:
     TEST_CASE(blob);
     TEST_CASE(executeQuery);
     TEST_CASE(addBatch);
+    TEST_CASE(concpp88);
   }
 
   /**
@@ -144,6 +145,8 @@ public:
   void executeQuery();
 
   void addBatch();
+  
+  void concpp88();
 };
 
 REGISTER_FIXTURE(preparedstatement);

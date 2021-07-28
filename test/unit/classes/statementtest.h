@@ -66,6 +66,7 @@ public:
     TEST_CASE(unbufferedOutOfSync);
     TEST_CASE(queryTimeout);
     TEST_CASE(addBatch);
+    TEST_CASE(concpp88);
   }
 
   /**
@@ -112,6 +113,11 @@ public:
    * checks addBatch
    */
   void addBatch();
+
+  /**
+   * checks if RS' get closed by various events with parent statemeng object
+   */
+  void concpp88();
 };
 
 REGISTER_FIXTURE(statement);

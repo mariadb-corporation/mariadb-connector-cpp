@@ -677,5 +677,23 @@ void statement::addBatch()
   stmt->executeUpdate("DROP TABLE IF EXISTS testAddBatch");
 }
 
+
+void statement::concpp88()
+{
+  res.reset(stmt->executeQuery("SELECT 1"));
+  ResultSet rs2(stmt->executeQuery("SELECT 2; SELECT 3"));
+
+  // Re-execution should close RS from previous execution
+  ASSERT(res->isClosed());
+  ASSERT(stmt->getMoreResults());
+
+  res.reset(stmt->getResultSet());
+  //Moving to the next RS should close previous RS
+  ASSERT(rs2->isClosed());
+
+  stmt.reset();
+  // Parent statemetne destruction should close RS
+  ASSERT(res->isClosed());
+}
 } /* namespace statement */
 } /* namespace testsuite */

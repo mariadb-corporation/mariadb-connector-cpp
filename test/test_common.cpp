@@ -962,7 +962,7 @@ static void test_result_set_1(std::unique_ptr<sql::Connection> & conn)
     std::unique_ptr<sql::ResultSet> rset2(stmt1->executeQuery("SELECT 1"));
     ensure("res2 is NULL", rset2.get() != NULL);
 
-    ensure("res1 is empty", rset1->next() != false);
+    ensure("res1 is not closed", rset1->isClosed());
     ensure("res2 is empty", rset2->next() != false);
   } catch (sql::SQLException &e) {
     printf("\n# ERR: Caught sql::SQLException at %s::%d  [%s] (%d/%s)\n", CPPCONN_FUNC, __LINE__, e.what(), e.getErrorCode(), e.getSQLStateCStr());

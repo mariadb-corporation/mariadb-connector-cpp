@@ -207,7 +207,7 @@ public:
   Blob* getBlob(int32_t columnIndex) const;
   Blob* getBlob(const SQLString& columnLabel) const;
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
 
   /* Still... maybe SQLString is better handler for this */
   sql::bytes* getBytes(const SQLString& columnLabel);

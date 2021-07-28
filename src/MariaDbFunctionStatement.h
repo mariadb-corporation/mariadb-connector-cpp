@@ -190,7 +190,7 @@ public:
   Statement* setResultSetType(int32_t rsType);
   void clearParameters();
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   std::istringstream* getCharacterStream(int32_t parameterIndex);
   std::istringstream* getCharacterStream(const SQLString& parameterName);
   void setBlob(const SQLString& parameterName, const std::istream* inputStream, int64_t length);

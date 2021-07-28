@@ -880,7 +880,7 @@ void connectionmetadata::getImportedKeys()
     num_res=0;
     while (res->next())
     {
-      num_res++;
+      ++num_res;
       switch (num_res) {
       case 1:
         ASSERT_EQUALS("cpid1", res->getString("FKCOLUMN_NAME"));

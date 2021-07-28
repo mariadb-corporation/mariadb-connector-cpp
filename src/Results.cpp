@@ -176,11 +176,13 @@ namespace mariadb
 
   Results::~Results() {
     if (resultSet != nullptr) {
-      if (!resultSet->isFullyLoaded()) {
+      resultSet->close();
+      /*if (!resultSet->isFullyLoaded()) {
         resultSet->fetchRemaining();
-      }
+      }*/
       // Mutually forgetting each other. While we should probably just close the RS
       resultSet->setStatement(nullptr);
+      
     }
   }
 

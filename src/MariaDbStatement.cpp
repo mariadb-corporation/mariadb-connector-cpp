@@ -170,7 +170,7 @@ namespace mariadb
 
   void MariaDbStatement::stopTimeoutTask()
   {
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
     if (timerTaskFuture){
       if (!timerTaskFuture.cancel(true)){
 

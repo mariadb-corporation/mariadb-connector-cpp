@@ -857,7 +857,7 @@ namespace capi
     return isNull(findColumn(columnLabel));
   }
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   /** {inheritDoc}. */
   std::istream* SelectResultSetCapi::getAsciiStream(const SQLString& columnLabel) {
     return getAsciiStream(findColumn(columnLabel));
@@ -1017,7 +1017,7 @@ namespace capi
     return getBigDecimal(findColumn(columnLabel));
   }
 #endif
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   /** {inheritDoc}. */
   SQLString SelectResultSetCapi::getBytes(const SQLString& columnLabel) {
     return getBytes(findColumn(columnLabel));

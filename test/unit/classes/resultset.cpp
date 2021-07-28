@@ -1375,7 +1375,7 @@ void resultset::concpp72_rs_streaming()
     ASSERT_EQUALS(1, res->getInt(1));
     ASSERT_EQUALS("string longer", res->getString(2));
     sql::SQLString col3(res->getString(3));
-    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT_EQUALS(4ULL, static_cast<uint64_t>(col3.length()));
     ASSERT(std::memcmp(col3.c_str(), "a\0\0b", 4) == 0);
 
     pstmt.reset(con->prepareStatement("SELECT id, strVal, binVal FROM t_concpp72 ORDER BY id DESC"));
@@ -1386,19 +1386,19 @@ void resultset::concpp72_rs_streaming()
     ASSERT_EQUALS(1, res->getInt(1));
     ASSERT_EQUALS("string longer", res->getString(2));
     col3= res->getString(3);
-    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT_EQUALS(4ULL, static_cast<uint64_t>(col3.length()));
     ASSERT(std::memcmp(col3.c_str(), "a\0\0b", 4) == 0);
     ASSERT(res->next());
     ASSERT_EQUALS(2, res->getInt(1));
     ASSERT_EQUALS("SHORT", res->getString(2));
     col3= res->getString(3);
-    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT_EQUALS(4ULL, static_cast<uint64_t>(col3.length()));
     ASSERT(std::memcmp(col3.c_str(), "\0a\0b", 4) == 0);
     ASSERT(res->next());
     ASSERT_EQUALS(4, res->getInt(1));
     ASSERT_EQUALS("midsize", res->getString(2));
     col3 = res->getString(3);
-    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT_EQUALS(4ULL, static_cast<uint64_t>(col3.length()));
     ASSERT(std::memcmp(col3.c_str(), "xz\0\0", 4) == 0);
     ASSERT(!res->next());
 
@@ -1407,7 +1407,7 @@ void resultset::concpp72_rs_streaming()
     ASSERT_EQUALS(4, rs2->getInt(1));
     ASSERT_EQUALS("midsize", rs2->getString(2));
     col3 = rs2->getString(3);
-    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT_EQUALS(4ULL, static_cast<uint64_t>(col3.length()));
     ASSERT(std::memcmp(col3.c_str(), "xz\0\0", 4) == 0);
     // We just need to send any command. to force driver to cache the data
     ASSERT_EQUALS(2, stmt->executeUpdate("INSERT INTO t_concpp72 VALUES(3, 'Some text 3', _binary'z\\0o\\0b'),(7, 'Another value 5', _binary'xxxxx')"));
@@ -1415,25 +1415,25 @@ void resultset::concpp72_rs_streaming()
     ASSERT_EQUALS(4, rs2->getInt(1));
     ASSERT_EQUALS("midsize", rs2->getString(2));
     col3 = rs2->getString(3);
-    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT_EQUALS(4ULL, static_cast<uint64_t>(col3.length()));
     ASSERT(std::memcmp(col3.c_str(), "xz\0\0", 4) == 0);
 
     ASSERT(rs2->next());
     ASSERT_EQUALS(2, rs2->getInt(1));
     ASSERT_EQUALS("SHORT", rs2->getString(2));
     col3 = rs2->getString(3);
-    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT_EQUALS(4ULL, static_cast<uint64_t>(col3.length()));
     ASSERT(std::memcmp(col3.c_str(), "\0a\0b", 4) == 0);
     ASSERT(rs2->next());
     ASSERT_EQUALS(1, rs2->getInt(1));
     ASSERT_EQUALS("string longer", rs2->getString(2));
     col3 = rs2->getString(3);
-    ASSERT_EQUALS(4ULL, col3.length());
+    ASSERT_EQUALS(4ULL, static_cast<uint64_t>(col3.length()));
     ASSERT(std::memcmp(col3.c_str(), "a\0\0b", 4) == 0);
-    ASSERT(!res->next());
+    ASSERT(!rs2->next());
 
     stmt->setFetchSize(4);
-    res.reset(stmt->executeQuery("SELECT id, strVal, binVal, CAST(NULL AS VARCHAR(8)) FROM t_concpp72 ORDER BY id"));
+    res.reset(stmt->executeQuery("SELECT id, strVal, binVal, CAST(NULL AS CHAR) FROM t_concpp72 ORDER BY id"));
 
     for (std::size_t i = 0; i < id.size(); ++i)
     {
@@ -1447,10 +1447,10 @@ void resultset::concpp72_rs_streaming()
     }
     ASSERT(!res->next());
 
-    pstmt.reset(con->prepareStatement("SELECT id, strVal, binVal, CAST(NULL AS VARCHAR(8)), CAST(id AS VARCHAR(24)) FROM t_concpp72 ORDER BY id DESC"));
+    pstmt.reset(con->prepareStatement("SELECT id, strVal, binVal, CAST(NULL AS CHAR), CAST(id AS CHAR) FROM t_concpp72 ORDER BY id DESC"));
     pstmt->setFetchSize(4);
     rs2.reset(pstmt->executeQuery());
-    for (int64_t i= id.size() - 1; i >= 0; --i)
+    for (std::size_t i= id.size() - 1; i != static_cast<std::size_t>(-1); --i)
     {
       ASSERT(rs2->next());
       ASSERT_EQUALS(id[i], rs2->getInt(1));
