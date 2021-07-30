@@ -510,7 +510,8 @@ namespace sql
         "1.0.1",
         "String data encoding charset. The driver will assume, that all input strings are encoded using this"
         "character set, and will use it for communication with the server",
-        false}
+        false,
+        "utf8mb4"}
       },
       {
         "usePipelineAuth", {"usePipelineAuth",
