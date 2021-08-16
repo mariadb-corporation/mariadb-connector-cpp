@@ -17,7 +17,6 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
-
 #include "CallableParameterMetaData.h"
 
 #include "ColumnType.h"
@@ -59,7 +58,7 @@ namespace mariadb
   void CallableParameterMetaData::setIndex(uint32_t index)
   {
     if (index < 1 || index > parameterCount) {
-      throw SQLException("invalid parameter index " + index);
+      throw SQLException(std::string("invalid parameter index ") + std::to_string(index));
     }
     rs->absolute(index);
   }
