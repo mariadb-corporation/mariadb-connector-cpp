@@ -25,10 +25,8 @@ namespace sql
 namespace mariadb
 {
 
-  const std::string ByteParameter::hexArray("0123456789ABCDEF");
-
-  ByteParameter::ByteParameter(char value)
-    : value(value & 0xFF)
+  ByteParameter::ByteParameter(int8_t value)
+    : value(value)
   {
   }
 
@@ -40,21 +38,17 @@ namespace mariadb
     */
   void ByteParameter::writeTo(PacketOutputStream& os)
   {
-    os.write("0x");
-    os.write(hexArray[value >> 4]);
-    os.write(hexArray[value &0x0F]);
+    os.write(std::to_string(value).c_str());
   }
 
-  void ByteParameter::writeTo(SQLString& os)
+  void ByteParameter::writeTo(SQLString& str)
   {
-    os.append("0x");
-    os.append(hexArray[value >> 4]);
-    os.append(hexArray[value &0x0F]);
+    str.append(std::to_string(value));
   }
 
   int64_t ByteParameter::getApproximateTextProtocolLength()
   {
-    return 4;
+    return std::to_string(value).length();
   }
 
   /**
@@ -65,7 +59,7 @@ namespace mariadb
     */
   void ByteParameter::writeBinary(PacketOutputStream& pos)
   {
-    pos.write(value);
+    pos.write((int32_t) value);
   }
 
   uint32_t ByteParameter::writeBinary(sql::bytes & buffer)
@@ -74,7 +68,8 @@ namespace mariadb
     {
       throw SQLException("Parameter buffer size is too small for int value");
     }
-    *buffer= value;
+    auto* buf = reinterpret_cast<int8_t*>(buffer.arr);
+    *buf = value;
     return getValueBinLen();
   }
 
@@ -85,7 +80,7 @@ namespace mariadb
 
   SQLString ByteParameter::toString()
   {
-    return SQLString("0x").append(hexArray[value & 0xF0]).append(hexArray[value & 0x0F]);
+    return std::to_string(value);
   }
 
   bool ByteParameter::isNullData() const
