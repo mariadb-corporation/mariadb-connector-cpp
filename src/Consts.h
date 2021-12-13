@@ -35,6 +35,7 @@
 
 #include "StringImp.h"
 #include "PropertiesImp.h"
+#include "MariaDbDataSourceInternal.h"
 #include "Version.h"
 #include "util/ServerStatus.h"
 #include "util/String.h"
@@ -127,6 +128,7 @@ namespace mariadb
   extern std::map<std::string, enum HaMode> StrHaModeMap;
   extern const char* HaModeStrMap[LOADBALANCE + 1];
   extern const SQLString emptyStr;
+  extern const SQLString localhost;
   extern const char QUOTE;
   extern const char DBL_QUOTE;
   extern const char ZERO_BYTE;
@@ -163,7 +165,7 @@ namespace mariadb
   namespace Shared
   {
     typedef std::shared_ptr<std::mutex> mutex;
-
+    typedef std::shared_ptr<sql::mariadb::UrlParser> UrlParser;
     typedef std::shared_ptr<sql::mariadb::Options> Options;
     typedef std::shared_ptr<sql::mariadb::Logger> Logger;
     typedef std::shared_ptr<sql::mariadb::Pool> Pool;
@@ -219,4 +221,7 @@ namespace mariadb
   //{
   //}
 } //---- namespave sql
+
+#include "UrlParser.h"
+
 #endif

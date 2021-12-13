@@ -27,23 +27,14 @@
 #include <memory>
 
 #include "UrlParser.h"
-#include "Pool.h"
+#include "ThreadPoolExecutor.h"
 
 namespace sql
 {
+
 namespace mariadb
 {
-//class Pool;
-
-/*Stub to enable build */
-class ScheduledThreadPoolExecutor
-{
-public:
-  //ScheduledThreadPoolExecutor(int32_t, MariaDbThreadFactory*) {}
-  void shutdown() {}
-  void awaitTermination(int32_t time, enum TimeUnit unit) {}
-};
-
+class Pool;
 
 template <class HASHABLEKEY, class VT> class HashMap
 {
@@ -63,7 +54,7 @@ public:
     realMap.insert({ hashableObj.hashCode(), valueObj });
   }
 
-  void remove(HASHABLEKEY& hashableObj)
+  void remove(const HASHABLEKEY& hashableObj)
   {
     realMap.erase(hashableObj.hashCode());
   }
@@ -111,18 +102,19 @@ public:
 
 class Pools
 {
-    static std::atomic<int32_t> poolIndex ; /*new std::atomic<int32_t>()*/
-    static HashMap<UrlParser,Shared::Pool> poolMap; /*new ConcurrentHashMap<>()*/
-    static std::shared_ptr<ScheduledThreadPoolExecutor> poolExecutor; /*NULL*/
+  static std::atomic<int32_t> poolIndex;
+  static HashMap<UrlParser,Shared::Pool> poolMap;
+  static std::unique_ptr<ScheduledThreadPoolExecutor> poolExecutor;
+  static std::mutex mapLock;
 
-  public:
-    static Shared::Pool retrievePool(std::shared_ptr<UrlParser>& urlParser);
-    static void remove(Pool& pool);
-    static void close();
-    static void close(const SQLString& poolName);
+public:
+  static Shared::Pool retrievePool(Shared::UrlParser& urlParser);
+  static void remove(Pool& pool);
+  static void close();
+  static void close(const SQLString& poolName);
 
-  private:
-    static void shutdownExecutor();
+private:
+  static void shutdownExecutor();
 };
 
 }

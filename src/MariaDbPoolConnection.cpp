@@ -20,23 +20,28 @@
 
 #include <chrono>
 
-#include "MariaDbPooledConnection.h"
+#include "MariaDbPoolConnection.h"
+#include "pool/ConnectionEventListener.h"
+#include "pool/ThreadPoolExecutor.h"
 
 namespace sql
 {
 namespace mariadb
 {
-
+  MariaDbPoolConnection::~MariaDbPoolConnection()
+  {
+    connection->setPoolConnection(nullptr);
+    delete connection;
+  }
   /**
     * Constructor.
     *
     * @param connection connection to retrieve connection options
     */
-  MariaDbPooledConnection::MariaDbPooledConnection(MariaDbConnection* connection)
+  MariaDbPoolConnection::MariaDbPoolConnection(MariaDbConnection* connection)
     : connection(connection)
   {
-    connection->pooledConnection.reset(this);
-    lastUsedToNow();
+    connection->setPoolConnection(this);
   }
 
   /**
@@ -49,7 +54,7 @@ namespace mariadb
     * @return a <code>Connection</code> object that is a handle to this <code>PooledConnection</code>
     *     object
     */
-  MariaDbConnection* MariaDbPooledConnection::getConnection()
+  sql::Connection* MariaDbPoolConnection::getConnection()
   {
     return connection;
   }
@@ -62,10 +67,18 @@ namespace mariadb
     *
     * @throws SQLException if a database access error occurs
     */
-  void MariaDbPooledConnection::close()
+  void MariaDbPoolConnection::close()
   {
-    connection->pooledConnection.reset();
-    connection->close();
+    MariaDbConnection* conn= this->connection;
+    // should probably also remove it from the pool here
+    conn->setPoolConnection(nullptr);
+    conn->close();
+  }
+
+
+  void MariaDbPoolConnection::returnToPool()
+  {
+    fireConnectionClosed(new ConnectionEvent(*this));
   }
 
   /**
@@ -74,9 +87,9 @@ namespace mariadb
     * @param executor executor
     * @throws SQLException if a database access error occurs
     */
-  void MariaDbPooledConnection::abort(sql::Executor* executor)
+  void MariaDbPoolConnection::abort(sql::ScheduledThreadPoolExecutor* executor)
   {
-    connection->pooledConnection.reset();
+    connection->setPoolConnection(nullptr);
     connection->abort(executor);
   }
 
@@ -89,9 +102,9 @@ namespace mariadb
     *     is closed or has an error
     * @see #removeConnectionEventListener
     */
-  void MariaDbPooledConnection::addConnectionEventListener(ConnectionEventListener& listener)
+  void MariaDbPoolConnection::addConnectionEventListener(ConnectionEventListener* listener)
   {
-    connectionEventListeners.push_back(&listener);
+    connectionEventListeners.emplace_back(listener);
   }
 
   /**
@@ -103,9 +116,9 @@ namespace mariadb
     *     PooledConnection</code> object as a failover
     * @see #addConnectionEventListener
     */
-  void MariaDbPooledConnection::removeConnectionEventListener(ConnectionEventListener& listener)
+  void MariaDbPoolConnection::removeConnectionEventListener(ConnectionEventListener* listener)
   {
-    //connectionEventListeners.erase(&listener);
+    //connectionEventListeners.erase(listener);
   }
 
   /**
@@ -117,9 +130,9 @@ namespace mariadb
     * @param listener an component which implements the <code>StatementEventListener</code> interface
     *     that is to be registered with this <code>PooledConnection</code> object <br>
     */
-  void MariaDbPooledConnection::addStatementEventListener(StatementEventListener& listener)
+  void MariaDbPoolConnection::addStatementEventListener(StatementEventListener* listener)
   {
-    statementEventListeners.push_back(&listener);
+    statementEventListeners.push_back(listener);
   }
 
   /**
@@ -131,7 +144,7 @@ namespace mariadb
     *     interface that was previously registered with this <code>PooledConnection</code> object
     *     <br>
     */
-  void MariaDbPooledConnection::removeStatementEventListener(StatementEventListener& listener)
+  void MariaDbPoolConnection::removeStatementEventListener(StatementEventListener* listener)
   {
     //statementEventListeners.erase(listener);
   }
@@ -141,7 +154,7 @@ namespace mariadb
     *
     * @param st statement
     */
-  void MariaDbPooledConnection::fireStatementClosed(Statement* st)
+  void MariaDbPoolConnection::fireStatementClosed(Statement* st)
   {
     if (INSTANCEOF(st, PreparedStatement*)) {
       /*StatementEvent* event= new StatementEvent(this, st);
@@ -157,7 +170,7 @@ namespace mariadb
     * @param st statement
     * @param ex exception
     */
-  void MariaDbPooledConnection::fireStatementErrorOccured(Statement* st, MariaDBExceptionThrower& ex)
+  void MariaDbPoolConnection::fireStatementErrorOccured(Statement* st, MariaDBExceptionThrower& ex)
   {
     if (INSTANCEOF(st, PreparedStatement*)) {
       /*StatementEvent* event= new StatementEvent(this, st, ex);
@@ -168,12 +181,12 @@ namespace mariadb
   }
 
   /** Fire Connection close to listening listeners. */
-  void MariaDbPooledConnection::fireConnectionClosed()
+  void MariaDbPoolConnection::fireConnectionClosed(ConnectionEvent* event)
   {
-    /*ConnectionEvent* event= new ConnectionEvent(this);
-    for (ConnectionEventListener* listener : connectionEventListeners) {
-      listener->connectionClosed(event);
-    }*/
+    for (auto const& listener : connectionEventListeners) {
+      listener->connectionClosed(*event);
+    }
+    delete event;
   }
 
   /**
@@ -181,7 +194,7 @@ namespace mariadb
     *
     * @param ex exception
     */
-  void MariaDbPooledConnection::fireConnectionErrorOccured(SQLException ex)
+  void MariaDbPoolConnection::fireConnectionErrorOccured(SQLException& ex)
   {
     /*ConnectionEvent* event= new ConnectionEvent(this, ex);
     for (ConnectionEventListener* listener : connectionEventListeners) {
@@ -194,26 +207,16 @@ namespace mariadb
     *
     * @return true if no listener.
     */
-  bool MariaDbPooledConnection::noStmtEventListeners()
+  bool MariaDbPoolConnection::noStmtEventListeners()
   {
     return statementEventListeners.empty();
   }
 
-  /**
-    * Indicate last time this pool connection has been used.
-    *
-    * @return current last used time (nano).
-    */
-  int64_t MariaDbPooledConnection::getLastUsed()
+  MariaDbConnection* MariaDbPoolConnection::makeFreshConnectionObj()
   {
-    return lastUsed.load();
-  }
-
-  /** Set last poolConnection use to now. */
-  void MariaDbPooledConnection::lastUsedToNow()
-  {
-    auto now= std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
-    lastUsed.store(now.count());
+    connection= new MariaDbConnection(connection->getProtocol());
+    connection->setPoolConnection(this);
+    return connection;
   }
 }
 }

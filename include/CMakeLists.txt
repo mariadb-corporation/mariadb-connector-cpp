@@ -1,4 +1,5 @@
-SET(MARIADBCPP_PUBLIC_API   ${CMAKE_SOURCE_DIR}/include/conncpp.hpp)
+SET(MARIADBCPP_PUBLIC_API   ${CMAKE_SOURCE_DIR}/include/conncpp.hpp
+                            ${CMAKE_SOURCE_DIR}/include/MariaDbDataSource.hpp)
 
 SET(MARIADBCPP_PUBLIC_CLASSES ${CMAKE_SOURCE_DIR}/include/conncpp/Driver.hpp
                             ${CMAKE_SOURCE_DIR}/include/conncpp/DriverManager.hpp

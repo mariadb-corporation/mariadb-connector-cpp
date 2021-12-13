@@ -61,8 +61,10 @@ public:
   const Shared::Options& getOptions() const;
   bool hasMoreResults();
   void close();
+  void abort();
   void reset();
   void closeExplicit();
+  void markClosed(bool closed);
   bool isClosed();
   void resetDatabase();
   SQLString getCatalog();

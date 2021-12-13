@@ -66,8 +66,10 @@ public:
   virtual const Shared::Options& getOptions() const=0;
   virtual bool hasMoreResults()=0;
   virtual void close()=0;
+  virtual void abort()=0;
   virtual void reset()=0;
   virtual void closeExplicit()=0;
+  virtual void markClosed(bool closed)=0;
   virtual bool isClosed()=0;
   virtual void resetDatabase()=0;
   virtual SQLString getCatalog()=0;

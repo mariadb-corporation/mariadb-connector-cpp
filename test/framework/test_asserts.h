@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -128,6 +128,19 @@ void assertLessThan(unsigned int expected, unsigned int result
                     , const char * file, int line);
 
 bool fuzzyEquals(double expected, double result, double fuzzyEpsilon);
+
+template <class T>
+bool contains(const std::vector<T> container, const T& val)
+{
+  for (auto& el : container)
+  {
+    if (el == val)
+    {
+      return true;
+    }
+  }
+  return false;
+}
 }
 
 // Macros should be used inside testsuite namespace

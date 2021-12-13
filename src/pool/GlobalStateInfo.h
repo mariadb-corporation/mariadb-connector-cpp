@@ -27,25 +27,26 @@ namespace mariadb
 {
 class GlobalStateInfo
 {
-  private:  int64_t maxAllowedPacket;
-  private:  int32_t waitTimeout;
-  private:  bool autocommit;
-  private:  int32_t autoIncrementIncrement;
-  private:  SQLString timeZone;
-  private:  SQLString systemTimeZone;
-  private:  int32_t defaultTransactionIsolation;
+  int64_t   maxAllowedPacket;
+  int32_t   waitTimeout;
+  bool      autocommit;
+  int32_t   autoIncrementIncrement;
+  SQLString timeZone;
+  SQLString systemTimeZone;
+  int32_t   defaultTransactionIsolation;
+
   public:
     GlobalStateInfo();
     GlobalStateInfo(int64_t maxAllowedPacket, int32_t waitTimeout, bool autocommit,
       int32_t autoIncrementIncrement, SQLString& timeZone, SQLString& systemTimeZone,
       int32_t defaultTransactionIsolation);
-  public:  int64_t getMaxAllowedPacket() const;
-  public:  int32_t getWaitTimeout() const;
-  public:  bool isAutocommit() const;
-  public:  int32_t getAutoIncrementIncrement() const;
-  public:  SQLString getTimeZone() const;
-  public:  SQLString getSystemTimeZone() const;
-  public:  int32_t getDefaultTransactionIsolation() const;
+  int64_t   getMaxAllowedPacket() const;
+  int32_t   getWaitTimeout() const;
+  bool      isAutocommit() const;
+  int32_t   getAutoIncrementIncrement() const;
+  SQLString getTimeZone() const;
+  SQLString getSystemTimeZone() const;
+  int32_t   getDefaultTransactionIsolation() const;
 };
 }
 }

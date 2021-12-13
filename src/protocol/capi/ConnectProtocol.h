@@ -62,6 +62,7 @@ namespace capi
     Shared::Options options;
     Shared::ExceptionFactory exceptionFactory;
     virtual ~ConnectProtocol() {}
+
   private:
     const SQLString username;
     //const LruTraceCache traceCache; /*new LruTraceCache()*/

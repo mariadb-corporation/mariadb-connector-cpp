@@ -18,45 +18,53 @@
 *************************************************************************************/
 
 
-#ifndef _MARIADBPOOLEDCONNECTION_H_
-#define _MARIADBPOOLEDCONNECTION_H_
+#ifndef _MARIADBPOOLCONNECTION_H_
+#define _MARIADBPOOLCONNECTION_H_
 
 #include <atomic>
 #include "Consts.h"
 
 #include "MariaDbConnection.h"
+#include "PooledConnection.hpp"
+#include "pool/ConnectionEventListener.h"
 
 namespace sql
 {
-class Executor;
-namespace mariadb
-{
+class ConnectionEvent;
 class ConnectionEventListener;
 class StatementEventListener;
+class ScheduledThreadPoolExecutor;
 
-class MariaDbPooledConnection //  : public PooledConnection {
+namespace mariadb
 {
+
+class MariaDbPoolConnection : public PooledConnection {
+
+  std::vector<std::unique_ptr<ConnectionEventListener>> connectionEventListeners;
+  std::vector<StatementEventListener*> statementEventListeners;
+
+protected:
   MariaDbConnection* connection;
-  std::vector<ConnectionEventListener*>connectionEventListeners;
-  std::vector<StatementEventListener*>statementEventListeners;
-  std::atomic<std::int64_t> lastUsed;
 
 public:
-  MariaDbPooledConnection(MariaDbConnection* connection);
-  MariaDbConnection* getConnection();
+  virtual ~MariaDbPoolConnection();
+  MariaDbPoolConnection(MariaDbConnection* connection);
+  sql::Connection* getConnection();
   void close();
-  void abort(sql::Executor* executor);
-  void addConnectionEventListener(ConnectionEventListener& listener);
-  void removeConnectionEventListener(ConnectionEventListener& listener);
-  void addStatementEventListener(StatementEventListener& listener);
-  void removeStatementEventListener(StatementEventListener& listener);
+  void returnToPool();
+  void abort(sql::ScheduledThreadPoolExecutor* executor);
+  void addConnectionEventListener(ConnectionEventListener* listener);
+  void removeConnectionEventListener(ConnectionEventListener* listener);
+  void addStatementEventListener(StatementEventListener* listener);
+  void removeStatementEventListener(StatementEventListener* listener);
   void fireStatementClosed(Statement* st);
   void fireStatementErrorOccured(Statement* st, MariaDBExceptionThrower& ex);
-  void fireConnectionClosed();
-  void fireConnectionErrorOccured(SQLException ex);
+  void fireConnectionClosed(ConnectionEvent* event);
+  void fireConnectionErrorOccured(SQLException& ex);
   bool noStmtEventListeners();
-  int64_t getLastUsed();
-  void lastUsedToNow();
+  /* Since destroying of Connection objects is under application's control, we should construct new Connection objects around old Protocol object
+     to store in the Pool */
+  virtual MariaDbConnection* makeFreshConnectionObj();
   };
 }
 }

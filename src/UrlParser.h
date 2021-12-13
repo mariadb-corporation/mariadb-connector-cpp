@@ -53,6 +53,7 @@ class UrlParser
 
 public:
   UrlParser(SQLString& database, std::vector<HostAddress>& addresses, Shared::Options options, enum HaMode haMode);
+  ~UrlParser() {}
   static bool acceptsUrl(const SQLString& url);
   static UrlParser* parse(const SQLString& url);
   static UrlParser* parse(const SQLString& url, PropertiesImp::ImpType & prop);
@@ -70,15 +71,16 @@ public:
   bool isAurora();
   void parseUrl(const SQLString& url);
   const SQLString& getUsername() const;
-  void setUsername(SQLString& username);
+  void setUsername(const SQLString& username);
   SQLString& getPassword();
-  void setPassword(SQLString& password);
+  void setPassword(const SQLString& password);
   const SQLString& getDatabase() const;
-  void setDatabase(SQLString& database);
+  void setDatabase(const SQLString& database);
   std::vector<HostAddress>& getHostAddresses();
   const Shared::Options& getOptions() const;
+  void setProperties(const SQLString& urlParameters);
+
 protected:
-  void setProperties(SQLString& urlParameters);
   public:  std::shared_ptr<CredentialPlugin> getCredentialPlugin();
   public:  const SQLString& toString() const;
   public:  const SQLString& getInitialUrl() const;

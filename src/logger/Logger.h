@@ -37,6 +37,8 @@ struct Logger
   virtual bool isDebugEnabled()= 0;
   virtual void debug(const SQLString& msg)= 0;
   virtual void debug(const SQLString& msg, std::exception& e)= 0;
+  // This is for pool. But should be a variadic function really
+  virtual void debug(const SQLString& msg, const SQLString& tag, int32_t total, int64_t active, int32_t pending) = 0;
   virtual bool isInfoEnabled()= 0;
   virtual void info(const SQLString& msg)= 0;
   virtual bool isWarnEnabled()= 0;

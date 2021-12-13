@@ -322,7 +322,7 @@ namespace mariadb
     return options->user;
   }
 
-  void UrlParser::setUsername(SQLString& username)
+  void UrlParser::setUsername(const SQLString& username)
   {
     options->user= username;
   }
@@ -331,7 +331,7 @@ namespace mariadb
     return options->password;
   }
 
-  void UrlParser::setPassword(SQLString& password) {
+  void UrlParser::setPassword(const SQLString& password) {
     options->password= password;
   }
 
@@ -339,7 +339,7 @@ namespace mariadb
     return database;
   }
 
-  void UrlParser::setDatabase(SQLString& database) {
+  void UrlParser::setDatabase(const SQLString& database) {
     this->database= database;
   }
 
@@ -353,7 +353,7 @@ namespace mariadb
   }
 
 
-  void UrlParser::setProperties(SQLString& urlParameters) {
+  void UrlParser::setProperties(const SQLString& urlParameters) {
     DefaultOptions::parse(this->haMode, urlParameters, this->options); setInitialUrl();
   }
 

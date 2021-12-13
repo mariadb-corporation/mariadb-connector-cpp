@@ -39,7 +39,6 @@
 #include "Connection.hpp"
 
 #include "Exception.hpp"
-//#include <cppconn/version_info.h>
 
 #include <memory>
 #include <list>
@@ -3299,7 +3298,7 @@ void connection::concpp89_10to11upgrade()
   con.reset(driver->connect(url, p));
   ASSERT(con.get());
 
-  p["hostName"]= url;
+  p["hostName"] = url;
   con.reset(driver->connect(p));
   ASSERT(con.get());
 

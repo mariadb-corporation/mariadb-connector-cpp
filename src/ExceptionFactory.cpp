@@ -153,8 +153,8 @@ namespace mariadb
       }
     }
 
-    if (connection && connection->pooledConnection) {
-      connection->pooledConnection->fireStatementErrorOccured(statement, returnEx);
+    if (connection && connection->poolConnection) {
+      connection->poolConnection->fireStatementErrorOccured(statement, returnEx);
     }
     return returnEx;
   }

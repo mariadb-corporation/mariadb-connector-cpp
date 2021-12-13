@@ -2,7 +2,7 @@
  *
  * MariaDB  C++ Connector
  *
- * Copyright (c) 2020 MariaDB Ab.
+ * Copyright (c) 2021 MariaDB Ab.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -21,21 +21,17 @@
  *
  */
 
-#ifndef _EXECUTOR_H_
-#define _EXECUTOR_H_
-
-#include <functional>
-
+#ifndef _XARESOURCE_H_
+#define _XARESOURCE_H_
+/* Stub class for the interface, that is used in one of methods for the non-implemented functionality. */
 namespace sql
 {
-class Executor{
-  Executor(const Executor&);
-  void operator=(Executor &);
+class XAResource{
+  XAResource(const XAResource&);
+  void operator=(XAResource &);
 public:
-  Executor() {}
-  virtual ~Executor(){}
-  // Should be Runnable
-  virtual void execute(std::function<void()>)= 0;
+  XAResource() {}
+  virtual ~XAResource(){}
 };
 }
 #endif

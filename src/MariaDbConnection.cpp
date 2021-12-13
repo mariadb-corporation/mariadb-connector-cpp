@@ -35,6 +35,7 @@
 #include "Properties.hpp"
 #include "jdbccompat.hpp"
 #include "ExceptionFactory.h"
+#include "pool/Pool.h"
 
 namespace sql
 {
@@ -65,10 +66,14 @@ namespace mariadb
     _canUseServerTimeout(protocol->versionGreaterOrEqual(10, 1, 2)),
     sessionStateAware(protocol->sessionStateAware()),
     nullCatalogMeansCurrent(options->nullCatalogMeansCurrent),
-    savepointCount(0),
     exceptionFactory(ExceptionFactory::of(this->getServerThreadId(), options)),
+    lowercaseTableNames(-1),
+    poolConnection(nullptr),
+    stateFlag(0),
+    defaultTransactionIsolation(0),
+    savepointCount(0),
     warningsCleared(true),
-    lowercaseTableNames(-1)
+    returnedToPool(false)
   {
     if (options->cacheCallableStmts)
     {
@@ -84,11 +89,11 @@ namespace mariadb
     * @return connection object
     * @throws SQLException if any connection error occur
     */
-  MariaDbConnection* MariaDbConnection::newConnection(UrlParser &urlParser, GlobalStateInfo *globalInfo)
+  MariaDbConnection* MariaDbConnection::newConnection(Shared::UrlParser &urlParser, GlobalStateInfo *globalInfo)
   {
-    if (urlParser.getOptions()->pool)
+    if (urlParser->getOptions()->pool)
     {
-      //return Pools::retrievePool(urlParser)->getConnection();
+      return dynamic_cast<MariaDbConnection*>(Pools::retrievePool(urlParser)->getPoolConnection()->getConnection());
     }
     Shared::Protocol protocol(Utils::retrieveProxy(urlParser, globalInfo));
 
@@ -111,7 +116,15 @@ namespace mariadb
 
   MariaDbConnection::~MariaDbConnection()
   {
-    protocol->closeExplicit();
+    if (poolConnection == nullptr && !returnedToPool) {
+      protocol->closeExplicit();
+    }
+    else {
+      if (!isClosed()) {
+        this->poolConnection->returnToPool();
+        // close() would also marked connection as closed, but since this object is about to die, it does not need that any more.
+      }
+    }
   }
 
 
@@ -119,12 +132,17 @@ namespace mariadb
     return protocol;
   }
 
+  void MariaDbConnection::setPoolConnection(MariaDbPoolConnection* _poolConnection)
+  {
+    poolConnection= _poolConnection;
+  }
+
   /**
-    * creates a new statement.
-    *
-    * @return a statement
-    * @throws SQLException if we cannot create the statement.
-    */
+  * creates a new statement.
+  *
+  * @return a statement
+  * @throws SQLException if we cannot create the statement.
+  */
   Statement* MariaDbConnection::createStatement()
   {
     checkConnection();
@@ -713,13 +731,18 @@ namespace mariadb
     */
   void MariaDbConnection::close()
   {
-    if (pooledConnection)
+    if (poolConnection)
     {
-      rollback();
-      pooledConnection->fireConnectionClosed();
+      rollback(); //TODO: should it be here?
+      this->poolConnection->returnToPool();
+      this->markClosed(true);
+      returnedToPool= true;
+      poolConnection= nullptr;
       return;
     }
-    protocol->closeExplicit();
+    else if (!returnedToPool){
+      protocol->closeExplicit();
+    }
   }
 
   /**
@@ -729,7 +752,7 @@ namespace mariadb
     */
   bool MariaDbConnection::isClosed()
   {
-    return protocol->isClosed();
+    return (protocol->isClosed() || returnedToPool);
   }
 
   /**
@@ -1128,7 +1151,7 @@ namespace mariadb
     */
   bool MariaDbConnection::isValid(int32_t timeout)
   {
-    if (timeout <0) {
+    if (timeout < 0) {
       throw SQLException("the value supplied for timeout is negative");
     }
     if (isClosed()) {
@@ -1173,7 +1196,7 @@ namespace mariadb
         {
           std::map<SQLString, ClientInfoStatus>failures;
           failures.insert({ name, ClientInfoStatus::_REASON_UNKNOWN });
-          throw SQLException("ClientInfoException: Connection* closed");// SQLClientInfoException("Connection* closed", failures, sqle);
+          throw SQLException("ClientInfoException: Connection closed");// SQLClientInfoException("Connection closed", failures, sqle);
         }
       }
       else {
@@ -1580,7 +1603,7 @@ namespace mariadb
     if (this->isClosed()) {
       return;
     }
-    throw SQLFeatureNotSupportedException("Connection abort is not supported yet");
+    //throw SQLFeatureNotSupportedException("Connection abort is not supported yet");
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
     SQLPermission sqlPermission= new SQLPermission("callAbort");
@@ -1588,11 +1611,13 @@ namespace mariadb
     if (securityManager !=NULL) {
       securityManager.checkPermission(sqlPermission);
     }
-    if (executor ==NULL) {
-      throw ExceptionMapper.getSqlException("Cannot abort the connection: NULL executor passed");
-    }
-    executor.execute(protocol->abort());
 #endif
+    if (executor == nullptr) {
+      throw ExceptionFactory::INSTANCE.create("Cannot abort the connection: NULL executor passed");
+    }
+    /* There is no sense to abort it in the separate thread, since Pool destructs connection after this call, and this has to be syncronized anyway */
+    //executor->execute(std::bind(&Protocol::abort, &*protocol));
+    protocol->abort();
   }
 
   /**
@@ -1607,7 +1632,7 @@ namespace mariadb
 
 
   SQLString MariaDbConnection::getSchema() {
-    return protocol->getCatalog();// "";
+    return protocol->getCatalog();
   }
 
 
@@ -1631,32 +1656,14 @@ namespace mariadb
     * @param milliseconds network timeout in milliseconds.
     * @throws SQLException if security manager doesn't permit it.
     */
-  void MariaDbConnection::setNetworkTimeout(Executor* executor, int32_t milliseconds)
+  void MariaDbConnection::setNetworkTimeout(Executor* executor, uint32_t milliseconds)
   {
-    throw SQLFeatureNotImplementedException("setNetworkTimeout is not yet implemented");
-
-#ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
     if (this->isClosed()) {
       throw SQLException("Connection::setNetworkTimeout cannot be called on a closed connection");//ExceptionMapper.getSqlException
     }
 
-    if (milliseconds <0) {
-      throw ExceptionMapper.getSqlException(
-        "Connection::setNetworkTimeout cannot be called with a negative timeout");
-    }
-    SQLPermission sqlPermission= new SQLPermission("setNetworkTimeout");
-    SecurityManager securityManager= System.getSecurityManager();
-    if (securityManager !=NULL) {
-      securityManager.checkPermission(sqlPermission);
-    }
-    try {
-      stateFlag |=ConnectionState::STATE_NETWORK_TIMEOUT;
-      protocol->setTimeout(milliseconds);
-    }
-    catch (SocketException& se) {
-      throw ExceptionMapper.getSqlException("Cannot set the network timeout", se);
-    }
-#endif
+    stateFlag|= static_cast<int32_t>(ConnectionState::STATE_NETWORK_TIMEOUT);
+    protocol->setTimeout(milliseconds);
   }
 
 
@@ -1694,19 +1701,19 @@ namespace mariadb
     }
     if (stateFlag !=0) {
       try {
-        if ((stateFlag &ConnectionState::STATE_NETWORK_TIMEOUT)!=0) {
-          setNetworkTimeout(NULL, options->socketTimeout);
+        if ((stateFlag & ConnectionState::STATE_NETWORK_TIMEOUT) != 0) {
+          setNetworkTimeout(nullptr, options->socketTimeout);
         }
-        if ((stateFlag &ConnectionState::STATE_AUTOCOMMIT)!=0) {
+        if ((stateFlag & ConnectionState::STATE_AUTOCOMMIT) != 0) {
           setAutoCommit(options->autocommit);
         }
-        if ((stateFlag &ConnectionState::STATE_DATABASE)!=0) {
+        if ((stateFlag & ConnectionState::STATE_DATABASE) != 0) {
           protocol->resetDatabase();
         }
-        if ((stateFlag &ConnectionState::STATE_READ_ONLY)!=0) {
+        if ((stateFlag & ConnectionState::STATE_READ_ONLY) != 0) {
           setReadOnly(false);
         }
-        if (!useComReset &&(stateFlag &ConnectionState::STATE_TRANSACTION_ISOLATION)!=0) {
+        if (!useComReset && (stateFlag & ConnectionState::STATE_TRANSACTION_ISOLATION) != 0) {
           setTransactionIsolation(defaultTransactionIsolation);
         }
         stateFlag= 0;
@@ -1747,6 +1754,12 @@ namespace mariadb
     }
 
     return new CallableParameterMetaData(preparedStatement->executeQuery(), isFunction);
+  }
+
+
+  void MariaDbConnection::markClosed(bool closed)
+  {
+    protocol->markClosed(closed);
   }
 }
 }

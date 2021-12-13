@@ -544,21 +544,20 @@ namespace mariadb
     * @return protocol
     * @throws SQLException if any error occur during connection
     */
-  Shared::Protocol Utils::retrieveProxy(UrlParser& urlParser, GlobalStateInfo* globalInfo)
+  Shared::Protocol Utils::retrieveProxy(Shared::UrlParser& urlParser, GlobalStateInfo* globalInfo)
   {
     Shared::mutex lock(new std::mutex());
-    std::shared_ptr<UrlParser> shUrlParser(&urlParser);
 
-    switch (urlParser.getHaMode())
+    switch (urlParser->getHaMode())
     {
       case AURORA:
 #ifdef AURORA_SUPPORT_IMPLEMENTED
         return getProxyLoggingIfNeeded(
             urlParser,
             (Protocol&)
-            Proxy.newProxyInstance(
-              AuroraProtocol.class.getClassLoader(),
-              new Class[] {Protocol&.class},
+            newProxyInstance(
+              AuroraProtocol,
+              Protocol,
               new FailoverProxy(new AuroraListener(urlParser,globalInfo), lock)));
 #endif
       case REPLICATION:
@@ -583,24 +582,24 @@ namespace mariadb
               new FailoverProxy(new MastersFailoverListener(urlParser,globalInfo), lock)));
 #else
         /* This exception supposed to be already thrown*/
-        throw SQLFeatureNotImplementedException(SQLString("Support of the HA mode") + HaModeStrMap[urlParser.getHaMode()] + "is not yet implemented");
+        throw SQLFeatureNotImplementedException(SQLString("Support of the HA mode") + HaModeStrMap[urlParser->getHaMode()] + "is not yet implemented");
 #endif
       default:
-        Shared::Protocol protocol(getProxyLoggingIfNeeded(urlParser, new MasterProtocol(shUrlParser, globalInfo, lock)));
+        Shared::Protocol protocol(getProxyLoggingIfNeeded(urlParser, new MasterProtocol(urlParser, globalInfo, lock)));
         protocol->connectWithoutProxy();
 
         return protocol;
     }
   }
 
-  Protocol* Utils::getProxyLoggingIfNeeded(const UrlParser &urlParser, Protocol* protocol)
+  Protocol* Utils::getProxyLoggingIfNeeded(const Shared::UrlParser &urlParser, Protocol* protocol)
   {
     /* TODO: profileSql and slowQueryThresholdNanos should be probably hidded/disabled*/
-    if (urlParser.getOptions()->profileSql
-        || urlParser.getOptions()->slowQueryThresholdNanos > 0)
+    if (urlParser->getOptions()->profileSql
+        || urlParser->getOptions()->slowQueryThresholdNanos > 0)
     {
       Shared::Protocol shProt(protocol);
-      protocol= new ProtocolLoggingProxy(shProt, urlParser.getOptions());
+      protocol= new ProtocolLoggingProxy(shProt, urlParser->getOptions());
 
       return protocol;
     }

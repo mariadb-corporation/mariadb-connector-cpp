@@ -104,6 +104,12 @@ namespace mariadb
 	}
 
 
+  void ProtocolLoggingProxy::abort()
+	{
+		/* Add here logging if needed */
+	  protocol->abort();
+	}
+
   void ProtocolLoggingProxy::reset()
 	{
 		/* Add here logging if needed */
@@ -115,6 +121,13 @@ namespace mariadb
 	{
 		/* Add here logging if needed */
 	  protocol->closeExplicit();
+	}
+
+
+	void ProtocolLoggingProxy::markClosed(bool closed)
+	{
+		/* Add here logging if needed */
+	  protocol->markClosed(closed);
 	}
 
 

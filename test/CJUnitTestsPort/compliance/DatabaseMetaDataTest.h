@@ -30,7 +30,6 @@
  */
 
 
-
 #include "../BaseTestFixture.h"
 
 #include "Connection.hpp"
@@ -38,8 +37,6 @@
 #include "ResultSet.hpp"
 #include "ResultSetMetaData.hpp"
 #include "Exception.hpp"
-
-//#include javax.sql.DataSource
 
 
 /**
@@ -61,7 +58,6 @@ class DatabaseMetaDataTest : public BaseTestFixture
 private:
   typedef BaseTestFixture super;
   DatabaseMetaData dbmd;
-  //DataSource ds1;
   String dbName;
   String dbUser;
   String drManager;

@@ -25,94 +25,96 @@
 #include <atomic>
 #include <deque>
 #include <list>
+#include <mutex>
 
 #include "Consts.h"
 #include "UrlParser.h"
 #include "GlobalStateInfo.h"
 #include "MariaDbConnection.h"
+#include "ThreadPoolExecutor.h"
+#include "MariaDbInnerPoolConnection.h"
+#include "util/BlockingQueue.h"
+#include "ConnectionEventListener.h"
 
 namespace sql
 {
-namespace mariadb
-{
-class ThreadPoolExecutor;
-class Runnable
-{
-  int32_t dummy;
-};
-class ScheduledFuture;
 class ExecutorService;
 
-class ScheduledThreadPoolExecutor;
-enum TimeUnit {
-  SECONDS
-};
-
+namespace mariadb
+{
 class MariaDbConnection;
 
 class Pool
 {
-  static const Shared::Logger logger; /*LoggerFactory.getLogger(Pool.class)*/
-  static int32_t POOL_STATE_OK; /*0*/
-  static int32_t POOL_STATE_CLOSING; /*1*/
+  typedef sql::blocking_deque<MariaDbInnerPoolConnection*> Idles;
+  static Shared::Logger logger; /*LoggerFactory.getLogger(Pool.class)*/
+  static const int32_t POOL_STATE_OK= 0;
+  static const int32_t POOL_STATE_CLOSING= 1;
   std::atomic<int32_t> poolState; /*new std::atomic<int32_t>()*/
 
-  std::shared_ptr<UrlParser> urlParser;
+  Shared::UrlParser urlParser;
   const Shared::Options options;
   std::atomic<int32_t> pendingRequestNumber ; /*new std::atomic<int32_t>()*/
   std::atomic<int32_t> totalConnection ; /*new std::atomic<int32_t>()*/
-  const std::deque<std::unique_ptr<MariaDbPooledConnection>>idleConnections;
-  const ThreadPoolExecutor* connectionAppender;
-  const std::vector<Runnable> connectionAppenderQueue;
-  const SQLString poolTag;
-  const ScheduledThreadPoolExecutor* poolExecutor;
-  const ScheduledFuture* scheduledFuture;
-  GlobalStateInfo globalInfo;
+  Idles idleConnections;
+  /* Queue must go before appender */
+  sql::blocking_deque<Runnable> connectionAppenderQueue;
+  // poolTag must be before connectionAppender
+  SQLString poolTag;
+  ThreadPoolExecutor connectionAppender;
+  ScheduledThreadPoolExecutor& poolExecutor;
+  ScheduledFuture* scheduledFuture;
+  /*GlobalStateInfo globalInfo;
   int32_t maxIdleTime;
   int64_t timeToConnectNanos;
-  int64_t connectionTime ; /*0*/
+  int64_t connectionTime;*/
+  std::mutex listsLock;
 
 public:
-  Pool(std::shared_ptr<UrlParser>& _urlParser, int32_t poolIndex, std::shared_ptr<ScheduledThreadPoolExecutor>& poolExecutor) : urlParser(_urlParser) {}
+  Pool(Shared::UrlParser& _urlParser, int32_t poolIndex, ScheduledThreadPoolExecutor& poolExecutor);
+  ~Pool();
 
 private:
   void addConnectionRequest();
   void removeIdleTimeoutConnection();
   void addConnection();
-  MariaDbPooledConnection& getIdleConnection();
-  MariaDbPooledConnection& getIdleConnection(int64_t timeout, TimeUnit timeUnit);
-  void silentCloseConnection(MariaDbPooledConnection& item);
-  void silentAbortConnection(MariaDbPooledConnection& item);
-  MariaDbPooledConnection& createPoolConnection(MariaDbConnection* connection);
+  MariaDbInnerPoolConnection* getIdleConnection();
+  MariaDbInnerPoolConnection* getIdleConnection(int64_t timeout, TimeUnit timeUnit);
+  void silentCloseConnection(MariaDbConnection& item);
+  void silentAbortConnection(MariaDbInnerPoolConnection& item);
+
+  //MariaDbInnerPoolConnection& createPoolConnection(MariaDbConnection* connection);
 
 public:
-  MariaDbConnection* getConnection();
-  MariaDbConnection* getConnection(SQLString& username, SQLString& password);
+  MariaDbInnerPoolConnection* getPoolConnection();
+  MariaDbInnerPoolConnection* getPoolConnection(const SQLString& username, const SQLString& password);
 
 private:
   SQLString generatePoolTag(int32_t poolIndex);
+
 public:
-  std::shared_ptr<UrlParser>& getUrlParser() { return urlParser; }
-  void close() {}
+  const UrlParser& getUrlParser();
+  void close();
+
 private:
-  void closeAll(ExecutorService connectionRemover, std::list<MariaDbPooledConnection>collection);
-  void initializePoolGlobalState(MariaDbConnection& connection);
+  void closeAll(Idles& collection);
+  //void initializePoolGlobalState(MariaDbConnection& connection);
+
 public:
   SQLString getPoolTag();
-  bool equals(sql::Object* obj);
-  int64_t hashCode();
-  GlobalStateInfo getGlobalInfo();
+  //bool equals(sql::Object* obj);
+  //int64_t hashCode();
+  //GlobalStateInfo getGlobalInfo();
   int64_t getActiveConnections();
   int64_t getTotalConnections();
   int64_t getIdleConnections();
   int64_t getConnectionRequests();
 
-private:
-  void registerJmx();
-  void unRegisterJmx();
-public:
-  std::vector<int64_t>testGetConnectionIdleThreadIds();
-  void resetStaticGlobal();
+  std::vector<int64_t> testGetConnectionIdleThreadIds();
+
+  // Possibly it would be better to make these lambdas
+  void connectionClosed(ConnectionEvent& event);
+  void connectionErrorOccurred(ConnectionEvent& event);
 };
 
 }

@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 3.1)
 CMAKE_POLICY(SET CMP0048 NEW)
 
 PROJECT(mariadb_connector_cpp
-        VERSION 1.1.0
+        VERSION 1.1.1
 #        DESCRIPTION "MariaDB Connector/C++"
         LANGUAGES CXX C)
 
@@ -31,7 +31,7 @@ IF(CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
 ENDIF()
 
 SET(MACPP_VERSION_QUALITY "beta") #Empty also means GA
-SET(MACPP_VERSION "1.01.0000")
+SET(MACPP_VERSION "1.01.0001")
 SET(MARIADB_DEFAULT_PLUGINS_SUBDIR "plugin")
 
 SET(CMAKE_CXX_STANDARD 11)
@@ -92,6 +92,11 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
 
                    src/pool/GlobalStateInfo.cpp
                    src/pool/Pools.cpp
+                   src/pool/Pool.cpp
+                   src/pool/MariaDbThreadFactory.cpp
+                   src/pool/MariaDbInnerPoolConnection.cpp
+                   src/pool/ConnectionEventListener.cpp
+                   src/pool/ThreadPoolExecutor.cpp
 
                    src/failover/FailoverProxy.cpp
 
@@ -137,7 +142,7 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/parameters/TimestampParameter.cpp
                    #src/parameters/ZonedDateTimeParameter.cpp
                    src/parameters/StringParameter.cpp
-                   src/MariaDbPooledConnection.cpp
+                   src/MariaDbPoolConnection.cpp
                    src/MariaDbParameterMetaData.cpp
                    src/MariaDbResultSetMetaData.cpp
                    src/CallParameter.cpp
@@ -160,11 +165,9 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/SimpleParameterMetaData.cpp
                    src/Properties.cpp
                    "src/List.cpp"
+                   src/MariaDbDataSource.cpp
                    ####CPP####
                    )
-
-# Raw class implementations of classes we are not gonna use atm
-#                   src/pool/Pool.cpp
 
 IF(WIN32)
   SET(MACPP_SOURCES ${MACPP_SOURCES}
@@ -221,9 +224,11 @@ IF(WIN32)
                    src/credential/CredentialPlugin.h
                    src/credential/CredentialPluginLoader.h
 
-                   src/pool/GlobalStateInfo.h
-                   src/pool/Pools.h
                    src/pool/Pool.h
+                   src/pool/ThreadPoolExecutor.h
+                   src/pool/MariaDbThreadFactory.h
+                   src/pool/MariaDbInnerPoolConnection.h
+                   src/pool/ConnectionEventListener.h
 
                    src/failover/FailoverProxy.h
 
@@ -251,6 +256,7 @@ IF(WIN32)
                    "include/conncpp/CArray.hpp"
                    "include/conncpp/Properties.hpp"
                    "include/conncpp/List.hpp"
+                   "include/MariaDbDataSource.hpp"
 
                    src/SelectResultSet.h
                    src/com/capi/SelectResultSetCapi.h
@@ -290,7 +296,7 @@ IF(WIN32)
                    src/parameters/StringParameter.h
 
                    src/Parameters.h
-                   src/MariaDbPooledConnection.h
+                   src/MariaDbPoolConnection.h
                    src/MariaDbParameterMetaData.h
                    src/CallParameter.h
                    src/CallableParameterMetaData.h
@@ -303,6 +309,7 @@ IF(WIN32)
                    src/util/ClientPrepareResult.h
                    src/util/ServerPrepareResult.h
                    src/util/ServerPrepareStatementCache.h
+                   src/util/BlockingQueue.h
                    src/com/CmdInformationSingle.h
                    src/com/CmdInformationBatch.h
                    src/com/CmdInformationMultiple.h
@@ -315,6 +322,7 @@ IF(WIN32)
                    src/SimpleParameterMetaData.h
                    src/PropertiesImp.h
                    src/ListImp.h
+                   src/MariaDbDataSourceInternal.h
                    ####H####
                        )
   SOURCE_GROUP(Logging REGULAR_EXPRESSION "/logger/")

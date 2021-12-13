@@ -47,6 +47,26 @@ TARGET_LINK_LIBRARIES(test_connection ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} t
 
 MESSAGE(STATUS "Configuring unit tests - connection")
 
+SET(test_pool_sources
+  ${test_common_sources}
+  pool.cpp)
+
+IF(WIN32)
+  SET(test_pool_sources
+      ${test_pool_sources}
+      pool.h)
+ENDIF(WIN32)
+
+ADD_EXECUTABLE(test_pool ${test_pool_sources})
+SET_TARGET_PROPERTIES(test_pool PROPERTIES
+          OUTPUT_NAME "pool"
+	        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+          LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
+          COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
+TARGET_LINK_LIBRARIES(test_pool ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
+
+MESSAGE(STATUS "Configuring unit tests - pool")
+
 SET(test_databasemetadata_sources
   ${test_common_sources}
   connectionmetadata.cpp)

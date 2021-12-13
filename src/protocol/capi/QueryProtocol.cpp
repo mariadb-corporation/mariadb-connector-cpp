@@ -1224,6 +1224,11 @@ namespace capi
     close();
   }
 
+  void QueryProtocol::markClosed(bool closed)
+  {
+    this->explicitClosed = closed;
+    //close();
+  }
 
   void QueryProtocol::releasePrepareStatement(ServerPrepareResult* serverPrepareResult)
   {

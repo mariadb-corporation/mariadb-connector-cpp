@@ -46,7 +46,7 @@ namespace mariadb
   Connection* MariaDbDriver::connect(const SQLString& url, const Properties& props)
   {
     PropertiesImp::ImpType propsCopy(PropertiesImp::get(props));
-    UrlParser* urlParser= UrlParser::parse(url, propsCopy);
+    Shared::UrlParser urlParser(UrlParser::parse(url, propsCopy));
 
     if (urlParser == nullptr || urlParser->getHostAddresses().empty())
     {
@@ -54,7 +54,7 @@ namespace mariadb
     }
     else
     {
-      return MariaDbConnection::newConnection(*urlParser, nullptr);
+      return MariaDbConnection::newConnection(urlParser, nullptr);
     }
   }
 

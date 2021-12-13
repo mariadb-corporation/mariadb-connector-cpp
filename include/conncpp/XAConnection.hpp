@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2021 MariaDB Corporation AB
+   Copyright (C) 2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -17,31 +17,26 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
-#ifndef _NOLOGGER_H_
-#define _NOLOGGER_H_
 
-#include "Logger.h"
+#ifndef _XACONNECTION_H_
+#define _XACONNECTION_H_
+
+#include "PooledConnection.hpp"
+#include "compat/XAResource.hpp"
 
 namespace sql
 {
-namespace mariadb
-{
-struct NoLogger  : public Logger {
-  bool isTraceEnabled();
-  void trace(const SQLString& msg);
-  bool isDebugEnabled();
-  void debug(const SQLString& msg);
-  void debug(const SQLString& msg, std::exception& e);
-  void debug(const SQLString& msg, const SQLString& tag, int32_t total, int64_t active, int32_t pending);
-  bool isInfoEnabled();
-  void info(const SQLString& msg);
-  bool isWarnEnabled();
-  void warn(const SQLString& msg);
-  bool isErrorEnabled();
-  void error(const SQLString& msg);
-  void error(const SQLString& msg, SQLException& e);
-  void error(const SQLString& msg, MariaDBExceptionThrower& e);
-};
+
+class XAConnection : public PooledConnection {
+
+public:
+  XAConnection() {}
+  virtual ~XAConnection() {}
+  XAConnection(const XAConnection&)= delete;
+  XAConnection& operator=(const XAConnection&) = delete;
+
+  virtual XAResource* getXAResource()=0;
+  };
 }
-}
+
 #endif

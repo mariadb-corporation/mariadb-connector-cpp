@@ -557,9 +557,8 @@ namespace sql
         true}},
       {
         "pool", {"pool",
-        "0.9.1",
-        "Use pool. This option is useful only if not using a DataSource object, but "
-        "only a connection object.",
+        "1.1.1",
+        "Use pool.",
         false,
         false}},
       {
@@ -570,14 +569,14 @@ namespace sql
         false}},
       {
         "maxPoolSize", {"maxPoolSize",
-        "0.9.1",
+        "1.1.1",
         "The maximum number of physical connections that the pool should contain.",
         false,
         (int32_t)8,
         int32_t(1) }},
       {
         "minPoolSize", {"minPoolSize",
-        "0.9.1",
+        "1.1.1",
         "When connections are removed due to not being used for "
         "longer than than \"maxIdleTime\", connections are closed and removed from the pool. \"minPoolSize\" "
         "indicates the number of physical connections the pool should keep available at all times. Should be less"
@@ -587,7 +586,7 @@ namespace sql
         int32_t(0)}},
       {
         "maxIdleTime", {"maxIdleTime",
-        "0.9.1",
+        "1.1.1",
         "The maximum amount of time in seconds"
         " that a connection can stay in the pool when not used. This value must always be below @wait_timeout"
         " value - 45s \n"
@@ -597,11 +596,11 @@ namespace sql
         Options::MIN_VALUE__MAX_IDLE_TIME}},
       {
         "poolValidMinDelay", {"poolValidMinDelay",
-        "0.9.1",
-        "When asking a connection to pool, the pool will "
-        "validate the connection state. \"poolValidMinDelay\" permits disabling this validation if the connection"
-        " has been borrowed recently avoiding useless verifications in case of frequent reuse of connections. "
-        "0 means validation is done each time the connection is asked.",
+        "1.1.1",
+        "When the pool is requested for a connection, it will validate the connection state. "
+        "\"poolValidMinDelay\" allows to disable this validation if the connection has been "
+        "used recently, avoiding useless verifications in case of frequent reuse of connections. "
+        "0 means validation is done each time the connection is requested.",
         false,
         (int32_t)1000,
         int32_t(0)}},
@@ -1048,8 +1047,6 @@ namespace sql
           options->minPoolSize == 0
           ? options->maxPoolSize
           : std::min(options->minPoolSize, options->maxPoolSize);
-
-        throw SQLFeatureNotImplementedException("Pool support is not implemented yet");
       }
 
       if (options->cacheCallableStmts || options->cachePrepStmts) {

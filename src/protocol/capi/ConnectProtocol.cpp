@@ -37,7 +37,6 @@ namespace mariadb
 namespace capi
 {
   const char OptionSelected= 1, OptionNotSelected= 0;
-  const SQLString localhost("localhost");
 
   const SQLString ConnectProtocol::SESSION_QUERY("SELECT @@max_allowed_packet,"
     "@@system_time_zone,"
@@ -69,13 +68,14 @@ namespace capi
     , patchVersion(0)
     , proxy(nullptr)
     , connected(false)
+    , serverPrepareStatementCache(nullptr)
   {
     urlParser->auroraPipelineQuirks();
     if (options->cachePrepStmts && options->useServerPrepStmts){
-      serverPrepareStatementCache= nullptr;
-        //ServerPrepareStatementCache.newInstance(options->prepStmtCacheSize,this);
+      //ServerPrepareStatementCache::newInstance(options->prepStmtCacheSize, this);
     }
   }
+
 
   void ConnectProtocol::closeSocket()
   {
@@ -260,7 +260,6 @@ namespace capi
       localScopeLock.unlock();
       skip();
     }catch (std::runtime_error& ){
-
     }
     localScopeLock.lock();
     closeSocket();
@@ -1039,7 +1038,6 @@ namespace capi
 
     std::vector<HostAddress>& addrs= urlParser->getHostAddresses();
     std::vector<HostAddress> hosts(addrs);
-
 
     if (urlParser->getHaMode() == HaMode::LOADBALANCE) {
       static auto rnd= std::default_random_engine{};

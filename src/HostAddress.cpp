@@ -21,8 +21,8 @@
 #include <regex>
 #include <cassert>
 
-#include "HostAddress.h"
 #include "Consts.h"
+#include "HostAddress.h"
 #include "logger/LoggerFactory.h"
 #include "Exception.hpp"
 

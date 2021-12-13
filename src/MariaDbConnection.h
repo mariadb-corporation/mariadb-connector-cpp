@@ -30,13 +30,14 @@
 #include "Statement.hpp"
 #include "Protocol.h"
 
-#include "MariaDbPooledConnection.h"
+#include "MariaDbPoolConnection.h"
 
 #include "Consts.h"
 #include "pool/GlobalStateInfo.h"
 #include "options/Options.h"
 #include "cache/CallableStatementCache.h"
 #include "failover/FailoverProxy.h"
+#include "pool/ConnectionEventListener.h"
 
 
 namespace sql
@@ -44,7 +45,7 @@ namespace sql
 namespace mariadb
 {
   class CallableStatementCache;
-  class MariaDbPooledConnection;
+  class MariaDbPoolConnection;
   class ExceptionFactory;
 
   enum ConnectionState
@@ -81,7 +82,7 @@ Pattern.CASE_INSENSITIVE)*/
 
 public:
   Shared::mutex lock; /* TODO: Public? Really? */
-  std::unique_ptr<MariaDbPooledConnection> pooledConnection;
+  MariaDbPoolConnection* poolConnection;
 //protected:
   bool nullCatalogMeansCurrent;
 private:
@@ -93,10 +94,11 @@ private:
   int32_t defaultTransactionIsolation ; /*0*/
   int32_t savepointCount; /*0*/
   bool warningsCleared;
+  bool returnedToPool;
 
 public:
   MariaDbConnection(Shared::Protocol& protocol);
-  static MariaDbConnection* newConnection(UrlParser& urlParser, GlobalStateInfo* globalInfo);
+  static MariaDbConnection* newConnection(Shared::UrlParser& urlParser, GlobalStateInfo* globalInfo);
   static SQLString quoteIdentifier(const SQLString& string);
   static SQLString unquoteIdentifier(SQLString& string);
   ~MariaDbConnection();
@@ -104,6 +106,7 @@ public:
   Shared::Protocol& getProtocol();
 
 public:
+  void setPoolConnection(MariaDbPoolConnection* poolConnection);
   Statement* createStatement();
   Statement* createStatement(int32_t resultSetType,int32_t resultSetConcurrency);
   Statement* createStatement( int32_t resultSetType,int32_t resultSetConcurrency,int32_t resultSetHoldability);
@@ -194,7 +197,7 @@ public:
   template <class T >T unwrap();
   bool isWrapperFor();
 #endif
-
+  int32_t getWaitTimeout() { return 0; }
   SQLString getUsername();
   SQLString getHostname();
   int32_t getPort();
@@ -208,7 +211,7 @@ public:
   int32_t getNetworkTimeout();
   SQLString getSchema();
   void setSchema(const SQLString& arg0);
-  void setNetworkTimeout(Executor* executor,int32_t milliseconds);
+  void setNetworkTimeout(Executor* executor, uint32_t milliseconds);
   int64_t getServerThreadId();
   bool canUseServerTimeout();
   void setDefaultTransactionIsolation(int32_t defaultTransactionIsolation);
@@ -217,6 +220,8 @@ public:
   bool includeDeadLockInfo();
   bool includeThreadsTraces();
   CallableParameterMetaData* getInternalParameterMetaData(const SQLString& procedureName, const SQLString& databaseName, bool isFunction);
+  /* To use by pool connection, when we don't really want to close it, but only mark as closed */
+  void markClosed(bool closed);
 };
 
 }

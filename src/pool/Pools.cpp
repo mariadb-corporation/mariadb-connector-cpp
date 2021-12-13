@@ -19,15 +19,20 @@
 
 
 #include "Pools.h"
+#include "Pool.h"
+#include "ThreadPoolExecutor.h"
+#include "MariaDbThreadFactory.h"
 
 namespace sql
 {
 namespace mariadb
 {
+  std::mutex Pools::mapLock;
   std::atomic<int32_t> Pools::poolIndex;
-  std::shared_ptr<ScheduledThreadPoolExecutor> Pools::poolExecutor;
   /* TODO: change to std::unordered_map */
   HashMap<UrlParser, Shared::Pool> Pools::poolMap;
+  std::unique_ptr<ScheduledThreadPoolExecutor> Pools::poolExecutor;
+  
 
   //const std::map<UrlParser&, Pool>poolMap;// =new ConcurrentHashMap<>();
   /* ScheduledThreadPoolExecutor* Pools::poolExecutor= nullptr; */
@@ -38,22 +43,23 @@ namespace mariadb
     * @param urlParser configuration parser
     * @return pool
     */
-  Shared::Pool Pools::retrievePool(std::shared_ptr<UrlParser>& urlParser)
+  Shared::Pool Pools::retrievePool(Shared::UrlParser& urlParser)
   {
     auto cit= poolMap.find(*urlParser);
     if (cit == poolMap.end())
     {
-      //synchronized(poolMap)
+      std::unique_lock<std::mutex> lock(mapLock);
       {
+        // TODO: it should also check if the pool is active, i.e. not closing atm
         cit= poolMap.find(*urlParser);
 
         if (cit == poolMap.end())
         {
           if (!poolExecutor)
           {
-            poolExecutor.reset(new ScheduledThreadPoolExecutor()); //1, new MariaDbThreadFactory("MariaDbPool-maxTimeoutIdle-checker"));
+            poolExecutor.reset(new ScheduledThreadPoolExecutor(1, new MariaDbThreadFactory("MariaDbPool-maxTimeoutIdle-checker")));
           }
-          Shared::Pool pool(new Pool(urlParser, ++poolIndex, poolExecutor));
+          Shared::Pool pool(new Pool(urlParser, ++poolIndex, *poolExecutor));
           poolMap.insert(*urlParser, pool);
 
           return pool;
@@ -71,15 +77,14 @@ namespace mariadb
     */
   void Pools::remove(Pool &pool)
   {
-    if (poolMap.find(*pool.getUrlParser()) != poolMap.end())
+    if (poolMap.find(pool.getUrlParser()) != poolMap.end())
     {
-      //synchronized(poolMap)
+      std::unique_lock<std::mutex> lock(mapLock);
+
+      if (poolMap.find(pool.getUrlParser()) != poolMap.end())
       {
-        if (poolMap.find(*pool.getUrlParser()) != poolMap.end())
-        {
-          poolMap.remove(*pool.getUrlParser());
-          shutdownExecutor();
-        }
+        poolMap.remove(pool.getUrlParser());
+        shutdownExecutor();
       }
     }
   }
@@ -87,20 +92,18 @@ namespace mariadb
   /** Close all pools. */
   void Pools::close()
   {
-    //synchronized(poolMap)
+    std::unique_lock<std::mutex> lock(mapLock);
+    for (auto it : poolMap)
     {
-      for (auto it : poolMap)
-      {
-        try {
-          it.second->close();
-        }
-        catch (std::exception&) {
-
-        }
+      try {
+        it.second->close();
       }
-      shutdownExecutor();
-      poolMap.clear();
+      catch (std::exception&) {
+
+      }
     }
+    shutdownExecutor();
+    poolMap.clear();
   }
 
   /**
@@ -114,28 +117,27 @@ namespace mariadb
     {
       return;
     }
-    //synchronized(poolMap)
-    {
-      for (auto it : poolMap)
-      {
-        if (poolName.compare(it.second->getUrlParser()->getOptions()->poolName) == 0)
-        {
-          try
-          {
-            it.second->close();
-          }
-          catch (std::exception&)
-          {
-          }
-          poolMap.remove(*it.second->getUrlParser());
-          return;
-        }
-      }
 
-      if (poolMap.empty())
+    std::unique_lock<std::mutex> lock(mapLock);
+    for (auto it : poolMap)
+    {
+      if (poolName.compare(it.second->getUrlParser().getOptions()->poolName) == 0)
       {
-        shutdownExecutor();
+        try
+        {
+          it.second->close();
+        }
+        catch (std::exception&)
+        {
+        }
+        poolMap.remove(it.second->getUrlParser());
+        return;
       }
+    }
+
+    if (poolMap.empty())
+    {
+      shutdownExecutor();
     }
   }
 
@@ -144,7 +146,7 @@ namespace mariadb
     poolExecutor->shutdown();
     try
     {
-      poolExecutor->awaitTermination(10, TimeUnit::SECONDS);
+      //poolExecutor->awaitTermination(std::chrono::seconds(10));
     }
     catch (std::exception&)
     {

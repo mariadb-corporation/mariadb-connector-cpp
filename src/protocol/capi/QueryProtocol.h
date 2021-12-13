@@ -149,6 +149,7 @@ namespace capi
     bool getAutocommit();
     bool inTransaction();
     void closeExplicit();
+    void markClosed(bool closed);
     void releasePrepareStatement(ServerPrepareResult* serverPrepareResult);
     int64_t getMaxRows();
     void setMaxRows(int64_t max);

@@ -68,10 +68,10 @@ private:
   static SQLString resolveEscapes(SQLString& escaped, Protocol* protocol);
 public:
   static SQLString nativeSql(const SQLString& sql, Protocol* protocol);
-  static Shared::Protocol retrieveProxy(UrlParser& urlParser, GlobalStateInfo* globalInfo);
+  static Shared::Protocol retrieveProxy(Shared::UrlParser& urlParser, GlobalStateInfo* globalInfo);
 
 private:
-  static Protocol* getProxyLoggingIfNeeded(const UrlParser& urlParser, Protocol* protocol);
+  static Protocol* getProxyLoggingIfNeeded(const Shared::UrlParser& urlParser, Protocol* protocol);
 public:
 #ifdef WE_DEAL_WITH_TIMEZONES
   static TimeZone& getTimeZone(const SQLString& id);

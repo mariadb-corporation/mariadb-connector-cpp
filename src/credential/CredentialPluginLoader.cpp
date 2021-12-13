@@ -17,8 +17,10 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
+#include "Consts.h"
 #include "CredentialPluginLoader.h"
 #include "Exception.hpp"
+
 namespace sql
 {
 namespace mariadb

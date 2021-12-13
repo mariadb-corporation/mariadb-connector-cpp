@@ -24,6 +24,7 @@
 #include "ExceptionFactory.h"
 #include "util/Utils.h"
 #include "Results.h"
+#include "pool/ConnectionEventListener.h"
 
 namespace sql
 {
@@ -728,12 +729,12 @@ namespace mariadb
       std::lock_guard<std::mutex> localScopeLock(*lock);
 
       if (protocol->isClosed()
-        || !connection->pooledConnection
-        || connection->pooledConnection->noStmtEventListeners()) {
+        || !connection->poolConnection
+        || connection->poolConnection->noStmtEventListeners()) {
         //protocol.reset();
         return;
       }
-      connection->pooledConnection->fireStatementClosed(this);
+      connection->poolConnection->fireStatementClosed(this);
     }
     catch (...) {
     }

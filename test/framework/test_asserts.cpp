@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -193,7 +193,7 @@ void assertEquals(const double & expected, const long double & result,
 {
   const long double fuzzyEpsilon=0.000001;
 
-  assertEqualsEpsilon(expected, result, fuzzyEpsilon, file, line);
+  assertEqualsEpsilon(static_cast<long double>(expected), result, fuzzyEpsilon, file, line);
 }
 
 

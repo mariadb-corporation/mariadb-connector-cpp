@@ -1,13 +1,9 @@
 sudo: true
 language: c++
 services: docker
-addons:
+addons:yy
   hosts:
     - mariadb.example.com
-#  homebrew:
-#    packages:
-#      - openssl
-#      - mariadb
 
 before_install:
   - chmod +x .travis/script.sh .travis/osx.sh .travis/gen-ssl.sh .travis/build/build.sh .travis/build/docker-entrypoint.sh
@@ -20,36 +16,40 @@ before_install:
   # choco install wixtoolset -y;
 matrix:
   allow_failures:
-    - env: DB=build:10.6
     - env: DB=mysql:5.6
     - env: DB=mysql:5.7
+    - env: DB=build:10.7
     - os: osx
       compiler: gcc
-      env: DB=mariadb:10.5
-    - env: DB=mariadb:10.5 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
+      addons:
+        homebrew:
+          packages:
+            - openssl
+            - mariadb
+          update: true
+    - env: DB=mariadb:10.6 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
     - env: SKYSQL=true
     - env: SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
   include:
-    - env: DB=mariadb:10.5 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
+    - env: DB=mariadb:10.6 MAXSCALE_VERSION=2.5.3 MAXSCALE_TEST_DISABLE=true
     - env: SKYSQL=true
     - env: SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
-    - env: DB=build:10.6
+    - env: DB=build:10.7
     - env: DB=mariadb:10.2
     - env: DB=mariadb:10.3
     - env: DB=mariadb:10.4
     - compiler: gcc
-      env: DB=mariadb:10.5
+      env: DB=mariadb:10.6
     - compiler: clang
-      env: DB=mariadb:10.5
+      env: DB=mariadb:10.6
     - os: osx
       compiler: gcc
-      env: DB=mariadb:10.5
       addons:
-        mariadb: '10.5'
-      before_script:
-        - brew update
-        - brew install openssl
-      #- brew install mariadb
+        homebrew:
+          packages:
+            - openssl
+            - mariadb
+          update: true
     - env: DB=mysql:5.6
     - env: DB=mysql:5.7
     - os: windows

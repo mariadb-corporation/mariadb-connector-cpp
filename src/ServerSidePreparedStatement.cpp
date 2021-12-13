@@ -443,12 +443,12 @@ namespace sql
       }
     }
     if (protocol->isClosed()
-     || !connection->pooledConnection
-     || connection->pooledConnection->noStmtEventListeners()) {
+     || !connection->poolConnection
+     || connection->poolConnection->noStmtEventListeners()) {
       connection= nullptr;
       return;
     }
-    connection->pooledConnection->fireStatementClosed(this);
+    connection->poolConnection->fireStatementClosed(this);
     connection= nullptr;
   }
 

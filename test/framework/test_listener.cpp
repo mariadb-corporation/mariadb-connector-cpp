@@ -52,9 +52,12 @@ TestsListener::TestsListener()
   outputter.reset(new TAP());
 }
 
-void TestsListener::setVerbose(bool verbosity)
+bool TestsListener::setVerbose(bool verbosity)
 {
-  theInstance().verbose=verbosity;
+  bool current= theInstance().verbose;
+  theInstance().verbose= verbosity;
+
+  return current;
 }
 
 bool TestsListener::doTiming(bool timing)

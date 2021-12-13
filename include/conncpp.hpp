@@ -39,6 +39,8 @@
 #include "conncpp/Exception.hpp"
 #include "conncpp/jdbccompat.hpp"
 
+#include "MariaDbDataSource.hpp"
+
 namespace sql
 {
 }

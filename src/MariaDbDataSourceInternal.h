@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2021 MariaDB Corporation AB
+   Copyright (C) 2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -17,31 +17,54 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
-#ifndef _NOLOGGER_H_
-#define _NOLOGGER_H_
+#ifndef _MARIADBDATASOURCEINTERNAL_H_
+#define _MARIADBDATASOURCEINTERNAL_H_
 
-#include "Logger.h"
+#include <mutex>
+#include <memory>
+
+#include "StringImp.h"
+#include "MariaDbDataSource.hpp"
+//#include "UrlParser.h"
 
 namespace sql
 {
 namespace mariadb
 {
-struct NoLogger  : public Logger {
-  bool isTraceEnabled();
-  void trace(const SQLString& msg);
-  bool isDebugEnabled();
-  void debug(const SQLString& msg);
-  void debug(const SQLString& msg, std::exception& e);
-  void debug(const SQLString& msg, const SQLString& tag, int32_t total, int64_t active, int32_t pending);
-  bool isInfoEnabled();
-  void info(const SQLString& msg);
-  bool isWarnEnabled();
-  void warn(const SQLString& msg);
-  bool isErrorEnabled();
-  void error(const SQLString& msg);
-  void error(const SQLString& msg, SQLException& e);
-  void error(const SQLString& msg, MariaDBExceptionThrower& e);
+
+class UrlParser;
+
+class MariaDbDataSourceInternal {
+  std::mutex syncronization;
+public:
+  SQLString hostname;
+  int32_t   port= 3306;
+  int32_t   connectTimeoutInMs= 0;
+  SQLString database;
+  SQLString url;
+  SQLString user;
+  SQLString password;
+  SQLString properties;
+
+  std::shared_ptr<UrlParser> urlParser;
+
+  MariaDbDataSourceInternal(const SQLString& _hostname, int32_t _port, const SQLString& _database)
+    : hostname(_hostname)
+    , port(_port)
+    , database(_database)
+    , urlParser(nullptr)
+  {}
+
+  MariaDbDataSourceInternal(const SQLString& url)
+    : url(url)
+    , urlParser(nullptr)
+  {}
+
+  void reInitializeIfNeeded();
+  UrlParser* getUrlParser(); 
+  void initialize(); /*synchronized*/ 
 };
+
 }
 }
 #endif

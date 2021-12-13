@@ -42,6 +42,9 @@ namespace mariadb
   void NoLogger::debug(const SQLString& msg, std::exception& e)
   {}
 
+  void NoLogger::debug(const SQLString& msg, const SQLString& tag, int32_t total, int64_t active, int32_t pending)
+  {}
+
   bool NoLogger::isInfoEnabled(){
     return false;
   }
