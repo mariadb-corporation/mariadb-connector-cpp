@@ -3314,5 +3314,34 @@ void connection::concpp89_10to11upgrade()
   res.reset();
 }
 
+
+void connection::concpp94_loadLocalInfile()
+{
+  sql::Properties p;
+
+  try {
+    stmt->execute("LOAD DATA LOCAL INFILE 'nonexistent.txt' INTO TABLE nonexistent(b)");
+  }
+  catch (sql::SQLException& e) {
+    ASSERT_EQUALS(4166, e.getErrorCode());
+    //ASSERT_EQUALS("42000", e.getSQLState());
+  }
+
+  p["user"] = user;
+  p["password"] = passwd;
+  p["allowLocalInfile"] = "true";
+
+  con.reset(driver->connect(url, p));
+  ASSERT(con.get());
+  stmt.reset(con->createStatement());
+
+  try {
+    stmt->execute("LOAD DATA LOCAL INFILE 'nonexistent.txt' INTO TABLE nonexistent(b)");
+  }
+  catch (sql::SQLException& e) {
+    ASSERT(4166!=e.getErrorCode());
+    ASSERT_EQUALS("42S02", e.getSQLState());
+  }
+}
 } /* namespace connection */
 } /* namespace testsuite */

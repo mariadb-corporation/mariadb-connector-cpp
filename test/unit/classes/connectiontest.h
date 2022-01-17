@@ -89,6 +89,7 @@ public:
     TEST_CASE(unknownPropertyConnect);
     TEST_CASE(useCharacterSet);
     TEST_CASE(concpp89_10to11upgrade);
+    TEST_CASE(concpp94_loadLocalInfile);
   }
 
   /**
@@ -277,6 +278,9 @@ public:
 
   /* Using 1.0 API types with 1.1 driver. i.e. Properties was just a map, now it's defined in the driver class */
   void concpp89_10to11upgrade();
+
+  /* LOAD DATA LOCAL INFILE should be disabled by default */
+  void concpp94_loadLocalInfile();
 };
 
 

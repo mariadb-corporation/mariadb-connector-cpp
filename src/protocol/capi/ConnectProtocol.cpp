@@ -36,7 +36,8 @@ namespace mariadb
 {
 namespace capi
 {
-  const char OptionSelected= 1, OptionNotSelected= 0;
+  static const char OptionSelected= 1, OptionNotSelected= 0;
+  static const unsigned int uintOptionSelected= 1, uintOptionNotSelected= 0;
 
   const SQLString ConnectProtocol::SESSION_QUERY("SELECT @@max_allowed_packet,"
     "@@system_time_zone,"
@@ -118,27 +119,24 @@ namespace capi
 
     // Bind the socket to a particular interface if the connection property
     // localSocketAddress has been defined.
-    if (!options->localSocket.empty()){
+    if (!options->localSocket.empty()) {
       mysql_optionsv(socket, MARIADB_OPT_UNIXSOCKET, (void *)options->localSocket.c_str());
       int protocol= MYSQL_PROTOCOL_SOCKET;
       mysql_optionsv(socket, MYSQL_OPT_PROTOCOL, (void*)&protocol);
     }
-    else if (!options->pipe.empty())
-    {
+    else if (!options->pipe.empty()) {
       mysql_optionsv(socket, MYSQL_OPT_NAMED_PIPE, (void *)options->pipe.c_str());
       int protocol= MYSQL_PROTOCOL_PIPE;
       mysql_optionsv(socket, MYSQL_OPT_PROTOCOL, (void*)&protocol);
     }
-    else
-    {
+    else {
       mysql_optionsv(socket, MARIADB_OPT_HOST, (void *)host.c_str());
       mysql_optionsv(socket, MARIADB_OPT_PORT, (void *)&port);
       int protocol= MYSQL_PROTOCOL_TCP;
       mysql_optionsv(socket, MYSQL_OPT_PROTOCOL, (void*)&protocol);
     }
 
-    if (!options->useCharacterEncoding.empty())
-    {
+    if (!options->useCharacterEncoding.empty()) {
       mysql_optionsv(socket, MYSQL_SET_CHARSET_NAME, options->useCharacterEncoding.c_str());
     }
 
@@ -454,8 +452,8 @@ namespace capi
           "08000",
           &ioException).Throw();
     }
-    unsigned reportDataTruncation= 1;
-    mysql_optionsv(connection.get(), MYSQL_REPORT_DATA_TRUNCATION, &reportDataTruncation);
+    mysql_optionsv(connection.get(), MYSQL_REPORT_DATA_TRUNCATION, &uintOptionSelected);
+    mysql_optionsv(connection.get(), MYSQL_OPT_LOCAL_INFILE, (options->allowLocalInfile ? &uintOptionSelected : &uintOptionNotSelected));
 
     if (mysql_real_connect(connection.get(), NULL, NULL, NULL, NULL, 0, NULL, CLIENT_MULTI_STATEMENTS) == nullptr)
     {
