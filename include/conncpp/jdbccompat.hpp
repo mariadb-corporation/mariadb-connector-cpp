@@ -30,7 +30,7 @@
 #include "compat/Struct.hpp"
 #include "compat/Object.hpp"
 #include "compat/Executor.hpp"
-//#include "compat/XAResource.hpp"
+#include "compat/XAResource.hpp"
 
 /*Complete interface definitions of not used/supported classes */
 #include "PooledConnection.hpp"

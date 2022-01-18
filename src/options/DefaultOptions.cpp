@@ -111,7 +111,7 @@ namespace sql
         false,
         false}},
       {
-        "allowLocalInfile", {"allowLocalInfile", "1.1.1", "Permit loading data from local file(on the client)", false, false}},
+        "allowLocalInfile", {"allowLocalInfile", "1.1.1", "Permits loading data from local file(on the client)", false, false}},
       {
         "sessionVariables", {"sessionVariables",
         "0.9.1",

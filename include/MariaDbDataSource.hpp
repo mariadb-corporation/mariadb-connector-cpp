@@ -20,7 +20,7 @@
 #ifndef _MARIADBDATASOURCE_H_
 #define _MARIADBDATASOURCE_H_
 
-#include "buildconf.hpp"
+//#include "buildconf.hpp"
 #include "conncpp.hpp"
 
 namespace sql

@@ -51,6 +51,18 @@ sql::SQLString url2("jdbc:mariadb://localhost:3306/db?user=root&password=someSec
 std::unique_ptr<Connection> conn2(DriverManager::getConnection(url));
 // or
 std::unique_ptr<Connection> conn3(DriverManager::getConnection(url, "root", "someSecretWord"));
+// or
+MariaDbDataSource ds(url);
+// Connections obrained via DataSource object are taken from the connetion pool, that automatically created in this case
+std::unique_ptr<Connection> conn4(ds.getConnection("root", "someSecretWord"));
+std::unique_ptr<Connection> conn5(ds.getConnection()); // ds remembers user/passwd after first call, alternatively ds.setUser() andsetPassword() can be used
+// ds.close() would close the pool making conn4 and conn5 unusable
+// thus conn4 and conn5 should be either reset before ds.close() call, or released after
+
+// or
+sql::SQLString failoverUrl("jdbc:mariadb:sequential://localhost:3306,failoverhost1.com,[::1]:3307,failoverhost2.com:3307/db?user=root&password=someSecretWord");
+std::unique_ptr<Connection> conn6(DriverManager::getConnection(failoverUrl));
+
 ```
 
 For URL syntax and options name you may find [here](https://mariadb.com/kb/en/about-mariadb-connector-j/)
@@ -98,6 +110,8 @@ Not complete list of supported options - mostly newly added or with new aliases:
 | **`minPoolSize`** |When connections are removed due to not being used for longer than than "maxIdleTime", connections are closed and removed from the pool. "minPoolSize" indicates the number of physical connections the pool should keep available at all times. Should be less or equal to maxPoolSize.|*int* |0||
 | **`maxIdleTime`** |The maximum amount of time in seconds that a connection can stay in the pool if not used. This value must always be below @wait_timeout value - 45s. Default: 600 in seconds (=10 minutes), minimum value is 60 seconds|*int* |600 ||
 | **`poolValidMinDelay`** |When the pool is requested for a connection, it will validate the connection state. "poolValidMinDelay" allows to disable this validation if the connection has been used recently, avoiding useless verifications in case of frequent reuse of connections. 0 means validation is done each time the connection is requested.|*int* |1000 ||
+| **`allowLocalInfile`** |Permits loading data from local file(on the client) with LOAD DATA LOCAL INFILE statement.|*bool* |false||
+
 
 
 Properties is map of strings, and is another way to pass optional parameters.

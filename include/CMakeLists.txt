@@ -30,6 +30,7 @@ SET(MARIADBCPP_COMPAT_STUBS ${CMAKE_SOURCE_DIR}/include/conncpp/compat/Array.hpp
                             ${CMAKE_SOURCE_DIR}/include/conncpp/compat/Object.hpp
                             ${CMAKE_SOURCE_DIR}/include/conncpp/compat/SQLType.hpp
                             ${CMAKE_SOURCE_DIR}/include/conncpp/compat/Struct.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/compat/XAResource.hpp
    )
 IF(WIN32)
   SET(WIX_INCLUDES ${MARIADBCPP_PUBLIC_API} MARIADBCPP_PUBLIC_CLASSES {MARIADBCPP_COMPAT_STUBS} PARENT_SCOPE)
