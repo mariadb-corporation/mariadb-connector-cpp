@@ -53,7 +53,7 @@ namespace mariadb
   }
 
 
-  UrlParser::UrlParser() : options(new Options())
+  UrlParser::UrlParser() : options(new Options()), haMode(HaMode::NONE), multiMaster(false)
   {}
 
   UrlParser::UrlParser(SQLString& database, std::vector<HostAddress>& addresses, Shared::Options options, enum HaMode haMode) :
@@ -122,7 +122,7 @@ namespace mariadb
       }
       urlParser.haMode= parseHaMode(url, separator);
 
-      if (urlParser.haMode != HaMode::NONE)
+      if (urlParser.haMode != HaMode::NONE && urlParser.haMode != HaMode::SEQUENTIAL)
       {
         throw SQLFeatureNotImplementedException(SQLString("Support of the HA mode") + HaModeStrMap[urlParser.haMode] + "is not yet implemented");
       }
@@ -208,7 +208,7 @@ namespace mariadb
       thirdColonPos= separator;
     }
     try {
-      std::string haModeString(StringImp::get(url.substr(secondColonPos +1, thirdColonPos).toUpperCase()));
+      std::string haModeString(StringImp::get(url.substr(secondColonPos + 1, thirdColonPos - secondColonPos - 1).toUpperCase()));
       if (haModeString.compare("FAILOVER") == 0) {
         haModeString= "LOADBALANCE";
       }

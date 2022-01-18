@@ -29,7 +29,7 @@ struct DriverPropertyInfo {
   SQLString              name;
   bool                   required;
   SQLString              value;
-  DriverPropertyInfo(const SQLString& Name, const SQLString& Value) : name(Name), value(Value) {}
+  DriverPropertyInfo(const SQLString& Name, const SQLString& Value) : name(Name), value(Value), required(false) {}
 };
 }
 }

@@ -840,7 +840,7 @@ namespace capi
      /*std::string value(fieldBuf.arr + pos, length);
      if (std::regex_match(value, isIntegerRegex)) {
        try {
-         return std::stoull(value.substr(0, value.find_first_of(".")));
+         return std::stoull(value.substr(0, value.find_first_of('.')));
        }
        catch (std::exception&) {
 

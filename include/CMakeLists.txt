@@ -21,6 +21,8 @@ SET(MARIADBCPP_PUBLIC_CLASSES ${CMAKE_SOURCE_DIR}/include/conncpp/Driver.hpp
                             ${CMAKE_SOURCE_DIR}/include/conncpp/CArray.hpp
                             ${CMAKE_SOURCE_DIR}/include/conncpp/Properties.hpp
                             ${CMAKE_SOURCE_DIR}/include/conncpp/List.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/PooledConnection.hpp
+                            ${CMAKE_SOURCE_DIR}/include/conncpp/XAConnection.hpp
                             )
 
 SET(MARIADBCPP_COMPAT_STUBS ${CMAKE_SOURCE_DIR}/include/conncpp/compat/Array.hpp

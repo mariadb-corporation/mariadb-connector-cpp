@@ -90,6 +90,7 @@ public:
     TEST_CASE(useCharacterSet);
     TEST_CASE(concpp89_10to11upgrade);
     TEST_CASE(concpp94_loadLocalInfile);
+    TEST_CASE(concpp4_sequentialfailover);
   }
 
   /**
@@ -281,6 +282,9 @@ public:
 
   /* LOAD DATA LOCAL INFILE should be disabled by default */
   void concpp94_loadLocalInfile();
+
+  /* Failover test */
+  void concpp4_sequentialfailover();
 };
 
 

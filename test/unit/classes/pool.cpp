@@ -134,7 +134,7 @@ void pool::pool_datasource()
   if (localUrl.find_first_of('?') == sql::SQLString::npos) {
     localUrl.append('?');
   }
-  localUrl.append("minPoolSize=1&maxPoolSize=1&connectTimeout=5000&testMinRemovalDelay=6");
+  localUrl.append("minPoolSize=1&maxPoolSize=1&connectTimeout=6000&testMinRemovalDelay=6");
 
   sql::mariadb::MariaDbDataSource ds(localUrl);
   int32_t connId;

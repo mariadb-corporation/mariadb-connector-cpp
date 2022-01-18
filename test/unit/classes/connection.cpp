@@ -3343,5 +3343,43 @@ void connection::concpp94_loadLocalInfile()
     ASSERT_EQUALS("42S02", e.getSQLState());
   }
 }
+
+
+void connection::concpp4_sequentialfailover()
+{
+  const sql::SQLString dummyHost("240.0.0.1:3307"), sequentialPrefix("jdbc:mariadb:sequential://"), hostsSeparator(",");
+  sql::SQLString localUrl(sequentialPrefix + dummyHost + hostsSeparator), realHost, theRest;
+
+  std::size_t doubleSlash= url.find("//"), slash;
+  
+  if (doubleSlash == std::string::npos) {
+    slash= url.find_first_of('/');
+    realHost = url.substr(0, slash);
+  }
+  else {
+    slash= url.find_first_of('/', doubleSlash + 2);
+    realHost = url.substr(doubleSlash + 2, slash - doubleSlash - 2);
+  }
+  theRest= url.substr(slash);
+  localUrl.append(realHost).append(theRest);
+
+  sql::Properties p{{"connectTimeout", "6000"}, {"user", user}, {"password", passwd}};
+
+  con.reset(driver->connect(localUrl, p));
+  ASSERT(con.get());
+  stmt.reset(con->createStatement());
+  res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
+  ASSERT(res->next());
+
+  //Now good host first
+  localUrl= sequentialPrefix + realHost + hostsSeparator + dummyHost + theRest;
+
+  con.reset(driver->connect(localUrl, p));
+  ASSERT(con.get());
+  stmt.reset(con->createStatement());
+  res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
+  ASSERT(res->next());
+}
+
 } /* namespace connection */
 } /* namespace testsuite */

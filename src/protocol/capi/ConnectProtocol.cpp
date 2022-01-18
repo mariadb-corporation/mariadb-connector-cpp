@@ -54,13 +54,13 @@ namespace capi
    * @param globalInfo server global variables information
    * @param lock the lock for thread synchronisation
    */
-  ConnectProtocol::ConnectProtocol(std::shared_ptr<UrlParser>& _urlParser, GlobalStateInfo* globalInfo, Shared::mutex& lock)
+  ConnectProtocol::ConnectProtocol(std::shared_ptr<UrlParser>& _urlParser, GlobalStateInfo* _globalInfo, Shared::mutex& lock)
     : lock(lock)
     , urlParser(_urlParser)
     , options(_urlParser->getOptions())
     , database(_urlParser->getDatabase())
     , username(_urlParser->getUsername())
-    , globalInfo(globalInfo)
+    , globalInfo(_globalInfo)
     , connection(nullptr, &mysql_close)
     , currentHost(localhost, 3306)
     , explicitClosed(false)
@@ -70,6 +70,17 @@ namespace capi
     , proxy(nullptr)
     , connected(false)
     , serverPrepareStatementCache(nullptr)
+    , autoIncrementIncrement(_globalInfo ? _globalInfo->getAutoIncrementIncrement() : 1)
+    , eofDeprecated(false)
+    , hasWarningsFlag(false)
+    , hostFailed(false)
+    , readOnly(false)
+    , serverCapabilities(0)
+    , serverMariaDb(true)
+    , serverStatus(0)
+    , serverThreadId(0)
+    , socketTimeout(0)
+    , timeZone(nullptr)
   {
     urlParser->auroraPipelineQuirks();
     if (options->cachePrepStmts && options->useServerPrepStmts){
@@ -386,7 +397,7 @@ namespace capi
   void ConnectProtocol::createConnection(HostAddress* hostAddress, const SQLString& username)
   {
 
-    SQLString host= hostAddress != nullptr ? hostAddress->host : "";
+    SQLString host(hostAddress != nullptr ? hostAddress->host : "");
     int32_t port= hostAddress != nullptr ? hostAddress->port :3306;
 
     Unique::Credential credential;
@@ -1036,6 +1047,7 @@ namespace capi
 
     std::vector<HostAddress>& addrs= urlParser->getHostAddresses();
     std::vector<HostAddress> hosts(addrs);
+
 
     if (urlParser->getHaMode() == HaMode::LOADBALANCE) {
       static auto rnd= std::default_random_engine{};

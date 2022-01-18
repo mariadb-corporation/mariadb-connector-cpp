@@ -32,10 +32,10 @@ namespace sql
   {
     Shared::Logger HostAddress::logger= LoggerFactory::getLogger(typeid(HostAddress));
 
-    HostAddress::HostAddress() {}
+    HostAddress::HostAddress() : host(""), port(DefaultPort) {}
 
 
-    HostAddress::HostAddress(const SQLString& _host, int32_t _port)
+    HostAddress::HostAddress(const SQLString& _host, uint32_t _port)
       : host(_host)
       , port(_port)
       , type(ParameterConstant::TYPE_MASTER)
@@ -43,13 +43,19 @@ namespace sql
     }
 
 
-    HostAddress::HostAddress(const SQLString& _host, int32_t _port, const SQLString& _type)
+    HostAddress::HostAddress(const SQLString& _host, uint32_t _port, const SQLString& _type)
       : host(_host)
       , port(_port)
       , type(_type)
     {
     }
 
+    static bool prepareCapiFailoverHost(const SQLString& specOrig, std::vector<HostAddress>& arr)
+    {
+      // Our Hosts lists format is digestable by Conn/C, thus adding it as is
+      arr.emplace_back(specOrig, 3306);
+      return false;
+    }
 
     std::vector<HostAddress> HostAddress::parse(const SQLString& specOrig, enum HaMode haMode) {
       //TODO: "upstream has here difference between NULL and empty str, and looks like that has reason for us in this case, too
@@ -61,6 +67,13 @@ namespace sql
       std::vector<HostAddress> arr;
 
       if (specOrig.empty()) {
+        return arr;
+      }
+
+      if (haMode == HaMode::SEQUENTIAL) {
+        if (prepareCapiFailoverHost(specOrig, arr)) {
+          throw IllegalArgumentException("Could not parse failover hosts list");
+        }
         return arr;
       }
 

@@ -571,7 +571,6 @@ namespace mariadb
               new FailoverProxy(new MastersSlavesListener(urlParser,globalInfo), lock)));
 #endif
       case LOADBALANCE:
-      case SEQUENTIAL:
 #ifdef LOADBALANCE_SUPPORT_IMPLEMENTED
         return getProxyLoggingIfNeeded(
             urlParser,
@@ -584,6 +583,7 @@ namespace mariadb
         /* This exception supposed to be already thrown*/
         throw SQLFeatureNotImplementedException(SQLString("Support of the HA mode") + HaModeStrMap[urlParser->getHaMode()] + "is not yet implemented");
 #endif
+      case SEQUENTIAL:
       default:
         Shared::Protocol protocol(getProxyLoggingIfNeeded(urlParser, new MasterProtocol(urlParser, globalInfo, lock)));
         protocol->connectWithoutProxy();
