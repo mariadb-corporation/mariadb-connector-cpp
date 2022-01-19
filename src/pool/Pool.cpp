@@ -57,7 +57,10 @@ namespace mariadb
         TimeUnit::SECONDS,
         connectionAppenderQueue,
         new MariaDbThreadFactory(poolTag +"-appender")),
-    poolExecutor(_poolExecutor)
+    poolExecutor(_poolExecutor),
+    pendingRequestNumber(0),
+    totalConnection(0),
+    scheduledFuture(nullptr)
   {
     connectionAppender.allowCoreThreadTimeOut(true);
 
@@ -69,9 +72,9 @@ namespace mariadb
       minDelay= std::stoi(cit->second.c_str());
     }
     int32_t scheduleDelay= std::min(minDelay, options->maxIdleTime / 2);
-    scheduledFuture=
+    scheduledFuture.reset(
       poolExecutor.scheduleAtFixedRate(
-        std::bind(&Pool::removeIdleTimeoutConnection, this), scheduleDelay, scheduleDelay, TimeUnit::SECONDS);
+        std::bind(&Pool::removeIdleTimeoutConnection, this), scheduleDelay, scheduleDelay, TimeUnit::SECONDS));
 
     try
     {
@@ -79,9 +82,16 @@ namespace mariadb
       for (int32_t i= 1; i < options->minPoolSize; ++i) {
         addConnectionRequest();
       }
+      if (!idleConnections.empty()) {
+        Unique::Statement stmt(idleConnections.front()->getConnection()->createStatement());
+        Unique::ResultSet rs(stmt->executeQuery("SELECT @@wait_timeout"));
+        if (rs->next()) {
+          waitTimeout= rs->getUInt(1);
+        }
+      }
     }
     catch (sql::SQLException& sqle) {
-      logger->error("error initializing pool connection", sqle);
+      logger->error("Error initializing pool connection", sqle);
     }
   }
 
@@ -134,23 +144,24 @@ namespace mariadb
     //LoggerFactory::getLogger().trace("Pool","Checking idles");
     std::lock_guard<std::mutex> synchronized(listsLock);
 
-    Idles::reverse_iterator iterator= idleConnections.rbegin();
+    Idles::iterator iterator= idleConnections.begin();
     MariaDbInnerPoolConnection* item;
 
-    while (iterator != idleConnections.rend())
+    while (iterator != idleConnections.end())
     {
       item= *iterator;
       auto now= std::chrono::steady_clock::now();
+      //urlParser->getOptions()->maxIdleTime << "Now:" << now.time_since_epoch().count() << " Last used:" << item->getLastUsed().time_since_epoch().count() << " Diff:" << std::chrono::duration_cast<std::chrono::nanoseconds>(now - item->getLastUsed()).count() << "/" << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds(urlParser->getOptions()->maxIdleTime)).count();
       auto idleNanos= std::chrono::duration_cast<std::chrono::nanoseconds>(now - item->getLastUsed());
-      bool timedOut= idleNanos > std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds(urlParser->getOptions()->maxIdleTime));
+      bool timedOut= (idleNanos > std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds(urlParser->getOptions()->maxIdleTime)));
       bool shouldBeReleased= false;
       MariaDbConnection* con= dynamic_cast<MariaDbConnection*>(item->getConnection());
 
-      if (con->getWaitTimeout() > 0) {
+      if (waitTimeout > 0) {
 
         // idle time is reaching server @@wait_timeout
         if (idleNanos >
-          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds(con->getWaitTimeout() - 45))) {
+          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds(waitTimeout > 45U ? waitTimeout - 45U : waitTimeout))) {
           shouldBeReleased= true;
         }
 
@@ -229,6 +240,8 @@ namespace mariadb
     }
 
     silentCloseConnection(*connection);
+    // silentCloseConnection resets item's pointer to real connection. TODO: smells bad - this can be done better
+    delete connection;
     delete item;
   }
 
@@ -663,6 +676,7 @@ namespace mariadb
       else {
         // pool is closed, should then not be rendered to pool, but closed.
         try {
+          conn.setPoolConnection(nullptr);
           conn.close();
         }
         catch (SQLException & /*sqle*/) {

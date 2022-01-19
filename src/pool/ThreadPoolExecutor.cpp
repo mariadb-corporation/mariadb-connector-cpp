@@ -134,34 +134,39 @@ Runnable::Runnable(Runnable&& moved) : codeToRun(moved.codeToRun)
 }
 
 //-------------------- ScheduledFuture ---------------------
-ScheduledFuture::ScheduledFuture(std::atomic<bool>& flagRef) : workersQuitFlag(flagRef)
+ScheduledFuture::ScheduledFuture(std::shared_ptr<std::atomic_bool>& flagRef) : workersQuitFlag(flagRef)
 {
 }
 
 void ScheduledFuture::cancel(bool cancelType)
 {
-  workersQuitFlag.store(cancelType);
+  std::shared_ptr<std::atomic_bool> existing(workersQuitFlag.lock());
+  if (existing) {
+    existing->store(cancelType);
+  }
 }
 
 //-------------------- ScheduledThreadPoolExecutor ---------------------
 
 ScheduledFuture* ScheduledThreadPoolExecutor::scheduleAtFixedRate(std::function<void(void)> methodToRun, int32_t scheduleDelay, int32_t delay2, TimeUnit unit)
 {
-  ScheduledTask *task= new ScheduledTask(methodToRun, scheduleDelay);
+  ScheduledTask task(methodToRun, scheduleDelay);
   // TODO: can do better and insert it based on execution time
   tasksQueue.push_back(task);
 
   if (workersCount == 0) {
     prestartCoreThread();
   }
-  return new ScheduledFuture(*task->canceled);
+  return new ScheduledFuture(task.canceled);
 }
 
 
 ScheduledThreadPoolExecutor::~ScheduledThreadPoolExecutor()
 {
-  for (auto task : tasksQueue) {
-    task->canceled->store(true);
+  for (auto& task : tasksQueue) {
+    if (task.canceled) {
+      task.canceled->store(true);
+    }
   }
   shutdown();
 
@@ -186,7 +191,7 @@ ScheduledThreadPoolExecutor::ScheduledThreadPoolExecutor(int32_t _corePoolSize, 
 void ScheduledThreadPoolExecutor::workerFunction()
 {
   const auto defaultTimeout= std::chrono::seconds(1);
-  ScheduledTask *task= nullptr;
+  ScheduledTask task;
 
   //LoggerFactory::getLogger().trace("Pool", "Starting idles remover thread");
 
@@ -203,34 +208,33 @@ void ScheduledThreadPoolExecutor::workerFunction()
 
     if (task) {
       //LoggerFactory::getLogger().trace("Pool", "Idles: valid task");
-      if (task->canceled->load()) {
+      if (task.canceled && task.canceled->load()) {
         //LoggerFactory::getLogger().trace("Pool", "Idles: canceled task, deleting");
-        delete task;
       }
       else {
-        if (task->schedulePeriod.count() == 0) {
+        if (task.schedulePeriod.count() == 0) {
           //LoggerFactory::getLogger().trace("Pool", "Idles: one time task, executing and deleting");
           // One time task w/out schedule. Polling the next one right away
-          task->task.run();
-          delete task;
+          task.task.run();
           break;
         }
         auto now = std::chrono::steady_clock::now();
 
-        if (now >= task->nextRunTime) {
+        if (now >= task.nextRunTime) {
           //LoggerFactory::getLogger().trace("Pool", "Idles: scheduled due task, executing and rescheduling");
-          task->task.run();
-          task->nextRunTime = now + task->schedulePeriod;
-          tasksQueue.push_back(task);
+          task.task.run();
+          task.nextRunTime = now + task.schedulePeriod;
+          tasksQueue.push_back(std::move(task));
         }
         else {
           //LoggerFactory::getLogger().trace("Pool", "Idles: scheduled task, too early, pushing bacj to the queue");
-          tasksQueue.push(task);
+          // Push is like push_front
+          tasksQueue.push(std::move(task));
         }
 
-        if (task->schedulePeriod < defaultTimeout) {
+        if (task.schedulePeriod < defaultTimeout) {
           //LoggerFactory::getLogger().trace("Pool", "Idles: sleeping remaining time");
-          std::this_thread::sleep_for(task->schedulePeriod);
+          std::this_thread::sleep_for(task.schedulePeriod);
           break;
         }
       }
@@ -266,18 +270,10 @@ void ScheduledThreadPoolExecutor::execute(std::function<void()> func)
 
 void ScheduledThreadPoolExecutor::execute(Runnable code)
 {
-  ScheduledTask* task= nullptr;
-  try {
-    task= new ScheduledTask(code);
-    tasksQueue.push(task);
-    if (workersCount == 0) {
-      prestartCoreThread();
-    }
-  }
-  catch (...) {
-    if (task) {
-      delete task;
-    }
+  ScheduledTask task(code);
+  tasksQueue.push(task);
+  if (workersCount == 0) {
+    prestartCoreThread();
   }
 }
 
@@ -296,9 +292,9 @@ bool ScheduledThreadPoolExecutor::awaitTermination(std::chrono::duration<T, P> w
   return sql::awaitTermination<T, P>(waitTime, this->workersCount, workersList);
 }
 
-// ----------------------- ScheduledTask ----------------------
-bool ScheduledTask::operator()()
+ScheduledTask::operator bool() const
 {
-  return canceled.get() != nullptr;
+  return canceled && !canceled->load();
 }
+
 }

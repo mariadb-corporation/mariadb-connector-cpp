@@ -63,12 +63,13 @@ class Pool
   SQLString poolTag;
   ThreadPoolExecutor connectionAppender;
   ScheduledThreadPoolExecutor& poolExecutor;
-  ScheduledFuture* scheduledFuture;
+  std::unique_ptr<ScheduledFuture> scheduledFuture;
   /*GlobalStateInfo globalInfo;
   int32_t maxIdleTime;
   int64_t timeToConnectNanos;
   int64_t connectionTime;*/
   std::mutex listsLock;
+  uint32_t waitTimeout= 28800;
 
 public:
   Pool(Shared::UrlParser& _urlParser, int32_t poolIndex, ScheduledThreadPoolExecutor& poolExecutor);

@@ -57,9 +57,9 @@ public:
 class ScheduledFuture
 {
   ScheduledFuture()= delete;
-  std::atomic<bool>& workersQuitFlag;
+  std::weak_ptr<std::atomic_bool> workersQuitFlag;
 public:
-  ScheduledFuture(std::atomic<bool>& flagRef);
+  ScheduledFuture(std::shared_ptr<std::atomic_bool>& flagRef);
   void cancel(bool cancelType);
 };
 
@@ -68,15 +68,15 @@ struct ScheduledTask
 {
   std::chrono::seconds schedulePeriod;
   std::chrono::time_point<std::chrono::steady_clock> nextRunTime;
-  std::unique_ptr<std::atomic_bool> canceled;
+  std::shared_ptr<std::atomic_bool> canceled;
   Runnable task;
 
   ScheduledTask(Runnable taskCode, uint32_t seconds = 0) : 
     task(taskCode), schedulePeriod(seconds),
     nextRunTime(std::chrono::steady_clock::now() + schedulePeriod),
     canceled(new std::atomic_bool(false)) {}
-
-  bool operator()();
+  ScheduledTask(std::atomic_bool* _canceled= nullptr) : canceled(_canceled), schedulePeriod(0) {}
+  explicit operator bool() const;
 };
 
 class ThreadPoolExecutor: public Executor {
@@ -125,7 +125,7 @@ class ScheduledThreadPoolExecutor : public /*ThreadPool*/Executor
   ScheduledThreadPoolExecutor() = delete;
 
   std::unique_ptr<ThreadFactory> threadFactory;
-  blocking_deque<ScheduledTask*> tasksQueue;
+  blocking_deque<ScheduledTask> tasksQueue;
   std::atomic_int workersCount;
   std::atomic_bool quit;
   std::vector<std::thread> workersList;

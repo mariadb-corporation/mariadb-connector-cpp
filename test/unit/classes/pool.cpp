@@ -49,18 +49,18 @@ namespace classes
 
 void pool::pool_simple()
 {
-  constexpr std::size_t maxPoolSize= 4;
+  constexpr std::size_t minPoolSize= 2, maxPoolSize= 4;
   std::size_t i;
   sql::Properties p;
   std::array<Connection, maxPoolSize> c;
-  std::vector<int32_t> connection_id(4);
+  std::vector<int32_t> connection_id(maxPoolSize);
   bool verbosity= TestsListener::setVerbose(true);
 
   p["user"] = user;
   p["password"] = passwd;
   p["useTls"] = useTls ? "true" : "false";
   p["pool"] = "true";
-  p["minPoolSize"]= "2";
+  p["minPoolSize"]= std::to_string(minPoolSize);
   p["maxPoolSize"]= std::to_string(maxPoolSize);
   p["testMinRemovalDelay"]= "10";
 
@@ -70,7 +70,7 @@ void pool::pool_simple()
     stmt.reset(c[i]->createStatement());
     res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
     ASSERT(res->next());
-    connection_id.push_back(res->getInt(1));
+    connection_id[i]= (res->getInt(1));
     TestsListener::messagesLog() << std::hex << c[i].get() << i << ":" << res->getInt(1) << std::endl;
   }
 
@@ -84,7 +84,7 @@ void pool::pool_simple()
   stmt.reset(c[3]->createStatement());
   res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
   ASSERT(res->next());
-  TestsListener::messagesLog() << std::hex << c[3].get() << res->getInt(1) << std::endl;
+  TestsListener::messagesLog() << std::hex << c[3].get() << "3:" << res->getInt(1) << std::dec << std::endl;
 
   ASSERT(contains(connection_id, res->getInt(1)));
 
@@ -134,11 +134,12 @@ void pool::pool_datasource()
   if (localUrl.find_first_of('?') == sql::SQLString::npos) {
     localUrl.append('?');
   }
-  localUrl.append("minPoolSize=1&maxPoolSize=1&connectTimeout=6000&testMinRemovalDelay=6");
+  localUrl.append("minPoolSize=1&maxPoolSize=1&connectTimeout=5000&testMinRemovalDelay=6");
 
   sql::mariadb::MariaDbDataSource ds(localUrl);
   int32_t connId;
 
+  TestsListener::messagesLog() << "Requesting pooled connection with DataSource" << std::endl;
   con.reset(ds.getConnection(user, passwd));
   stmt.reset(con->createStatement());
   res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
@@ -147,25 +148,81 @@ void pool::pool_datasource()
   TestsListener::messagesLog() << "ThreadId:" << connId  << std::endl;
 
   try {
+    TestsListener::messagesLog() << "Requesting connection above maxPoolSize" << std::endl;
     Connection c2(ds.getConnection(user, passwd));
+    if (c2) {
+      stmt.reset(c2->createStatement());
+      res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
+      ASSERT(res->next());
+      connId = res->getInt(1);
+      TestsListener::messagesLog() << "Unexpected ThreadId:" << connId << std::endl;
+    }
     FAIL("Requesting connection beyond pool max capacity should yield an exception");
   }
   catch (sql::SQLException&) {
     // Fine
   }
 
+  TestsListener::messagesLog() << "Closing pool" << std::endl;
+  // Connection should be deleted(or even just released) before pool closed
+  con.reset(nullptr);
   // This supposed close the pool, thus new connection should be not from there.
   ds.close();
-  // That also means, that all connections in the pool are closed. Thus we should
-  // get rid of those pointers. TODO: maybe this should still be cared of by the connector? not sure if that is possible
-  con.release(); // or reset() before ds.close()
 
+  TestsListener::messagesLog() << "Requesting the connection from the new pool" << std::endl;
   con.reset(ds.getConnection());
   stmt.reset(con->createStatement());
   res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
   ASSERT(res->next());
   TestsListener::messagesLog() << "ThreadId:" << res->getInt(1) << std::endl;
   ASSERT(connId != res->getInt(1));
+  con.reset(nullptr);
+  // We don't need too many pools
+  ds.close();
+}
+
+
+void pool::pool_idle()
+{
+  constexpr std::size_t maxPoolSize = 2, minPoolSize= 1, maxIdleTime= 60;
+  sql::SQLString localUrl(url);
+
+  if (localUrl.find_first_of('?') == sql::SQLString::npos) {
+    localUrl.append('?');
+  }
+  localUrl.append("minPoolSize=1&maxPoolSize=" + std::to_string(maxPoolSize) + "&testMinRemovalDelay=4&maxIdleTime=" + std::to_string(maxIdleTime));
+
+  sql::mariadb::MariaDbDataSource ds(localUrl);
+  std::size_t i;
+  std::array<Connection, maxPoolSize> c;
+  std::vector<int32_t> connection_id(maxPoolSize);
+  bool verbosity = TestsListener::setVerbose(true);
+
+  for (i = 0; i < maxPoolSize; ++i) {
+    c[i].reset(ds.getConnection(user, passwd));
+    ASSERT(c[i].get());
+    stmt.reset(c[i]->createStatement());
+    res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
+    ASSERT(res->next());
+    connection_id[i]= (res->getInt(1));
+    TestsListener::messagesLog() << std::hex << c[i].get() << i << ":" << res->getInt(1) << std::endl;
+  }
+
+  c[1].reset(nullptr);
+  std::this_thread::sleep_for(std::chrono::seconds(maxIdleTime + 10));
+
+  c[1].reset(ds.getConnection());
+  ASSERT(c[1].get());
+  stmt.reset(c[1]->createStatement());
+  res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
+  ASSERT(res->next());
+  int32_t newConnId= res->getInt(1);
+  TestsListener::messagesLog() << std::hex << c[1].get() << "1:" << newConnId << std::dec << std::endl;
+
+  ASSERT(connection_id[1] != newConnId);
+  ASSERT(!contains(connection_id, newConnId));
+
+  ds.close();
 }
 
 } /* namespace connection */

@@ -84,7 +84,9 @@ namespace mariadb
       if (poolMap.find(pool.getUrlParser()) != poolMap.end())
       {
         poolMap.remove(pool.getUrlParser());
-        shutdownExecutor();
+        if (poolMap.empty()) {
+          shutdownExecutor();
+        }
       }
     }
   }

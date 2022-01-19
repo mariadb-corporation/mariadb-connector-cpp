@@ -48,12 +48,15 @@ public:
   {
     TEST_CASE(pool_simple);
     TEST_CASE(pool_datasource);
+    TEST_CASE(pool_idle);
   }
 
   /* Simple test of the connection pool */
   void pool_simple();
   /* Simple test of the connection pool with DataSource class */
   void pool_datasource();
+  /* Test of idle connection removal function */
+  void pool_idle();
 };
 
 

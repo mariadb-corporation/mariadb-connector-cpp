@@ -197,20 +197,18 @@ namespace sql
     T pollFirst(const std::chrono::duration<Rep, Period>& timeout_duration)
     {
       std::unique_lock<std::mutex> lock(queueSync);
-      for (;;) {
-        if (!closed && !realQueue.empty()) {
-          break;
-        }
-        if (!closed && notEmpty.wait_for(lock, timeout_duration) != std::cv_status::timeout) {
-          break;
-        }
-        else {
-          T null(nullptr);
-          return std::move(null);
-        }
+
+      // If the queue is not closed yet, and is empty, let's wait for timeout duration
+      if (!closed && realQueue.empty()) {
+        notEmpty.wait_for(lock, timeout_duration);
       }
-      T result= std::move(realQueue.front());
-      realQueue.pop_front();
+
+      T result(nullptr);
+      // If still empty - then return "null", if not - return what we have
+      if (!realQueue.empty()) {
+        result= std::move(realQueue.front());
+        realQueue.pop_front();
+      }
       return std::move(result);
     }
 
@@ -221,6 +219,17 @@ namespace sql
       case MICROSECONDS: return pollFirst(std::chrono::microseconds(timeout));
       default/*case NANOSECONDS*/: return pollFirst(std::chrono::nanoseconds(timeout));
       }
+    }
+
+    /* that is application's responsibility to make sure it's not empty */
+    T& front()
+    {
+      return realQueue.front();
+    }
+
+    T& back()
+    {
+      return realQueue.back();
     }
 
     reverse_iterator rbegin() { return realQueue.rbegin(); }
