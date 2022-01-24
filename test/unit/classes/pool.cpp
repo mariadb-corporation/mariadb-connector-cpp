@@ -222,6 +222,7 @@ void pool::pool_idle()
   ASSERT(connection_id[1] != newConnId);
   ASSERT(!contains(connection_id, newConnId));
 
+  for (auto& cnx : c) cnx.reset(nullptr);
   ds.close();
 }
 

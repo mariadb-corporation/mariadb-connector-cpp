@@ -1,7 +1,7 @@
 sudo: true
 language: c++
 services: docker
-addons:yy
+addons:
   hosts:
     - mariadb.example.com
 

@@ -396,7 +396,9 @@ namespace mariadb
 
   /** Close datasource. This an extension to JDBC to close corresponding connections pool */
   void MariaDbDataSource::close() {
-    Pools::retrievePool(internal->urlParser)->close();
+    Shared::Pool pool= Pools::retrievePool(internal->urlParser);
+    if (pool)
+      pool->close();
   }
 
   // ------------------------- MariaDbDataSourceInternal ---------------------------

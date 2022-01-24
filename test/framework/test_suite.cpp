@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020, 2022, MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -29,6 +30,7 @@
  */
 
 
+#include <chrono>
 
 #include "test_suite.h"
 #include "test_runner.h"
@@ -84,8 +86,9 @@ void TestSuite::runTest()
 
   String fullName;
 
-  for ( testsList_it it=testCases.begin(); it != testCases.end(); ++it)
+  for (testsList_it it= testCases.begin(); it != testCases.end(); ++it)
   {
+    std::chrono::steady_clock::time_point testStart;
     fullName=   suiteName;
     fullName+=  "::";
     fullName+=  (*it)->get()->name();
@@ -120,12 +123,12 @@ void TestSuite::runTest()
       break;
     }
 
-    TestRunResult result=   trrPassed;
+    TestRunResult result= trrPassed;
 
     try
     {
       TestsListener::testHasStarted();
-
+      testStart= std::chrono::steady_clock::now();
       (*it)->get()->runTest();
     }
     // TODO: move interpretation of exception to TestSuite descendants
@@ -144,6 +147,14 @@ void TestSuite::runTest()
       msg= msg + e.what() + "\")";
 
       TestsListener::setTestExecutionComment( msg );
+    }
+    catch (sql::SQLException& e)
+    {
+      std::stringstream msg("[");
+      msg << e.getSQLState() << "]" << e.getCause() << "(" << e.getErrorCode() << "). Execution took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - testStart).count() << "ms";
+
+      TestsListener::setTestExecutionComment( msg.str() );
+      TestsListener::errorsLog( msg.str() );
     }
     catch ( std::exception & e )
     {
