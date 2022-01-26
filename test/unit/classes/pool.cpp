@@ -84,9 +84,17 @@ void pool::pool_simple()
   stmt.reset(c[3]->createStatement());
   res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
   ASSERT(res->next());
-  TestsListener::messagesLog() << std::hex << c[3].get() << "3:" << res->getInt(1) << std::dec << std::endl;
+  int32_t connid= res->getInt(1);
+  TestsListener::messagesLog() << std::hex << c[3].get() << "3:" << connid << std::dec << std::endl;
 
-  ASSERT(contains(connection_id, res->getInt(1)));
+  if (isSkySqlHA()) {
+    if (!contains(connection_id, connid)) {
+      connection_id.push_back(res->getInt(1));
+    }
+  }
+  else {
+    ASSERT(contains(connection_id, res->getInt(1)));
+  }
 
   std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
@@ -105,7 +113,17 @@ void pool::pool_simple()
       res.reset(stmt->executeQuery("SELECT 1, CONNECTION_ID()"));
       ASSERT(res->next());
       //TestsListener::messagesLog() << " ThreadId:" << res->getInt(2);
-      ASSERT(contains(connection_id, res->getInt(2)));
+      if (isSkySqlHA()) {
+        connid= res->getInt(2);
+        if (!contains(connection_id, connid)) {
+          connection_id.push_back(connid);
+          // Assuming maxscale has 2 servers behind it
+          ASSERT(connection_id.size() <= maxPoolSize*2);
+        }
+      }
+      else {
+        ASSERT(contains(connection_id, res->getInt(2)));
+      }
       ASSERT(!res->next());
     }
     switch (std::rand() % 3) {

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -2804,8 +2804,11 @@ void connection::setDefaultAuth()
     }
     catch (sql::SQLException &e)
     {
-      /* Error expected as trying to load unknown authentication plugin */
-      ASSERT_EQUALS(2059, e.getErrorCode()/*CR_AUTH_PLUGIN_CANNOT_LOAD_ERROR*/);
+      /* With maxscale that happens to be 1105, and does not make sense to test it */
+      if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+        /* Error expected as trying to load unknown authentication plugin */
+        ASSERT_EQUALS(2059, e.getErrorCode()/*CR_AUTH_PLUGIN_CANNOT_LOAD_ERROR*/);
+      }
     }
   }
   catch (sql::SQLException &e)
@@ -3318,13 +3321,24 @@ void connection::concpp89_10to11upgrade()
 void connection::concpp94_loadLocalInfile()
 {
   sql::Properties p;
+  sql::SQLString onServer(getVariableValue("local_infile", true));
 
+  if (onServer.compare("0") == 0) {
+    try {
+      setVariableValue("local_infile", "ON", true); // can't be session
+    }
+    catch (sql::SQLException&) {
+      SKIP("local_infile is OFF at the server, and test could not change that. Doesn't make sense to continue the test");
+    }
+  }
   try {
     stmt->execute("LOAD DATA LOCAL INFILE 'nonexistent.txt' INTO TABLE nonexistent(b)");
   }
   catch (sql::SQLException& e) {
-    ASSERT_EQUALS(4166, e.getErrorCode());
-    //ASSERT_EQUALS("42000", e.getSQLState());
+    if (e.getErrorCode() != 1148 && e.getErrorCode() != 4166) {
+      FAIL("Wrong error code - local infile is allowed");
+    }
+    //ASSERT_EQUALS(4166, e.getErrorCode());
   }
 
   p["user"] = user;
@@ -3339,7 +3353,10 @@ void connection::concpp94_loadLocalInfile()
     stmt->execute("LOAD DATA LOCAL INFILE 'nonexistent.txt' INTO TABLE nonexistent(b)");
   }
   catch (sql::SQLException& e) {
-    ASSERT(4166!=e.getErrorCode());
+    if (e.getErrorCode() == 1148 || e.getErrorCode() == 4166) {
+      FAIL("Wrong error code - local infile is still not allowed");
+    }
+    //ASSERT(4166!=e.getErrorCode());
     ASSERT_EQUALS("42S02", e.getSQLState());
   }
 }

@@ -1263,6 +1263,9 @@ void preparedstatement::callSPWithPS()
       return;
     }
     res->close();
+    /*while (cstmt->getMoreResults())
+    {
+    }*/
   }
   catch (sql::SQLException &e)
   {

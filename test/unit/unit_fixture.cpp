@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -335,17 +335,19 @@ void unit_fixture::init()
 void unit_fixture::setUp()
 {
   created_objects.clear();
+  undo.clear();
 
-  try
-  {
-    con.reset(this->getConnection(&commonProperties));
+  if (!con) {
+    try
+    {
+      con.reset(this->getConnection(&commonProperties));
+    }
+    catch (sql::SQLException& sqle)
+    {
+      logErr(String("Couldn't get connection") + sqle.what());
+      throw sqle;
+    }
   }
-  catch (sql::SQLException & sqle)
-  {
-    logErr(String("Couldn't get connection") + sqle.what());
-    throw sqle;
-  }
-
   logDebug("Host: " + url + ", UID: " + user + ", Schema: " + db + ", Tls: " + (useTls ? "yes" : "no"));
 
   /*
@@ -372,9 +374,28 @@ void unit_fixture::tearDown()
     }
   }
 
+  if (!undo.empty()) {
+    std::stringstream undoCombined(undo.front().c_str());
+    undo.pop_front();
+    for (auto& undoQuery : undo) {
+      undoCombined << ";" << undoQuery;
+    }
+    stmt->execute(undoCombined.str());
+  }
+
   stmt.reset();
   pstmt.reset();
-  con.reset();
+  cstmt.reset();
+  if (con) {
+    if (con->isClosed()) {
+      // Resetting the pointer, i.e.destructing if it is closed. We can't reset it and make usable
+      con.reset();
+    }
+    else {
+      // resetting the connection for future use
+      con->reset();
+    }
+  }
 }
 
 void unit_fixture::createSchemaObject(String object_type, String object_name,
@@ -465,6 +486,29 @@ int unit_fixture::getServerVersion(Connection & con)
 {
   DatabaseMetaData dbmeta(con->getMetaData());
   return dbmeta->getDatabaseMajorVersion() * 10000 + dbmeta->getDatabaseMinorVersion() * 1000 + dbmeta->getDatabasePatchVersion();
+}
+
+sql::SQLString unit_fixture::getVariableValue(const sql::SQLString& name, bool global)
+{
+  res.reset(stmt->executeQuery((global ? "SELECT @@global." : "SELECT @@") + name));
+  res->next();
+  return res->getString(1);
+}
+
+bool unit_fixture::setVariableValue(const sql::SQLString& name, const sql::SQLString& value, bool global)
+{
+  sql::SQLString currentValue(getVariableValue(name), global);
+
+  if (value.compare(currentValue) != 0) {
+    if (global) {
+      stmt->execute("SET GLOBAL " + name + "=" + value);
+      undo.push_front("SET GLOBAL " + name + "=" + currentValue);
+    }
+    else {
+      stmt->execute("SET SESSION " + name + "=" + value);
+    }
+  }
+  return false;
 }
 
 std::string unit_fixture::exceptionIsOK(sql::SQLException & e)

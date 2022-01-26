@@ -614,14 +614,14 @@ namespace sql
         false}},
       {
         "useResetConnection", {"useResetConnection",
-        "0.9.1",
+        "1.1.1",
         "When a connection is closed() "
         "(given back to pool), the pool resets the connection state. Setting this option, the prepare command "
         "will be deleted, session variables changed will be reset, and user variables will be destroyed when the"
         " server permits it (>= MariaDB 10.2.4, >= MySQL 5.7.3), permitting saving memory on the server if the "
         "application make extensive use of variables. Must not be used with the useServerPrepStmts option",
         false,
-        false}},
+        true }},
       {
         "allowMasterDownConnection", {"allowMasterDownConnection",
         "0.9.1",

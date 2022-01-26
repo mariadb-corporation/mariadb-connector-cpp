@@ -216,7 +216,7 @@ namespace mariadb
     if (!internal->hostname.empty()){
       return internal->hostname;
     }
-    bool hasHost= !internal->urlParser && internal->urlParser->getHostAddresses()[0].host.empty();
+    bool hasHost= internal->urlParser && !internal->urlParser->getHostAddresses()[0].host.empty();
     return (hasHost) ? internal->urlParser->getHostAddresses()[0].host : localhost;
   }
 

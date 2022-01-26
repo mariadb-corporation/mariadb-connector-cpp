@@ -125,7 +125,8 @@ minPoolSize              When connections are removed due to not being used for
                          longer than than "maxIdleTime", connections are closed and
                          removed from the pool. "minPoolSize" indicates the number of
                          physical connections the pool should keep available at all
-                         times. Should be less or equal to maxPoolSize(default 0)     int
+                         times. Should be less or equal to maxPoolSize(default
+                         maxPoolSize value)                                           int
 maxIdleTime              The maximum amount of time in seconds that a connection can
                          stay in the pool if not used. This value must always be below
                          @wait_timeout value - 45s. Default: 600 in seconds
@@ -138,6 +139,10 @@ poolValidMinDelay        When the pool is requested for a connection, it will va
                          connection is requested(default 1000)                        int
 allowLocalInfile         Permits loading data from local file(on the client) with
                          LOAD DATA LOCAL INFILE statement(false)                      bool
+useResetConnection       Makes Connection::reset() method to issue conenction reset
+                         command at the server. This option existed from first version,
+                         but was not documented. Since 1.1.1 its default changed to
+                         true                                                         bool
 
 
 Properties is map of strings, and is another way to pass optional parameters.

@@ -1694,8 +1694,8 @@ namespace mariadb
   {
     bool useComReset =
       options->useResetConnection
-      &&((protocol->isServerMariaDb()&&protocol->versionGreaterOrEqual(10, 2, 4))
-        ||(!protocol->isServerMariaDb()&&protocol->versionGreaterOrEqual(5, 7, 3)));
+      && ((protocol->isServerMariaDb() && protocol->versionGreaterOrEqual(10, 2, 4))
+       || (!protocol->isServerMariaDb() && protocol->versionGreaterOrEqual(5, 7, 3)));
     if (useComReset) {
       protocol->reset();
     }

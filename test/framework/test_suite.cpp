@@ -150,6 +150,7 @@ void TestSuite::runTest()
     }
     catch (sql::SQLException& e)
     {
+      result = trrThrown;
       std::stringstream msg("[");
       msg << e.getSQLState() << "]" << e.getCause() << "(" << e.getErrorCode() << "). Execution took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - testStart).count() << "ms";
 
@@ -178,7 +179,7 @@ void TestSuite::runTest()
     {
       result= trrThrown;
       TestsListener::errorsLog()
-        << "Unknown exception occurred while running:"
+        << "Unknown exception occurred while running:" << typeid(std::current_exception).name()
         << (*it)->get()->name() << std::endl;
     }
 

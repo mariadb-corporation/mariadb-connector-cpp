@@ -35,6 +35,7 @@
 
 #include <memory>
 #include <vector>
+#include <queue>
 #include <stdlib.h>
 
 #include "../framework/framework.h"
@@ -164,7 +165,6 @@ struct udtattribute
   ctype(c)
   {
   }
-
 };
 
 
@@ -180,6 +180,7 @@ protected:
    * Used by tearDown() to clean up the database after the test run
    */
   TestList created_objects;
+  std::list<sql::SQLString> undo;
 
   sql::Properties commonProperties;
   /**
@@ -330,7 +331,7 @@ protected:
    *
    * @throws SQLException &
    */
-  sql::Connection * getConnection(sql::ConnectOptionsMap *additional_opts=NULL);
+  sql::Connection * getConnection(sql::ConnectOptionsMap *additional_opts= nullptr);
 
   /**
    * Checks if the passed SQLException is caused by the specified error
@@ -353,6 +354,13 @@ protected:
    * Helper function to fetch the MySQL Server version as a classical integer in the range from 30000 - 99999
    */
   int getServerVersion(Connection &con);
+
+
+  /* Returns value of the named variable */
+  sql::SQLString getVariableValue(const sql::SQLString& name, bool global= false);
+
+  /* Checks current value, if it's different - then set the new value, and record what has to be done to return it to the original state */
+  bool setVariableValue(const sql::SQLString& name, const sql::SQLString& value, bool global= false);
 
 public:
 

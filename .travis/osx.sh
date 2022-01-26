@@ -28,4 +28,4 @@ cmake --build . --config RelWithDebInfo
 echo "Running tests"
 cd test
 mysql --protocol=tcp -ubob -h$TEST_SERVER --port=$TEST_PORT < cts.sql
-ctest -VV
+ctest --output-on-failure

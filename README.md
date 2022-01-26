@@ -107,10 +107,11 @@ Not complete list of supported options - mostly newly added or with new aliases:
 | **`defaultFetchSize`** |The driver will call setFetchSize(n) with this value on all newly-created Statements|*int* |0||
 | **`pool`** |Use connections pool.|*bool* |false||
 | **`maxPoolSize`** |The maximum number of physical connections that the pool should contain.|*int* |8||
-| **`minPoolSize`** |When connections are removed due to not being used for longer than than "maxIdleTime", connections are closed and removed from the pool. "minPoolSize" indicates the number of physical connections the pool should keep available at all times. Should be less or equal to maxPoolSize.|*int* |0||
+| **`minPoolSize`** |When connections are removed due to not being used for longer than than "maxIdleTime", connections are closed and removed from the pool. "minPoolSize" indicates the number of physical connections the pool should keep available at all times. Should be less or equal to maxPoolSize.|*int* |maxPoolSize value||
 | **`maxIdleTime`** |The maximum amount of time in seconds that a connection can stay in the pool if not used. This value must always be below @wait_timeout value - 45s. Default: 600 in seconds (=10 minutes), minimum value is 60 seconds|*int* |600 ||
 | **`poolValidMinDelay`** |When the pool is requested for a connection, it will validate the connection state. "poolValidMinDelay" allows to disable this validation if the connection has been used recently, avoiding useless verifications in case of frequent reuse of connections. 0 means validation is done each time the connection is requested.|*int* |1000 ||
 | **`allowLocalInfile`** |Permits loading data from local file(on the client) with LOAD DATA LOCAL INFILE statement.|*bool* |false||
+| **`useResetConnection`** |Makes Connection::reset() method to issue conenction reset command at the server. This option existed from first version, but was not documented. Since 1.1.1 its default changed to true|*bool* |true||
 
 
 
