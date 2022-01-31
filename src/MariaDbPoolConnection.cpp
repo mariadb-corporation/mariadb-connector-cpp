@@ -104,7 +104,9 @@ namespace mariadb
     */
   void MariaDbPoolConnection::addConnectionEventListener(ConnectionEventListener* listener)
   {
-    connectionEventListeners.emplace_back(listener);
+    if (listener) {
+      connectionEventListeners.emplace_back(listener);
+    }
   }
 
   /**
@@ -132,7 +134,9 @@ namespace mariadb
     */
   void MariaDbPoolConnection::addStatementEventListener(StatementEventListener* listener)
   {
-    statementEventListeners.push_back(listener);
+    if (listener) {
+      statementEventListeners.emplace_back(listener);
+    }
   }
 
   /**

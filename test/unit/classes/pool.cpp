@@ -208,13 +208,19 @@ void pool::pool_idle()
   if (localUrl.find_first_of('?') == sql::SQLString::npos) {
     localUrl.append('?');
   }
-  localUrl.append("minPoolSize=1&maxPoolSize=" + std::to_string(maxPoolSize) + "&testMinRemovalDelay=4&maxIdleTime=" + std::to_string(maxIdleTime));
+  localUrl.append("minPoolSize=" + std::to_string(minPoolSize) + "&maxPoolSize=" + std::to_string(maxPoolSize));
+  sql::Properties properties({{"testMinRemovalDelay", "4"}, {"maxIdleTime", std::to_string(maxIdleTime)}});
 
-  sql::mariadb::MariaDbDataSource ds(localUrl);
+  sql::mariadb::MariaDbDataSource ds(localUrl, properties);
   std::size_t i;
   std::array<Connection, maxPoolSize> c;
   std::vector<int32_t> connection_id(maxPoolSize);
   bool verbosity = TestsListener::setVerbose(true);
+  sql::Properties propsFromDs;
+
+  ds.getProperties(propsFromDs);
+  ASSERT_EQUALS("4", propsFromDs["testMinRemovalDelay"]);
+  ASSERT_EQUALS(std::to_string(maxIdleTime), propsFromDs["maxIdleTime"]);
 
   for (i = 0; i < maxPoolSize; ++i) {
     c[i].reset(ds.getConnection(user, passwd));

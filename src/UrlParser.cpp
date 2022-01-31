@@ -56,9 +56,9 @@ namespace mariadb
   UrlParser::UrlParser() : options(new Options()), haMode(HaMode::NONE), multiMaster(false)
   {}
 
-  UrlParser::UrlParser(SQLString& database, std::vector<HostAddress>& addresses, Shared::Options options, enum HaMode haMode) :
+  UrlParser::UrlParser(const SQLString& _database, std::vector<HostAddress>& addresses, Shared::Options options, enum HaMode haMode) :
     options(options),
-    database(database),
+    database(_database),
     addresses(addresses),
     haMode(haMode)
   {
@@ -396,8 +396,10 @@ namespace mariadb
   int64_t UrlParser::hashCode() const
   {
     int64_t result= !options->password.empty() ? options->password.hashCode() : 0;
-    result= 31 *result + (!options->user.empty() ? options->user.hashCode() : 0);
-    result= 31 *result + initialUrl.hashCode();
+    result= 31*result + (!options->user.empty() ? options->user.hashCode() : 0);
+    result= 31*result + initialUrl.hashCode();
+    result= 31*result + database.hashCode();
+    //result+= options->hashCode();
 
     return result;
   }

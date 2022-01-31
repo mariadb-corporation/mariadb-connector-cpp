@@ -26,7 +26,7 @@
 #include "StringImp.h"
 #include "MariaDbDataSource.hpp"
 //#include "UrlParser.h"
-
+#include "PropertiesImp.h"
 namespace sql
 {
 namespace mariadb
@@ -36,28 +36,25 @@ class UrlParser;
 
 class MariaDbDataSourceInternal {
   std::mutex syncronization;
+
 public:
-  SQLString hostname;
-  int32_t   port= 3306;
   int32_t   connectTimeoutInMs= 0;
-  SQLString database;
   SQLString url;
   SQLString user;
   SQLString password;
-  SQLString properties;
+  PropertiesImp::ImpType properties;
 
   std::shared_ptr<UrlParser> urlParser;
-
-  MariaDbDataSourceInternal(const SQLString& _hostname, int32_t _port, const SQLString& _database)
-    : hostname(_hostname)
-    , port(_port)
-    , database(_database)
-    , urlParser(nullptr)
-  {}
 
   MariaDbDataSourceInternal(const SQLString& url)
     : url(url)
     , urlParser(nullptr)
+  {}
+
+  MariaDbDataSourceInternal(const SQLString& url, const Properties& props)
+    : url(url)
+    , urlParser(nullptr)
+    , properties(PropertiesImp::get(props))
   {}
 
   void reInitializeIfNeeded();

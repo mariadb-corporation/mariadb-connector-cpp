@@ -52,7 +52,7 @@ class UrlParser
   UrlParser();
 
 public:
-  UrlParser(SQLString& database, std::vector<HostAddress>& addresses, Shared::Options options, enum HaMode haMode);
+  UrlParser(const SQLString& database, std::vector<HostAddress>& addresses, Shared::Options options, enum HaMode haMode);
   ~UrlParser() {}
   static bool acceptsUrl(const SQLString& url);
   static UrlParser* parse(const SQLString& url);

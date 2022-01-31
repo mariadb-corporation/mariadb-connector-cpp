@@ -29,57 +29,27 @@ namespace sql
 {
 namespace mariadb
 {
-  /**
-   * Constructor.
-   *
-   * @param hostname hostname (ipv4, ipv6, dns name)
-   * @param port server port
-   * @param database database name
-   */
-  MariaDbDataSource::MariaDbDataSource(const SQLString& hostname,int32_t port, const SQLString& database)
+  static const SQLString defaultUrl("jdbc:mariadb://localhost:3306/");
+  MariaDbDataSource::MariaDbDataSource(const SQLString& url) :
+    internal(new MariaDbDataSourceInternal(url))
   {
-    internal.reset(new MariaDbDataSourceInternal(hostname, port, database));
+    
   }
 
-  MariaDbDataSource::MariaDbDataSource(const SQLString& url)
+  MariaDbDataSource::MariaDbDataSource(const SQLString& url, const Properties& props) :
+    internal(new MariaDbDataSourceInternal(url, props))
   {
-    internal.reset(new MariaDbDataSourceInternal(url));
   }
 
   /** Default constructor. hostname will be localhost, port 3306. */
-  MariaDbDataSource::MariaDbDataSource()
+  MariaDbDataSource::MariaDbDataSource() : internal(new MariaDbDataSourceInternal(emptyStr))
   {
-    internal.reset(new MariaDbDataSourceInternal(localhost, 3306, emptyStr));
   }
 
 
   MariaDbDataSource::~MariaDbDataSource() {
   }
 
-  /**
-    * Gets the name of the database.
-    *
-    * @return the name of the database for this data source
-    */
-  const SQLString& MariaDbDataSource::getDatabaseName()
-  {
-    if (!internal->database.empty()){
-      return internal->database;
-    }
-    return (internal->urlParser && internal->urlParser->getDatabase() ? internal->urlParser->getDatabase() : emptyStr);
-  }
-
-  /**
-   * Sets the database name.
-   *
-   * @param database the name of the database
-   * @throws SQLException if connection information are erroneous
-   */
-  void MariaDbDataSource::setDatabaseName(const SQLString& database)
-  {
-    internal->database= database;
-    internal->reInitializeIfNeeded();
-  }
 
   /**
    * Gets the username.
@@ -107,27 +77,6 @@ namespace mariadb
   }
 
   /**
-   * Gets the username.
-   *
-   * @return the username to use when connecting to the database
-   */
-  const SQLString& MariaDbDataSource::getUserName()
-  {
-    return getUser();
-  }
-
-  /**
-   * Sets the username.
-   *
-   * @param userName the username
-   * @throws SQLException if connection information are erroneous
-   */
-  void MariaDbDataSource::setUserName(const SQLString& userName)
-  {
-    setUser(userName);
-  }
-
-  /**
    * Sets the password.
    *
    * @param password the password
@@ -139,59 +88,15 @@ namespace mariadb
     internal->reInitializeIfNeeded();
   }
 
-  /**
-   * Returns the port number.
-   *
-   * @return the port number
-   */
-  int32_t MariaDbDataSource::getPort()
+  void MariaDbDataSource::setProperties(const Properties& props)
   {
-    if (internal->port != 0){
-      return internal->port;
-    }
-    return internal->urlParser ? internal->urlParser->getHostAddresses()[0].port : 3306;
-  }
-
-  /**
-   * Sets the database port.
-   *
-   * @param port the port
-   * @throws SQLException if connection information are erroneous
-   */
-  void MariaDbDataSource::setPort(int32_t port)
-  {
-    internal->port= port;
+    internal->properties= PropertiesImp::get(props);
     internal->reInitializeIfNeeded();
   }
 
-  /**
-   * Returns the port number.
-   *
-   * @return the port number
-   */
-  int32_t MariaDbDataSource::getPortNumber()
+  void MariaDbDataSource::getProperties(Properties& properties)
   {
-    return getPort();
-  }
-
-  /**
-   * Sets the port number.
-   *
-   * @param port the port
-   * @throws SQLException if connection information are erroneous
-   * @see #setPort
-   */
-  void MariaDbDataSource::setPortNumber(int32_t port)
-  {
-    if (port >0){
-      setPort(port);
-    }
-  }
-
-  void MariaDbDataSource::setProperties(const SQLString& properties)
-  {
-    internal->properties= properties;
-    internal->reInitializeIfNeeded();
+    for (auto &it : internal->properties) properties[it.first]= it.second;
   }
 
   /**
@@ -207,29 +112,11 @@ namespace mariadb
   }
 
   /**
-   * Returns the name of the database server.
-   *
-   * @return the name of the database server
+   * Gets the connection string URL.
    */
-  const SQLString& MariaDbDataSource::getServerName()
+  SQLString MariaDbDataSource::getUrl()
   {
-    if (!internal->hostname.empty()){
-      return internal->hostname;
-    }
-    bool hasHost= internal->urlParser && !internal->urlParser->getHostAddresses()[0].host.empty();
-    return (hasHost) ? internal->urlParser->getHostAddresses()[0].host : localhost;
-  }
-
-  /**
-   * Sets the server name.
-   *
-   * @param serverName the server name
-   * @throws SQLException if connection information are erroneous
-   */
-  void MariaDbDataSource::setServerName(const SQLString& serverName)
-  {
-    internal->hostname= serverName;
-    internal->reInitializeIfNeeded();
+    return internal->url;
   }
 
   /**
@@ -245,9 +132,9 @@ namespace mariadb
       if (!internal->urlParser){
         internal->initialize();
       }
-
       return MariaDbConnection::newConnection(internal->urlParser, nullptr);
-    }catch (SQLException& e){
+    }
+    catch (SQLException& e) {
       throw ExceptionFactory::INSTANCE.create(e);
     }
   }
@@ -424,44 +311,25 @@ namespace mariadb
   {
     std::unique_lock<std::mutex> localScopeLock(syncronization);
 
+    properties["pool"]= "true";
+    
+    if (!user.empty()){
+      properties["user"]= user;
+    }
+    if (!password.empty()) {
+      properties["password"]= password;
+    }
+    if (connectTimeoutInMs != 0){
+      properties["connectTimeout"]= std::to_string(connectTimeoutInMs);
+    }
+    /*if (!database.empty()){
+      props["schema"]= database;
+    }*/
     if (!url.empty()) {
-      // With DS using pool by default. Perhaps would be better to "implement" getPooledConnection, and have it different for getPooledConnection and getConnection
-      PropertiesImp::ImpType props{ {"pool", "true"}};
-      if (!user.empty()){
-        props["user"]= user;
-      }
-      if (!password.empty()) {
-        props["password"]= password;
-      }
-      if (!database.empty()){
-        props["schema"]= database;
-      }
-      if (connectTimeoutInMs != 0){
-        props["connectTimeout"]= std::to_string(connectTimeoutInMs);
-      }
-
-      urlParser.reset(UrlParser::parse(url, props));
+      urlParser.reset(UrlParser::parse(url, properties));
     }
     else {
-      Shared::Options options= DefaultOptions::defaultValues(HaMode::NONE);
-      options->user= user;
-      options->password= password;
-
-      std::vector<HostAddress> hosts({ HostAddress(
-        hostname.empty() ? localhost : hostname,
-        port == 0 ? 3306 : port) });
-      urlParser.reset(
-        new UrlParser(
-            database,
-            hosts,
-            options,
-            HaMode::NONE));
-      if (!properties.empty()){
-        urlParser->setProperties(properties);
-      }
-      if (connectTimeoutInMs != 0){
-        urlParser->getOptions()->connectTimeout= connectTimeoutInMs;
-      }
+      urlParser.reset(UrlParser::parse(defaultUrl, properties));
     }
   }
 }
