@@ -38,26 +38,17 @@ class MARIADB_EXPORTED MariaDbDataSource {
 #pragma warning(pop)
 
 public:
-  MariaDbDataSource(const SQLString& hostname, int32_t port, const SQLString& database);  
-  MariaDbDataSource(const SQLString& url);  
+  MariaDbDataSource(const SQLString& url);
+  MariaDbDataSource(const SQLString& url, const Properties& props);
   MariaDbDataSource();  
   ~MariaDbDataSource();
 
-  const SQLString& getDatabaseName();
-  void setDatabaseName(const SQLString& database);  
   const SQLString& getUser();
   void setUser(const SQLString& user);  
-  const SQLString& getUserName();
-  void setUserName(const SQLString& userName);  
   void setPassword(const SQLString& password);  
-  int32_t getPort();  
-  void setPort(int32_t port);  
-  int32_t getPortNumber();  
-  void setPortNumber(int32_t port);  
-  void setProperties(const SQLString& properties);  
+  void setProperties(const Properties& properties);
+  void getProperties(Properties& properties);
   void setUrl(const SQLString& url);  
-  const SQLString& getServerName();
-  void setServerName(const SQLString& serverName);  
   Connection* getConnection();  
   Connection* getConnection(const SQLString& username,const SQLString& password);  
   PrintWriter* getLogWriter();  
