@@ -1572,6 +1572,38 @@ void bugs::concpp60()
   }
 }
 
+void bugs::change_request_9()
+{
+  char buffer[] = "(values was 0x 0)";
+  logMsg("bugs::change_request_9");
+
+  // Initialize prepared statement
+  pstmt.reset(con->prepareStatement("SELECT NULL"));
+
+  // Check for all target locations of the segmentation fault
+  for(int8_t i = 0; i < 16; ++i)
+  {
+    try
+    {
+      pstmt->setByte(3, i << 4);
+    }
+    catch(sql::SQLException const &e)
+    {
+      buffer[14] = i < 10 ? (char)i + 48 : (char)i + 65 - 10;
+
+      if(!strstr(e.what(), buffer))
+      {
+        fprintf(stderr, "The error message:\n%s\n\n", e.what());
+        fprintf(stderr, "Does not contain: %s\n\n", buffer);
+
+        fail("Incorrect calculation of hex value", __FILE__, __LINE__);
+      }
+    }
+  }
+
+  pstmt->execute();
+}
+
 } /* namespace regression */
 } /* namespace testsuite */
 
