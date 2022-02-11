@@ -11,12 +11,13 @@ namespace sql
 namespace mariadb
 {
 class MariaDbInnerPoolConnection  : public MariaDbPoolConnection {
-  std::atomic<std::chrono::time_point<std::chrono::steady_clock>> lastUsed;
+  //std::chrono::time_point<std::chrono::steady_clock>
+  std::atomic<int64_t> lastUsed;
 
 public:
   MariaDbInnerPoolConnection(MariaDbConnection* connection);
   void close();
-  std::chrono::time_point<std::chrono::steady_clock> getLastUsed();
+  int64_t getLastUsed();
   void lastUsedToNow();
   void ensureValidation();
   };

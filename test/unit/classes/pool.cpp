@@ -118,7 +118,10 @@ void pool::pool_simple()
         if (!contains(connection_id, connid)) {
           connection_id.push_back(connid);
           // Assuming maxscale has 2 servers behind it
-          ASSERT(connection_id.size() <= maxPoolSize*2);
+          //ASSERT(connection_id.size() <= maxPoolSize*2);
+        }
+        else {
+          TestsListener::messagesLog() << "HA->the pool hit" << std::endl;
         }
       }
       else {
@@ -152,7 +155,7 @@ void pool::pool_datasource()
   if (localUrl.find_first_of('?') == sql::SQLString::npos) {
     localUrl.append('?');
   }
-  localUrl.append("minPoolSize=1&maxPoolSize=1&connectTimeout=5000&testMinRemovalDelay=6");
+  localUrl.append("minPoolSize=1&maxPoolSize=1&connectTimeout=10000&testMinRemovalDelay=6&useTls=").append(useTls ? "true" : "false");
 
   sql::mariadb::MariaDbDataSource ds(localUrl);
   int32_t connId;
@@ -209,7 +212,7 @@ void pool::pool_idle()
     localUrl.append('?');
   }
   localUrl.append("minPoolSize=" + std::to_string(minPoolSize) + "&maxPoolSize=" + std::to_string(maxPoolSize));
-  sql::Properties properties({{"testMinRemovalDelay", "4"}, {"maxIdleTime", std::to_string(maxIdleTime)}});
+  sql::Properties properties({{"testMinRemovalDelay", "4"}, {"maxIdleTime", std::to_string(maxIdleTime)}, {"useTls", useTls ? "true" : "false"}});
 
   sql::mariadb::MariaDbDataSource ds(localUrl, properties);
   std::size_t i;

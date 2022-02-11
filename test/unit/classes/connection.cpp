@@ -3380,7 +3380,7 @@ void connection::concpp4_sequentialfailover()
   theRest= url.substr(slash);
   localUrl.append(realHost).append(theRest);
 
-  sql::Properties p{{"connectTimeout", "6000"}, {"user", user}, {"password", passwd}};
+  sql::Properties p{{"connectTimeout", "6000"}, {"user", user}, {"password", passwd}, {"useTls", useTls ? "true" : "false"}};
 
   con.reset(driver->connect(localUrl, p));
   ASSERT(con.get());

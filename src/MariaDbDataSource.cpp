@@ -239,7 +239,7 @@ namespace mariadb
    *     that this <code>ConnectionPoolDataSource</code> object represents
    * @throws SQLException if a database access error occurs
    */
-  PooledConnection* MariaDbDataSource::getPooledConnection()
+  PooledConnection& MariaDbDataSource::getPooledConnection()
   {
     throw SQLFeatureNotSupportedException("getPooledConnection() is not supported");
     /* The line below will even compile. But letting things as simple as possible - getConnection() will
@@ -256,7 +256,7 @@ namespace mariadb
    *     that this <code>ConnectionPoolDataSource</code> object represents
    * @throws SQLException if a database access error occurs
    */
-  PooledConnection* MariaDbDataSource::getPooledConnection(const SQLString& user, const SQLString& password)
+  PooledConnection& MariaDbDataSource::getPooledConnection(const SQLString& user, const SQLString& password)
   {
     throw SQLFeatureNotSupportedException("getPooledConnection() is not supported");
     /* The line below will even compile. But letting things as simple as possible - getConnection() will

@@ -30,6 +30,9 @@
 #include "util/Utils.h"
 #include "ConnectionEventListener.h"
 
+// Otherwise operations with time tend to be few screens wide
+using namespace std::chrono;
+
 namespace sql
 {
 namespace mariadb
@@ -150,10 +153,10 @@ namespace mariadb
     while (iterator != idleConnections.end())
     {
       item= *iterator;
-      auto now= std::chrono::steady_clock::now();
+      auto now= steady_clock::now();
       //urlParser->getOptions()->maxIdleTime << "Now:" << now.time_since_epoch().count() << " Last used:" << item->getLastUsed().time_since_epoch().count() << " Diff:" << std::chrono::duration_cast<std::chrono::nanoseconds>(now - item->getLastUsed()).count() << "/" << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds(urlParser->getOptions()->maxIdleTime)).count();
-      auto idleNanos= std::chrono::duration_cast<std::chrono::nanoseconds>(now - item->getLastUsed());
-      bool timedOut= (idleNanos > std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds(urlParser->getOptions()->maxIdleTime)));
+      auto idleNanos= duration_cast<nanoseconds>(now.time_since_epoch()).count() - item->getLastUsed();
+      bool timedOut= (idleNanos > duration_cast<nanoseconds>(seconds(urlParser->getOptions()->maxIdleTime)).count());
       bool shouldBeReleased= false;
       MariaDbConnection* con= dynamic_cast<MariaDbConnection*>(item->getConnection());
 
@@ -161,7 +164,7 @@ namespace mariadb
 
         // idle time is reaching server @@wait_timeout
         if (idleNanos >
-          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds(waitTimeout > 45U ? waitTimeout - 45U : waitTimeout))) {
+          duration_cast<nanoseconds>(seconds(waitTimeout > 45U ? waitTimeout - 45U : waitTimeout)).count()) {
           shouldBeReleased= true;
         }
 
@@ -265,7 +268,7 @@ namespace mariadb
       if (item) {
         MariaDbConnection* connection= dynamic_cast<MariaDbConnection*>(item->getConnection());
         try {
-          if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - item->getLastUsed()).count()
+          if (duration_cast<milliseconds>(nanoseconds(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count() - item->getLastUsed())).count()
 > urlParser->getOptions()->poolValidMinDelay) {
             // validate connection
             if (connection->isValid(10)) { // 10 seconds timeout
@@ -667,7 +670,7 @@ namespace mariadb
           // sql exception during reset, removing connection from pool
           --totalConnection;
           silentCloseConnection(conn);
-          std::stringstream msg("connection ");
+          std::ostringstream msg("connection ", std::ios_base::ate);
           msg << conn.getServerThreadId() << " removed from pool " << poolTag << "due to error during reset (total:" ;
           msg << totalConnection.load() << ", active:" << getActiveConnections() << ", pending:" << pendingRequestNumber.load() << ")";
           logger->debug(msg.str());
@@ -705,7 +708,7 @@ namespace mariadb
       }
       silentCloseConnection(conn);
       addConnectionRequest();
-      std::stringstream msg("connection ");
+      std::ostringstream msg("connection ", std::ios_base::ate);
       msg << conn.getServerThreadId() << " removed from pool " << poolTag << "due to having throw a Connection exception (total:";
       msg << totalConnection.load() << ", active:" << getActiveConnections() << ", pending:" << pendingRequestNumber.load() << ")";
       logger->debug(msg.str());

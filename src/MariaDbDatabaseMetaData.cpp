@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2022 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -2301,7 +2301,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
 
   ResultSet* MariaDbDatabaseMetaData::getSchemas(const SQLString& catalog, const SQLString& schemaPattern) {
     // TODO: need obviously smth more than that
-    std::stringstream query("SELECT SCHEMA_NAME TABLE_SCHEM, '' TABLE_CATALOG  FROM INFORMATION_SCHEMA.SCHEMATA ");
+    std::ostringstream query("SELECT SCHEMA_NAME TABLE_SCHEM, '' TABLE_CATALOG  FROM INFORMATION_SCHEMA.SCHEMATA ", std::ios_base::ate);
 
     if (!catalog.empty() && catalog.compare("def") != 0) {
       query << "WHERE 1=0 ";

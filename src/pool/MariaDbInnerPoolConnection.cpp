@@ -4,6 +4,7 @@
 #include "MariaDbInnerPoolConnection.h"
 #include "ConnectionEventListener.h"
 
+using namespace std::chrono;
 namespace sql
 {
 namespace mariadb
@@ -16,7 +17,7 @@ namespace mariadb
    */
   MariaDbInnerPoolConnection::MariaDbInnerPoolConnection(MariaDbConnection* connection) :
     MariaDbPoolConnection(connection),
-    lastUsed(std::chrono::steady_clock::now())
+    lastUsed(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count())
   {
     
   }
@@ -31,7 +32,7 @@ namespace mariadb
    *
    * @return current last used time (nano).
    */
-  std::chrono::time_point<std::chrono::steady_clock> MariaDbInnerPoolConnection::getLastUsed()
+  int64_t MariaDbInnerPoolConnection::getLastUsed()
   {
     return lastUsed.load();
   }
@@ -41,12 +42,12 @@ namespace mariadb
   {
     // Probably not the best place, but does the job
     connection->markClosed(false);
-    lastUsed.store(std::chrono::steady_clock::now());
+    lastUsed.store(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count());
   }
 
   void MariaDbInnerPoolConnection::ensureValidation()
   {
-    lastUsed.store(std::chrono::steady_clock::time_point::min());
+    lastUsed.store(0);
   }
 }
 }

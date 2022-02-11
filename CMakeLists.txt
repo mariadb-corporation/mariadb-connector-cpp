@@ -256,6 +256,7 @@ IF(WIN32)
                    "include/conncpp/CArray.hpp"
                    "include/conncpp/Properties.hpp"
                    "include/conncpp/List.hpp"
+                   "include/conncpp/PooledConnection.hpp"
                    "include/MariaDbDataSource.hpp"
 
                    src/SelectResultSet.h

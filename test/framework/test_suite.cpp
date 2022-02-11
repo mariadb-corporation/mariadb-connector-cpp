@@ -151,8 +151,8 @@ void TestSuite::runTest()
     catch (sql::SQLException& e)
     {
       result = trrThrown;
-      std::stringstream msg("[");
-      msg << e.getSQLState() << "]" << e.getCause() << "(" << e.getErrorCode() << "). Execution took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - testStart).count() << "ms";
+      std::ostringstream msg("[", std::ios_base::ate);
+      msg << e.getSQLState() << "]" << e.getMessage() << "(" << e.getErrorCode() << "). Execution took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - testStart).count() << "ms";
 
       TestsListener::setTestExecutionComment( msg.str() );
       TestsListener::errorsLog( msg.str() );

@@ -345,6 +345,11 @@ void unit_fixture::setUp()
     catch (sql::SQLException& sqle)
     {
       logErr(String("Couldn't get connection") + sqle.what());
+      logDebug("Host:" + url + ", UID:" + user + ", Schema:" + db + ", Tls:" + (useTls ? "yes" : "no")/* + ", Pwd:" + passwd + "<<<"*/);
+      for (auto& cit : commonProperties) {
+        String property(cit.first.c_str());
+        logDebug(property + ":" + cit.second.c_str());
+      }
       throw sqle;
     }
   }
@@ -375,7 +380,7 @@ void unit_fixture::tearDown()
   }
 
   if (!undo.empty()) {
-    std::stringstream undoCombined(undo.front().c_str());
+    std::ostringstream undoCombined(undo.front().c_str(), std::ios_base::ate);
     undo.pop_front();
     for (auto& undoQuery : undo) {
       undoCombined << ";" << undoQuery;

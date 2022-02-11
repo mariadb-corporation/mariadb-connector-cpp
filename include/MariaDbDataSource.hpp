@@ -56,8 +56,8 @@ public:
   void setLogWriter(const PrintWriter& out);  
   int32_t getLoginTimeout();  
   void setLoginTimeout(int32_t seconds);  
-  PooledConnection* getPooledConnection();  
-  PooledConnection* getPooledConnection(const SQLString& user, const SQLString& password);  
+  PooledConnection& getPooledConnection();  
+  PooledConnection& getPooledConnection(const SQLString& user, const SQLString& password);  
   XAConnection* getXAConnection();  
   XAConnection* getXAConnection(const SQLString& user, const SQLString& password);  
   sql::Logger* getParentLogger();

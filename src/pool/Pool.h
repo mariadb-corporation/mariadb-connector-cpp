@@ -47,15 +47,15 @@ class MariaDbConnection;
 class Pool
 {
   typedef sql::blocking_deque<MariaDbInnerPoolConnection*> Idles;
-  static Shared::Logger logger; /*LoggerFactory.getLogger(Pool.class)*/
+  static Shared::Logger logger;
   static const int32_t POOL_STATE_OK= 0;
   static const int32_t POOL_STATE_CLOSING= 1;
-  std::atomic<int32_t> poolState; /*new std::atomic<int32_t>()*/
+  std::atomic<int32_t> poolState;
 
   Shared::UrlParser urlParser;
   const Shared::Options options;
-  std::atomic<int32_t> pendingRequestNumber ; /*new std::atomic<int32_t>()*/
-  std::atomic<int32_t> totalConnection ; /*new std::atomic<int32_t>()*/
+  std::atomic<int32_t> pendingRequestNumber;
+  std::atomic<int32_t> totalConnection;
   Idles idleConnections;
   /* Queue must go before appender */
   sql::blocking_deque<Runnable> connectionAppenderQueue;
