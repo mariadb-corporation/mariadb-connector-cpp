@@ -56,11 +56,14 @@ template <class T> CArray<T>::CArray(int64_t len, const T& fillValue) : CArray<T
   std::fill(this->begin(), this->end(), fillValue);
 }
 
-#ifndef _WIN32
+#if defined(__MINGW32__) || defined(__MINGW64__)
+# define ZEROI64 0LL
+#elif not defined(_WIN32)
 # define ZEROI64 0LL
 #else
 # define ZEROI64 0I64
 #endif
+
 /* This constructor takes existin(stack?) array for "storing". Won't delete */
 template <class T> CArray<T>::CArray(T _arr[], size_t len) : arr(_arr), length(ZEROI64 - len)
 {

@@ -35,10 +35,12 @@
 #include <cstdio>
 
 #ifndef L64
-#ifdef _WIN32
-#define L64(x) x##i64
-#else
+#if defined(__MINGW32__) || defined(__MINGW64__)
 #define L64(x) x##LL
+#elif not defined(_WIN32)
+#define L64(x) x##LL
+#else
+#define L64(x) x##i64
 #endif
 #endif
 

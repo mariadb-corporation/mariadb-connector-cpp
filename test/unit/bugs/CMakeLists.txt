@@ -42,6 +42,10 @@ ADD_EXECUTABLE(unsorted_bugs ${bugs_sources})
 SET_TARGET_PROPERTIES(unsorted_bugs PROPERTIES
           OUTPUT_NAME "unsorted_bugs"
 	        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test")
+IF(MINGW)
+TARGET_LINK_LIBRARIES(unsorted_bugs ${PLATFORM_DEPENDENCIES} test_framework ${LIBRARY_NAME} ${MY_GCOV_LINK_LIBRARIES})
+ELSE()
 TARGET_LINK_LIBRARIES(unsorted_bugs ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
+ENDIF()
 
 MESSAGE(STATUS "Configuring bugs test cases - unsorted")

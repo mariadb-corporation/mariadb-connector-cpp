@@ -27,7 +27,9 @@
 # along with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
-IF(WIN32)
+IF(MINGW)
+  SET(MY_TARGET_LINK_LIBRARIES ${PLATFORM_DEPENDENCIES} test_framework ${LIBRARY_NAME})
+ELSEIF(WIN32)
   LINK_DIRECTORIES(../framework/$(ConfigurationName))
   SET(MY_TARGET_LINK_LIBRARIES ${LIBRARY_NAME} test_framework)
 #	ADD_DEFINITIONS("-D_SECURE_SCL")

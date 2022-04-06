@@ -22,8 +22,13 @@
 
 namespace sql
 {
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+
+#else
 // Instantiating template classed that have to be exported
 template struct MARIADB_EXPORTED CArray<char>;
 template struct MARIADB_EXPORTED CArray<int32_t>;
 template struct MARIADB_EXPORTED CArray<int64_t>;
+#endif
 }

@@ -368,7 +368,7 @@ INCLUDE("${CMAKE_SOURCE_DIR}/cmake/install.cmake")
 MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIB_SUFFIX}")
 MESSAGE(STATUS "Authentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
 
-IF(WIN32)
+IF(NOT MINGW AND WIN32)
   ADD_OPTION(WITH_MSI "Build MSI installation package" ON)
   ADD_OPTION(WITH_SIGNCODE "Digitally sign files" OFF)
   MESSAGE(STATUS "Generate MSI package: ${WITH_MSI}")
@@ -381,7 +381,25 @@ IF(NOT WITH_SSL)
   SET(CONC_WITH_SSL ON)
 ENDIF()
 ### Including C/C subproject
-IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
+IF(MINGW)
+    
+  find_path(MARIADB_CONNECTORC_INCLUDE NAMES "mysql.h"
+								       DOC "Path to MariaDB Connector/C Include Directory")
+  find_path(MARIADB_CONNECTORC_LIB NAMES libmariadbclient.a
+                                         liblibmariadb.dll.a 
+										 libmariadb.dll 
+										 mariadbclient
+									 	 mariadb
+								   DOC "Path to MariaDB Connector/C Lib Directory")
+  find_library(MARIADB_SHLWAPI_LIB NAMES ShLwApi.Lib 
+                                         ShLwApi
+                                   DOC "Path to ShLwApi.Lib. Usually found in $ENV{programfiles\(x86\)}\\Windows Kits\\10\\Lib")
+                #PATHS "$ENV{programfiles\(x86\)}\\Windows Kits\\10\\Lib\\10.0.17763.0\\um" 
+				#"$ENV{programfiles\(x86\)}\\Windows Kits\\10\\Lib\\10.0.18362.0\\um"
+				#PATH_SUFFIXES "arm" "arm64" "x64" "x86")
+ENDIF()
+
+IF(NOT MINGW AND EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
   IF(GIT_BUILD_SRCPKG)
     # We don't want conn/c (wrong) src pkg to be built.
     SET(GIT_BUILD_SRCPKG FALSE)
@@ -466,6 +484,33 @@ ENDIF()
 TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${MARIADB_CLIENT_TARGET_NAME} ${PLATFORM_DEPENDENCIES})
 ADD_DEPENDENCIES(${LIBRARY_NAME} DEPENDENCIES_FOR_PACKAGE)
 
+# MINGW Specific includes and linking
+IF(MINGW)
+  TARGET_LINK_LIBRARIES(${LIBRARY_NAME} "-lsecur32 -lcrypt32")
+  
+  IF(MARIADB_SHLWAPI_LIB)
+    TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${MARIADB_SHLWAPI_LIB})
+    MESSAGE(STATUS "FOUND MARIADB_SHLWAPI_LIB = ${MARIADB_SHLWAPI_LIB}")
+  ELSE()
+    MESSAGE(WARNING "DID NOT FIND MARIADB_SHLWAPI_LIB")
+  ENDIF()
+
+  IF(MARIADB_CONNECTORC_INCLUDE)
+    TARGET_INCLUDE_DIRECTORIES(${LIBRARY_NAME} PUBLIC  ${MARIADB_CONNECTORC_INCLUDE})
+    MESSAGE(STATUS "FOUND MARIADB_CONNECTORC_INCLUDE = ${MARIADB_CONNECTORC_INCLUDE}")
+  ELSE()
+    MESSAGE(WARNING "DID NOT FIND MARIADB_CONNECTORC_INCLUDE")
+  ENDIF()
+  
+  IF(MARIADB_CONNECTORC_LIB)
+    TARGET_LINK_DIRECTORIES(${LIBRARY_NAME} PUBLIC ${MARIADB_CONNECTORC_LIB})
+    MESSAGE(STATUS "FOUND MARIADB_CONNECTORC_LIB = ${MARIADB_CONNECTORC_LIB}")
+  ELSE()
+    MESSAGE(WARNING "DID NOT FIND MARIADB_CONNECTORC_LIB")
+  ENDIF()
+  
+ENDIF()
+
 ########## Packaging ##########
 
 # MSI
@@ -511,8 +556,12 @@ IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
   ADD_SUBDIRECTORY(test)
   ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
 	  COMMAND ${CMAKE_COMMAND} ARGS -E copy $<TARGET_FILE:${LIBRARY_NAME}> test)
-  ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
+  IF(MINGW)
+
+  ELSE()
+    ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
 	  COMMAND ${CMAKE_COMMAND} ARGS -E copy $<TARGET_FILE:libmariadb> test)
+  ENDIF()
 ENDIF()
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/install_test/CMakeLists.txt.in
@@ -523,3 +572,5 @@ MESSAGE(STATUS "Package Name: ${CPACK_PACKAGE_FILE_NAME}")
 MESSAGE(STATUS "License File: ${CPACK_RESOURCE_FILE_LICENSE}")
 MESSAGE(STATUS "ReadMe File: ${CPACK_PACKAGE_DESCRIPTION_FILE}")
 MESSAGE(STATUS "Source Package Filename: ${CPACK_SOURCE_PACKAGE_FILE_NAME}.${CPACK_SOURCE_GENERATOR}")
+
+

@@ -38,7 +38,10 @@
 #define __C_CPP_TYPES_H_
 
 #include <cstdlib>
-#if defined(_WIN32) || defined(_WIN64)
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include <string.h>
+#elif defined(_WIN32) || defined(_WIN64)
 /* MySQL 5.1 might have defined it before in include/config-win.h */
 #  ifdef strncasecmp
 #    undef strncasecmp
@@ -71,18 +74,22 @@
 #endif
 
 #ifndef L64
-#ifdef _WIN32
-#define L64(x) x##i64
-#else
+#if defined(__MINGW32__) || defined(__MINGW64__)
 #define L64(x) x##LL
+#elif not defined(_WIN32)
+#define L64(x) x##LL
+#else
+#define L64(x) x##i64
 #endif
 #endif
 
 #ifndef UL64
-#ifdef _WIN32
-#define UL64(x) x##ui64
-#else
+#if defined(__MINGW32__) || defined(__MINGW64__)
 #define UL64(x) x##ULL
+#elif not defined(_WIN32)
+#define UL64(x) x##ULL
+#else
+#define UL64(x) x##ui64
 #endif
 #endif
 
