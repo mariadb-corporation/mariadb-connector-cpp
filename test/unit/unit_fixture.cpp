@@ -340,9 +340,9 @@ void unit_fixture::setUp()
            + " " + String(driver->getMajorVersion() + driver->getMajorVersion + String(".") + driver->getMinorVersion());*/
 
   con->setSchema(db);
-
   stmt.reset(con->createStatement());
 }
+
 
 void unit_fixture::tearDown()
 {

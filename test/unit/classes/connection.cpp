@@ -59,7 +59,7 @@ void connection::getClientInfo()
 
     //ret= con->getClientInfo();
     if (ret != "cppconn")
-      FAIL("Expecting 'cppconn' got '" + ret + "'.");
+      FAIL(("Expecting 'cppconn' got '" + ret + "'.").c_str());
 
   }
   catch (sql::SQLException &e)
@@ -1203,7 +1203,7 @@ void connection::connectUsingMap()
           con.reset(driver->connect(connection_properties));
           schema=con->getSchema();
           if (!schema.empty())
-            FAIL("Empty schama specified but certain schema selected upon connect");
+            FAIL("Empty schema specified but certain schema selected upon connect");
         }
         catch (sql::SQLException &)
         {

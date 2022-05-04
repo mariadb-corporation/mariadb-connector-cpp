@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -42,6 +43,33 @@ namespace testsuite
 {
 namespace classes
 {
+void preparedstatement::setUp()
+{
+  sql::SQLString sspsOptionValue;
+  sql::Properties::iterator useServerPrepStmts= commonProperties.find("useServerPrepStmts");
+  bool hadOption= useServerPrepStmts != commonProperties.end();
+
+  if (hadOption) {
+    sspsOptionValue= useServerPrepStmts->second;
+  }
+
+  commonProperties["useServerPrepStmts"]= "false";
+  super::setUp();
+
+  commonProperties["useServerPrepStmts"] = "true";
+  try
+  {
+    sspsCon.reset(this->getConnection(&commonProperties));
+  }
+  catch (sql::SQLException& sqle)
+  {
+    logErr(String("Couldn't get connection") + sqle.what());
+    throw sqle;
+  }
+
+  sspsCon->setSchema(db);
+}
+
 
 void preparedstatement::InsertSelectAllTypes()
 {
@@ -639,10 +667,10 @@ void preparedstatement::assortedSetType()
         }
         catch(sql::SQLException& e)
         {
-          if (!((it->name == "VARBINARY" || it->name == "BINARY" || it->name == "CHAR") &&
-            it->precision < 8 && e.getSQLState() == "22001" && e.getErrorCode() == 1406))
+          if (!((it->name == "VARBINARY" || it->name == "BINARY" || it->name == "CHAR" || it->name == "VARCHAR") &&
+            it->precision < 30 && e.getSQLState() == "22001" && e.getErrorCode() == 1406))
           {
-            throw e;
+            TEST_THROW(sql::SQLException, e);
           }
         }
 
@@ -833,7 +861,9 @@ void preparedstatement::assortedSetType()
   {
     logErr(e.what());
     logErr("SQLState: " + std::string(e.getSQLState()));
-    fail(e.what(), __FILE__, __LINE__);
+    std::string message("The error occured on type:");
+    message.append(it->sqldef).append(".").append(e.what());
+    fail(message.c_str(), __FILE__, __LINE__);
   }
 }
 
@@ -1312,10 +1342,10 @@ void preparedstatement::callSPMultiRes()
     do
     {
       res.reset(pstmt->getResultSet());
-    while (res->next())
-    {
-      msg2 << res->getString(1);
-    }
+      while (res->next())
+      {
+        msg2 << res->getString(1);
+      }
     }
     while (pstmt->getMoreResults());
 
@@ -1621,7 +1651,6 @@ void preparedstatement::executeQuery()
   }
   try
   {
-
     stmt.reset(con->createStatement());
     stmt->execute("DROP TABLE IF EXISTS test");
     stmt->execute("CREATE TABLE test(id INT UNSIGNED)");
@@ -1705,6 +1734,58 @@ void preparedstatement::addBatch()
   ASSERT_EQUALS(1LL, batchLRes[2]);
 
   stmt->executeUpdate("DROP TABLE testAddBatchPs");
+}
+
+
+void preparedstatement::bugConcpp96()
+{
+  createSchemaObject("TABLE", "bugConcpp96", "(`as_double` double NOT NULL, `as_string` varchar(20) NOT NULL, `as_decimal` decimal(15,4) NOT NULL)");
+
+  sql::SQLString selectQuery("SELECT CAST(? AS DOUBLE), ?, CAST(? AS DECIMAL(15,4))");
+
+  pstmt.reset(con->prepareStatement(selectQuery));
+  ssps.reset(sspsCon->prepareStatement(selectQuery));
+  PreparedStatement ssps2(sspsCon->prepareStatement("INSERT INTO bugConcpp96 (as_double, as_string, as_decimal) VALUES (?, ?, ?)"));
+
+  double numberToInsert(98.765432109), epsilon(0.0001);
+
+  do {
+    pstmt->setDouble(1, numberToInsert);
+    pstmt->setString(2, std::to_string(numberToInsert));
+    pstmt->setDouble(3, numberToInsert);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT_EQUALS_EPSILON(numberToInsert, res->getDouble(1), epsilon);
+    ASSERT_EQUALS(std::to_string(numberToInsert), res->getString(2));
+    ASSERT_EQUALS_EPSILON(numberToInsert, res->getDouble(3), epsilon);
+
+    ssps->setDouble(1, numberToInsert);
+    ssps->setString(2, std::to_string(numberToInsert));
+    ssps->setDouble(3, numberToInsert);
+    ResultSet res2(ssps->executeQuery());
+    ASSERT(res2->next());
+    ASSERT_EQUALS_EPSILON(numberToInsert, res2->getDouble(1), epsilon);
+    ASSERT_EQUALS(std::to_string(numberToInsert), res2->getString(2));
+    ASSERT_EQUALS_EPSILON(numberToInsert, res2->getDouble(3), epsilon);
+
+    ssps2->setDouble(1, numberToInsert);
+    ssps2->setString(2, std::to_string(numberToInsert));
+    ssps2->setDouble(3, numberToInsert);
+    ASSERT_EQUALS(1, ssps2->executeUpdate());
+
+    numberToInsert*= 10.0;
+  } while (numberToInsert < 1000000000);
+
+  res.reset(stmt->executeQuery("SELECT as_double, as_string, as_decimal FROM bugConcpp96 ORDER BY 1 DESC"));
+  
+  while (res->next()) {
+    // Initially the value is 10 times bigger as the last inserted value
+    numberToInsert/= 10.0;
+    ASSERT_EQUALS_EPSILON(numberToInsert, res->getDouble(1), epsilon);
+    ASSERT_EQUALS(std::to_string(numberToInsert), res->getString(2));
+    ASSERT_EQUALS_EPSILON(numberToInsert, res->getDouble(3), epsilon);
+    
+  }
 }
 
 } /* namespace preparedstatement */

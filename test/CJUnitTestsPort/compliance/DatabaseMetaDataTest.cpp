@@ -7305,8 +7305,7 @@ void DatabaseMetaDataTest::testSupportsFullOuterJoins()
     logMsg("supportsFullOuterJoins method is supported");
     if (!dbmd->supportsLimitedOuterJoins())
     {
-      FAIL("supportsLimitedOuterJoins() must "
-           + "be true if supportsFullOuterJoins() " + "is true!");
+      FAIL("supportsLimitedOuterJoins() must be true if supportsFullOuterJoins() is true!");
     }
   } else {
     logMsg("supportsFullOuterJoins method is not supported");

@@ -42,6 +42,14 @@
 #define __LINE__ "(line number n/a)"
 #endif
 
+#define XSTR(__MACRODEF) STR(__MACRODEF)
+#define STR(__MACRODEF) #__MACRODEF
+
+#define TEST_ERR_LOCATION __FILE__ ":L#" XSTR(__LINE__) " "
+#define TEST_ERR_LINE     ":L#" XSTR(__LINE__)" "
+#define TEST_INSTR_EXEPTION_MSG(_ORIG_EXPTN_MSG) std::string __tst_msg(_ORIG_EXPTN_MSG);__tst_msg.append("("TEST_ERR_LINE")")
+#define TEST_THROW(_EXPTN_CLASS,_EXPTN) do { TEST_INSTR_EXEPTION_MSG(_EXPTN.what()); throw _EXPTN_CLASS(__tst_msg.c_str(), _EXPTN.getSQLState().c_str(), _EXPTN.getErrorCode()); } while (false)
+
 namespace testsuite
 {
 void fail(const char* reason, const char * file, int line);
@@ -130,10 +138,14 @@ void assertLessThan(unsigned int expected, unsigned int result
 bool fuzzyEquals(double expected, double result, double fuzzyEpsilon);
 }
 
-// Macros should be used inside testsuite namespace
 
-#define ASSERT_EQUALS( expected, result) \
-  assertEquals( (expected), (result), __FILE__, __LINE__ )
+#define TEST_CATCH_EXCEPTIONS catch (sql::SQLFeatureNotSupportedException& ee) { TEST_THROW(sql::SQLFeatureNotSupportedException, ee); }\
+                              catch (sql::SQLException &ee)                    { TEST_THROW(sql::SQLException, ee); }
+
+// Macros should be used inside testsuite namespace
+#define FAIL( why ) fail( (why), __FILE__, __LINE__ )
+
+#define ASSERT_EQUALS( expected, result) do{ try{assertEquals( (expected), (result), __FILE__, __LINE__ );} TEST_CATCH_EXCEPTIONS }while (false)
 
 #define ASSERT_LT( expected, result) \
   assertLessThan( (expected), (result), __FILE__, __LINE__ )
@@ -144,11 +156,11 @@ bool fuzzyEquals(double expected, double result, double fuzzyEpsilon);
 #define ASSERT_EQUALS_EPSILON( expected, result, epsilon) \
   assertEqualsEpsilon( (expected), (result), (epsilon), __FILE__, __LINE__ )
 
-#define ASSERT( exp ) assertTrue( (#exp), (exp), __FILE__, __LINE__)
+#define ASSERT( exp ) do{ try{ assertTrue( (#exp), (exp), __FILE__, __LINE__); } TEST_CATCH_EXCEPTIONS }while (false)
 
 #define ASSERT_MESSAGE( exp, message ) \
   assertTrue( (message), (exp), __FILE__, __LINE__ )
 
-#define FAIL( why ) fail( (#why), __FILE__, __LINE__ )
+
 
 #endif  // __TESTASSERTS_H_
