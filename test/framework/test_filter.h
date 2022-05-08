@@ -59,7 +59,7 @@ class SingleFilter : public Filter
 {
 private:
 
-  List  staticPart;
+  TestList  staticPart;
   bool  negative;
 
 public:

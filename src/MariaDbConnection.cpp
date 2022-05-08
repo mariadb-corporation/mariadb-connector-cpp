@@ -64,10 +64,13 @@ namespace mariadb
     _canUseServerTimeout(protocol->versionGreaterOrEqual(10, 1, 2)),
     sessionStateAware(protocol->sessionStateAware()),
     nullCatalogMeansCurrent(options->nullCatalogMeansCurrent),
-    savepointCount(0),
     exceptionFactory(ExceptionFactory::of(this->getServerThreadId(), options)),
-    warningsCleared(true),
-    lowercaseTableNames(-1)
+    lowercaseTableNames(-1),
+    pooledConnection(nullptr),
+    stateFlag(0),
+    defaultTransactionIsolation(0),
+    savepointCount(0),
+    warningsCleared(true)
   {
     if (options->cacheCallableStmts)
     {
@@ -641,7 +644,7 @@ namespace mariadb
 
     if (stmt)
     {
-      stateFlag |=ConnectionState::STATE_AUTOCOMMIT;
+      stateFlag|= ConnectionState::STATE_AUTOCOMMIT;
       stmt->executeUpdate(SQLString("set autocommit=").append((autoCommit) ? '1' : '0'));
     }
   }
@@ -1127,7 +1130,7 @@ namespace mariadb
     */
   bool MariaDbConnection::isValid(int32_t timeout)
   {
-    if (timeout <0) {
+    if (timeout < 0) {
       throw SQLException("the value supplied for timeout is negative");
     }
     if (isClosed()) {
@@ -1172,7 +1175,7 @@ namespace mariadb
         {
           std::map<SQLString, ClientInfoStatus>failures;
           failures.insert({ name, ClientInfoStatus::_REASON_UNKNOWN });
-          throw SQLException("ClientInfoException: Connection* closed");// SQLClientInfoException("Connection* closed", failures, sqle);
+          throw SQLException("ClientInfoException: Connection closed");// SQLClientInfoException("Connection* closed", failures, sqle);
         }
       }
       else {
@@ -1330,14 +1333,14 @@ namespace mariadb
         setClientInfo(name, cit != properties.cend() ? cit->second : "");
       }
       catch (SQLException& /*e*/) {
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
         propertiesExceptions.putAll(e.getFailedProperties());
 #endif
       }
     }
     if (!propertiesExceptions.empty()) {
       SQLString errorMsg("setClientInfo errors : the following properties where not set : ");
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
         +propertiesExceptions.keySet();
 #endif
       throw SQLException("ClientInfoException: " + errorMsg);//SQLClientInfoException(errorMsg, propertiesExceptions);
@@ -1584,10 +1587,10 @@ namespace mariadb
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
     SQLPermission sqlPermission= new SQLPermission("callAbort");
     SecurityManager securityManager= System.getSecurityManager();
-    if (securityManager !=NULL) {
+    if (securityManager != nullptr) {
       securityManager.checkPermission(sqlPermission);
     }
-    if (executor ==NULL) {
+    if (executor == nullptr) {
       throw ExceptionMapper.getSqlException("Cannot abort the connection: NULL executor passed");
     }
     executor.execute(protocol->abort());
@@ -1606,7 +1609,7 @@ namespace mariadb
 
 
   SQLString MariaDbConnection::getSchema() {
-    return protocol->getCatalog();// "";
+    return protocol->getCatalog();
   }
 
 
@@ -1645,11 +1648,11 @@ namespace mariadb
     }
     SQLPermission sqlPermission= new SQLPermission("setNetworkTimeout");
     SecurityManager securityManager= System.getSecurityManager();
-    if (securityManager !=NULL) {
+    if (securityManager != nullptr) {
       securityManager.checkPermission(sqlPermission);
     }
     try {
-      stateFlag |=ConnectionState::STATE_NETWORK_TIMEOUT;
+      stateFlag|= ConnectionState::STATE_NETWORK_TIMEOUT;
       protocol->setTimeout(milliseconds);
     }
     catch (SocketException& se) {
@@ -1684,28 +1687,28 @@ namespace mariadb
     */
   void MariaDbConnection::reset()
   {
-    bool useComReset =
+    bool useComReset=
       options->useResetConnection
-      &&((protocol->isServerMariaDb()&&protocol->versionGreaterOrEqual(10, 2, 4))
-        ||(!protocol->isServerMariaDb()&&protocol->versionGreaterOrEqual(5, 7, 3)));
+      && ((protocol->isServerMariaDb() && protocol->versionGreaterOrEqual(10, 2, 4))
+        || (!protocol->isServerMariaDb() && protocol->versionGreaterOrEqual(5, 7, 3)));
     if (useComReset) {
       protocol->reset();
     }
     if (stateFlag !=0) {
       try {
-        if ((stateFlag &ConnectionState::STATE_NETWORK_TIMEOUT)!=0) {
-          setNetworkTimeout(NULL, options->socketTimeout);
+        if ((stateFlag & ConnectionState::STATE_NETWORK_TIMEOUT) != 0) {
+          setNetworkTimeout(nullptr, options->socketTimeout);
         }
-        if ((stateFlag &ConnectionState::STATE_AUTOCOMMIT)!=0) {
+        if ((stateFlag & ConnectionState::STATE_AUTOCOMMIT) != 0) {
           setAutoCommit(options->autocommit);
         }
-        if ((stateFlag &ConnectionState::STATE_DATABASE)!=0) {
+        if ((stateFlag & ConnectionState::STATE_DATABASE) != 0) {
           protocol->resetDatabase();
         }
-        if ((stateFlag &ConnectionState::STATE_READ_ONLY)!=0) {
+        if ((stateFlag & ConnectionState::STATE_READ_ONLY) != 0) {
           setReadOnly(false);
         }
-        if (!useComReset &&(stateFlag &ConnectionState::STATE_TRANSACTION_ISOLATION)!=0) {
+        if (!useComReset && (stateFlag & ConnectionState::STATE_TRANSACTION_ISOLATION) != 0) {
           setTransactionIsolation(defaultTransactionIsolation);
         }
         stateFlag= 0;

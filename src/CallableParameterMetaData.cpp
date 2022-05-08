@@ -59,7 +59,7 @@ namespace mariadb
   void CallableParameterMetaData::setIndex(uint32_t index)
   {
     if (index < 1 || index > parameterCount) {
-      throw SQLException(std::string("invalid parameter index ") + std::to_string(index));
+      throw SQLException("invalid parameter index " + index);
     }
     rs->absolute(index);
   }
@@ -67,7 +67,7 @@ namespace mariadb
   {
     setIndex(index);
     SQLString paramDetail(rs->getString("DTD_IDENTIFIER"));
-    return paramDetail.find_first_of(" unsigned") == std::string::npos;
+    return StringImp::get(paramDetail).find(" unsigned") == std::string::npos;
   }
 
   int32_t CallableParameterMetaData::getPrecision(uint32_t index)

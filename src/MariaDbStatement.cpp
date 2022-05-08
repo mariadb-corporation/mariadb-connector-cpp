@@ -113,7 +113,7 @@ namespace mariadb
   // Part of query prolog - setup timeout timer
   void MariaDbStatement::setTimerTask(bool isBatch)
   {
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
     assert(!timerTaskFuture);
     if (!timeoutScheduler)
     {
@@ -162,7 +162,7 @@ namespace mariadb
 
   void MariaDbStatement::stopTimeoutTask()
   {
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
     if (timerTaskFuture){
       if (!timerTaskFuture.cancel(true)){
 
@@ -266,7 +266,7 @@ namespace mariadb
     MariaDBExceptionThrower sqle2= exceptionFactory->raiseStatementError(connection, this)->create(*sqle.getException());
     logger->error("error executing query", sqle2);
 
-    return BatchUpdateException(sqle2.getException()->getMessage(), sqle2.getException()->getSQLState(), sqle2.getException()->getErrorCode());//, ret, &sqle2); //MAYBE_IN_BETA
+    return BatchUpdateException(sqle2.getException()->getMessage(), sqle2.getException()->getSQLState(), sqle2.getException()->getErrorCode());//, ret, &sqle2); //MAYBE_IN_NEXTVERSION
   }
 
   /**

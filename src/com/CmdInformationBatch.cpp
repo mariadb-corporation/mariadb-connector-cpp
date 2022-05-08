@@ -199,7 +199,7 @@ namespace mariadb
       if (updateCount != Statement::EXECUTE_FAILED
         && updateCount != RESULT_SET_VALUE
         && (insertId= *idIterator) > 0) {
-        for (int32_t i= 0; i < updateCount; i++) {
+        for (int64_t i= 0; i < updateCount; i++) {
           ret[position++]= insertId + i*autoIncrement;
         }
       }

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2022, MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -147,7 +148,7 @@ void TAP::SuiteSummary(const String & _suiteName
 void TAP::Assert(const String & expected, const String & result
                  , const String & file, int line)
 {
-  std::ostringstream tmp("Assertion Failed in file ");
+  std::ostringstream tmp("Assertion Failed in file ", std::ios_base::ate);
 
   tmp << file << " Line " << line;
 

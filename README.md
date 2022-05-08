@@ -53,18 +53,9 @@ std::unique_ptr<Connection> conn2(DriverManager::getConnection(url));
 std::unique_ptr<Connection> conn3(DriverManager::getConnection(url, "root", "someSecretWord"));
 ```
 
-For URL syntax and options name you may find [here](https://mariadb.com/kb/en/about-mariadb-connector-j/)
-but not all options will have effect at the moment. In particular, not supported are(list may be incomplete):
-  - keyStore
-  - keyStorePassword
-  - trustStore
-  - trustStorePassword
-  - keyStoreType
-  - trustStoreType
-  - allowPublicKeyRetrieval
-  - tlsSocketType
+For URL syntax you may find [here](https://mariadb.com/kb/en/about-mariadb-connector-j/)
 
-Not complete list of supported options - mostly newly added or with new aliases:
+The list of supported options:
 
 |Option|Description|Type|Default|Aliases|
 |---:|---|:---:|:---:|---|
@@ -92,6 +83,8 @@ Not complete list of supported options - mostly newly added or with new aliases:
 | **`jdbcCompliantTruncation`** |Truncation error will be thrown as error, and not as warning|*bool* |true||
 | **`useCharacterEncoding`** |Character set used for text encoding.|*string* ||OPT_SET_CHARSET_NAME,useCharset|
 | **`credentialType`** |Default authentication client-side plugin to use.|*string* ||defaultAuth|
+| **`allowLocalInfile`** |Permits loading data from local file(on the client) with LOAD DATA LOCAL INFILE statement.|*bool* |false||
+| **`useResetConnection`** |Makes Connection::reset() method to issue conenction reset command at the server.|*bool* |false||
 
 
 Properties is map of strings, and is another way to pass optional parameters.

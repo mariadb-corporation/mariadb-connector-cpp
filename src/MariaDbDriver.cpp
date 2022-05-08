@@ -33,24 +33,7 @@ namespace sql
 namespace mariadb
 {
   static MariaDbDriver theInstance;
-  static const Properties legacyPropKeyMapping{ {"userName", "user"},
-                                               {"socket",   "localSocket"} };
   extern const SQLString mysqlTcp, mysqlSocket, mysqlPipe;
-
-  void mapLegacyProps(Properties& props)
-  {
-    auto it = props.begin();
-    while (it != props.end()) {
-      auto cit = legacyPropKeyMapping.find(it->first);
-      if (cit != legacyPropKeyMapping.end()) {
-        props.emplace(cit->second, it->second);
-        it = props.erase(it);
-      }
-      else {
-        ++it;
-      }
-    }
-  }
 
 
   Driver* get_driver_instance()
@@ -61,7 +44,8 @@ namespace mariadb
 
   Connection* MariaDbDriver::connect(const SQLString& url, Properties& props)
   {
-    UrlParser* urlParser= UrlParser::parse(url, props);
+    Properties propsCopy(props);
+    UrlParser* urlParser= UrlParser::parse(url, propsCopy);
 
     if (urlParser == nullptr || urlParser->getHostAddresses().empty())
     {
@@ -77,17 +61,17 @@ namespace mariadb
   void normalizeLegacyUri(SQLString& url, Properties* prop= nullptr) {
 
     //Making TCP default with legacy uri
-    if (url.find_first_of("://") == std::string::npos) {
+    if (StringImp::get(url).find("://") == std::string::npos) {
       url= "tcp://" + url;
     }
 
+    // Looks like in the only use of the normalizeLegacyUri propeties are not passed, i.e. it's nullptr
+    // TODO: Something is wrong
     if (prop != nullptr)
     {
       std::string key;
       std::size_t offset= 0;
       
-      mapLegacyProps(*prop);
-
       if (url.startsWith(mysqlTcp))
       {
         auto cit= prop->find("port");
@@ -115,17 +99,14 @@ namespace mariadb
         return;
       }
 
-      if (prop != nullptr) {
-        std::string name(StringImp::get(url.substr(offset)));
-        std::size_t slashPos = name.find_first_of('/');
+      std::string name(StringImp::get(url.substr(offset)));
+      std::size_t slashPos = name.find_first_of('/');
 
-        if (slashPos != std::string::npos) {
-          name = name.substr(0, slashPos);
-        }
-
-        (*prop)[key] = name;
-        mapLegacyProps(*prop);
+      if (slashPos != std::string::npos) {
+        name = name.substr(0, slashPos);
       }
+
+      (*prop)[key] = name;
     }
   }
 
@@ -146,7 +127,6 @@ namespace mariadb
     SQLString uri;
     Properties props(initProps);
     auto cit= props.find("hostName");
-    
 
     if (cit != props.end())
     {
@@ -180,8 +160,6 @@ namespace mariadb
       uri.append(cit->second);
     }
 
-    mapLegacyProps(props);
-
     return connect(uri, props);
   }
 
@@ -198,7 +176,7 @@ namespace mariadb
     if (!url.empty())
     {
       UrlParser *urlParser= UrlParser::parse(url, info);
-      if (urlParser == NULL)// urlParser->getOptions())
+      if (urlParser == nullptr)// urlParser->getOptions())
       {
         return result;
       }

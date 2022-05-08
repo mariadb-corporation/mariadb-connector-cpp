@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -678,7 +679,7 @@ void DatabaseMetaDataTest::testGetBestRowIdentifier6()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetBestRowIdentifier7()
 {
-  List sColumnNames;
+  TestList sColumnNames;
   sColumnNames.push_back("SCOPE");
   sColumnNames.push_back("COLUMN_NAME");
   sColumnNames.push_back("DATA_TYPE");
@@ -795,7 +796,7 @@ void DatabaseMetaDataTest::testGetCatalogTerm()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetCatalogs()
 {
-  List sColumnNames;
+  TestList sColumnNames;
   sColumnNames.push_back("TABLE_CAT");
   bool test_status=true;
   logMsg("Calling DatabaseMetaData.getCatalogs");
@@ -845,7 +846,7 @@ void DatabaseMetaDataTest::testGetCatalogs()
 void DatabaseMetaDataTest::testGetColumnPrivileges()
 {
 
-  List sColumnNames;
+  TestList sColumnNames;
   sColumnNames.push_back("TABLE_CAT");
   sColumnNames.push_back("TABLE_SCHEM");
   sColumnNames.push_back("TABLE_NAME");
@@ -898,7 +899,7 @@ void DatabaseMetaDataTest::testGetColumnPrivileges()
 void DatabaseMetaDataTest::testGetColumns()
 {
 
-  List sColumnNames;
+  TestList sColumnNames;
 
   sColumnNames.push_back("TABLE_CAT");
   sColumnNames.push_back("TABLE_SCHEM");
@@ -964,7 +965,7 @@ void DatabaseMetaDataTest::testGetColumns()
 void DatabaseMetaDataTest::testGetCrossReference()
 {
 
-  List sColumnNames;
+  TestList sColumnNames;
 
   sColumnNames.push_back("PKTABLE_CAT");
   sColumnNames.push_back("PKTABLE_SCHEM");
@@ -1307,7 +1308,7 @@ void DatabaseMetaDataTest::testGetDriverVersion()
 void DatabaseMetaDataTest::testGetExportedKeys()
 {
 
-  List sColumnNames;
+  TestList sColumnNames;
 
   sColumnNames.push_back("PKTABLE_CAT");
   sColumnNames.push_back("PKTABLE_SCHEM");
@@ -1453,7 +1454,7 @@ void DatabaseMetaDataTest::testGetIdentifierQuoteString()
 void DatabaseMetaDataTest::testGetImportedKeys()
 {
 
-  List sColumnNames;
+  TestList sColumnNames;
 
   sColumnNames.push_back("PKTABLE_CAT");
   sColumnNames.push_back("PKTABLE_SCHEM");
@@ -1695,7 +1696,7 @@ void DatabaseMetaDataTest::testGetIndexInfo4()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetIndexInfo5()
 {
-  List sColumnNames;
+  TestList sColumnNames;
   sColumnNames.push_back("TABLE_CAT");
   sColumnNames.push_back("TABLE_SCHEM");
   sColumnNames.push_back("TABLE_NAME");
@@ -2552,8 +2553,7 @@ void DatabaseMetaDataTest::testGetNumericFunctions()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetPrimaryKeys()
 {
-
-  List sColumnNames;
+  TestList sColumnNames;
 
   sColumnNames.push_back("TABLE_CAT");
   sColumnNames.push_back("TABLE_SCHEM");
@@ -2581,12 +2581,8 @@ void DatabaseMetaDataTest::testGetPrimaryKeys()
     logMsg("The columns returned Are : "
            + sRetStr.substr(0, sRetStr.length() - 1));
   }
-
-
 }
 
-
-#ifdef INCLUDE_NOT_IMPLEMENTED_METHODS
 /*
  * @testName:         testGetProcedureColumns
  * @assertion:        The DatabaseMetaData provides information about the database.
@@ -2614,8 +2610,7 @@ void DatabaseMetaDataTest::testGetPrimaryKeys()
 void DatabaseMetaDataTest::testGetProcedureColumns()
 {
   if (hasSps) {
-
-    List sColumnNames;
+    TestList sColumnNames;
 
     sColumnNames.push_back("PROCEDURE_CAT");
     sColumnNames.push_back("PROCEDURE_SCHEM");
@@ -2654,7 +2649,6 @@ void DatabaseMetaDataTest::testGetProcedureColumns()
     }
   }
 }
-#endif
 
 /*
  * @testName:         testGetProcedureTerm
@@ -2681,7 +2675,6 @@ void DatabaseMetaDataTest::testGetProcedureColumns()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetProcedureTerm()
 {
-
   logMsg("Calling getProcedureTerm on DatabaseMetaData");
   String sRetValue(dbmd->getProcedureTerm().c_str());
   if (sRetValue.empty()) {
@@ -2723,7 +2716,7 @@ void DatabaseMetaDataTest::testGetProcedures()
     return;
   }
 
-  List sColumnNames;
+  TestList sColumnNames;
 
   sColumnNames.push_back("PROCEDURE_CAT");
   sColumnNames.push_back("PROCEDURE_SCHEM");
@@ -2887,7 +2880,7 @@ void DatabaseMetaDataTest::testGetSchemaTerm()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetSchemas()
 {
-  List sColumnNames;
+  TestList sColumnNames;
   sColumnNames.push_back("TABLE_SCHEM");
 
   bool test_status=true;
@@ -3051,7 +3044,7 @@ void DatabaseMetaDataTest::testGetSystemFunctions()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetTablePrivileges()
 {
-  List sColumnNames;
+  TestList sColumnNames;
 
   sColumnNames.push_back("TABLE_CAT");
   sColumnNames.push_back("TABLE_SCHEM");
@@ -3111,7 +3104,7 @@ void DatabaseMetaDataTest::testGetTablePrivileges()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetTableTypes()
 {
-  List sColumnNames;
+  TestList sColumnNames;
   sColumnNames.push_back("TABLE_TYPE");
 
   bool test_status=true;
@@ -3166,7 +3159,7 @@ void DatabaseMetaDataTest::testGetTableTypes()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetTables()
 {
-  List sColumnNames;
+  TestList sColumnNames;
 
   sColumnNames.push_back("TABLE_CAT");
   sColumnNames.push_back("TABLE_SCHEM");
@@ -3265,7 +3258,7 @@ void DatabaseMetaDataTest::testGetTimeDateFunctions()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetTypeInfo()
 {
-  List sColumnNames;
+  TestList sColumnNames;
 
   sColumnNames.push_back("TYPE_NAME");
   sColumnNames.push_back("DATA_TYPE");
@@ -3410,7 +3403,7 @@ void DatabaseMetaDataTest::testGetUDTs()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetUDTs01()
 {
-  List sColumnNames;
+  TestList sColumnNames;
 
   sColumnNames.push_back("TYPE_CAT");
   sColumnNames.push_back("TYPE_SCHEM");
@@ -3583,7 +3576,7 @@ void DatabaseMetaDataTest::testGetUserName()
 void DatabaseMetaDataTest::testGetVersionColumns()
 {
 
-  List sColumnNames;
+  TestList sColumnNames;
 
   sColumnNames.push_back("SCOPE");
   sColumnNames.push_back("COLUMN_NAME");
@@ -9361,7 +9354,7 @@ void DatabaseMetaDataTest::setUp()
 
   sPtable="CTSTABLE1";
 
-  Properties::const_iterator cit=sqlProps.find("ptable");
+  TestProperties::const_iterator cit= sqlProps.find("ptable");
 
   if (cit != sqlProps.end())
     sPtable=cit->second;
@@ -9386,7 +9379,7 @@ void DatabaseMetaDataTest::setUp()
 /* A private method to compare the Column Names & No of Columns Specific to the test */
 
 /* throws SQLException */
-bool DatabaseMetaDataTest::columnCompare(List & sColumnNames, ResultSet & rset)
+bool DatabaseMetaDataTest::columnCompare(TestList & sColumnNames, ResultSet & rset)
 {
   bool test_status=       false;
   bool statusColumnCount= true;

@@ -138,7 +138,7 @@ namespace mariadb
   MariaDbProcedureStatement* MariaDbProcedureStatement::clone(MariaDbConnection* connection)
   {
     MariaDbProcedureStatement* clone= new MariaDbProcedureStatement(connection);
-    clone->outputResultSet= NULL;
+    clone->outputResultSet= nullptr;
     clone->stmt.reset(stmt->clone(connection));
 
     clone->params= params;
@@ -154,7 +154,7 @@ namespace mariadb
     Shared::Results& results= getResults();
 
     outputResultSet= results->getCallableResultSet();
-    if (outputResultSet/* != nullptr */) {
+    if (outputResultSet != nullptr) {
       outputResultSet->next();
     }
   }
@@ -167,14 +167,10 @@ namespace mariadb
 
   bool MariaDbProcedureStatement::execute()
   {
-    std::unique_lock<std::mutex> localScopeLock(*connection->lock);
     Shared::Results& results= getResults();
 
     validAllParameters();
-    // Ugly and possibly incorrect, but executeInternal has own lock
-    localScopeLock.unlock();
     stmt->executeInternal(stmt->getFetchSize());
-    // TODO: better check if further locking might be needed here
     retrieveOutputResult();
 
     return results && results->getResultSet();
@@ -395,7 +391,7 @@ namespace mariadb
     return getOutputResult()->getDouble(nameToOutputIndex(parameterName));
   }
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   sql::bytes* MariaDbProcedureStatement::getBytes(const SQLString& parameterName)
   {
     return getOutputResult()->getBytes(nameToOutputIndex(parameterName));
@@ -527,7 +523,7 @@ namespace mariadb
   }
 #endif
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   Blob* MariaDbProcedureStatement::getBlob(int32_t parameterIndex)
   {
     return getOutputResult()->getBlob(parameterIndex);
@@ -747,7 +743,7 @@ namespace mariadb
     throw ExceptionFactory::INSTANCE.notSupported("RowIDs not supported");
   }
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   void MariaDbProcedureStatement::setNString(const SQLString& parameterName, const SQLString& value)
   {
     setString(nameToIndex(parameterName), value);
@@ -885,7 +881,7 @@ namespace mariadb
   }
 
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   void MariaDbProcedureStatement::setBinaryStream(const SQLString& parameterName, const std::istream& inputStream, int64_t length)
   {
     stmt->setBinaryStream(nameToIndex(parameterName), inputStream, length);

@@ -36,8 +36,8 @@ namespace mariadb
 {
 namespace capi
 {
-  const char OptionSelected= 1, OptionNotSelected= 0;
-  const SQLString localhost("localhost");
+  static const char OptionSelected= 1, OptionNotSelected= 0;
+  static const unsigned int uintOptionSelected= 1, uintOptionNotSelected= 0;
 
   const SQLString ConnectProtocol::SESSION_QUERY("SELECT @@max_allowed_packet,"
     "@@system_time_zone,"
@@ -54,13 +54,13 @@ namespace capi
    * @param globalInfo server global variables information
    * @param lock the lock for thread synchronisation
    */
-  ConnectProtocol::ConnectProtocol(std::shared_ptr<UrlParser>& _urlParser, GlobalStateInfo* globalInfo, Shared::mutex& lock)
+  ConnectProtocol::ConnectProtocol(std::shared_ptr<UrlParser>& _urlParser, GlobalStateInfo* _globalInfo, Shared::mutex& lock)
     : lock(lock)
     , urlParser(_urlParser)
     , options(_urlParser->getOptions())
     , database(_urlParser->getDatabase())
     , username(_urlParser->getUsername())
-    , globalInfo(globalInfo)
+    , globalInfo(_globalInfo)
     , connection(nullptr, &mysql_close)
     , currentHost(localhost, 3306)
     , explicitClosed(false)
@@ -69,13 +69,25 @@ namespace capi
     , patchVersion(0)
     , proxy(nullptr)
     , connected(false)
+    , serverPrepareStatementCache(nullptr)
+    , autoIncrementIncrement(_globalInfo ? _globalInfo->getAutoIncrementIncrement() : 1)
+    , eofDeprecated(false)
+    , hasWarningsFlag(false)
+    , hostFailed(false)
+    , readOnly(false)
+    , serverCapabilities(0)
+    , serverMariaDb(true)
+    , serverStatus(0)
+    , serverThreadId(0)
+    , socketTimeout(0)
+    , timeZone(nullptr)
   {
     urlParser->auroraPipelineQuirks();
     if (options->cachePrepStmts && options->useServerPrepStmts){
-      serverPrepareStatementCache= NULL;
-        //ServerPrepareStatementCache.newInstance(options->prepStmtCacheSize,this);
+      //ServerPrepareStatementCache::newInstance(options->prepStmtCacheSize, this);
     }
   }
+
 
   void ConnectProtocol::closeSocket()
   {
@@ -118,27 +130,24 @@ namespace capi
 
     // Bind the socket to a particular interface if the connection property
     // localSocketAddress has been defined.
-    if (!options->localSocket.empty()){
+    if (!options->localSocket.empty()) {
       mysql_optionsv(socket, MARIADB_OPT_UNIXSOCKET, (void *)options->localSocket.c_str());
       int protocol= MYSQL_PROTOCOL_SOCKET;
       mysql_optionsv(socket, MYSQL_OPT_PROTOCOL, (void*)&protocol);
     }
-    else if (!options->pipe.empty())
-    {
+    else if (!options->pipe.empty()) {
       mysql_optionsv(socket, MYSQL_OPT_NAMED_PIPE, (void *)options->pipe.c_str());
       int protocol= MYSQL_PROTOCOL_PIPE;
       mysql_optionsv(socket, MYSQL_OPT_PROTOCOL, (void*)&protocol);
     }
-    else
-    {
+    else {
       mysql_optionsv(socket, MARIADB_OPT_HOST, (void *)host.c_str());
       mysql_optionsv(socket, MARIADB_OPT_PORT, (void *)&port);
       int protocol= MYSQL_PROTOCOL_TCP;
       mysql_optionsv(socket, MYSQL_OPT_PROTOCOL, (void*)&protocol);
     }
 
-    if (!options->useCharacterEncoding.empty())
-    {
+    if (!options->useCharacterEncoding.empty()) {
       mysql_optionsv(socket, MYSQL_SET_CHARSET_NAME, options->useCharacterEncoding.c_str());
     }
 
@@ -213,7 +222,7 @@ namespace capi
     if (!options->enabledTlsProtocolSuites.empty()) {
       Tokens protocols= split(options->enabledTlsProtocolSuites, "[,;\\s]+");
       for (const auto& protocol : *protocols){
-        if (possibleProtocols.find_first_of(protocol) == std::string::npos){
+        if (StringImp::get(possibleProtocols).find(protocol) == std::string::npos){
           throw SQLException(
               "Unsupported TLS protocol '"
               +protocol
@@ -237,7 +246,7 @@ namespace capi
       SQLString possibleCiphers;
       Tokens ciphers(split(options->enabledTlsCipherSuites, "[,;\\s]+"));
       for (const auto& cipher : *ciphers){
-        if (!(possibleCiphers.find_first_of(cipher) != std::string::npos)){
+        if (!(possibleCiphers.find(cipher) != std::string::npos)){
           throw SQLException(
               "Unsupported SSL cipher '"
               +cipher
@@ -253,23 +262,17 @@ namespace capi
   /** Closes socket and stream readers/writers Attempts graceful shutdown. */
   void ConnectProtocol::close()
   {
-    bool locked= false;
-    if (lock){
-      locked= lock->try_lock();
-    }
+    std::unique_lock<std::mutex> localScopeLock(*lock);
     this->connected= false;
     try {
-
+      // skip acquires lock
+      localScopeLock.unlock();
       skip();
     }catch (std::runtime_error& ){
-
     }
-
+    localScopeLock.lock();
     closeSocket();
     cleanMemory();
-    if (locked){
-      lock->unlock();
-    }
   }
 
   /** Force closes socket and stream readers/writers. */
@@ -322,10 +325,10 @@ namespace capi
   void ConnectProtocol::abortActiveStream()
   {
     try {
-
-      if (activeStreamingResult){
-        activeStreamingResult->abort();
-        activeStreamingResult= NULL;
+      Shared::Results activeStream= activeStreamingResult.lock();
+      if (activeStream){
+        activeStream->abort();
+        activeStreamingResult.reset();
       }
     }catch (std::runtime_error& ){
 
@@ -341,9 +344,10 @@ namespace capi
    */
   void ConnectProtocol::skip()
   {
-    if (activeStreamingResult){
-      activeStreamingResult->loadFully(true, this);
-      activeStreamingResult= nullptr;
+    Shared::Results activeStream = activeStreamingResult.lock();
+    if (activeStream) {
+      activeStream->loadFully(true, this);
+      activeStreamingResult.reset();
     }
   }
 
@@ -393,7 +397,7 @@ namespace capi
   void ConnectProtocol::createConnection(HostAddress* hostAddress, const SQLString& username)
   {
 
-    SQLString host= hostAddress != nullptr ? hostAddress->host : "";
+    SQLString host(hostAddress != nullptr ? hostAddress->host : "");
     int32_t port= hostAddress != nullptr ? hostAddress->port :3306;
 
     Unique::Credential credential;
@@ -459,8 +463,8 @@ namespace capi
           "08000",
           &ioException).Throw();
     }
-    unsigned reportDataTruncation= 1;
-    mysql_optionsv(connection.get(), MYSQL_REPORT_DATA_TRUNCATION, &reportDataTruncation);
+    mysql_optionsv(connection.get(), MYSQL_REPORT_DATA_TRUNCATION, &uintOptionSelected);
+    mysql_optionsv(connection.get(), MYSQL_OPT_LOCAL_INFILE, (options->allowLocalInfile ? &uintOptionSelected : &uintOptionNotSelected));
 
     if (mysql_real_connect(connection.get(), NULL, NULL, NULL, NULL, 0, NULL, CLIENT_MULTI_STATEMENTS) == nullptr)
     {
@@ -479,7 +483,7 @@ namespace capi
       serverVersion = serverVersion.substr(MARIADB_RPL_HACK_PREFIX.length());
     }
     else {
-      serverMariaDb = serverVersion.find_first_of("MariaDB") != std::string::npos;
+      serverMariaDb = StringImp::get(serverVersion).find("MariaDB") != std::string::npos;
     }
     unsigned long baseCaps, extCaps;
     mariadb_get_infov(connection.get(), MARIADB_CONNECTION_EXTENDED_SERVER_CAPABILITIES, (void*)&extCaps);
@@ -500,7 +504,7 @@ namespace capi
 
     postConnectionQueries();
 
-    activeStreamingResult= NULL;
+    activeStreamingResult.reset();
     hostFailed= false;
   }
 
@@ -653,7 +657,7 @@ namespace capi
         loadCalendar(globalInfo->getTimeZone(), globalInfo->getSystemTimeZone());
       }
 
-      activeStreamingResult= NULL;
+      activeStreamingResult.reset();
       hostFailed= false;
     }catch (SQLException& sqlException){
       destroySocket();
@@ -1052,7 +1056,7 @@ namespace capi
 
     if (hosts.empty() && !options->pipe.empty()){
       try {
-        createConnection(NULL, username);
+        createConnection(nullptr, username);
         return;
       }catch (SQLException& exception){
         ExceptionFactory::INSTANCE.create(
@@ -1302,9 +1306,9 @@ namespace capi
     this->hasWarningsFlag= _hasWarnings;
   }
 
-  Shared::Results& ConnectProtocol::getActiveStreamingResult()
+  Shared::Results ConnectProtocol::getActiveStreamingResult()
   {
-    return activeStreamingResult;
+    return activeStreamingResult.lock();
   }
 
   void ConnectProtocol::setActiveStreamingResult(Shared::Results& _activeStreamingResult)
@@ -1315,8 +1319,9 @@ namespace capi
   /** Remove exception result and since totally fetched, set fetch size to 0. */
   void ConnectProtocol::removeActiveStreamingResult()
   {
-    if (this->activeStreamingResult){
-      this->activeStreamingResult->removeFetchSize();
+    Shared::Results activeStream = getActiveStreamingResult();
+    if (activeStream) {
+      activeStream->removeFetchSize();
       this->activeStreamingResult.reset();
     }
   }

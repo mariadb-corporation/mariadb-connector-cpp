@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -28,7 +28,6 @@
  * along with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
  */
-
 
 
 #include "../unit_fixture.h"
@@ -73,22 +72,23 @@ public:
 #ifndef MYSQLCLIENT_STATIC_BINDING
     TEST_CASE(loadSameLibraryTwice);
 #endif
-  TEST_CASE(enableClearTextAuth);
-  TEST_CASE(connectAttrAdd);
-  TEST_CASE(connectAttrReset);
-  TEST_CASE(connectCharsetDir);
-  TEST_CASE(connectSSLEnforce);
-  TEST_CASE(setAuthDir);
-  TEST_CASE(setDefaultAuth);
-  TEST_CASE(localInfile);
-  TEST_CASE(isValid);
-  TEST_CASE(reconnect);
-  TEST_CASE(ssl_mode);
-  TEST_CASE(tls_version);
-  TEST_CASE(cached_sha2_auth);
-  TEST_CASE(bugConCpp21);
-  TEST_CASE(unknownPropertyConnect);
-  TEST_CASE(useCharacterSet);
+    TEST_CASE(enableClearTextAuth);
+    TEST_CASE(connectAttrAdd);
+    TEST_CASE(connectAttrReset);
+    TEST_CASE(connectCharsetDir);
+    TEST_CASE(connectSSLEnforce);
+    TEST_CASE(setAuthDir);
+    TEST_CASE(setDefaultAuth);
+    TEST_CASE(localInfile);
+    TEST_CASE(isValid);
+    TEST_CASE(reconnect);
+    TEST_CASE(ssl_mode);
+    TEST_CASE(tls_version);
+    TEST_CASE(cached_sha2_auth);
+    TEST_CASE(bugConCpp21);
+    TEST_CASE(unknownPropertyConnect);
+    TEST_CASE(useCharacterSet);
+    TEST_CASE(concpp94_loadLocalInfile);
   }
 
   /**
@@ -274,6 +274,9 @@ public:
 
   /* useCharacterSet property */
   void useCharacterSet();
+
+  /* LOAD DATA LOCAL INFILE should be disabled by default */
+  void concpp94_loadLocalInfile();
 };
 
 

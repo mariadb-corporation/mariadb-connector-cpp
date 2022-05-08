@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2022 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -30,6 +30,7 @@
 #include "SelectResultSet.h"
 #include "ColumnDefinition.h"
 #include "util/Utils.h"
+
 
 #define IMPORTED_KEYS_COLUMN_COUNT 14
 #define TYPE_INFO_COLUMN_COUNT 18
@@ -167,7 +168,7 @@ namespace sql
 
   int32_t MariaDbDatabaseMetaData::getImportedKeyAction(const SQLString& actionKey)
   {
-    if (actionKey.empty() == true){
+    if (actionKey.empty()){
       return DatabaseMetaData::importedKeyRestrict;
     }
     if (actionKey.compare("NO ACTION") == 0)
@@ -216,8 +217,8 @@ namespace sql
       "PK_NAME","DEFERRABILITY"
     };
     std::vector<ColumnType>columnTypes {
+      ColumnType::_NULL,ColumnType::VARCHAR,ColumnType::VARCHAR,
       ColumnType::VARCHAR,ColumnType::_NULL,ColumnType::VARCHAR,
-      ColumnType::VARCHAR,ColumnType::VARCHAR,ColumnType::_NULL,
       ColumnType::VARCHAR,ColumnType::VARCHAR,ColumnType::SMALLINT,
       ColumnType::SMALLINT,ColumnType::SMALLINT,ColumnType::VARCHAR,
       ColumnType::_NULL,ColumnType::SMALLINT
@@ -230,7 +231,7 @@ namespace sql
     for (auto& part : *parts)
     {
       part= part.trim();
-      if (!part.startsWith("CONSTRAINT") && !(part.find_first_of("FOREIGN KEY") != std::string::npos)){
+      if (!part.startsWith("CONSTRAINT") && !(StringImp::get(part).find("FOREIGN KEY") != std::string::npos)){
         continue;
       }
       //const char* partChar= part.c_str();
@@ -257,10 +258,10 @@ namespace sql
       int32_t onDeleteReferenceAction= DatabaseMetaData::importedKeyRestrict;
 
       for (SQLString referenceAction : {"RESTRICT","CASCADE", "SET NULL","NO ACTION"}) {
-        if (part.find_first_of("FOREIGN KEY") != std::string::npos) {
+        if (StringImp::get(part).find("ON UPDATE " + referenceAction) != std::string::npos) {
           onUpdateReferenceAction= getImportedKeyAction(referenceAction);
         }
-        if (part.find_first_of("FOREIGN KEY") != std::string::npos) {
+        if (StringImp::get(part).find("ON DELETE " + referenceAction) != std::string::npos) {
           onDeleteReferenceAction= getImportedKeyAction(referenceAction);
         }
       }
@@ -273,45 +274,56 @@ namespace sql
       for (size_t i= 0; i <primaryKeyCols.size(); i++)
       {
         std::vector<sql::bytes> row;
+        row.reserve(columnNames.size());
+
+        // NULL in 1st column
+        row.emplace_back(0); // PKTABLE_CAT
 
         if (pkTable.schema.empty())
         {
-          BYTES_ASSIGN_STR(row[0], catalog);
+          row.push_back(BYTES_STR_INIT(catalog));
         }
         else
         {
-          BYTES_ASSIGN_STR(row[0], pkTable.schema);
+          row.push_back(BYTES_STR_INIT(pkTable.schema)); // PKTABLE_SCHEM
         }
-
+        
         f8= std::to_string(i + 1);
 
-        //row[1]= NULL;
-        BYTES_ASSIGN_STR(row[2], pkTable.name);
-        BYTES_ASSIGN_STR(row[3], primaryKeyCols[i].name);
-        BYTES_ASSIGN_STR(row[4], catalog);
-        //BYTES_ASSIGN_STR(row[5], NULL);
-        BYTES_ASSIGN_STR(row[6], tableName);
-        BYTES_ASSIGN_STR(row[7], foreignKeyCols[i].name);
-        BYTES_ASSIGN_STR(row[8], f8);
-        BYTES_ASSIGN_STR(row[9], f9);
-        BYTES_ASSIGN_STR(row[10], f10);
-        BYTES_ASSIGN_STR(row[11], constraintName.name);
-        //BYTES_ASSIGN_STR(row[12], NULL);
-        BYTES_ASSIGN_STR(row[13], f13);
+        row.push_back(BYTES_STR_INIT(pkTable.name)); // PKTABLE_NAME
+        row.push_back(BYTES_STR_INIT(primaryKeyCols[i].name));
+        // NULL in 5th column
+        row.emplace_back(0);
+        row.push_back(BYTES_STR_INIT(catalog));
+        row.push_back(BYTES_STR_INIT(tableName));
+        row.push_back(BYTES_STR_INIT(foreignKeyCols[i].name));
+        row.push_back(BYTES_STR_INIT(f8));
+        row.push_back(BYTES_STR_INIT(f9));
+        row.push_back(BYTES_STR_INIT(f10));
+        row.push_back(BYTES_STR_INIT(constraintName.name));
+        row.emplace_back(0); // PK_NAME - unlike using information_schema, cannot know constraint name
+        row.push_back(BYTES_STR_INIT(f13));
         data.push_back(row);
       }
     }
-    //SQLString arr= data.toArray();
 
     std::sort(data.begin(), data.end(),
         [](const std::vector<sql::bytes>& row1, const std::vector<sql::bytes>& row2){
-        int32_t result= strcmp(row1[0],row2[0]);
+        std::size_t minSize= std::min<std::size_t>(row1[1].size(), row2[1].size());
+        int32_t result= strncmp(row1[1],row2[1], minSize); // PKTABLE_SCHEM 
         if (result == 0){
-          result= strcmp(row1[2], row2[2]);
+          if (row1[1].size() != row2[1].size()) {
+            return row1[1].size() < row2[1].size();
+          }
+          minSize = std::min<std::size_t>(row1[2].size(), row2[2].size());
+          result= strncmp(row1[2], row2[2], minSize); // PKTABLE_NAME
         if (result == 0){
-          result= static_cast<int32_t>(row1[8].size() - row2[8].size());
+          if (row1[2].size() != row2[2].size()) {
+            return row1[2].size() < row2[2].size();
+          }
+          result= static_cast<int32_t>(row1[8].size() - row2[8].size()); // KEY_SEQ
         if (result == 0){
-          result= strcmp(row1[8], row2[8]);
+          result= strncmp(row1[8], row2[8], row1[8].size());
         }
         }
         }
@@ -389,35 +401,23 @@ namespace sql
    */
   ResultSet* MariaDbDatabaseMetaData::getImportedKeys(const SQLString& catalog, const SQLString& schema, const SQLString& table)  {
 
-
+    // We use schema as schema.
     SQLString database(schema);
 
-
-    if (table.empty() == true){
+    // We avoid using information schema queries by default, because this appears to be an expensive query
+    if (table.empty()){
       throw SQLException("'table' parameter in getImportedKeys cannot be NULL");
     }
 
-    if (database.empty() == true && connection->nullCatalogMeansCurrent){
-
-      return getImportedKeysUsingInformationSchema("",table);
-    }
-
-    if (database.empty() == true){
-      return getImportedKeysUsingInformationSchema(""/*NULL*/, table);
-    }
-
-    if (database.empty()){
-      database= connection->getCatalog();
-      if (database.empty() == true/* || database.empty()*/){
-        return getImportedKeysUsingInformationSchema(database, table);
-      }
+    if (database.empty()) {
+      return getImportedKeysUsingInformationSchema(database, table);
     }
 
     try {
-      return getImportedKeysUsingShowCreateTable(database,table);
+      return getImportedKeysUsingShowCreateTable(database, table);
     }catch (std::runtime_error& /*e*/){
-
-      return getImportedKeysUsingInformationSchema(database,table);
+      // Likely, parsing failed, try out I_S query
+      return getImportedKeysUsingInformationSchema(database, table);
     }
   }
 
@@ -509,9 +509,11 @@ namespace sql
   ResultSet* MariaDbDatabaseMetaData::executeQuery(const SQLString& sql)
   {
     Unique::Statement stmt(connection->createStatement());
+    // We are taking responsibility not to stream metadata queries
+    stmt->setFetchSize(0);
     SelectResultSet* rs= dynamic_cast<SelectResultSet*>(stmt->executeQuery(sql));
-    rs->setStatement(NULL);
     rs->setForceTableAlias();
+    rs->setStatement(nullptr);
     return rs;
   }
 
@@ -662,8 +664,9 @@ ResultSet* MariaDbDatabaseMetaData::getPrimaryKeys(const SQLString& catalog, con
  * @see #getSearchStringEscape
  */
 ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQLString& schemaPattern, const SQLString& tableNamePattern,
-  std::list<SQLString>& types)
+  std::list<SQLString>& wrappedTypes)
 {
+  const std::list<SQLString>& types= wrappedTypes;
   SQLString sql(
       "SELECT NULL TABLE_CAT, TABLE_SCHEMA TABLE_SCHEM,  TABLE_NAME,"
       " IF(TABLE_TYPE='BASE TABLE', 'TABLE', TABLE_TYPE) as TABLE_TYPE,"
@@ -836,7 +839,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
     try {
       return executeQuery(sql);
     }catch (SQLException& sqlException){
-      if ((sqlException.getMessage().find_first_of("Unknown column 'DATETIME_PRECISION'") != std::string::npos)){
+      if ((StringImp::get(sqlException.getMessage()).find("Unknown column 'DATETIME_PRECISION'") != std::string::npos)){
         datePrecisionColumnExist= false;
         return getColumns(catalog,schemaPattern,tableNamePattern,columnNamePattern);
       }
@@ -1231,7 +1234,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
     {
       SQLString svrVer(connection->getProtocol()->getServerVersion());
 
-      if (svrVer.toLowerCase().find_first_of("mariadb") != std::string::npos)
+      if (StringImp::get(svrVer.toLowerCase()).find("mariadb") != std::string::npos)
       {
         return "MariaDB";
       }
@@ -2146,7 +2149,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
       return executeQuery(sql);
     }
     catch (SQLException& sqlException) {
-      if (sqlException.getMessage().find_first_of("Unknown column 'DATETIME_PRECISION'") != std::string::npos) {
+      if (StringImp::get(sqlException.getMessage()).find("Unknown column 'DATETIME_PRECISION'") != std::string::npos) {
         datePrecisionColumnExist = false;
         return getProcedureColumns(catalog, schemaPattern, procedureNamePattern, columnNamePattern);
       }
@@ -2297,7 +2300,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& catalog, const SQ
 
   ResultSet* MariaDbDatabaseMetaData::getSchemas(const SQLString& catalog, const SQLString& schemaPattern) {
     // TODO: need obviously smth more than that
-    std::stringstream query("SELECT SCHEMA_NAME TABLE_SCHEM, '' TABLE_CATALOG  FROM INFORMATION_SCHEMA.SCHEMATA ");
+    std::ostringstream query("SELECT SCHEMA_NAME TABLE_SCHEM, '' TABLE_CATALOG  FROM INFORMATION_SCHEMA.SCHEMATA ", std::ios_base::ate);
 
     if (!catalog.empty() && catalog.compare("def") != 0) {
       query << "WHERE 1=0 ";

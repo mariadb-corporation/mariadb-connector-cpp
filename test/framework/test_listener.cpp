@@ -52,9 +52,12 @@ TestsListener::TestsListener()
   outputter.reset(new TAP());
 }
 
-void TestsListener::setVerbose(bool verbosity)
+bool TestsListener::setVerbose(bool verbosity)
 {
-  theInstance().verbose=verbosity;
+  bool current= theInstance().verbose;
+  theInstance().verbose= verbosity;
+
+  return current;
 }
 
 bool TestsListener::doTiming(bool timing)
@@ -203,7 +206,7 @@ void TestsListener::testHasFinished(TestRunResult result, const String & msg)
     tmp << std::setw(13) << std::right << total << "s";
     tmp << " (100.00%)" << std::endl;
 
-    const List & names=Timer::getNames(testFullName());
+    const TestList & names=Timer::getNames(testFullName());
     ConstIterator it=names.begin();
     for (; it != names.end(); ++it)
     {

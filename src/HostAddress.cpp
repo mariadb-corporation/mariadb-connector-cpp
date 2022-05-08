@@ -21,8 +21,8 @@
 #include <regex>
 #include <cassert>
 
-#include "HostAddress.h"
 #include "Consts.h"
+#include "HostAddress.h"
 #include "logger/LoggerFactory.h"
 #include "Exception.hpp"
 
@@ -32,7 +32,7 @@ namespace sql
   {
     Shared::Logger HostAddress::logger= LoggerFactory::getLogger(typeid(HostAddress));
 
-    HostAddress::HostAddress() {}
+    HostAddress::HostAddress() : host(""), port(DefaultPort) {}
 
 
     HostAddress::HostAddress(const SQLString& _host, int32_t _port)
@@ -112,7 +112,7 @@ namespace sql
           result->port= getPort(str.substr(ind +2));
         }
       }
-      else if ((str.find_first_of(":") != std::string::npos)) {
+      else if ((str.find_first_of(':') != std::string::npos)) {
         Tokens hostPort= split(str, ":");
         result->host= (*hostPort)[0];
         assert(hostPort->size() > 1);
@@ -187,7 +187,7 @@ namespace sql
         }
         else
         {
-          bool isIPv6= !addrs[i].host.empty() && (addrs[i].host.find_first_of(":") != std::string::npos);
+          bool isIPv6= !addrs[i].host.empty() && (addrs[i].host.find_first_of(':') != std::string::npos);
           SQLString host= (isIPv6) ? ("["+addrs[i].host +"]") : addrs[i].host;
           str.append(host).append(":").append(std::to_string(addrs[i].port));
         }
@@ -201,7 +201,7 @@ namespace sql
     SQLString HostAddress::toString(HostAddress* addrs) {
       SQLString str;
       for (int32_t i= 0; i <addrs.length; i++) {
-        if (addrs[i].type !=NULL) {
+        if (addrs[i].type != nullptr) {
           str.append("address=(host=")
             .append(addrs[i].host)
             .append(")(port=")
@@ -211,7 +211,7 @@ namespace sql
             .append(")");
         }
         else {
-          bool isIPv6= addrs[i].host !=NULL && (addrs[i].host.find_first_of(":") != std::string::npos);
+          bool isIPv6= addrs[i].host != nullptr && (addrs[i].host.find_first_of(':') != std::string::npos);
           SQLString host= (isIPv6) ? ("["+addrs[i].host +"]") : addrs[i].host;
           str.append(host).append(":").append(addrs[i].port);
         }
@@ -233,7 +233,7 @@ namespace sql
       if (this == obj) {
         return true;
       }
-      if (obj == NULL) {
+      if (obj == nullptr) {
         return false;
       }
       return port == obj->port &&

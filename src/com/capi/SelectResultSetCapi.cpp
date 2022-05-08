@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2022 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -73,7 +73,7 @@ namespace capi
       callableResult(callableResult),
       eofDeprecated(eofDeprecated),
       isEof(false),
-      capiConnHandle(NULL),
+      capiConnHandle(nullptr),
       capiStmtHandle(spr->getStatementId()),
       timeZone(nullptr),
       forceAlias(false),
@@ -122,24 +122,25 @@ namespace capi
       eofDeprecated(eofDeprecated),
       isEof(false),
       capiConnHandle(capiConnHandle),
-      capiStmtHandle(NULL),
+      capiStmtHandle(nullptr),
       timeZone(nullptr),
       forceAlias(false),
       lastRowPointer(-1)
   {
-    MYSQL_RES* textNativeResults= NULL;
+    MYSQL_RES* textNativeResults= nullptr;
     if (fetchSize == 0 || callableResult) {
-      data.reserve(10);//= new char[10]; // This has to be array of arrays. Need to decide what to use for its representation
+      data.reserve(10);
       textNativeResults= mysql_store_result(capiConnHandle);
 
       if (textNativeResults == nullptr && mysql_errno(capiConnHandle) != 0) {
         throw SQLException(mysql_error(capiConnHandle), mysql_sqlstate(capiConnHandle), mysql_errno(capiConnHandle));
       }
-      dataSize= static_cast<size_t>(textNativeResults != NULL ? mysql_num_rows(textNativeResults) : 0);
+      dataSize= static_cast<size_t>(textNativeResults != nullptr ? mysql_num_rows(textNativeResults) : 0);
       streaming= false;
       resetVariables();
     }
     else {
+      lock = protocol->getLock();
       //TODO: This may be wrong. We get plain ptr and putting it to smart ptr, which will eventually destrct the object w/out object's owner control
       Shared::Results shRes(results);
       protocol->setActiveStreamingResult(shRes);
@@ -180,9 +181,10 @@ namespace capi
   SelectResultSetCapi::SelectResultSetCapi(
     std::vector<Shared::ColumnDefinition>& columnInformation,
     std::vector<std::vector<sql::bytes>>& resultSet,
-    Protocol* protocol,
+    Protocol* _protocol,
     int32_t resultSetScrollType)
     : statement(nullptr),
+      protocol(_protocol),
       row(new capi::TextRowProtocolCapi(0, this->options, nullptr)),
       data(std::move(resultSet)),
       dataSize(data.size()),
@@ -229,16 +231,16 @@ namespace capi
     dataSize= 0;
     while (readNextValue()) {
     }
-    dataFetchTime++;
+    ++dataFetchTime;
   }
 
   const char * SelectResultSetCapi::getErrMessage()
   {
-    if (capiStmtHandle != NULL)
+    if (capiStmtHandle != nullptr)
     {
       return mysql_stmt_error(capiStmtHandle);
     }
-    else if (capiConnHandle != NULL)
+    else if (capiConnHandle != nullptr)
     {
       return mysql_error(capiConnHandle);
     }
@@ -248,11 +250,11 @@ namespace capi
 
   const char * SelectResultSetCapi::getSqlState()
   {
-    if (capiStmtHandle != NULL)
+    if (capiStmtHandle != nullptr)
     {
       return mysql_stmt_error(capiStmtHandle);
     }
-    else if (capiConnHandle != NULL)
+    else if (capiConnHandle != nullptr)
     {
       return mysql_error(capiConnHandle);
     }
@@ -261,11 +263,11 @@ namespace capi
 
   uint32_t SelectResultSetCapi::getErrNo()
   {
-    if (capiStmtHandle != NULL)
+    if (capiStmtHandle != nullptr)
     {
       return mysql_stmt_errno(capiStmtHandle);
     }
-    else if (capiConnHandle != NULL)
+    else if (capiConnHandle != nullptr)
     {
       return mysql_errno(capiConnHandle);
     }
@@ -274,11 +276,11 @@ namespace capi
 
   uint32_t SelectResultSetCapi::warningCount()
   {
-    if (capiStmtHandle != NULL)
+    if (capiStmtHandle != nullptr)
     {
       return mysql_stmt_warning_count(capiStmtHandle);
     }
-    else if (capiConnHandle != NULL)
+    else if (capiConnHandle != nullptr)
     {
       return mysql_warning_count(capiConnHandle);
     }
@@ -377,18 +379,16 @@ namespace capi
         getErrMessage(),
         getSqlState(),
         getErrNo(),
-        NULL,
+        nullptr,
         false);*/
     }
 
     case MYSQL_NO_DATA: {
       uint32_t serverStatus;
-      uint32_t warnings;
 
       if (!eofDeprecated) {
 
         protocol->readEofPacket();
-        warnings= warningCount();
         serverStatus= protocol->getServerStatus();
 
         // CallableResult has been read from intermediate EOF server_status
@@ -407,11 +407,10 @@ namespace capi
         // OK_Packet with a 0xFE header
         // protocol->readOkPacket()?
         serverStatus= protocol->getServerStatus();
-        warnings= warningCount();;
         callableResult= (serverStatus & PS_OUT_PARAMETERS)!=0;
       }
       protocol->setServerStatus(serverStatus);
-      protocol->setHasWarnings(warnings > 0);
+      protocol->setHasWarnings(warningCount() > 0);
 
       if ((serverStatus & MORE_RESULTS_EXISTS) == 0) {
         protocol->removeActiveStreamingResult();
@@ -422,11 +421,10 @@ namespace capi
     }
     }
 
-
     if (dataSize + 1 >= data.size()) {
       growDataArray();
     }
-    //data[dataSize++]= ?;
+    ++dataSize;
     return true;
   }
 
@@ -530,7 +528,7 @@ namespace capi
 
     if (statement != nullptr) {
       statement->checkCloseOnCompletion(this);
-      statement= NULL;
+      statement= nullptr;
     }
   }
 
@@ -663,8 +661,8 @@ namespace capi
   }
 
   SQLWarning* SelectResultSetCapi::getWarnings() {
-    if (this->statement == NULL) {
-      return NULL;
+    if (this->statement == nullptr) {
+      return nullptr;
     }
     return this->statement->getWarnings();
   }
@@ -766,7 +764,7 @@ namespace capi
   bool SelectResultSetCapi::first() {
     checkClose();
 
-    if (streaming &&resultSetScrollType == TYPE_FORWARD_ONLY) {
+    if (streaming && resultSetScrollType == TYPE_FORWARD_ONLY) {
       throw SQLException("Invalid operation for result set type TYPE_FORWARD_ONLY");
     }
 
@@ -940,7 +938,7 @@ namespace capi
     return isNull(findColumn(columnLabel));
   }
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   /** {inheritDoc}. */
   std::istream* SelectResultSetCapi::getAsciiStream(const SQLString& columnLabel) {
     return getAsciiStream(findColumn(columnLabel));
@@ -950,7 +948,7 @@ namespace capi
   std::istream* SelectResultSetCapi::getAsciiStream(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     return new ByteArrayInputStream(
       new SQLString(row->buf, row->pos, row->getLengthMaxFieldSize()).c_str());/*, StandardCharsets.UTF_8*/
@@ -994,7 +992,7 @@ namespace capi
   std::istream* SelectResultSetCapi::getBinaryStream(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     blobBuffer[columnIndex].reset(new memBuf(row->fieldBuf.arr + row->pos, row->fieldBuf.arr + row->pos + row->getLengthMaxFieldSize()));
     return new std::istream(blobBuffer[columnIndex].get());
@@ -1104,7 +1102,7 @@ namespace capi
     return getBigDecimal(findColumn(columnLabel));
   }
 #endif
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   /** {inheritDoc}. */
   SQLString SelectResultSetCapi::getBytes(const SQLString& columnLabel) {
     return getBytes(findColumn(columnLabel));
@@ -1113,7 +1111,7 @@ namespace capi
   SQLString SelectResultSetCapi::getBytes(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     char* data= new char[row->getLengthMaxFieldSize()];
     System.arraycopy(row->buf, row->pos, data, 0, row->getLengthMaxFieldSize());
@@ -1124,7 +1122,7 @@ namespace capi
   /** {inheritDoc}. */
   Date* SelectResultSetCapi::getDate(int32_t columnIndex) {
     checkObjectRange(columnIndex);
-    return row->getInternalDate(columnsInformation[columnIndex -1], NULL, timeZone);
+    return row->getInternalDate(columnsInformation[columnIndex -1], nullptr, timeZone);
   }
 
   /** {inheritDoc}. */
@@ -1135,7 +1133,7 @@ namespace capi
   /** {inheritDoc}. */
   Time* SelectResultSetCapi::getTime(int32_t columnIndex) {
     checkObjectRange(columnIndex);
-    return row->getInternalTime(columnsInformation[columnIndex -1], NULL, timeZone);
+    return row->getInternalTime(columnsInformation[columnIndex -1], nullptr, timeZone);
   }
 
   /** {inheritDoc}. */  Time SelectResultSetCapi::getTime(const SQLString& columnLabel) {
@@ -1150,7 +1148,7 @@ namespace capi
   /** {inheritDoc}. */
   Timestamp* SelectResultSetCapi::getTimestamp(int32_t columnIndex) {
     checkObjectRange(columnIndex);
-    return row->getInternalTimestamp(columnsInformation[columnIndex -1], NULL, timeZone);
+    return row->getInternalTimestamp(columnsInformation[columnIndex -1], nullptr, timeZone);
   }
 #endif
 
@@ -1219,16 +1217,16 @@ namespace capi
 
   template <class T>T getObject(int32_t columnIndex, Classtemplate <class T>type) {
     if (type.empty() == true) {
-      throw SQLException("Class type cannot be NULL");
+      throw SQLException("Class type cannot be nullptr");
     }
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     ColumnDefinition col= columnsInformation[columnIndex -1];
 
     if ((type.compare(SQLString.class) == 0)) {
-      return (T)row->getInternalString(col, NULL, timeZone);
+      return (T)row->getInternalString(col, nullptr, timeZone);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
@@ -1262,15 +1260,15 @@ namespace capi
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)row->getInternalDate(col, NULL, timeZone);
+      return (T)row->getInternalDate(col, nullptr, timeZone);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)row->getInternalTime(col, NULL, timeZone);
+      return (T)row->getInternalTime(col, nullptr, timeZone);
 
     }
     else if ((type.compare(SQLString.class) == 0)||((type.compare(SQLString.class) == 0)) {
-      return (T)row->getInternalTimestamp(col, NULL, timeZone);
+      return (T)row->getInternalTimestamp(col, nullptr, timeZone);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
@@ -1279,9 +1277,9 @@ namespace capi
     }
     else if ((type.compare(SQLString.class) == 0)) {
       calendar=  .getInstance(timeZone);
-      Timestamp timestamp= row->getInternalTimestamp(col, NULL, timeZone);
+      Timestamp timestamp= row->getInternalTimestamp(col, nullptr, timeZone);
       if (timestamp.empty() == true) {
-        return NULL;
+        return nullptr;
       }
       calendar.setTimeInMillis(timestamp.getTime());
       return type.cast(calendar);
@@ -1296,9 +1294,9 @@ namespace capi
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      SQLString value= row->getInternalString(col, NULL, timeZone);
+      SQLString value= row->getInternalString(col, nullptr, timeZone);
       if (value.empty() == true) {
-        return NULL;
+        return nullptr;
       }
       return (T)new StringReader(value);
 
@@ -1318,7 +1316,7 @@ namespace capi
       ZonedDateTime zonedDateTime =
         row->getInternalZonedDateTime(col, LocalDateTime.class, timeZone);
       return zonedDateTime.empty() == true
-        ? NULL
+        ? nullptr
         : type.cast(zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime());
 
     }
@@ -1326,7 +1324,7 @@ namespace capi
       ZonedDateTime zonedDateTime =
         row->getInternalZonedDateTime(col, ZonedDateTime.class, timeZone);
       if (zonedDateTime.empty() == true) {
-        return NULL;
+        return nullptr;
       }
       return type.cast(row->getInternalZonedDateTime(col, ZonedDateTime.class, timeZone));
 
@@ -1334,13 +1332,13 @@ namespace capi
     else if ((type.compare(SQLString.class) == 0)) {
       ZonedDateTime tmpZonedDateTime =
         row->getInternalZonedDateTime(col, OffsetDateTime.class, timeZone);
-      return tmpZonedDateTime.empty() == true ? NULL : type.cast(tmpZonedDateTime.toOffsetDateTime());
+      return tmpZonedDateTime.empty() == true ? nullptr : type.cast(tmpZonedDateTime.toOffsetDateTime());
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
       LocalDate localDate= row->getInternalLocalDate(col, timeZone);
       if (localDate.empty() == true) {
-        return NULL;
+        return nullptr;
       }
       return type.cast(localDate);
 
@@ -1348,7 +1346,7 @@ namespace capi
     else if ((type.compare(SQLString.class) == 0)) {
       LocalDate localDate= row->getInternalLocalDate(col, timeZone);
       if (localDate.empty() == true) {
-        return NULL;
+        return nullptr;
       }
       return type.cast(localDate);
 
@@ -1356,7 +1354,7 @@ namespace capi
     else if ((type.compare(SQLString.class) == 0)) {
       LocalTime localTime= row->getInternalLocalTime(col, timeZone);
       if (localTime.empty() == true) {
-        return NULL;
+        return nullptr;
       }
       return type.cast(localTime);
 
@@ -1364,7 +1362,7 @@ namespace capi
     else if ((type.compare(SQLString.class) == 0)) {
       OffsetTime offsetTime= row->getInternalOffsetTime(col, timeZone);
       if (offsetTime.empty() == true) {
-        return NULL;
+        return nullptr;
       }
       return type.cast(offsetTime);
     }
@@ -1380,9 +1378,9 @@ namespace capi
   /** {inheritDoc}. */
   std::istringstream* SelectResultSetCapi::getCharacterStream(int32_t columnIndex) {
     checkObjectRange(columnIndex);
-    SQLString value= row->getInternalString(columnsInformation[columnIndex -1], NULL, timeZone);
+    SQLString value= row->getInternalString(columnsInformation[columnIndex -1], nullptr, timeZone);
     if (value.empty() == true) {
-      return NULL;
+      return nullptr;
     }
     return new StringReader(value);
   }
@@ -1412,7 +1410,7 @@ namespace capi
   Clob* SelectResultSetCapi::getClob(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     return new MariaDbClob(row->buf, row->pos, row->length);
   }
@@ -1437,10 +1435,10 @@ namespace capi
   {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     try {
-      return new URL(row->getInternalString(columnsInformation[columnIndex -1], NULL, timeZone));
+      return new URL(row->getInternalString(columnsInformation[columnIndex -1], nullptr, timeZone));
     }
     catch (MalformedURLException& e) {
       throw ExceptionMapper::getSqlException("Could not parse as URL");
@@ -1456,7 +1454,7 @@ namespace capi
   NClob* SelectResultSetCapi::getNClob(int32_t columnIndex) {
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     return new MariaDbClob(row->buf, row->pos, row->length);
   }

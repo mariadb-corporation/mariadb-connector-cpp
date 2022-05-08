@@ -34,8 +34,6 @@ public:
   static std::string& get(SQLString& str);
   static const std::string& get(const SQLString& str);
 
-  /*StringImp(const StringImp&);
-  StringImp(const std::string&);*/
   StringImp(const char* str);
   StringImp(const char* str, std::size_t count);
   StringImp()=default; //or delete?
@@ -44,13 +42,6 @@ public:
   std::string* operator ->() { return &realStr; }
 
   std::string& get() { return realStr; }
-  //StringImp& operator=(const StringImp&);
-  //operator std::string&() { return theString; }
-  //operator const std::string&() const { return theString; }
-  ////operator const char*() const { return theString.c_str(); }
-  //StringImp& operator=(const char * right);
-  //bool operator <(const StringImp&) const;
-
 };
 
 }

@@ -62,7 +62,7 @@ public:
   virtual void registerOutParameter(const SQLString& parameterName, int32_t sqlType, int32_t scale)=0;
   virtual void registerOutParameter(const SQLString& parameterName, int32_t sqlType, const SQLString& typeName)=0;
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   virtual Blob* getBlob(int32_t columnIndex)=0;
   virtual Blob* getBlob(const SQLString& columnLabel)=0;
   /*virtual std::istream* getBlob(int32_t columnIndex)=0;

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2021 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -158,12 +158,12 @@ ciString;
 
 #endif
 
-typedef std::vector<String>   List;
-typedef List::iterator        Iterator;
-typedef List::const_iterator  ConstIterator;
+typedef std::vector<String>       TestList;
+typedef TestList::iterator        Iterator;
+typedef TestList::const_iterator  ConstIterator;
 
-typedef std::map<String, String>  Properties;
-typedef Properties::iterator      PropsIterator;
-typedef List::const_iterator      PropsConstIterator;
+typedef std::map<String, String>        TestProperties;
+typedef TestProperties::iterator        PropsIterator;
+typedef TestProperties::const_iterator  PropsConstIterator;
 
 #endif /* __C_CPP_TYPES_H_ */

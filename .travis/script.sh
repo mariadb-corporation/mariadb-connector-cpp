@@ -164,5 +164,5 @@ pwd
 #  mysql --protocol=tcp -u$TEST_UID -h$TEST_SERVER --port=$TEST_PORT --password=$TEST_PASSWORD < cts.sql
 #fi
 
-ctest -VV
+ctest --output-on-failure
 

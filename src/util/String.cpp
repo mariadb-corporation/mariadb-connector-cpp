@@ -39,7 +39,7 @@ namespace mariadb
     std::string::const_iterator it = str.cbegin();
     std::size_t offset = 0, prevOffset = 0;
 
-    while ((offset = str.find_first_of(delimiter, prevOffset)) != std::string::npos)
+    while ((offset = StringImp::get(str).find(delimiter, prevOffset)) != std::string::npos)
     {
       std::string tmp(it, it + (offset - prevOffset));
       result->emplace_back(tmp);

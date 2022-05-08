@@ -865,7 +865,7 @@ void ResultSetMetadataTest::setUp()
   super::setUp();
   createStandardTable(TABLE_CTSTABLE2);
 
-  Properties::const_iterator cit=sqlProps.find("ftable");
+  TestProperties::const_iterator cit=sqlProps.find("ftable");
   String fTableName;
 
   if (cit != sqlProps.end()) {

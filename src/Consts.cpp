@@ -30,6 +30,7 @@ const char* Version::version= MACPP_VERSION_STR;
 const SQLString ParameterConstant::TYPE_MASTER("master");
 const SQLString ParameterConstant::TYPE_SLAVE("slave");
 const SQLString emptyStr("");
+const SQLString localhost("localhost");
 
 const char QUOTE=     '\'';
 const char DBL_QUOTE= '"';

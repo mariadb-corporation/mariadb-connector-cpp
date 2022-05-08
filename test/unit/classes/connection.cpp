@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -39,7 +39,6 @@
 #include "Connection.hpp"
 
 #include "Exception.hpp"
-//#include <cppconn/version_info.h>
 
 #include <memory>
 #include <list>
@@ -1053,7 +1052,7 @@ void connection::connectUsingMap()
   {
     sql::ConnectOptionsMap connection_properties;
 
-    connection_properties["hostName"]=url;
+    connection_properties["hostName"]=urlWithoutSchema;
     connection_properties["userName"]=user;
     connection_properties["password"]=passwd;
     connection_properties["useTls"]= useTls? "true" : "false";
@@ -1195,15 +1194,15 @@ void connection::connectUsingMap()
       {
         logMsg("... schema not set through the URL");
 
-        connection_properties[std::string("schema")]=schema;
+        connection_properties["schema"]= schema;
 
         try
         {
           created_objects.clear();
           con.reset(driver->connect(connection_properties));
-          schema=con->getSchema();
+          schema= con->getSchema();
           if (!schema.empty())
-            FAIL("Empty schema specified but certain schema selected upon connect");
+            FAIL("Empty schama specified but certain schema selected upon connect");
         }
         catch (sql::SQLException &)
         {
@@ -1214,7 +1213,7 @@ void connection::connectUsingMap()
         logMsg("... trying to connect to mysql schema, may or may not work");
 
         connection_properties.erase("schema");
-        connection_properties["schema"]=(myschema);
+        connection_properties["schema"]= (myschema);
 
         try
         {
@@ -2206,7 +2205,8 @@ void connection::setTransactionIsolation()
       /* JDBC documentation: If this method is called while
        in the middle of a transaction, any changes up to that point
        will be committed.*/
-      stmt->execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+      // setTransactionIsolation does SET SESSION ...
+      stmt->execute("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
       // con->setTransactionIsolation(sql::TRANSACTION_REPEATABLE_READ);
       /* According to the JDBC docs the INSERT has been comitted
        and this ROLLBACK must have no impat */
@@ -2804,8 +2804,11 @@ void connection::setDefaultAuth()
     }
     catch (sql::SQLException &e)
     {
-      /* Error expected as trying to load unknown authentication plugin */
-      ASSERT_EQUALS(2059, e.getErrorCode()/*CR_AUTH_PLUGIN_CANNOT_LOAD_ERROR*/);
+      /* With maxscale that happens to be 1105, and does not make sense to test it */
+      if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+        /* Error expected as trying to load unknown authentication plugin */
+        ASSERT_EQUALS(2059, e.getErrorCode()/*CR_AUTH_PLUGIN_CANNOT_LOAD_ERROR*/);
+      }
     }
   }
   catch (sql::SQLException &e)
@@ -3280,5 +3283,50 @@ void connection::useCharacterSet()
     // All is fine
   }
 }
+
+
+void connection::concpp94_loadLocalInfile()
+{
+  sql::Properties p;
+  sql::SQLString onServer(getVariableValue("local_infile", true));
+
+  if (onServer.compare("0") == 0) {
+    try {
+      setVariableValue("local_infile", "ON", true); // can't be session
+    }
+    catch (sql::SQLException&) {
+      SKIP("local_infile is OFF at the server, and test could not change that. Doesn't make sense to continue the test");
+    }
+  }
+  try {
+    stmt->execute("LOAD DATA LOCAL INFILE 'nonexistent.txt' INTO TABLE nonexistent(b)");
+  }
+  catch (sql::SQLException& e) {
+    if (e.getErrorCode() != 1148 && e.getErrorCode() != 4166) {
+      FAIL("Wrong error code - local infile is allowed");
+    }
+    //ASSERT_EQUALS(4166, e.getErrorCode());
+  }
+
+  p["user"] = user;
+  p["password"] = passwd;
+  p["allowLocalInfile"] = "true";
+
+  con.reset(driver->connect(url, p));
+  ASSERT(con.get());
+  stmt.reset(con->createStatement());
+
+  try {
+    stmt->execute("LOAD DATA LOCAL INFILE 'nonexistent.txt' INTO TABLE nonexistent(b)");
+  }
+  catch (sql::SQLException& e) {
+    if (e.getErrorCode() == 1148 || e.getErrorCode() == 4166) {
+      FAIL("Wrong error code - local infile is still not allowed");
+    }
+    //ASSERT(4166!=e.getErrorCode());
+    ASSERT_EQUALS("42S02", e.getSQLState());
+  }
+}
+
 } /* namespace connection */
 } /* namespace testsuite */

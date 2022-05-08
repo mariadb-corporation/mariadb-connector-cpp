@@ -126,6 +126,7 @@ namespace mariadb
   extern std::map<std::string, enum HaMode> StrHaModeMap;
   extern const char* HaModeStrMap[LOADBALANCE + 1];
   extern const SQLString emptyStr;
+  extern const SQLString localhost;
   extern const char QUOTE;
   extern const char DBL_QUOTE;
   extern const char ZERO_BYTE;
@@ -209,6 +210,7 @@ namespace mariadb
   namespace Weak
   {
     typedef std::weak_ptr<MariaDbConnection> MariaDbConnection;
+    typedef std::weak_ptr<Results> Results;
   }
 } //---- namespace mariadb
 
@@ -219,4 +221,7 @@ namespace mariadb
   //{
   //}
 } //---- namespave sql
+
+//#include "UrlParser.h"
+
 #endif

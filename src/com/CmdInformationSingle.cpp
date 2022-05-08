@@ -119,7 +119,7 @@ namespace mariadb
 
   ResultSet* CmdInformationSingle::getBatchGeneratedKeys(Protocol* protocol)
   {
-    return getGeneratedKeys(protocol, NULL);
+    return getGeneratedKeys(protocol, nullptr);
   }
 
   int32_t CmdInformationSingle::getCurrentStatNumber()

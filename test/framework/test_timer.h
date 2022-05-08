@@ -135,8 +135,8 @@ public:
   static clock_t stopTimer(const String & test, const String & name);
   static clock_t stopTimer(const String & name);
 
-  static const List & getNames();
-  static const List & getNames(const String & test);
+  static const TestList & getNames();
+  static const TestList & getNames(const String & test);
 
   static clock_t getTime(const String & test, const String & name);
   static clock_t getTime(const String & test);

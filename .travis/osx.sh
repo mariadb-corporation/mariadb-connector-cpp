@@ -13,7 +13,7 @@ export TEST_PASSWORD=
 # mysql.server start
 
 # ls -la /usr/local/Cellar/openssl/
-cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_OPENSSL=ON -DWITH_SSL=OPENSSL -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -DTEST_HOST="tcp://$TEST_SERVER:$TEST_PORT" .
+cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=OPENSSL -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -DTEST_HOST="tcp://$TEST_SERVER:$TEST_PORT" .
 cmake --build . --config RelWithDebInfo
 
 ###################################################################################################################
@@ -28,4 +28,4 @@ cmake --build . --config RelWithDebInfo
 echo "Running tests"
 cd test
 mysql --protocol=tcp -ubob -h$TEST_SERVER --port=$TEST_PORT < cts.sql
-ctest -VV
+ctest --output-on-failure

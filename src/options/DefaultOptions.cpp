@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2022 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -24,7 +24,6 @@
 #include "DefaultOptions.h"
 #include "Consts.h"
 #include "Exception.hpp"
-
 
 namespace sql
 {
@@ -112,7 +111,7 @@ namespace sql
         false,
         false}},
       {
-        "allowLocalInfile", {"allowLocalInfile", "0.9.1", "Permit loading data from file", false, true}},
+        "allowLocalInfile", {"allowLocalInfile", "1.0.2", "Permits loading data from local file(on the client)", false, false}},
       {
         "sessionVariables", {"sessionVariables",
         "0.9.1",
@@ -189,7 +188,7 @@ namespace sql
         "0.9.1",
         "set buffer size for TCP buffer (SO_RCVBUF).",
         false,
-        (int32_t)0/*(int32_t)NULL*/,
+        (int32_t)0,
         int32_t(0) }},
       {
         "tcpSndBuf", {"tcpSndBuf",
@@ -474,7 +473,7 @@ namespace sql
         "\n"
         "This option is mainly effective when the client is distant from the server.",
         false,
-        false/*(bool*)NULL*/}},
+        false}},
       {
         "useBatchMultiSendNumber", {"useBatchMultiSendNumber",
         "0.9.1",
@@ -511,7 +510,8 @@ namespace sql
         "1.0.1",
         "String data encoding charset. The driver will assume, that all input strings are encoded using this"
         "character set, and will use it for communication with the server",
-        false}
+        false,
+        "utf8mb4"}
       },
       {
         "usePipelineAuth", {"usePipelineAuth",
@@ -521,7 +521,7 @@ namespace sql
         " pipeline (all queries are send, then only all results are reads), permitting faster connection "
         "creation",
         false,
-        false/*(bool*)NULL*/}},
+        false}},
       {
         "enablePacketDebug", {"enablePacketDebug",
         "0.9.1",
@@ -557,9 +557,8 @@ namespace sql
         true}},
       {
         "pool", {"pool",
-        "0.9.1",
-        "Use pool. This option is useful only if not using a DataSource object, but "
-        "only a connection object.",
+        "1.1.1",
+        "Use pool.",
         false,
         false}},
       {
@@ -570,24 +569,24 @@ namespace sql
         false}},
       {
         "maxPoolSize", {"maxPoolSize",
-        "0.9.1",
+        "1.1.1",
         "The maximum number of physical connections that the pool should contain.",
         false,
         (int32_t)8,
         int32_t(1) }},
       {
         "minPoolSize", {"minPoolSize",
-        "0.9.1",
+        "1.1.1",
         "When connections are removed due to not being used for "
         "longer than than \"maxIdleTime\", connections are closed and removed from the pool. \"minPoolSize\" "
         "indicates the number of physical connections the pool should keep available at all times. Should be less"
         " or equal to maxPoolSize.",
         false,
-        (int32_t)0/*(int32_t)NULL*/,
+        (int32_t)0,
         int32_t(0)}},
       {
         "maxIdleTime", {"maxIdleTime",
-        "0.9.1",
+        "1.1.1",
         "The maximum amount of time in seconds"
         " that a connection can stay in the pool when not used. This value must always be below @wait_timeout"
         " value - 45s \n"
@@ -597,11 +596,11 @@ namespace sql
         Options::MIN_VALUE__MAX_IDLE_TIME}},
       {
         "poolValidMinDelay", {"poolValidMinDelay",
-        "0.9.1",
-        "When asking a connection to pool, the pool will "
-        "validate the connection state. \"poolValidMinDelay\" permits disabling this validation if the connection"
-        " has been borrowed recently avoiding useless verifications in case of frequent reuse of connections. "
-        "0 means validation is done each time the connection is asked.",
+        "1.1.1",
+        "When the pool is requested for a connection, it will validate the connection state. "
+        "\"poolValidMinDelay\" allows to disable this validation if the connection has been "
+        "used recently, avoiding useless verifications in case of frequent reuse of connections. "
+        "0 means validation is done each time the connection is requested.",
         false,
         (int32_t)1000,
         int32_t(0)}},
@@ -615,14 +614,14 @@ namespace sql
         false}},
       {
         "useResetConnection", {"useResetConnection",
-        "0.9.1",
+        "1.1.1",
         "When a connection is closed() "
         "(given back to pool), the pool resets the connection state. Setting this option, the prepare command "
         "will be deleted, session variables changed will be reset, and user variables will be destroyed when the"
         " server permits it (>= MariaDB 10.2.4, >= MySQL 5.7.3), permitting saving memory on the server if the "
         "application make extensive use of variables. Must not be used with the useServerPrepStmts option",
         false,
-        false}},
+        true }},
       {
         "allowMasterDownConnection", {"allowMasterDownConnection",
         "0.9.1",
@@ -713,6 +712,8 @@ namespace sql
         completeOptionsMap.emplace(defaultOption.first, &defaultOption.second);
       }
 
+      completeOptionsMap.emplace("userName",                   &OptionsMap["user"]);
+      completeOptionsMap.emplace("socket",                     &OptionsMap["localSocket"]);
       completeOptionsMap.emplace("createDB",                   &OptionsMap["createDatabaseIfNotExist"]);
       completeOptionsMap.emplace("useSSL",                     &OptionsMap["useTls"]);
       completeOptionsMap.emplace("useSsl",                     &OptionsMap["useTls"]);
@@ -864,7 +865,7 @@ namespace sql
     Shared::Options DefaultOptions::parse(enum HaMode haMode, const SQLString& urlParameters, Properties& properties,
       Shared::Options options)
     {
-      if (/*urlParameters !=NULL &&*/ !urlParameters.empty())
+      if (/*urlParameters != nullptr &&*/ !urlParameters.empty())
       {
         Tokens parameters= split(urlParameters, "&");
 
@@ -1036,18 +1037,18 @@ namespace sql
       if (options->rewriteBatchedStatements){
         options->useServerPrepStmts= false;
       }
-      if (options->pipe.empty()){
+      if (!options->pipe.empty()){
         options->useBatchMultiSend= false;
         options->usePipelineAuth= false;
       }
 
       if (options->pool) {
-        options->minPoolSize =
+        options->minPoolSize=
           options->minPoolSize == 0
           ? options->maxPoolSize
           : std::min(options->minPoolSize, options->maxPoolSize);
 
-        throw SQLFeatureNotImplementedException("Pool support is not implemented yet");
+        throw SQLFeatureNotImplementedException("This connector version does not have pool support");
       }
 
       if (options->cacheCallableStmts || options->cachePrepStmts) {

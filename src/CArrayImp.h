@@ -43,7 +43,7 @@ template <class T> CArray<T>::CArray(int64_t len) : arr(nullptr), length(len)
   if (length > 0)
   {
     arr= new T[static_cast<size_t>(length)];
-    if (arr == NULL)
+    if (arr == nullptr)
     {
       throw std::runtime_error("Could not allocate memory");
     }

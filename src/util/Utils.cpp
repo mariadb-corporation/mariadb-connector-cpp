@@ -34,7 +34,7 @@ namespace mariadb
 {
   Socket* createSocket()
   {
-    return NULL;
+    return nullptr;
   }
 
   const char Utils::hexArray[]= "0123456789ABCDEF";
@@ -427,7 +427,7 @@ namespace mariadb
 
   SQLString Utils::nativeSql(const SQLString& sql, Protocol* protocol)
   {
-    if (!(sql.find_first_of("{") != std::string::npos)){
+    if (!(sql.find_first_of('{') != std::string::npos)){
       return sql;
     }
 
@@ -844,7 +844,7 @@ namespace mariadb
     bool iskey= true;
     bool singleQuotes= true;
     bool first= true;
-    SQLString key= NULL;
+    SQLString key;
 
     const char *chars= sessionVariable.c_str();
 
@@ -905,7 +905,7 @@ namespace mariadb
               }
             }
             iskey= true;
-            key= NULL;
+            key= "";
             sb= "";
             continue;
           }

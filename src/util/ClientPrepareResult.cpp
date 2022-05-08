@@ -355,9 +355,9 @@ namespace mariadb
 
     SQLString sb("");
 
-    SQLString preValuePart1= NULL;
-    SQLString preValuePart2= NULL;
-    SQLString postValuePart= NULL;
+    SQLString preValuePart1;
+    SQLString preValuePart2;
+    SQLString postValuePart;
 
     bool singleQuotes= false;
 
@@ -500,7 +500,7 @@ namespace mariadb
           && (query[i + 5] == 't' || query[i + 5] == 'T')) {
 
 
-          if (i > 0 && (query[i - 1] > ' ' && SpecChars.find_first_of(query[i -1]) == std::string::npos)) {
+          if (i > 0 && (query[i - 1] > ' ' && SpecChars.find_first_of(query[i - 1]) == std::string::npos)) {
             break;
           }
           if (query[i + 6] >' '&& SpecChars.find_first_of(query[i + 6]) == std::string::npos) {

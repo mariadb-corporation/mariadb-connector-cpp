@@ -181,7 +181,6 @@ namespace mariadb
 
   Shared::Results & MariaDbFunctionStatement::getResults()
   {
-    //TODO can it be casted?
     MariaDbStatement* mstmt= static_cast<MariaDbStatement*>(*stmt);
     return mstmt->getInternalResults();
   }
@@ -406,7 +405,7 @@ namespace mariadb
     return getOutputResult()->getDouble(nameToOutputIndex(parameterName));
   }
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   sql::bytes* MariaDbFunctionStatement::getBytes(const SQLString& parameterName)
   {
     return getOutputResult()->getBytes(nameToOutputIndex(parameterName));

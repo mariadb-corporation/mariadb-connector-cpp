@@ -245,7 +245,7 @@ void connectionmetadata::getBestRowIdentifier()
       ASSERT_EQUALS(sql::DatabaseMetaData::bestRowNotPseudo, res->getInt(8));
       ASSERT_EQUALS(res->getInt(8), res->getInt("PSEUDO_COLUMN"));
 
-      stmt->execute("DROP TABLE IF EXISTS test");
+      stmt->execute("DROP TABLE test");
     }
     if (got_warning)
     {
@@ -880,7 +880,7 @@ void connectionmetadata::getImportedKeys()
     num_res=0;
     while (res->next())
     {
-      num_res++;
+      ++num_res;
       switch (num_res) {
       case 1:
         ASSERT_EQUALS("cpid1", res->getString("FKCOLUMN_NAME"));
@@ -1056,8 +1056,11 @@ void connectionmetadata::checkForeignKey(Connection &mycon, ResultSet &myres)
   ASSERT("" != myres->getString("FK_NAME"));
   ASSERT_EQUALS(myres->getString(12), myres->getString("FK_NAME"));
 
-  // TODO - not sure what value to expect
-  ASSERT_EQUALS("PRIMARY", myres->getString("PK_NAME"));
+  // We would have PK_NAME only if I_S. By default "SHOW CREATE TABLE" result is parsed, and it doesn't have this info, and thus NULL is returned
+  if (!myres->isNull(13))
+  {
+    ASSERT_EQUALS("PRIMARY", myres->getString("PK_NAME"));
+  }
   ASSERT_EQUALS(myres->getString(13), myres->getString("PK_NAME"));
 
   ASSERT_EQUALS((int64_t) sql::DatabaseMetaData::importedKeyNotDeferrable, myres->getInt64(14));
@@ -1299,7 +1302,7 @@ void connectionmetadata::getLimitsAndStuff()
     stmt.reset(con->createStatement());
     res.reset(stmt->executeQuery("SELECT @@max_connections AS _max"));
     ASSERT(res->next());
-    ASSERT_EQUALS(res->getInt("_max"), dbmeta->getMaxConnections());
+    ASSERT_EQUALS(dbmeta->getMaxConnections(), res->getInt("_max"));
 
     ASSERT_EQUALS(64, dbmeta->getMaxCursorNameLength());
     ASSERT_EQUALS(256, dbmeta->getMaxIndexLength());
@@ -2513,14 +2516,16 @@ void connectionmetadata::bugCpp25()
     verFromServer= verFromServer.substr(0, dash);
   }
   // More to test connector's split
+#ifndef _WIN32
+  // In case of mixing relese/debug versions, split may crash on Windows. Thus leaving it to be tested on other platforms
+  // On Windows doing testing the same without split
   sql::mariadb::Tokens verParts(sql::mariadb::split(verFromServer, "."));
 
   ASSERT_EQUALS(3ULL, static_cast<uint64_t>(verParts->size()));
   ASSERT_EQUALS(major, std::stoul((*verParts)[0].c_str()));
-  ASSERT_EQUALS(minor, std::stoul((*verParts)[1].c_str()));
-
-  std::size_t dashPos = (*verParts)[2].find_first_of("-");
   if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+    ASSERT_EQUALS(minor, std::stoul((*verParts)[1].c_str()));
+    std::size_t dashPos = (*verParts)[2].find_first_of('-');
     ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? (*verParts)[2].c_str() : (*verParts)[2].substr(0, dashPos).c_str()));
   }
 
@@ -2533,6 +2538,20 @@ void connectionmetadata::bugCpp25()
   ASSERT_EQUALS("22", (*csv)[3]);
   ASSERT_EQUALS("", (*csv)[4]);
   ASSERT_EQUALS("", (*csv)[5]);
+#else
+  TestList verParts;
+  StringUtils::split(verParts, verFromServer.c_str(), ".", true, true);
+
+  ASSERT_EQUALS(3ULL, static_cast<uint64_t>(verParts.size()));
+  ASSERT_EQUALS(major, std::stoul(verParts[0].c_str()));
+  ASSERT_EQUALS(minor, std::stoul(verParts[1].c_str()));
+
+  std::size_t dashPos = verParts[2].find_first_of('-');
+  if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+    ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? verParts[2].c_str() : verParts[2].substr(0, dashPos).c_str()));
+  }
+#endif // !_WIN32
+
 }
 
 } /* namespace connectionmetadata */

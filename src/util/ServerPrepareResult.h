@@ -46,7 +46,7 @@ class ServerPrepareResult  : public PrepareResult {
   std::vector<Shared::ColumnDefinition> columns;
   std::vector<Shared::ColumnDefinition> parameters;
   const SQLString sql;
-  std::atomic_bool inCache ; /*new std::atomic_bool()*/
+  std::atomic_bool inCache;
   capi::MYSQL_STMT* statementId;
   std::unique_ptr<capi::MYSQL_RES, decltype(&capi::mysql_free_result)> metadata;
   std::vector<capi::MYSQL_BIND> paramBind;

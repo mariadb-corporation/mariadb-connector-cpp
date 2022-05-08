@@ -68,7 +68,7 @@ namespace testsuite
 
   /* Last orderedParams array member must be NULL */
   StartOptions::StartOptions( const String::value_type    * orderedParams[]
-                            , const Properties            * defStrVals
+                            , const TestProperties            * defStrVals
                             , const std::map<String, bool>* defBoolVals )
   {
     while ( *orderedParams != NULL )
@@ -85,11 +85,11 @@ namespace testsuite
   }
 
 
-  StartOptions::StartOptions( const List                  & orderedParams
-                            , const Properties            * defStrVals
+  StartOptions::StartOptions( const TestList                  & orderedParams
+                            , const TestProperties            * defStrVals
                             , const std::map<String, bool>* defBoolVals )
   {
-    for ( List::const_iterator cit= orderedParams.begin();
+    for (TestList::const_iterator cit= orderedParams.begin();
           cit != orderedParams.end();
           ++cit )
     {
@@ -119,11 +119,11 @@ namespace testsuite
 
   bool StartOptions::parseParams(int paramsNumber, char** paramsValues)
   {
-    List paramPair;
+    TestList paramPair;
 
     if (paramsNumber > 1)
     {
-      List::const_iterator curParam= unnamedParams.begin();
+      TestList::const_iterator curParam= unnamedParams.begin();
 
       while (--paramsNumber)
       {
@@ -197,7 +197,7 @@ namespace testsuite
   {
     static String empty;
 
-    Properties::const_iterator cit= defStringValues.find( name );
+    TestProperties::const_iterator cit= defStringValues.find( name );
 
     if ( cit != defStringValues.end() )
       return cit->second;
@@ -208,7 +208,7 @@ namespace testsuite
 
   const String &  StartOptions::getString( const String & param) const
   {
-    Properties::const_iterator cit= sOptions.find( param );
+    TestProperties::const_iterator cit= sOptions.find( param );
 
     if ( cit != sOptions.end() )
       return cit->second;

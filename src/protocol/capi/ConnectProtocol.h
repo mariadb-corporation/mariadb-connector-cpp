@@ -53,7 +53,7 @@ namespace capi
     +"@@auto_increment_increment")
     .getBytes(StandardCharsets.UTF_8)*/
     static const SQLString IS_MASTER_QUERY; /*"select @@innodb_read_only".getBytes(StandardCharsets.UTF_8)*/
-    static Shared::Logger logger; /*LoggerFactory.getLogger(typeid(AbstractConnectProtocol))*/
+    static Shared::Logger logger;
 
   protected:
     std::unique_ptr<MYSQL, decltype(&mysql_close)> connection;
@@ -62,6 +62,7 @@ namespace capi
     Shared::Options options;
     Shared::ExceptionFactory exceptionFactory;
     virtual ~ConnectProtocol() {}
+
   private:
     const SQLString username;
     //const LruTraceCache traceCache; /*new LruTraceCache()*/
@@ -70,7 +71,8 @@ namespace capi
 
   public:
     bool hasWarningsFlag; /*false*/
-    Shared::Results activeStreamingResult; /*NULL*/
+    /* This cannot be Shared as long as C/C stmt handle is owned by  statement(SSPS class in this case) object */
+    Weak::Results activeStreamingResult; /*NULL*/
     uint32_t serverStatus;
 
   protected:
@@ -223,7 +225,7 @@ namespace capi
     TimeZone* getTimeZone();
     const Shared::Options& getOptions() const;
     void setHasWarnings(bool hasWarnings);
-    Shared::Results& getActiveStreamingResult();
+    Shared::Results getActiveStreamingResult();
     void setActiveStreamingResult(Shared::Results& activeStreamingResult);
     void removeActiveStreamingResult();
     Shared::mutex& getLock();

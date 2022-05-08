@@ -126,7 +126,7 @@ public:
   virtual Blob* getBlob(int32_t columnIndex)=0;
   virtual Blob* getBlob(const SQLString& columnLabel)=0;
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   virtual Blob* getBlob(int32_t columnIndex)=0;
   virtual Blob* getBlob(const SQLString& columnLabel)=0;
   virtual sql::bytes* getBytes(const SQLString& columnLabel)=0;

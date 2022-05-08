@@ -38,7 +38,6 @@ extern const SQLString mysqlTcp, mysqlSocket, mysqlPipe;
 
 class UrlParser
 {
-  static const SQLString DISABLE_MYSQL_URL;
   static std::regex URL_PARAMETER;
   static std::regex AWS_PATTERN;
 
@@ -70,15 +69,15 @@ public:
   bool isAurora();
   void parseUrl(const SQLString& url);
   const SQLString& getUsername() const;
-  void setUsername(SQLString& username);
+  void setUsername(const SQLString& username);
   SQLString& getPassword();
-  void setPassword(SQLString& password);
+  void setPassword(const SQLString& password);
   const SQLString& getDatabase() const;
-  void setDatabase(SQLString& database);
+  void setDatabase(const SQLString& database);
   std::vector<HostAddress>& getHostAddresses();
   const Shared::Options& getOptions() const;
 protected:
-  void setProperties(SQLString& urlParameters);
+  void setProperties(const SQLString& urlParameters);
   public:  std::shared_ptr<CredentialPlugin> getCredentialPlugin();
   public:  const SQLString& toString() const;
   public:  const SQLString& getInitialUrl() const;

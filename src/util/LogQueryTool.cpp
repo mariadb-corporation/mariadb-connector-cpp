@@ -136,7 +136,7 @@ namespace mariadb
     */
   SQLException LogQueryTool::exceptionWithQuery(std::vector<Shared::ParameterHolder>& parameters, SQLException& sqlEx, PrepareResult* serverPrepareResult)
   {
-    if (sqlEx.getCause() && dynamic_cast<SocketTimeoutException*>(sqlEx.getCause()) != NULL) {
+    if (sqlEx.getCause() && dynamic_cast<SocketTimeoutException*>(sqlEx.getCause()) != nullptr) {
       return SQLException("Connection* timed out", CONNECTION_EXCEPTION.getSqlState(), 0, &sqlEx);
     }
     if (options->dumpQueriesOnException) {

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2021 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -96,11 +96,18 @@ namespace capi
   void BinRowProtocolCapi::setPosition(int32_t newIndex)
   {
     index= newIndex;
-    length= bind[index].length_value;
-    fieldBuf.wrap(static_cast<char*>(bind[index].buffer), length);
     pos= 0;
 
-    this->lastValueNull= bind[index].is_null_value ? BIT_LAST_FIELD_NULL : BIT_LAST_FIELD_NOT_NULL;
+    if (buf != nullptr) {
+      fieldBuf.wrap((*buf)[index], (*buf)[index].size());
+      this->lastValueNull = fieldBuf ? BIT_LAST_FIELD_NOT_NULL : BIT_LAST_FIELD_NULL;
+      length = static_cast<uint32_t>(fieldBuf.size());
+    }
+    else {
+      length = bind[index].length_value;
+      fieldBuf.wrap(static_cast<char*>(bind[index].buffer), length);
+      this->lastValueNull = bind[index].is_null_value ? BIT_LAST_FIELD_NULL : BIT_LAST_FIELD_NOT_NULL;
+    }
   }
 
 
@@ -120,7 +127,7 @@ namespace capi
   SQLString* BinRowProtocolCapi::convertToString(const char* asChar, ColumnDefinition* columnInfo)
   {
     if ((lastValueNull & BIT_LAST_FIELD_NULL)!=0) {
-      return NULL;
+      return nullptr;
     }
 
     switch (columnInfo->getColumnType().getType()) {
@@ -212,8 +219,7 @@ namespace capi
     */
   std::unique_ptr<SQLString> BinRowProtocolCapi::getInternalString(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
   {
-    const char* asChar= static_cast<char*>(bind[index].buffer);
-    std::unique_ptr<SQLString> result(convertToString(asChar, columnInfo));
+    std::unique_ptr<SQLString> result(convertToString(fieldBuf.arr, columnInfo));
 
     return std::move(result);
   }
@@ -247,10 +253,10 @@ namespace capi
     case MYSQL_TYPE_LONG:
     case MYSQL_TYPE_INT24:
       if (columnInfo->isSigned()) {
-        return *static_cast<int32_t*>(bind[index].buffer);
+        return *reinterpret_cast<int32_t*>(fieldBuf.arr);
       }
       else {
-        value= *static_cast<uint32_t*>(bind[index].buffer);
+        value= *reinterpret_cast<uint32_t*>(fieldBuf.arr);
       }
       break;
     case MYSQL_TYPE_LONGLONG:
@@ -270,13 +276,14 @@ namespace capi
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
       try {
-        value = std::stoll(static_cast<char*>(bind[index].buffer));
+        std::string str(fieldBuf.arr, length);
+        value = std::stoll(str);
       }
       // Common parent for std::invalid_argument and std::out_of_range
       catch (std::logic_error&) {
 
         throw SQLException(
-          "Out of range value for column '" + columnInfo->getName() + "' : value " + sql::SQLString(static_cast<char*>(bind[index].buffer), length),
+          "Out of range value for column '" + columnInfo->getName() + "' : value " + sql::SQLString(static_cast<char*>(fieldBuf.arr), length),
           "22003",
           1264);
       }
@@ -330,12 +337,12 @@ namespace capi
       }
       case MYSQL_TYPE_LONGLONG:
       {
-        value = *static_cast<uint64_t*>(bind[index].buffer);
+        value = *reinterpret_cast<uint64_t*>(fieldBuf.arr);
 
         if (columnInfo->isSigned()) {
           return value;
         }
-        uint64_t unsignedValue = *static_cast<uint64_t*>(bind[index].buffer);
+        uint64_t unsignedValue = *reinterpret_cast<uint64_t*>(fieldBuf.arr);
 
         if (unsignedValue > static_cast<uint64_t>(INT64_MAX)) {
           throw SQLException(
@@ -390,7 +397,10 @@ namespace capi
       case MYSQL_TYPE_VAR_STRING:
       case MYSQL_TYPE_VARCHAR:
       case MYSQL_TYPE_STRING:
-        return std::stoll(static_cast<char*>(bind[index].buffer));
+      {
+        std::string str(fieldBuf.arr, length);
+        return std::stoll(str);
+      }
       default:
         throw SQLException(
           "getLong not available for data field type "
@@ -439,7 +449,7 @@ namespace capi
     }
     case MYSQL_TYPE_LONGLONG:
     {
-      value = *static_cast<int64_t*>(bind[index].buffer);
+      value = *reinterpret_cast<int64_t*>(fieldBuf.arr);
 
       break;
     }
@@ -485,9 +495,9 @@ namespace capi
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
     {
-      char* charValue = static_cast<char*>(bind[index].buffer);
+      std::string str(fieldBuf.arr, length);
       try {
-        return sql::mariadb::stoull(charValue);
+        return sql::mariadb::stoull(str);
       }
       // Common parent for std::invalid_argument and std::out_of_range
       catch (std::logic_error&) {
@@ -495,7 +505,7 @@ namespace capi
           "Out of range value for column '"
           + columnInfo->getName()
           + "' : value "
-          + charValue
+          + str
           + " is not in int64_t range",
           "22003",
           1264);
@@ -552,14 +562,14 @@ namespace capi
     case MYSQL_TYPE_LONGLONG:
     {
       if (columnInfo->isSigned()) {
-        return static_cast<float>(*static_cast<int64_t*>(bind[index].buffer));
+        return static_cast<float>(*reinterpret_cast<int64_t*>(fieldBuf.arr));
       }
-      uint64_t unsignedValue= *static_cast<uint64_t*>(bind[index].buffer);
+      uint64_t unsignedValue= *reinterpret_cast<uint64_t*>(fieldBuf.arr);
 
       return static_cast<float>(unsignedValue);
     }
     case MYSQL_TYPE_FLOAT:
-      return *static_cast<float*>(bind[index].buffer);
+      return *reinterpret_cast<float*>(fieldBuf.arr);
     case MYSQL_TYPE_DOUBLE:
       return static_cast<float>(getInternalDouble(columnInfo));
     case MYSQL_TYPE_NEWDECIMAL:
@@ -569,7 +579,7 @@ namespace capi
     case MYSQL_TYPE_DECIMAL:
       try {
         char* end;
-        return std::strtof(static_cast<char*>(bind[index].buffer), &end);
+        return std::strtof(static_cast<char*>(fieldBuf.arr), &end);
         // if (errno == ERANGE) ?
       }
       // Common parent for std::invalid_argument and std::out_of_range
@@ -615,21 +625,21 @@ namespace capi
     case MYSQL_TYPE_LONGLONG:
     {
       if (columnInfo->isSigned()) {
-        return static_cast<long double>(*static_cast<int64_t*>(bind[index].buffer));
+        return static_cast<long double>(*reinterpret_cast<int64_t*>(fieldBuf.arr));
       }
-      return static_cast<long double>(*static_cast<uint64_t*>(bind[index].buffer));
+      return static_cast<long double>(*reinterpret_cast<uint64_t*>(fieldBuf.arr));
     }
     case MYSQL_TYPE_FLOAT:
       return getInternalFloat(columnInfo);
     case MYSQL_TYPE_DOUBLE:
-      return *static_cast<double*>(bind[index].buffer);
+      return *reinterpret_cast<double*>(fieldBuf.arr);
     case MYSQL_TYPE_NEWDECIMAL:
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
     case MYSQL_TYPE_DECIMAL:
       try {
-        return std::stold(static_cast<char*>(bind[index].buffer));
+        return std::stold(static_cast<char*>(fieldBuf.arr));
       }
       // Common parent for std::invalid_argument and std::out_of_range
       catch (std::logic_error& nfe) {
@@ -679,7 +689,7 @@ namespace capi
     {
       if (length > 0)
       {
-        const char *asChar= static_cast<char*>(bind[index].buffer), *ptr= asChar, *end= asChar + strlen(asChar);
+        const char *asChar= fieldBuf.arr, *ptr= asChar, *end= asChar + length;
         if (*ptr == '+' || *ptr == '-') {
           ++ptr;
         }
@@ -778,7 +788,7 @@ namespace capi
     case MYSQL_TYPE_DATETIME:
     case MYSQL_TYPE_DATE:
     {
-      MYSQL_TIME* mt= static_cast<MYSQL_TIME*>(bind[index].buffer);
+      MYSQL_TIME* mt= reinterpret_cast<MYSQL_TIME*>(fieldBuf.arr);
 
       if (isNullTimeStruct(mt, MYSQL_TYPE_DATE)) {
         lastValueNull |= BIT_LAST_ZERO_DATE;
@@ -791,7 +801,7 @@ namespace capi
       throw SQLException("Cannot read Date using a Types::TIME field");
     case MYSQL_TYPE_STRING:
     {
-      SQLString rawValue(static_cast<char*>(bind[index].buffer));
+      SQLString rawValue(fieldBuf.arr, length);
 
       if (rawValue.compare(nullDate) == 0) {
         lastValueNull |= BIT_LAST_ZERO_DATE;
@@ -802,7 +812,7 @@ namespace capi
     }
     case MYSQL_TYPE_YEAR:
     {
-      int32_t year = *static_cast<int16_t*>(bind[index].buffer);
+      int32_t year = *reinterpret_cast<int16_t*>(fieldBuf.arr);
       if (length == 2 && columnInfo->getLength() == 2) {
         if (year < 70) {
           year += 2000;
@@ -855,14 +865,14 @@ namespace capi
     case MYSQL_TYPE_TIMESTAMP:
     case MYSQL_TYPE_DATETIME:
     {
-      MYSQL_TIME* mt= static_cast<MYSQL_TIME*>(bind[index].buffer);
+      MYSQL_TIME* mt= reinterpret_cast<MYSQL_TIME*>(fieldBuf.arr);
       return std::unique_ptr<Time>(new Time(makeStringFromTimeStruct(mt, MYSQL_TYPE_TIME, columnInfo->getDecimals())));
     }
     case MYSQL_TYPE_DATE:
       throw SQLException("Cannot read Time using a Types::DATE field");
     case MYSQL_TYPE_STRING:
     {
-      SQLString rawValue(static_cast<char*>(bind[index].buffer));
+      SQLString rawValue(fieldBuf.arr, length);
 
       /*if (rawValue.compare(*nullTime) == 0 || rawValue.compare("00:00:00") == 0) {
         lastValueNull |= BIT_LAST_ZERO_DATE;
@@ -909,7 +919,7 @@ namespace capi
     case MYSQL_TYPE_DATETIME:
     case MYSQL_TYPE_DATE:
     {
-      MYSQL_TIME* mt= static_cast<MYSQL_TIME*>(bind[index].buffer);
+      MYSQL_TIME* mt= reinterpret_cast<MYSQL_TIME*>(fieldBuf.arr);
 
       if (isNullTimeStruct(mt, MYSQL_TYPE_TIMESTAMP)) {
         lastValueNull |= BIT_LAST_ZERO_DATE;
@@ -928,7 +938,7 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_STRING:
     {
-      SQLString rawValue(static_cast<char*>(bind[index].buffer));
+      SQLString rawValue(fieldBuf.arr, length);
 
       if (rawValue.compare(*nullTs) == 0 || rawValue.compare("00:00:00") == 0) {
         lastValueNull |= BIT_LAST_ZERO_DATE;
@@ -986,7 +996,7 @@ namespace capi
       return getInternalLong(columnInfo) != 0;
     }
     default:
-      return convertStringToBoolean(static_cast<char*>(bind[index].buffer), * bind[index].length);
+      return convertStringToBoolean(fieldBuf.arr, length);
     }
   }
 
@@ -1035,7 +1045,8 @@ namespace capi
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
     {
-      value= std::stoll(static_cast<char*>(bind[index].buffer));
+      std::string str(fieldBuf.arr, length);
+      value= std::stoll(str);
       break;
     }
     default:
@@ -1070,7 +1081,7 @@ namespace capi
       break;
     case MYSQL_TYPE_SHORT:
     case MYSQL_TYPE_YEAR:
-      return *static_cast<int16_t*>(bind[index].buffer);
+      return *reinterpret_cast<int16_t*>(fieldBuf.arr);
     case MYSQL_TYPE_LONG:
     case MYSQL_TYPE_INT24:
       value= getInternalMediumInt(columnInfo);
@@ -1092,7 +1103,8 @@ namespace capi
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
     {
-      value= std::stoll(static_cast<char*>(bind[index].buffer));
+      std::string str(fieldBuf.arr, length);
+      value= std::stoll(str);
       break;
     }
     default:
@@ -1116,7 +1128,7 @@ namespace capi
     if (lastValueWasNull()) {
       return "";
     }
-    MYSQL_TIME* ts= static_cast<MYSQL_TIME*>(bind[index].buffer);
+    MYSQL_TIME* ts= reinterpret_cast<MYSQL_TIME*>(fieldBuf.arr);
     return makeStringFromTimeStruct(ts, MYSQL_TYPE_TIME, columnInfo->getDecimals());
   }
 
@@ -1132,7 +1144,7 @@ namespace capi
   sql::Object* BinRowProtocolCapi::getInternalObject(ColumnDefinition* columnInfo, TimeZone* timeZone)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
 
     switch (columnInfo->getColumnType().getType()) {
@@ -1168,12 +1180,12 @@ namespace capi
           memcpy(dataBit + 0, buf + pos, length));
     return data;
         }
-        return getInternalString(columnInfo, NULL, timeZone);
+        return getInternalString(columnInfo, nullptr, timeZone);
       case MYSQL_TYPE_TIMESTAMP:
       case MYSQL_TYPE_DATETIME:
-        return getInternalTimestamp(columnInfo, NULL, timeZone);
+        return getInternalTimestamp(columnInfo, nullptr, timeZone);
       case MYSQL_TYPE_DATE:
-        return getInternalDate(columnInfo, NULL, timeZone);
+        return getInternalDate(columnInfo, nullptr, timeZone);
       case MYSQL_TYPE_NEWDECIMAL:
         return getInternalBigDecimal(columnInfo);
       case MYSQL_TYPE_BLOB:
@@ -1184,10 +1196,10 @@ namespace capi
         memcpy(dataBit + 0, buf + pos, length));
       return dataBlob;
       case NULL:
-        return NULL;
+        return nullptr;
       case MYSQL_TYPE_YEAR:
         if (options->yearIsDateType) {
-          return getInternalDate(columnInfo, NULL, timeZone);
+          return getInternalDate(columnInfo, nullptr, timeZone);
         }
         return getInternalShort(columnInfo);
       case MYSQL_TYPE_SHORT:
@@ -1196,10 +1208,10 @@ namespace capi
       case MYSQL_TYPE_FLOAT:
         return getInternalFloat(columnInfo);
       case MYSQL_TYPE_TIME:
-        return getInternalTime(columnInfo, NULL, timeZone);
+        return getInternalTime(columnInfo, nullptr, timeZone);
       case MYSQL_TYPE_DECIMAL:
       case JSON:
-        return getInternalString(columnInfo, NULL, timeZone);
+        return getInternalString(columnInfo, nullptr, timeZone);
       case MYSQL_TYPE_GEOMETRY:
         int8_t[] data= new int8_t[length];
         memcpy(dataBit + 0, buf + pos, length);
@@ -1228,7 +1240,7 @@ namespace capi
   BigInteger BinRowProtocolCapi::getInternalBigInteger(ColumnDefinition* columnInfo)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     switch (columnInfo->getColumnType().getType()) {
     case MYSQL_TYPE_BIT:
@@ -1301,11 +1313,11 @@ namespace capi
   ZonedDateTime BinRowProtocolCapi::getInternalZonedDateTime(ColumnDefinition* columnInfo, Class* clazz, TimeZone* timeZone)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     if (length == 0) {
       lastValueNull |=BIT_LAST_FIELD_NULL;
-      return NULL;
+      return nullptr;
     }
 
     switch (columnInfo->getColumnType().getSqlType()) {
@@ -1343,7 +1355,7 @@ namespace capi
       SQLString raw;
       raw.reserve(buf, pos, length);
       if (raw.startsWith("0000-00-00 00:00:00")) {
-        return NULL;
+        return nullptr;
       }
       try {
         return ZonedDateTime::parse(raw, TEXT_ZONED_DATE_TIME);
@@ -1376,11 +1388,11 @@ namespace capi
   OffsetTime BinRowProtocolCapi::getInternalOffsetTime(ColumnDefinition* columnInfo, TimeZone* timeZone)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     if (length == 0) {
       lastValueNull |=BIT_LAST_FIELD_NULL;
-      return NULL;
+      return nullptr;
     }
 
     ZoneId zoneId= timeZone.toZoneId().normalized();
@@ -1502,11 +1514,11 @@ namespace capi
   LocalTime BinRowProtocolCapi::getInternalLocalTime(ColumnDefinition* columnInfo, TimeZone* timeZone)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     if (length == 0) {
       lastValueNull |=BIT_LAST_FIELD_NULL;
-      return NULL;
+      return nullptr;
     }
 
     switch (columnInfo->getColumnType().getSqlType()) {
@@ -1566,7 +1578,7 @@ namespace capi
       ZonedDateTime zonedDateTime =
         getInternalZonedDateTime(columnInfo, typeid(LocalTime), timeZone);
       return zonedDateTime/*.empty() == true*/
-        ? NULL
+        ? nullptr
         : zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalTime();
 
     default:
@@ -1588,11 +1600,11 @@ namespace capi
   LocalDate BinRowProtocolCapi::getInternalLocalDate(ColumnDefinition* columnInfo, TimeZone* timeZone)
   {
     if (lastValueWasNull()) {
-      return NULL;
+      return nullptr;
     }
     if (length == 0) {
       lastValueNull |=BIT_LAST_FIELD_NULL;
-      return NULL;
+      return nullptr;
     }
 
     switch (columnInfo->getColumnType().getSqlType()) {
@@ -1606,7 +1618,7 @@ namespace capi
       ZonedDateTime zonedDateTime =
         getInternalZonedDateTime(columnInfo, typeid(LocalDate), timeZone);
       return zonedDateTime/*.empty() == true*/
-        ? NULL
+        ? nullptr
         : zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDate();
 
     case Types::MYSQL_TYPE_VARCHAR:
@@ -1616,7 +1628,7 @@ namespace capi
       SQLString raw;
       raw.reserve(buf, pos, length);
       if (raw.startsWith("0000-00-00")) {
-        return NULL;
+        return nullptr;
       }
       try {
         return LocalDate::parse(
@@ -1645,7 +1657,6 @@ namespace capi
   {
     return true;
   }
-
 }
 }
 }

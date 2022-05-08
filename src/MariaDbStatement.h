@@ -70,13 +70,13 @@ protected:
   sql::Longs largeBatchRes;
 
 private:
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   ScheduledExecutorService timeoutScheduler;
 #endif
   bool warningsCleared;
   bool mustCloseOnCompletion ; /*false*/
   std::vector<SQLString> batchQueries;
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   Future<?>timerTaskFuture;
 #endif
   bool isTimedout;

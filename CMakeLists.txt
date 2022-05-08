@@ -185,8 +185,6 @@ IF(WIN32)
                    src/MariaDbServerCapabilities.h
 
                    src/protocol/MasterProtocol.h
-                   src/protocol/AbstractQueryProtocol.h
-                   src/protocol/AbstractConnectProtocol.h
 
                    src/protocol/capi/QueryProtocol.h
                    src/protocol/capi/ConnectProtocol.h

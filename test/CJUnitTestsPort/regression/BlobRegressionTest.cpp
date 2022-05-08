@@ -221,7 +221,7 @@ namespace regression
   {
     const int dataSize = 256;
 
-    Properties props ;
+    TestProperties props ;
     props["emulateLocators"]= "true";
     Connection locatorConn( getConnectionWithProps(props) );
 

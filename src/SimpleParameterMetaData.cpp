@@ -27,7 +27,7 @@ namespace mariadb
 void SimpleParameterMetaData::validateParameter(uint32_t param)
 {
   if (param < 1 || param > parameterCount) {
-    std::stringstream msg("Parameter metadata out of range : param was ");
+    std::ostringstream msg("Parameter metadata out of range : param was ", std::ios_base::ate);
     msg << param << " and must be in range 1 - " << parameterCount;
     ExceptionFactory::INSTANCE.create(msg.str(), "07009").Throw();
   }

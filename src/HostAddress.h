@@ -32,6 +32,8 @@ namespace sql
 {
 namespace mariadb
 {
+  constexpr int32_t DefaultPort = 3306;
+
   class HostAddress
   {
     static Shared::Logger logger; /* const? */
@@ -43,7 +45,7 @@ namespace mariadb
   private:
     HostAddress();
   public:
-    HostAddress(const SQLString& host, int32_t port);
+    HostAddress(const SQLString& host, int32_t port= DefaultPort);
     HostAddress(const SQLString& host, int32_t port, const SQLString& type);
     static std::vector<HostAddress> parse(const SQLString& spec, enum HaMode haMode);
   private:
