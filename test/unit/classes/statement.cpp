@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -602,7 +602,7 @@ void statement::queryTimeout()
 
   int serverVersion= getServerVersion(con);
   int timeout= 2;
-  if ( serverVersion < 57004 )
+  if ( serverVersion < 507004 )
   {
     SKIP("Server version >= 5.7.4 needed to run this test");
   }

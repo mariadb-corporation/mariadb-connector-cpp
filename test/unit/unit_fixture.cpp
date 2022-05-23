@@ -490,7 +490,7 @@ void unit_fixture::logDebug(const String & message)
 int unit_fixture::getServerVersion(Connection & con)
 {
   DatabaseMetaData dbmeta(con->getMetaData());
-  return dbmeta->getDatabaseMajorVersion() * 10000 + dbmeta->getDatabaseMinorVersion() * 1000 + dbmeta->getDatabasePatchVersion();
+  return dbmeta->getDatabaseMajorVersion() * 100000 + dbmeta->getDatabaseMinorVersion() * 1000 + dbmeta->getDatabasePatchVersion();
 }
 
 sql::SQLString unit_fixture::getVariableValue(const sql::SQLString& name, bool global)

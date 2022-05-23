@@ -187,7 +187,7 @@ void connection::getClientOption()
     }
 
     int serverVersion=getServerVersion(con);
-    if ( serverVersion >= 57003)
+    if ( serverVersion >= 507003)
     {
       try
       {
@@ -2363,7 +2363,7 @@ void connection::enableClearTextAuth()
 {
   int serverVersion=getServerVersion(con);
 
-  if ( ((serverVersion < 55027) || (serverVersion > 56000)) && (serverVersion < 56007))
+  if ( ((serverVersion < 505027) || (serverVersion > 506000)) && (serverVersion < 506007))
   {
     SKIP("The server does not support tested functionality(cleartext plugin enabling)");
   }
@@ -2747,7 +2747,7 @@ void connection::setAuthDir()
 {
   logMsg("connection::setAuthDir - MYSQL_PLUGIN_DIR");
   int serverVersion=getServerVersion(con);
-  if ( serverVersion >= 50703 )
+  if ( serverVersion >= 507003 )
   {
     SKIP("Server version >= 5.7.3 needed to run this test");
   }
@@ -2779,7 +2779,7 @@ void connection::setDefaultAuth()
 {
   logMsg("connection::setDefaultAuth - MYSQL_DEFAULT_AUTH");
   int serverVersion=getServerVersion(con);
-  if ( serverVersion < 50703 )
+  if ( serverVersion < 507003 )
   {
     SKIP("Server version >= 5.7.3 needed to run this test");
   }
@@ -3069,7 +3069,7 @@ void connection::tls_version()
 {
   logMsg("connection::tls_version - OPT_TLS_VERSION");
 
-  if (getServerVersion(con) < 104006)
+  if (getServerVersion(con) < 1004006)
   {
     SKIP("Server does not support tls_version variable");
   }
@@ -3157,7 +3157,7 @@ void connection::cached_sha2_auth()
   logMsg("connection::auth - MYSQL_OPT_GET_SERVER_PUBLIC_KEY");
 
   int serverVersion= getServerVersion(con);
-  if (serverVersion < 80000 || serverVersion > 100000)
+  if (serverVersion < 800000 || serverVersion > 1000000)
   {
     SKIP("Server doesn't support caching_sha2_password");
     return;

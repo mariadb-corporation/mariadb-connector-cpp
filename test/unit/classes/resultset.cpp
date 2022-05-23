@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -1285,7 +1286,7 @@ void resultset::JSON_support()
 
   logMsg("resultset::JSON_support - MySQL_ResultSet::*");
 
-  if (getServerVersion(con) < 102007)
+  if (getServerVersion(con) < 1002007)
   {
     SKIP("Server does not support JSON");
   }
