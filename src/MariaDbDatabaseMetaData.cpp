@@ -166,7 +166,7 @@ namespace sql
     return pos;
   }
 
-  int32_t MariaDbDatabaseMetaData::getImportedKeyAction(const SQLString& actionKey)
+  int32_t MariaDbDatabaseMetaData::getImportedKeyAction(const std::string& actionKey)
   {
     if (actionKey.empty()){
       return DatabaseMetaData::importedKeyRestrict;
@@ -193,7 +193,7 @@ namespace sql
     }
     else
     {
-      throw  SQLException("Illegal key action '"+actionKey +"' specified.");
+      throw  SQLException("Illegal key action '" + actionKey + "' specified.");
     }
   }
 
@@ -257,7 +257,7 @@ namespace sql
       int32_t onUpdateReferenceAction= DatabaseMetaData::importedKeyRestrict;
       int32_t onDeleteReferenceAction= DatabaseMetaData::importedKeyRestrict;
 
-      for (SQLString referenceAction : {"RESTRICT","CASCADE", "SET NULL","NO ACTION"}) {
+      for (std::string referenceAction : {"RESTRICT","CASCADE", "SET NULL","NO ACTION"}) {
         if (StringImp::get(part).find("ON UPDATE " + referenceAction) != std::string::npos) {
           onUpdateReferenceAction= getImportedKeyAction(referenceAction);
         }

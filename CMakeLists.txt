@@ -513,11 +513,11 @@ IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
 	  COMMAND ${CMAKE_COMMAND} ARGS -E copy $<TARGET_FILE:libmariadb> test)
 ENDIF()
 
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/install_test/CMakeLists.txt.in
-               ${CMAKE_SOURCE_DIR}/install_test/CMakeLists.txt @ONLY)
 # Packaging
 INCLUDE(cmake/packaging.cmake)
-MESSAGE(STATUS "Package Name: ${CPACK_PACKAGE_FILE_NAME}")
 MESSAGE(STATUS "License File: ${CPACK_RESOURCE_FILE_LICENSE}")
 MESSAGE(STATUS "ReadMe File: ${CPACK_PACKAGE_DESCRIPTION_FILE}")
 MESSAGE(STATUS "Source Package Filename: ${CPACK_SOURCE_PACKAGE_FILE_NAME}.${CPACK_SOURCE_GENERATOR}")
+
+# install_test/CMakeLists.txt fuke configuration should go after packaging.cmake but before include(CPack). Since CPack included in packaging cmake,
+# that configuration has been moved there. For the same reason there also moved the message with package name
