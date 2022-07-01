@@ -35,6 +35,10 @@ SET_VALUE(TEST_UID            "root"                 "Defines Unit Tests default
 SET_VALUE(TEST_PASSWORD       "root"                 "Defines Unit Tests default login user password")
 SET_VALUE(TEST_USETLS         "false"                "Defines useTls option value to use in tests")
 
+IF("${TEST_USETLS}" STREQUAL "")
+  SET(TEST_USETLS "false")
+ENDIF()
+
 configure_file(tests_config.h.in
                ${CMAKE_BINARY_DIR}/test/tests_config.h)
 
