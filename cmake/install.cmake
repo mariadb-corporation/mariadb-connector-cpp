@@ -13,12 +13,12 @@
 # Built with default prefix=/usr
 #
 #
-# The following va+riables are used and can be overwritten
+# The following variables are used and can be overwritten
 #
 # INSTALL_LAYOUT     installation layout (DEFAULT = standard for tar.gz and zip packages
 #                                         RPM packages
 #
-# INSTALL_BINDIR    location of binaries (mariadb_config)
+# INSTALL_BINDIR    location of binaries ()
 # INSTALL_LIBDIR    location of libraries
 # INSTALL_PLUGINDIR location of plugins
 # INSTALL_DOCDIR    location of docs
@@ -35,15 +35,20 @@ IF(RPM)
   SET(INSTALL_LIB_SUFFIX ${CMAKE_INSTALL_LIBDIR})
 ENDIF()
 
+IF(PKG)
+  SET(INSTALL_LAYOUT "PKG")
+  SET(INSTALL_LIB_SUFFIX ${CMAKE_INSTALL_LIBDIR})
+ENDIF()
+
 IF(NOT INSTALL_LAYOUT)
   SET(INSTALL_LAYOUT "DEFAULT")
   SET(INSTALL_LIB_SUFFIX ${CMAKE_INSTALL_LIBDIR})
 ENDIF()
 
 SET(INSTALL_LAYOUT ${INSTALL_LAYOUT} CACHE
-  STRING "Installation layout. Currently supported options are DEFAULT (tar.gz and zip), RPM and DEB")
+  STRING "Installation layout. Currently supported options are DEFAULT (tar.gz and zip), PKG")
 
-# On Windows we only provide zip and .msi. Latter one uses a different packager.
+# On Windows we only provide zip and .msi. The latter uses a different packager.
 IF(UNIX)
   SET(libmariadb_prefix ${CMAKE_INSTALL_PREFIX})
 ENDIF()
@@ -53,7 +58,7 @@ IF(CMAKE_DEFAULT_PREFIX_INITIALIZED_BY_DEFAULT)
 ENDIF()
 
 # check if the specified installation layout is valid
-SET(VALID_INSTALL_LAYOUTS "DEFAULT" "RPM" "DEB")
+SET(VALID_INSTALL_LAYOUTS "DEFAULT" "RPM" "DEB" "PKG")
 LIST(FIND VALID_INSTALL_LAYOUTS "${INSTALL_LAYOUT}" layout_no)
 IF(layout_no EQUAL -1)
   MESSAGE(FATAL_ERROR "Invalid installation layout ${INSTALL_LAYOUT}. Please specify one of the following layouts: ${VALID_INSTALL_LAYOUTS}")
@@ -64,7 +69,11 @@ ENDIF()
 #       later (webhelp to man transformation)
 #
 IF(NOT INSTALL_LAYOUT STREQUAL "DEFAULT")
-   SET(CMAKE_INSTALL_PREFIX "/usr")
+  IF(APPLE)
+    SET(CMAKE_INSTALL_PREFIX "/") # /usr/local ?
+  ELSE()
+    SET(CMAKE_INSTALL_PREFIX "/usr")
+  ENDIF()
 ENDIF()
 
 #
@@ -106,7 +115,16 @@ IF(INSTALL_LAYOUT MATCHES "DEB")
   SET(INSTALL_PLUGINDIR_CLIENT ${INSTALL_PLUGINDIR_DEB})
 ENDIF()
 
-
+#
+# PKG(PRODUCTBUILD) layout
+#
+SET(INSTALL_BINDIR_PKG "${CMAKE_INSTALL_BINDIR}")
+SET(INSTALL_LIBDIR_PKG "${CMAKE_INSTALL_LIBDIR}")
+SET(INSTALL_PCDIR_PKG "${INSTALL_LIBDIR_DEB}/pkgconfig")
+SET(INSTALL_PLUGINDIR_PKG "${INSTALL_LIBDIR_DEB}/libmariadb3/plugin")
+SET(INSTALL_INCLUDEDIR_PKG "${CMAKE_INSTALL_INCLUDEDIR}")
+SET(INSTALL_DOCDIR_PKG "${CMAKE_INSTALL_DOCDIR}")
+SET(INSTALL_LICENSEDIR_PKG "${INSTALL_DOCDIR_PKG}")
 #
 # Overwrite defaults
 #
@@ -140,7 +158,6 @@ IF(INSTALL_INCLUDEDIR)
 ENDIF()
 
 IF(INSTALL_BINDIR)
-    message(STATUS "-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-")
   SET(INSTALL_BINDIR_${INSTALL_LAYOUT} ${INSTALL_BINDIR})
 ENDIF()
 
@@ -157,6 +174,6 @@ ENDIF()
 FOREACH(dir "BIN" "LIB" "PC" "INCLUDE" "DOC" "LICENSE" "PLUGIN")
   SET(INSTALL_${dir}DIR ${INSTALL_${dir}DIR_${INSTALL_LAYOUT}})
   MARK_AS_ADVANCED(INSTALL_${dir}DIR)
-  MESSAGE(STATUS "MariaDB Connector ODBC: INSTALL_${dir}DIR=${INSTALL_${dir}DIR}")
+  MESSAGE(STATUS "MariaDB Connector C++: INSTALL_${dir}DIR=${INSTALL_${dir}DIR}")
 ENDFOREACH()
 

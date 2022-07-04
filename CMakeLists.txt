@@ -17,8 +17,12 @@
 #   51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 # *************************************************************************************/
 
-cmake_minimum_required(VERSION 3.1)
-
+IF(APPLE)
+  # productbuild packaging stuff 
+  cmake_minimum_required(VERSION 3.23)
+ELSE()
+  cmake_minimum_required(VERSION 3.1)
+ENDIF()
 CMAKE_POLICY(SET CMP0048 NEW)
 
 PROJECT(mariadb_connector_cpp
@@ -455,7 +459,17 @@ ELSE()
 #  MESSAGE(STATUS "Version script: ${CMAKE_SOURCE_DIR}/src/maconncpp.def")
   ADD_LIBRARY(${LIBRARY_NAME} SHARED ${MACPP_SOURCES})
   IF(APPLE)
-    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl")
+    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl"
+                                     INSTALL_RPATH_USE_LINK_PATH 0
+                                     BUILD_WITH_INSTALL_RPATH 1
+                                     XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES
+                                     XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--timestamp -f"
+                                     INSTALL_RPATH "${MAODBC_INSTALL_RPATH}")
+    IF(WITH_SIGNCODE)
+      SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Developer ID Application: ${DEVELOPER_ID}")
+    ELSE()
+      SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
+    ENDIF()
   ELSE()
 #    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_SOURCE_DIR}/src/maconncpp.def")
   ENDIF()
