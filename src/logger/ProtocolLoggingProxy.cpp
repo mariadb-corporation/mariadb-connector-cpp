@@ -324,10 +324,10 @@ namespace mariadb
 	}
 
 
-  void ProtocolLoggingProxy::getResult(Results* results, ServerPrepareResult* spr)
+  void ProtocolLoggingProxy::getResult(Results* results, ServerPrepareResult* spr, bool readAllResults)
 	{
 		/* Add here logging if needed */
-	  protocol->getResult(results, spr);
+	  protocol->getResult(results, spr, readAllResults);
 	}
 
 

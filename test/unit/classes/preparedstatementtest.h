@@ -57,7 +57,7 @@ public:
 
   EXAMPLE_TEST_FIXTURE(preparedstatement)
   {
-    TEST_CASE(crash);
+    /*TEST_CASE(crash);
     TEST_CASE(anonymousSelect);
     TEST_CASE(InsertSelectAllTypes);
     TEST_CASE(assortedSetType);
@@ -72,7 +72,8 @@ public:
     TEST_CASE(blob);
     TEST_CASE(executeQuery);
     TEST_CASE(addBatch);
-    TEST_CASE(bugConcpp96);
+    TEST_CASE(bugConcpp96);*/
+    TEST_CASE(concpp99_batchRewrite);
   }
 
   /**
@@ -151,7 +152,12 @@ public:
 
   void bugConcpp96();
 
-  /* unit_fixture methods redefinitions */
+  /**
+   * checks addBatch
+   */
+  void concpp99_batchRewrite();
+
+  /* unit_fixture methods overriding */
   void setUp();
 };
 

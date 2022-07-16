@@ -612,9 +612,9 @@ void statement::queryTimeout()
   {
     stmt->setQueryTimeout(timeout);
     ASSERT_EQUALS(timeout, stmt->getQueryTimeout());
-    time_t t1= time(NULL);
+    time_t t1= time(nullptr);
     stmt->execute("select sleep(5)");
-    time_t t2= time(NULL);
+    time_t t2= time(nullptr);
     ASSERT((t2 -t1) < 5);
   }
   catch (sql::SQLException &e)
@@ -629,9 +629,7 @@ void statement::queryTimeout()
 void statement::addBatch()
 {
   Statement st2(con->createStatement());
-  stmt->executeUpdate("DROP TABLE IF EXISTS testAddBatch");
-  stmt->executeUpdate("CREATE TABLE testAddBatch "
-                      "(id int not NULL)");
+  createSchemaObject("TABLE", "testAddBatch", "(id int not NULL)");
   
   stmt->addBatch("INSERT INTO testAddBatch VALUES(1)");
   stmt->addBatch("INSERT INTO testAddBatch VALUES(2)");
@@ -673,8 +671,61 @@ void statement::addBatch()
   ASSERT_EQUALS(2LL, batchLRes[0]);
   ASSERT_EQUALS(1LL, batchLRes[1]);
   ASSERT_EQUALS(1LL, batchLRes[2]);
+}
 
-  stmt->executeUpdate("DROP TABLE IF EXISTS testAddBatch");
+
+/** Test of rewriteBatchedStatements option. The test does cannot test if the batch is really rewritten, though.
+ */
+void statement::concpp99_batchRewrite()
+{
+  sql::ConnectOptionsMap connection_properties{{"userName", user}, {"password", passwd}, {"rewriteBatchedStatements", "true"}, {"useTls", useTls ? "true" : "false"}};
+
+  con.reset(driver->connect(url, connection_properties));
+  stmt.reset(con->createStatement());
+
+  createSchemaObject("TABLE", "concpp99_batchRewrite", "(id int not NULL PRIMARY KEY, val VARCHAR(31) NOT NULL)");
+
+  stmt->addBatch("INSERT INTO concpp99_batchRewrite VALUES(1,'\\'')");
+  stmt->addBatch("INSERT INTO concpp99_batchRewrite VALUES(2,'\"')");
+  stmt->addBatch("INSERT INTO concpp99_batchRewrite VALUES(3,';')");
+
+  const sql::Ints& batchRes = stmt->executeBatch();
+
+  Statement st2(con->createStatement());
+  res.reset(st2->executeQuery("SELECT MIN(id), MAX(id), SUM(id), count(*) FROM concpp99_batchRewrite"));
+
+  ASSERT(res->next());
+
+  ASSERT_EQUALS(1, res->getInt(1));
+  ASSERT_EQUALS(3, res->getInt(2));
+  ASSERT_EQUALS(6, res->getInt(3));
+  ASSERT_EQUALS(3, res->getInt(4));
+  ASSERT_EQUALS(3ULL, static_cast<uint64_t>(batchRes.size()));
+  ASSERT_EQUALS(1, batchRes[0]);
+  ASSERT_EQUALS(1, batchRes[1]);
+  ASSERT_EQUALS(1, batchRes[2]);
+
+  ////// The same, but for executeLargeBatch
+  st2->executeUpdate("DELETE FROM concpp99_batchRewrite");
+  stmt->clearBatch();
+  stmt->addBatch("INSERT INTO concpp99_batchRewrite VALUES(4,'x'),(11,'y')");
+  stmt->addBatch("INSERT INTO concpp99_batchRewrite VALUES(5,'xx')");
+  stmt->addBatch("INSERT INTO concpp99_batchRewrite VALUES(6,'y\\'\";')");
+
+  const sql::Longs& batchLRes = stmt->executeLargeBatch();
+
+  res.reset(st2->executeQuery("SELECT MIN(id), MAX(id), SUM(id), count(*) FROM concpp99_batchRewrite"));
+
+  ASSERT(res->next());
+
+  ASSERT_EQUALS(4, res->getInt(1));
+  ASSERT_EQUALS(11, res->getInt(2));
+  ASSERT_EQUALS(26, res->getInt(3));
+  ASSERT_EQUALS(4, res->getInt(4));
+  ASSERT_EQUALS(3ULL, static_cast<uint64_t>(batchLRes.size()));
+  ASSERT_EQUALS(2LL, batchLRes[0]);
+  ASSERT_EQUALS(1LL, batchLRes[1]);
+  ASSERT_EQUALS(1LL, batchLRes[2]);
 }
 
 } /* namespace statement */

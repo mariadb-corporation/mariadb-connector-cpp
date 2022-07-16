@@ -435,8 +435,8 @@ void preparedstatement::InsertSelectAllTypes()
           len=it->as_string.length();
           std::unique_ptr<char[]> blob_out(new char[len]);
           blob_output_stream->read(blob_out.get(), len);
-          if (it->as_string.compare(0, blob_output_stream->gcount()
-                                    , blob_out.get(), blob_output_stream->gcount()))
+          if (it->as_string.compare(0, static_cast<std::size_t>(blob_output_stream->gcount())
+                                    , blob_out.get(), static_cast<std::size_t>(blob_output_stream->gcount())))
           {
             sql.str("");
             sql << "... \t\tWARNING - SQL: '" << it->sqldef << "' - expecting '" << it->as_string << "'";
@@ -451,8 +451,8 @@ void preparedstatement::InsertSelectAllTypes()
           len=it->as_string.length();
           std::unique_ptr<char[]> blob_out(new char[len]);
           blob_output_stream->read(blob_out.get(), len);
-          if (it->as_string.compare(0, blob_output_stream->gcount()
-                                    , blob_out.get(), blob_output_stream->gcount()))
+          if (it->as_string.compare(0, static_cast<std::size_t>(blob_output_stream->gcount())
+                                    , blob_out.get(), static_cast<std::size_t>(blob_output_stream->gcount())))
           {
             sql.str("");
             sql << "... \t\tWARNING - SQL: '" << it->sqldef << "' - expecting '" << it->as_string << "'";
@@ -1736,7 +1736,7 @@ void preparedstatement::addBatch()
   stmt->executeUpdate("DROP TABLE testAddBatchPs");
 }
 
-
+/* Connector wasn't precise enough with double numbers operations and could lose significant digits */
 void preparedstatement::bugConcpp96()
 {
   createSchemaObject("TABLE", "bugConcpp96", "(`as_double` double NOT NULL, `as_string` varchar(20) NOT NULL, `as_decimal` decimal(15,4) NOT NULL)");
@@ -1788,5 +1788,77 @@ void preparedstatement::bugConcpp96()
   }
 }
 
+/** Test of rewriteBatchedStatements option. The test does cannot test if the batch is really rewritten, though. 
+ */
+void preparedstatement::concpp99_batchRewrite()
+{
+  sql::ConnectOptionsMap connection_properties{{"userName", user}, {"password", passwd}, {"rewriteBatchedStatements", "true"}, {"useTls", useTls ? "true" : "false"}};
+
+  con.reset(driver->connect(url, connection_properties));
+  stmt.reset(con->createStatement());
+  createSchemaObject("TABLE", "concpp99_batchRewrite", "(id int not NULL PRIMARY KEY, val VARCHAR(31) NOT NULL)");
+
+  const sql::SQLString insertQuery[]{"INSERT INTO concpp99_batchRewrite VALUES(?,?)",
+                                     "INSERT INTO concpp99_batchRewrite(id) VALUES(?) ON DUPLICATE KEY UPDATE val=?"};
+  const int32_t id[]{1, 2, 3}, batchResult[]{sql::Statement::SUCCESS_NO_INFO, 1};
+  const sql::SQLString val[][3]{{"X'1", "y\"2", "xxx"}, {"","",""}},
+    selectQuery("SELECT id, val FROM concpp99_batchRewrite ORDER BY id"),
+    deleteQuery("DELETE FROM concpp99_batchRewrite");
+
+  for (std::size_t i= 0; i < sizeof(insertQuery) / sizeof(insertQuery[0]); ++i) {
+    pstmt.reset(con->prepareStatement(insertQuery[i]));
+    //ssps.reset(sspsCon->prepareStatement(insertQuery[i]));
+
+    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+      pstmt->setInt(1, id[row]);
+      pstmt->setString(2, val[0][row]);
+      pstmt->addBatch();
+      /*ssps->setInt(1, id[row]);
+      ssps->setString(2, val[0][row]);
+      ssps->addBatch();*/
+    }
+
+    const sql::Ints& batchRes = pstmt->executeBatch();
+    ASSERT_EQUALS(static_cast<uint64_t>(sizeof(id) / sizeof(id[0])), static_cast<uint64_t>(batchRes.size()));
+
+    res.reset(stmt->executeQuery(selectQuery));
+
+    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+      ASSERT(res->next());
+      ASSERT_EQUALS(id[row], res->getInt(1));
+      ASSERT_EQUALS(val[i][row], res->getString(2));
+      // With rewriteBatchedStatements we don't have separate results for each parameters set - only SUCCESS_NO_INFO
+      ASSERT_EQUALS(batchResult[i], batchRes[row]);
+    }
+    ASSERT(!res->next());
+    ////// The same, but for executeLargeBatch
+    stmt->executeUpdate(deleteQuery);
+    //const sql::Ints& batchRes2= ssps->executeBatch();
+
+    pstmt->clearBatch();
+    pstmt->clearParameters();
+
+    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+      pstmt->setInt(1, id[row] + 3);
+      pstmt->setString(2, val[0][row]);
+      pstmt->addBatch();
+    }
+    const sql::Longs& batchLRes = pstmt->executeLargeBatch();
+    ASSERT_EQUALS(3ULL, static_cast<uint64_t>(batchLRes.size()));
+
+    res.reset(stmt->executeQuery(selectQuery));
+    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+      ASSERT(res->next());
+      ASSERT_EQUALS(id[row] + 3, res->getInt(1));
+      ASSERT_EQUALS(val[i][row], res->getString(2));
+      // With rewriteBatchedStatements we don't have separate results for each parameters set - only SUCCESS_NO_INFO
+      ASSERT_EQUALS(static_cast<int64_t>(batchResult[i]), batchLRes[row]);
+    }
+    ASSERT(!res->next());
+    stmt->executeUpdate(deleteQuery);
+  }
+  // To make sure the framework provides next test with "standard" connection
+  con.reset();
+}
 } /* namespace preparedstatement */
 } /* namespace testsuite */

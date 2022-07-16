@@ -303,7 +303,8 @@ namespace capi
           return true;
         }
 
-
+        // multi rewritten in one query :
+        // INSERT INTO X(a,b) VALUES (1,2);INSERT INTO X(a,b) VALUES (3,4); ...
         executeBatchRewrite(results, prepareResult, parametersList, false);
         return true;
       }
@@ -350,6 +351,7 @@ namespace capi
     // **************************************************************************************
 
     SQLString sql(origSql);
+    // ensure that type doesn't change
     std::vector<Shared::ParameterHolder> initParameters= parametersList.front();
     size_t parameterCount= initParameters.size();
     std::vector<int16_t> types;
@@ -359,7 +361,6 @@ namespace capi
       types.push_back(initParameters[i]->getColumnType().getType());
     }
 
-
     for (auto& parameters :parametersList){
       for (size_t i= 0;i <parameterCount; i++){
         if (parameters[i]->getColumnType().getType() != types[i]) {
@@ -368,7 +369,7 @@ namespace capi
       }
     }
 
-
+    // any select query is not applicable to bulk
     if (StringImp::get(sql.toLowerCase()).find("select") != std::string::npos) {
       return false;
     }
@@ -380,12 +381,16 @@ namespace capi
     try {
       SQLException exception;
 
-
+      // **************************************************************************************
+      // send PREPARE if needed
+      // **************************************************************************************
       if (!serverPrepareResult){
         tmpServerPrepareResult= prepare(sql, true);
       }
 
-
+      // **************************************************************************************
+      // send BULK
+      // **************************************************************************************
       capi::MYSQL_STMT* statementId= tmpServerPrepareResult ? tmpServerPrepareResult->getStatementId() : nullptr;
 
       //TODO: shouldn't throw if stmt is NULL? Returning false so far.
@@ -490,21 +495,24 @@ namespace capi
     cmdPrologue();
     if (this->options->rewriteBatchedStatements){
 
-
+      // check that queries are rewritable
       bool canAggregateSemiColumn= true;
-      for (SQLString query :queries){
+      std::size_t totalLen= 0;
+      for (SQLString query : queries){
         if (!ClientPrepareResult::canAggregateSemiColon(query,noBackslashEscapes())){
           canAggregateSemiColumn= false;
           break;
         }
+        totalLen+= query.length() + 1/*;*/;
       }
 
       if (isInterrupted()){
+        // interrupted by timeout, must throw an exception manually
         throw SQLTimeoutException("Timeout during batch execution", "00000");
       }
 
       if (canAggregateSemiColumn){
-        executeBatchAggregateSemiColon(results,queries);
+        executeBatchAggregateSemiColon(results, queries, totalLen);
       }else {
         executeBatch(results,queries);
       }
@@ -527,10 +535,8 @@ namespace capi
 
       MariaDBExceptionThrower exception;
 
-      for (auto& sql : queries){
-
+      for (auto& sql : queries) {
         try {
-
           realQuery(sql);
           getResult(results.get());
 
@@ -641,7 +647,7 @@ namespace capi
     // add query with ";"
     while (currentIndex < queries.size()) {
 
-      if (checkRemainingSize(sql.length() + queries[currentIndex].length() + 1)) {
+      if (!checkRemainingSize(sql.length() + queries[currentIndex].length() + 1)) {
         break;
       }
       sql.append(';').append(queries[currentIndex]);
@@ -660,7 +666,7 @@ namespace capi
    * @param queries list of queries
    * @throws SQLException exception
    */
-  void QueryProtocol::executeBatchAggregateSemiColon(Shared::Results& results, const std::vector<SQLString>& queries)
+  void QueryProtocol::executeBatchAggregateSemiColon(Shared::Results& results, const std::vector<SQLString>& queries, std::size_t totalLenEstimation)
   {
 
     SQLString firstSql;
@@ -674,12 +680,15 @@ namespace capi
       try {
 
         firstSql= queries[currentIndex++];
-
+        if (totalLenEstimation == 0) {
+          totalLenEstimation= firstSql.length()*queries.size() + queries.size() - 1;
+        }
+        sql.reserve(((std::min<int64_t>(MAX_PACKET_LENGTH, totalLenEstimation) + 7) / 8) * 8);
         currentIndex= assembleBatchAggregateSemiColonQuery(sql, firstSql, queries, currentIndex);
         realQuery(sql);
         sql.clear(); // clear is not supposed to release memory
 
-        getResult(results.get());
+        getResult(results.get(), nullptr, true);
 
       }catch (SQLException& sqlException){
         if (exception.getMessage().empty()){
@@ -725,8 +734,8 @@ namespace capi
     std::size_t index= currentIndex;
     std::vector<Shared::ParameterHolder> &parameters= parameterList[index++];
 
-    const SQLString &firstPart= queryParts[0];
-    const SQLString &secondPart= queryParts[1];
+    const SQLString &firstPart= queryParts[1];
+    const SQLString &secondPart= queryParts[0];
 
     if (!rewriteValues) {
 
@@ -772,7 +781,7 @@ namespace capi
               pos.append(queryParts[i + 2]);
             }
             pos.append(queryParts[paramCount +2]);
-            index++;
+            ++index;
           }
           else {
             break;
@@ -788,7 +797,7 @@ namespace capi
             pos.append(queryParts[i +2]);
           }
           pos.append(queryParts[paramCount +2]);
-          index++;
+          ++index;
           break;
         }
       }
@@ -832,7 +841,7 @@ namespace capi
               parameters[i]->writeTo(pos);
               pos.append(queryParts[i + 2]);
             }
-            index++;
+            ++index;
           }
           else {
             break;
@@ -846,11 +855,11 @@ namespace capi
             parameters[i]->writeTo(pos);
             pos.append(queryParts[i +2]);
           }
-          index++;
+          ++index;
           break;
         }
       }
-      pos.append(queryParts[paramCount +2]);
+      pos.append(queryParts[paramCount + 2]);
     }
 
     return index;
@@ -878,11 +887,12 @@ namespace capi
 
     try {
       SQLString sql;
+      sql.reserve(1024); //No estimations. Just something for beginning. stringstream ?
       do {
         sql.clear();
-        rewriteQuery(sql, prepareResult->getQueryParts(), currentIndex, prepareResult->getParamCount(), parameterList, rewriteValues);
+        currentIndex= rewriteQuery(sql, prepareResult->getQueryParts(), currentIndex, prepareResult->getParamCount(), parameterList, rewriteValues);
         realQuery(sql);
-        getResult(results.get());
+        getResult(results.get(), nullptr, !rewriteValues);
 
 #ifdef THE_TIME_HAS_COME
         if (Thread.currentThread().isInterrupted()){
@@ -1340,13 +1350,16 @@ namespace capi
     }
   }
 
-  void QueryProtocol::getResult(Results* results, ServerPrepareResult *pr)
+  void QueryProtocol::getResult(Results* results, ServerPrepareResult *pr, bool readAllResults)
   {
     readPacket(results, pr);
 
-    /*while (hasMoreResults()){
-      readPacket(results, pr);
-    }*/
+    if (readAllResults) {
+      while (hasMoreResults()) {
+        moveToNextResult(results, pr);
+        readPacket(results, pr);
+      }
+    }
   }
 
   /**

@@ -43,23 +43,26 @@ jobs:
     - env: srv=mariadb v=10.8
       os: windows
       language: shell
-    - env: srv=mariadb v=10.3 local=1
-    - env: srv=mariadb v=10.4 local=1
-    - env: srv=mariadb v=10.5 local=1
-    - env: srv=mariadb v=10.6 local=1
-    - env: srv=mariadb v=10.7 local=1
+    - if: type = push AND fork = false
+      env: srv=mariadb-es v=10.3
+    - if: type = push AND fork = false
+      env: srv=mariadb-es v=10.4
     - if: type = push AND fork = false
       env: srv=mariadb-es v=10.5
     - if: type = push AND fork = false
-      env: srv=maxscale MAXSCALE_TEST_DISABLE=true
+      env: srv=mariadb-es v=10.6
+    - env: srv=mariadb v=10.7 local=1
+    - env: srv=mariadb v=10.8 local=1
     - if: type = push AND fork = false
-      env: srv=xpand
-    - env: srv=mysql v=5.7 native=1
-    - env: srv=mysql v=8.0 native=1
+      env: srv=maxscale MAXSCALE_TEST_DISABLE=true
     - if: type = push AND fork = false
       env: srv=skysql SKYSQL=true
     - if: type = push AND fork = false
       env: srv=skysql-ha SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
+    - if: type = push AND fork = false
+      env: srv=xpand
+    - env: srv=mysql v=5.7 native=1
+    - env: srv=mysql v=8.0 native=1
       #    - env: server_branch=10.8
 
 script: ./travis.sh

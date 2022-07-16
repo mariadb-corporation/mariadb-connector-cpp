@@ -171,7 +171,7 @@ namespace mariadb
       std::stringstream str;
 
       str << std::this_thread::get_id();
-      message.append("\njava thread: ").append(str.str());
+      message.append("\nthread id: ").append(str.str());
 
       return SQLException(message, sqlEx.getSQLState(), sqlEx.getErrorCode(), sqlEx.getCause());
     }

@@ -103,7 +103,7 @@ public:
   virtual bool executeBatchServer(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Shared::Results& results, const SQLString& sql,
                                   std::vector<std::vector<Shared::ParameterHolder>>& parameterList, bool hasLongData)= 0;
   virtual void moveToNextResult(Results* results, ServerPrepareResult* spr= nullptr)=0;
-  virtual void getResult(Results* results, ServerPrepareResult *pr=nullptr)=0;
+  virtual void getResult(Results* results, ServerPrepareResult *pr=nullptr, bool readAllResults= false)=0;
   virtual void cancelCurrentQuery()=0;
   virtual void interrupt()=0;
   virtual void skip()=0;

@@ -162,7 +162,7 @@ namespace sql
         false}},
       {
         "rewriteBatchedStatements", {"rewriteBatchedStatements",
-        "0.9.1",
+        "1.0.2",
         "For insert queries, rewrite "
         "batchedStatement to execute in a single executeQuery.\n"
         "example:\n"

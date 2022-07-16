@@ -66,6 +66,7 @@ public:
     TEST_CASE(unbufferedOutOfSync);
     TEST_CASE(queryTimeout);
     TEST_CASE(addBatch);
+    TEST_CASE(concpp99_batchRewrite);
   }
 
   /**
@@ -112,6 +113,9 @@ public:
    * checks addBatch
    */
   void addBatch();
+
+  /* addBatch with rewrite option */
+  void concpp99_batchRewrite();
 };
 
 REGISTER_FIXTURE(statement);

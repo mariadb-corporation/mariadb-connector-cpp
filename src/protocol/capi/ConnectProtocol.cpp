@@ -1333,7 +1333,7 @@ namespace capi
 
   bool ConnectProtocol::hasMoreResults()
   {
-    return (serverStatus & ServerStatus::MORE_RESULTS_EXISTS)!=0;
+    return (serverStatus & ServerStatus::MORE_RESULTS_EXISTS) != 0;
   }
 
   ServerPrepareStatementCache* ConnectProtocol::prepareStatementCache()
