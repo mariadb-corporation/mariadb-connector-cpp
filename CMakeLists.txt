@@ -332,13 +332,7 @@ ELSE()
   MESSAGE(STATUS "Found math lib: ${LIB_MATH}")
   SET(PLATFORM_DEPENDENCIES ${LIB_MATH})
 ENDIF()
-MACRO(ADD_OPTION _name _text _default)
-  IF(NOT DEFINED ${_name})
-    OPTION(${OPT}${_name} "${_text}" "${_default}")
-  ELSE()
-    OPTION(${OPT}${_name} "${_text}" "${${_name}}")
-  ENDIF()
-ENDMACRO()
+
 # This has to be before C/C's cmake run, or it will build with /MD
 IF(WIN32)
   IF (MSVC)
@@ -365,14 +359,15 @@ IF(WIN32)
   SET(PLATFORM_DEPENDENCIES ${PLATFORM_DEPENDENCIES} version.lib)
 ENDIF()
 
+### Build options, initial settings and platform defaults
+INCLUDE("${CMAKE_SOURCE_DIR}/cmake/options_defaults.cmake")
+
 ### Setting installation paths - should go before C/C subproject sets its own. We need to have control over those
 INCLUDE("${CMAKE_SOURCE_DIR}/cmake/install.cmake")
 MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIB_SUFFIX}")
 MESSAGE(STATUS "Authentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
 
 IF(WIN32)
-  ADD_OPTION(WITH_MSI "Build MSI installation package" ON)
-  ADD_OPTION(WITH_SIGNCODE "Digitally sign files" OFF)
   MESSAGE(STATUS "Generate MSI package: ${WITH_MSI}")
   MESSAGE(STATUS "Sign MSI package: ${WITH_SIGNCODE}")
 ENDIF()

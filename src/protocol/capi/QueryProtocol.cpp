@@ -350,6 +350,9 @@ namespace capi
     // - avoid INSERT FROM SELECT
     // **************************************************************************************
 
+    if ((serverCapabilities & MariaDbServerCapabilities::_MARIADB_CLIENT_STMT_BULK_OPERATIONS) == 0)
+      return false;
+
     SQLString sql(origSql);
     // ensure that type doesn't change
     std::vector<Shared::ParameterHolder> initParameters= parametersList.front();

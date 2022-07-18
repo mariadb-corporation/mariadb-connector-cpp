@@ -44,7 +44,7 @@ jobs:
       os: windows
       language: shell
     - if: type = push AND fork = false
-      env: srv=mariadb-es v=10.3
+      env: srv=mariadb v=10.3
     - if: type = push AND fork = false
       env: srv=mariadb-es v=10.4
     - if: type = push AND fork = false
