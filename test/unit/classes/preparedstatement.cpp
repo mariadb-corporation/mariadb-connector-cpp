@@ -1796,7 +1796,7 @@ void preparedstatement::concpp99_batchRewrite()
 
   con.reset(driver->connect(url, connection_properties));
   stmt.reset(con->createStatement());
-  createSchemaObject("TABLE", "concpp99_batchRewrite", "(id int not NULL PRIMARY KEY, val VARCHAR(31) NOT NULL)");
+  createSchemaObject("TABLE", "concpp99_batchRewrite", "(id int not NULL PRIMARY KEY, val VARCHAR(31) NOT NULL DEFAULT '')");
 
   const sql::SQLString insertQuery[]{"INSERT INTO concpp99_batchRewrite VALUES(?,?)",
                                      "INSERT INTO concpp99_batchRewrite(id) VALUES(?) ON DUPLICATE KEY UPDATE val=?"};

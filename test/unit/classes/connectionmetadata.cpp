@@ -535,7 +535,8 @@ void connectionmetadata::getColumns()
       }
       //res->isNull(13)
       /* Looks like 10.1 returns '' where we expect NULL, and there are also other problems with it. Thus, skipping this check altogether on 10.1*/
-      if (serverVersion < 1001000 || serverVersion > 1001999)
+      if ((std::getenv("srv") != nullptr && (strcmp(std::getenv("srv"), "mysql") == 0 && serverVersion < 800000))
+         || serverVersion > 1001999)
       {
         ASSERT_EQUALS(it->column_def, res->getString(13));
       }
@@ -688,7 +689,7 @@ void connectionmetadata::getDatabaseVersions()
     ASSERT_LT(100, dbmeta->getDatabaseMinorVersion());
     ASSERT_LT(100, dbmeta->getDatabasePatchVersion());
 
-    ASSERT_EQUALS("MariaDB", dbmeta->getDatabaseProductName());
+    //ASSERT_EQUALS("MariaDB", dbmeta->getDatabaseProductName());
 
     prodversion.str("");
     prodversion << dbmeta->getDatabaseMajorVersion() << "." << dbmeta->getDatabaseMinorVersion();
@@ -1204,7 +1205,7 @@ void connectionmetadata::getIndexInfo()
       ASSERT_EQUALS(false, res->getBoolean("NON_UNIQUE"));
       ASSERT(res->next());
       ASSERT_EQUALS("idx_col4_col5", res->getString("INDEX_NAME"));
-      ASSERT_EQUALS(getServerVersion(con) > 1008000 ? "D" : "A", res->getString("ASC_OR_DESC"));
+      ASSERT_EQUALS((("MariaDB" != dbmeta->getDatabaseProductName() && getServerVersion(con) > 800000) || getServerVersion(con) > 1008000) ? "D" : "A", res->getString("ASC_OR_DESC"));
       ASSERT_EQUALS("col5", res->getString("COLUMN_NAME"));
       ASSERT_EQUALS(true, res->getBoolean("NON_UNIQUE"));
       ASSERT(res->next());
