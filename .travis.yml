@@ -44,6 +44,8 @@ jobs:
   allow_failures:
     - env: srv=build
     - env: srv=xpand
+    - env: srv=mysql v=5.7
+    - env: srv=mysql v=8.0
   include:
     - stage: Minimal
       env: srv=mariadb v=10.6 local=1
