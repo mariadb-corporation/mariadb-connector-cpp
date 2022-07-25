@@ -637,8 +637,8 @@ namespace capi
             if (sqle.getSQLState().startsWith("08")){
               throw sqle;
             }
-
-
+            // in case pipeline is not supported
+            // (proxy flush socket after reading first packet)
             additionalData(serverData);
           }
         }else {
@@ -687,12 +687,12 @@ namespace capi
   {
 
     SQLString sessionOption("autocommit=");
-    sessionOption.append(options->autocommit ?"1":"0");
+    sessionOption.append(options->autocommit ? "1" : "0");
 
     if ((serverCapabilities & MariaDbServerCapabilities::CLIENT_SESSION_TRACK)!=0){
       sessionOption.append(", session_track_schema=1");
       if (options->rewriteBatchedStatements){
-        sessionOption.append(", session_track_system_variables='auto_increment_increment' ");
+        sessionOption.append(", session_track_system_variables= 'auto_increment_increment' ");
       }
     }
 
@@ -726,7 +726,7 @@ namespace capi
       serverData.emplace("max_allowed_packet",resultSet->getString(1));
       serverData.emplace("system_time_zone",resultSet->getString(2));
       serverData.emplace("time_zone",resultSet->getString(3));
-      serverData.emplace("auto_increment_increment",resultSet->getString(4));
+      serverData.emplace("auto_increment_increment", resultSet->getString(4));
 
     }else {
       throw SQLException(mysql_get_socket(connection.get()) == MARIADB_INVALID_SOCKET ?

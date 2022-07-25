@@ -89,6 +89,7 @@ public:
     TEST_CASE(unknownPropertyConnect);
     TEST_CASE(useCharacterSet);
     TEST_CASE(concpp94_loadLocalInfile);
+    TEST_CASE(concpp105_conn_concurrency);
   }
 
   /**
@@ -277,6 +278,10 @@ public:
 
   /* LOAD DATA LOCAL INFILE should be disabled by default */
   void concpp94_loadLocalInfile();
+
+  /* Exception in the connector when attempting connections from multiple threads */
+  void concpp105_conn_concurrency();
+
 };
 
 

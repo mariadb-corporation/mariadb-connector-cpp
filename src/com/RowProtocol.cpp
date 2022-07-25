@@ -27,7 +27,6 @@ namespace sql
 namespace mariadb
 {
   Date nullDate("0000-00-00");
-  sql::bytes dummy;
 
   int32_t RowProtocol::BIT_LAST_FIELD_NOT_NULL= 0b000000;
   int32_t RowProtocol::BIT_LAST_FIELD_NULL= 0b000001;
@@ -81,7 +80,7 @@ namespace mariadb
     : maxFieldSize(_maxFieldSize)
     , options(options)
     , buf(nullptr)
-    , fieldBuf(dummy)
+    , fieldBuf()
     , length(0)
     , lastValueNull(0)
     , index(0)
