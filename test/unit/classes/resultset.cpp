@@ -33,6 +33,7 @@
 
 #include "Warning.hpp"
 
+#include <cstring>
 #include <sstream>
 #include <cstdlib>
 #include <stdlib.h>
