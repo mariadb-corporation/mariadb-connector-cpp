@@ -37,6 +37,7 @@
 #include "conncpp/ResultSet.hpp"
 
 #include "../common/ccppTypes.h"
+#include <cstring>
 
 #ifndef __LINE__
 #define __LINE__ "(line number n/a)"
