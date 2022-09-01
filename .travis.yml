@@ -1,5 +1,6 @@
 os: linux
 dist: focal
+sudo: true
 language: c
 services: docker
 addons:
@@ -59,6 +60,8 @@ jobs:
       name: "ES 10.4"
     - env: srv=mariadb-es v=10.5
       name: "ES 10.5"
+    - env: srv=mariadb v=10.6 local=1 BENCH=true
+      name: "benchmark"
     - env: srv=maxscale MAXSCALE_TEST_DISABLE=true
       name: "Maxscale"
     - env: srv=skysql SKYSQL=true
@@ -91,4 +94,4 @@ jobs:
     - env: srv=build
       name: "CS build"
 
-script: ./travis.sh
+script: sudo ./travis.sh
