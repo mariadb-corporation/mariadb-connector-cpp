@@ -101,7 +101,7 @@ namespace mariadb
   {
     Shared::ExceptionFactory ef(ExceptionFactory::of(this->exceptionFactory->getThreadId(), this->exceptionFactory->getOptions()));
     MariaDbStatement* clone= new MariaDbStatement(connection, this->resultSetScrollType, this->resultSetConcurrency, ef);
-    clone->fetchSize = this->options->defaultFetchSize;
+    clone->fetchSize= this->options->defaultFetchSize;
 
     return clone;
   }
@@ -1190,7 +1190,10 @@ namespace mariadb
    * @see #getFetchSize
    */
   void MariaDbStatement::setFetchSize(int32_t rows) {
-    if (rows <0 &&rows != INT32_MIN){
+    if (rows != 0) {
+      throw SQLFeatureNotImplementedException("setFetchSize(ResultSet streaming) support is implemented beginning from version 1.1");
+    }
+    if (rows < 0 && rows != INT32_MIN){
       exceptionFactory->raiseStatementError(connection, this)->create("invalid fetch size").Throw();
     }else if (rows == INT32_MIN)
     {

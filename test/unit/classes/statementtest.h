@@ -67,6 +67,7 @@ public:
     TEST_CASE(queryTimeout);
     TEST_CASE(addBatch);
     TEST_CASE(concpp99_batchRewrite);
+    TEST_CASE(concpp107_setFetchSizeExeption);
   }
 
   /**
@@ -116,6 +117,9 @@ public:
 
   /* addBatch with rewrite option */
   void concpp99_batchRewrite();
+
+  /* Making sure that setFetchSize is doing no bad things while rs streaming is not supported */
+  void concpp107_setFetchSizeExeption();
 };
 
 REGISTER_FIXTURE(statement);

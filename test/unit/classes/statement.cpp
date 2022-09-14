@@ -728,5 +728,53 @@ void statement::concpp99_batchRewrite()
   ASSERT_EQUALS(1LL, batchLRes[2]);
 }
 
+/* This is tmporary test for 1.0 version only. Thus putting all statement types in here - easier to remove */
+void statement::concpp107_setFetchSizeExeption()
+{
+  try {
+    stmt->setFetchSize(1);
+    FAIL("SQLFeatureNotImplementedException exception expected");
+  }
+  catch (sql::SQLFeatureNotImplementedException&)
+  {
+  }
+  
+  pstmt.reset(con->prepareStatement("SELECT 1 UNION SELECT 2"));
+  try {
+    pstmt->setFetchSize(1);
+    FAIL("SQLFeatureNotImplementedException exception expected");
+  }
+  catch (sql::SQLFeatureNotImplementedException&)
+  {
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT(res->next());
+    ASSERT(!res->next());
+  }
+  res.reset(stmt->executeQuery("SELECT 1 UNION SELECT 2"));
+  ASSERT(res->next());
+  ASSERT(res->next());
+  ASSERT(!res->next());
+
+  stmt->setFetchSize(0);
+  res.reset(stmt->executeQuery("SELECT 1 UNION SELECT 2"));
+  ASSERT(res->next());
+  ASSERT(res->next());
+  ASSERT(!res->next());
+
+  createSchemaObject("PROCEDURE", "concpp100", "() BEGIN SELECT 1 UNION SELECT 2; END;");
+  cstmt.reset(con->prepareCall("CALL concpp100()"));
+  try {
+    cstmt->setFetchSize(1);
+    FAIL("SQLFeatureNotImplementedException exception expected");
+  }
+  catch (sql::SQLFeatureNotImplementedException&)
+  {
+    res.reset(cstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT(res->next());
+    ASSERT(!res->next());
+  }
+}
 } /* namespace statement */
 } /* namespace testsuite */

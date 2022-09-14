@@ -1054,8 +1054,9 @@ namespace sql
       if (options->cacheCallableStmts || options->cachePrepStmts) {
         throw SQLFeatureNotImplementedException("Callable/Prepared statement caches are not supported yet");
       }
-      if (options->defaultFetchSize < 0){
-        options->defaultFetchSize= 0;
+
+      if (options->defaultFetchSize != 0){
+        throw SQLFeatureNotImplementedException("ResultSet streaming is not supported in this version");
       }
 
       if (credentialPlugin && credentialPlugin->mustUseSsl())
@@ -1064,7 +1065,7 @@ namespace sql
       }
 
       if (options->usePipelineAuth) {
-        SQLFeatureNotSupportedException("Pipe identification is not supported yet");
+        throw SQLFeatureNotSupportedException("Pipe identification is not supported yet");
       }
 
       if (options->useCharacterEncoding.compare("utf8") == 0) {
