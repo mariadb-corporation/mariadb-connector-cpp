@@ -275,5 +275,70 @@ static void BM_DO_1000_PARAMS(benchmark::State& state) {
 
 BENCHMARK(BM_DO_1000_PARAMS)->Name(TYPE + " DO 1000 params")->ThreadRange(1, MAX_THREAD)->UseRealTime();
 
+#ifndef MYSQL
+
+    std::vector<std::string> chars = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "\\Z", "😎", "🌶", "🎤", "🥂" };
+
+    std::string randomString(int length) {
+        std::string result = "";
+        for (int i = length; i > 0; --i) {
+            result += chars[rand() % (chars.size() - 1)];
+        }
+        return result;
+    }
+    static void setup_insert_batch(const benchmark::State& state) {
+      sql::Connection *conn = connect("");
+
+      sql::Statement *stmt;
+      stmt = conn->createStatement();
+      stmt->executeUpdate("DROP TABLE IF EXISTS perfTestTextBatch");
+      stmt->executeUpdate("INSTALL SONAME 'ha_blackhole'");
+      try {
+        stmt->executeUpdate("CREATE TABLE perfTestTextBatch (id MEDIUMINT NOT NULL AUTO_INCREMENT,t0 text, PRIMARY KEY (id)) COLLATE='utf8mb4_unicode_ci' ENGINE = BLACKHOLE");
+      } catch(sql::SQLException& e){
+        stmt->executeUpdate("CREATE TABLE perfTestTextBatch (id MEDIUMINT NOT NULL AUTO_INCREMENT,t0 text, PRIMARY KEY (id)) COLLATE='utf8mb4_unicode_ci'");
+      }
+      delete stmt;
+      delete conn;
+    }
+
+    void insert_batch_with_prepare(benchmark::State& state, sql::Connection* conn) {
+      std::string query = "INSERT INTO perfTestTextBatch(t0) VALUES (?)";
+      int rc;
+      std::string randomStringVal = randomString(100);
+
+      try {
+        sql::PreparedStatement *prep_stmt;
+        sql::ResultSet *res;
+
+        // Create a new Statement
+        prep_stmt = conn->prepareStatement(query);
+        for (int i = 0; i < 100; i++) {
+          prep_stmt->setString(1, randomStringVal);
+          prep_stmt->addBatch();
+        }
+
+        // Execute query
+        prep_stmt->executeBatch();
+        delete prep_stmt;
+      } catch(sql::SQLException& e){
+        state.SkipWithError(e.what());
+      }
+    }
+
+    static void BM_INSERT_BATCH_WITH_PREPARE(benchmark::State& state) {
+      sql::Connection *conn = connect("");
+      int numOperation = 0;
+      for (auto _ : state) {
+        insert_batch_with_prepare(state, conn);
+        numOperation++;
+      }
+      state.counters[OPERATION_PER_SECOND_LABEL] = benchmark::Counter(numOperation, benchmark::Counter::kIsRate);
+      delete conn;
+    }
+
+    BENCHMARK(BM_INSERT_BATCH_WITH_PREPARE)->Name(TYPE + " insert batch looping execute")->ThreadRange(1, MAX_THREAD)->UseRealTime()->Setup(setup_insert_batch);
+#endif
+
 BENCHMARK_MAIN();
 
