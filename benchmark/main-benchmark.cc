@@ -326,8 +326,8 @@ BENCHMARK(BM_DO_1000_PARAMS)->Name(TYPE + " DO 1000 params")->ThreadRange(1, MAX
       }
     }
 
-    static void BM_INSERT_BATCH_WITH_PREPARE(benchmark::State& state) {
-      sql::Connection *conn = connect("");
+    static void BM_INSERT_BATCH_CLIENT_REWRITE(benchmark::State& state) {
+      sql::Connection *conn = connect("?rewriteBatchedStatements=true");
       int numOperation = 0;
       for (auto _ : state) {
         insert_batch_with_prepare(state, conn);
@@ -337,7 +337,18 @@ BENCHMARK(BM_DO_1000_PARAMS)->Name(TYPE + " DO 1000 params")->ThreadRange(1, MAX
       delete conn;
     }
 
+    static void BM_INSERT_BATCH_WITH_PREPARE(benchmark::State& state) {
+      sql::Connection *conn = connect("?useServerPrepStmts=true");
+      int numOperation = 0;
+      for (auto _ : state) {
+        insert_batch_with_prepare(state, conn);
+        numOperation++;
+      }
+      state.counters[OPERATION_PER_SECOND_LABEL] = benchmark::Counter(numOperation, benchmark::Counter::kIsRate);
+      delete conn;
+    }
     BENCHMARK(BM_INSERT_BATCH_WITH_PREPARE)->Name(TYPE + " insert batch looping execute")->ThreadRange(1, MAX_THREAD)->UseRealTime()->Setup(setup_insert_batch);
+    BENCHMARK(BM_INSERT_BATCH_CLIENT_REWRITE)->Name(TYPE + " insert batch client rewrite")->ThreadRange(1, MAX_THREAD)->UseRealTime()->Setup(setup_insert_batch);
 #endif
 
 BENCHMARK_MAIN();
