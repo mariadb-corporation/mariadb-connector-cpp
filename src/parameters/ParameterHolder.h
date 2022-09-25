@@ -49,7 +49,7 @@ public:
   virtual bool isLongData()=0;
   virtual void* getValuePtr()=0;
   virtual unsigned long getValueBinLen() const=0;
-  virtual bool isUnsigned() { return false; }
+  virtual bool isUnsigned() const { return false; }
 };
 }
 }

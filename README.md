@@ -86,6 +86,7 @@ The list of supported options:
 | **`allowLocalInfile`** |Permits loading data from local file(on the client) with LOAD DATA LOCAL INFILE statement.|*bool* |false||
 | **`useResetConnection`** |Makes Connection::reset() method to issue conenction reset command at the server.|*bool* |false||
 | **`rewriteBatchedStatements`** |For insert queries, rewrites batchedStatement to execute in a single executeQuery. Example: insert into ab (i) values (?) with first batch values = 1, second = 2 will be rewritten as INSERT INTO ab (i) VALUES (1), (2).  If query cannot be rewriten in "multi-values", rewrite will use multi-queries : INSERT INTO TABLE(col1) VALUES (?) ON DUPLICATE KEY UPDATE col2=? with values [1,2] and [2,3]\" will be rewritten as INSERT INTO TABLE(col1) VALUES (1) ON DUPLICATE KEY UPDATE col2=2;INSERT INTO TABLE(col1) VALUES (3) ON DUPLICATE KEY UPDATE col2=4 If active, the useServerPrepStmts option is set to false.|*bool* |false||
+| **`useBulkStmts`** |Use dedicated COM_STMT_BULK_EXECUTE protocol for executeBatch if possible. Can be significanlty faster. (works only with server MariaDB >= 10.2.7).|*bool* |false||
 
 
 Properties is map of strings, and is another way to pass optional parameters.

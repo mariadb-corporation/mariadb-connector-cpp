@@ -1811,7 +1811,7 @@ void preparedstatement::concpp99_batchRewrite()
 
     for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row]);
-      pstmt->setString(2, val[0][row]);
+      pstmt->setString(2, val[i][row]);
       pstmt->addBatch();
       /*ssps->setInt(1, id[row]);
       ssps->setString(2, val[0][row]);
@@ -1860,5 +1860,104 @@ void preparedstatement::concpp99_batchRewrite()
   // To make sure the framework provides next test with "standard" connection
   con.reset();
 }
+
+
+/** Test of useBulkStmts option. The test does cannot test if the batch is really rewritten, though.
+ */
+void preparedstatement::concpp106_batchBulk()
+{
+  sql::ConnectOptionsMap connection_properties{ {"userName", user}, {"password", passwd}, {"useBulkStmts", "true"}, {"useTls", useTls ? "true" : "false"} };
+
+  con.reset(driver->connect(url, connection_properties));
+  stmt.reset(con->createStatement());
+  createSchemaObject("TABLE", "concpp106_batchBulk", "(id int not NULL PRIMARY KEY, val VARCHAR(31))");
+
+  const sql::SQLString insertQuery[]{ "INSERT INTO concpp106_batchBulk VALUES(?,?)",
+                                     "INSERT INTO concpp106_batchBulk(id) VALUES(?) ON DUPLICATE KEY UPDATE val=?" };
+  const int32_t id[]{1, 2, 5, 3}, batchResult[]{ sql::Statement::SUCCESS_NO_INFO, sql::Statement::SUCCESS_NO_INFO }, id_expected[]{1,2,3,5};
+  const char* val[][4]{{nullptr , "X'1", "y\"2", "xxx"}, {nullptr, nullptr, nullptr, nullptr}},
+    *val_expected[][4]{{nullptr, "X'1", "xxx", "y\"2"}, {nullptr, nullptr, nullptr, nullptr}};
+  const sql::SQLString selectQuery("SELECT id, val FROM concpp106_batchBulk ORDER BY id"),
+    deleteQuery("DELETE FROM concpp106_batchBulk");
+
+  for (std::size_t i = 0; i < sizeof(insertQuery) / sizeof(insertQuery[0]); ++i) {
+    pstmt.reset(con->prepareStatement(insertQuery[i]));
+    //ssps.reset(sspsCon->prepareStatement(insertQuery[i]));
+
+    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+      pstmt->setInt(1, id[row]);
+      if (val[i][row] != nullptr) {
+        pstmt->setString(2, val[0][row]);
+      }
+      else {
+        pstmt->setNull(2, sql::Types::VARCHAR);
+      }
+      pstmt->addBatch();
+      /*ssps->setInt(1, id[row]);
+      ssps->setString(2, val[0][row]);
+      ssps->addBatch();*/
+    }
+    const sql::Ints& batchRes = pstmt->executeBatch();
+    ASSERT_EQUALS(static_cast<uint64_t>(sizeof(id) / sizeof(id[0])), static_cast<uint64_t>(batchRes.size()));
+
+    res.reset(stmt->executeQuery(selectQuery));
+
+    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+      ASSERT(res->next());
+      ASSERT_EQUALS(id_expected[row], res->getInt(1));
+      if (val_expected[i][row] == nullptr) {
+        ASSERT(res->isNull(2));
+        /* SQLString does not have 3rd "null" state, thus for null it returns empty string */
+        ASSERT_EQUALS("", res->getString(2));
+      }
+      else {
+        ASSERT_EQUALS(val_expected[i][row], res->getString(2));
+      }
+      // With rewriteBatchedStatements we don't have separate results for each parameters set - only SUCCESS_NO_INFO
+      ASSERT_EQUALS(batchResult[i], batchRes[row]);
+    }
+    ASSERT(!res->next());
+    ////// The same, but for executeLargeBatch
+    stmt->executeUpdate(deleteQuery);
+    //const sql::Ints& batchRes2= ssps->executeBatch();
+
+    pstmt->clearBatch();
+    pstmt->clearParameters();
+
+    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+      pstmt->setInt(1, id[row] + 3);
+      if (val[i][row] != nullptr) {
+        pstmt->setString(2, val[0][row]);
+      }
+      else {
+        pstmt->setNull(2, sql::Types::VARCHAR);
+      }
+      pstmt->addBatch();
+    }
+    const sql::Longs& batchLRes = pstmt->executeLargeBatch();
+    ASSERT_EQUALS(static_cast<uint64_t>(sizeof(id) / sizeof(id[0])), static_cast<uint64_t>(batchLRes.size()));
+
+    res.reset(stmt->executeQuery(selectQuery));
+    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+      ASSERT(res->next());
+      ASSERT_EQUALS(id_expected[row] + 3, res->getInt(1));
+      if (val_expected[i][row] == nullptr) {
+        ASSERT(res->isNull(2));
+        /* SQLString does not have 3rd "null" state, thus for null it returns empty string */
+        ASSERT_EQUALS("", res->getString(2));
+      }
+      else {
+        ASSERT_EQUALS(val_expected[i][row], res->getString(2));
+      }
+      // With rewriteBatchedStatements we don't have separate results for each parameters set - only SUCCESS_NO_INFO
+      ASSERT_EQUALS(static_cast<int64_t>(batchResult[i]), batchLRes[row]);
+    }
+    ASSERT(!res->next());
+    stmt->executeUpdate(deleteQuery);
+  }
+  // To make sure the framework provides next test with "standard" connection
+  con.reset();
+}
+
 } /* namespace preparedstatement */
 } /* namespace testsuite */

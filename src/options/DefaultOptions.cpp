@@ -543,10 +543,10 @@ namespace sql
         false}},
       {
         "useBulkStmts", {"useBulkStmts",
-        "0.9.1",
-        "Use dedicated COM_STMT_BULK_EXECUTE protocol for batch "
-        "insert when possible. (batch without Statement.RETURN_GENERATED_KEYS and streams) to have faster batch. "
-        "(significant only if server MariaDB >= 10.2.7)",
+        "1.0.2",
+        "Use dedicated COM_STMT_BULK_EXECUTE protocol for executeBatch if "
+        "possible(batch without Statement::RETURN_GENERATED_KEYS and streams). Can be significanlty faster."
+        "(works only with server MariaDB >= 10.2.7)",
         false,
         false}},
       {

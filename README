@@ -111,6 +111,9 @@ rewriteBatchedStatements For insert queries, rewrites batchedStatement to execut
             INSERT INTO TABLE(col1) VALUES (1) ON DUPLICATE KEY UPDATE col2=2;INSERT
             INTO TABLE(col1) VALUES (3) ON DUPLICATE KEY UPDATE col2=4
             If active, the useServerPrepStmts option is set to false. Default false   bool
+useBulkStmts             Use dedicated COM_STMT_BULK_EXECUTE protocol for
+            executeBatch if possible. Can be significanlty faster.
+            (works only with server MariaDB >= 10.2.7). Default false                 bool
 
 
 Properties is map of strings, and is another way to pass optional parameters.

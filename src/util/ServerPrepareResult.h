@@ -88,7 +88,7 @@ public:
   const SQLString& getSql() const;
   const std::vector<capi::MYSQL_BIND>& getParameterTypeHeader() const;
   void bindParameters(std::vector<Shared::ParameterHolder>& parameters);
-  void bindParameters(std::vector<std::vector<Shared::ParameterHolder>>& parameters);
+  void bindParameters(std::vector<std::vector<Shared::ParameterHolder>>& parameters, const int16_t *type= nullptr);
   };
 }
 }

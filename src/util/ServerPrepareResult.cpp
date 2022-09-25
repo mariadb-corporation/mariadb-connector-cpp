@@ -110,10 +110,7 @@ namespace mariadb
     this->paramBind.clear();
 
     if (parameters.size() > 0) {
-      this->paramBind.reserve(parameters.size());
-      for (uint32_t i= 0; i < parameters.size(); ++i) {
-        paramBind.emplace_back();
-      }
+      this->paramBind.resize(parameters.size());
     }
   }
 
@@ -237,6 +234,10 @@ namespace mariadb
 
     bind.buffer_type= static_cast<capi::enum_field_types>(typeInfo.getType());
     bind.is_null= &bind.is_null_value;
+    if (paramInfo.isUnsigned()) {
+      bind.is_unsigned = '\1';
+    }
+    
   }
 
 
@@ -269,29 +270,53 @@ namespace mariadb
     for (size_t i= 0; i < parameters.size(); ++i)
     {
       auto& bind= paramBind[i];
-      std::memset(&bind, 0, sizeof(capi::MYSQL_BIND));
-      initBindStruct(bind, *paramValue[i]);
 
+      initBindStruct(bind, *paramValue[i]);
       bindParamValue(bind, paramValue[i]);
     }
     capi::mysql_stmt_bind_param(statementId, paramBind.data());
   }
 
-
-  void ServerPrepareResult::bindParameters(std::vector<std::vector<Shared::ParameterHolder>>& paramValue)
+  uint8_t paramRowUpdateCallback(void* data, capi::MYSQL_BIND* bind, uint32_t row_nr)
   {
-    for (auto& paramRow : paramValue)
-    {
-      uint32_t i= 0;
-      for (auto& bind : paramBind)
-      {
-        std::memset(&bind, 0, sizeof(capi::MYSQL_BIND));
-        initBindStruct(bind, *paramRow[i]);
+    static char indicator[]{'\0', capi::STMT_INDICATOR_NULL};
+    std::size_t i= 0;
+    std::vector<Shared::ParameterHolder>& paramSet= (*static_cast<std::vector<std::vector<Shared::ParameterHolder>>*>(data))[row_nr];
 
-        bindParamValue(bind, paramRow[i]);
+    for (auto& param : paramSet) {
+      if (param->isNullData()) {
+        bind[i].u.indicator= &indicator[1];
         ++i;
+        continue;
       }
+      bind[i].u.indicator = &indicator[0];
+      if (param->isUnsigned()) {
+        bind[i].is_unsigned = '\1';
+      }
+
+      bind[i].buffer = param->getValuePtr();
+      bind[i].buffer_length = param->getValueBinLen();
+      ++i;
     }
+    return '\0';
+  }
+  
+  void ServerPrepareResult::bindParameters(std::vector<std::vector<Shared::ParameterHolder>>& paramValue, const int16_t *type)
+  {
+    uint32_t i= 0;
+    resetParameterTypeHeader();
+    for (auto& bind : paramBind)
+    {
+      // Initing with first row param data
+      initBindStruct(bind, *paramValue.front()[i]);
+      if (type != nullptr) {
+        bind.buffer_type= static_cast<capi::enum_field_types>(type[i]);
+      }
+      ++i;
+    }
+    
+    capi::mysql_stmt_attr_set(statementId, capi::STMT_ATTR_CB_USER_DATA, &paramValue);
+    capi::mysql_stmt_attr_set(statementId, capi::STMT_ATTR_CB_PARAM, (const void*)&paramRowUpdateCallback);
     capi::mysql_stmt_bind_param(statementId, paramBind.data());
   }
 }

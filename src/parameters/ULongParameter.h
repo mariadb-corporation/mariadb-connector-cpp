@@ -46,7 +46,7 @@ public:
   bool isLongData();
   void* getValuePtr() { return static_cast<void*>(&value); }
   unsigned long getValueBinLen() const { return sizeof(value); }
-  bool isUnsigned() { return true; }
+  bool isUnsigned() const { return true; }
   };
 }
 }

@@ -282,7 +282,7 @@ namespace capi
     const auto cit= typeMap.find(typeValue);
     const ColumnType& columnType= cit != typeMap.end() ? cit->second : BLOB;
 
-    if (charsetNumber != 63 && typeValue >=249 && typeValue <=252) {
+    if (charsetNumber != 63 && typeValue >= 249 && typeValue <= 252) {
 
       return ColumnType::VARCHAR;
     }

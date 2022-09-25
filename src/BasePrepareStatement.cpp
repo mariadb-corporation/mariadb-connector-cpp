@@ -644,9 +644,9 @@ namespace mariadb
    *     statement; if a database access error occurs or this method is called on a closed <code>
    *     PreparedStatement</code>
    */
-  void BasePrepareStatement::setNull(int32_t parameterIndex,int32_t sqlType)
+  void BasePrepareStatement::setNull(int32_t parameterIndex, int32_t sqlType)
   {
-    setParameter(parameterIndex,new NullParameter());
+    setParameter(parameterIndex, new NullParameter());
   }
 
   /**

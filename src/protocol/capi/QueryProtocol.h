@@ -112,7 +112,7 @@ namespace capi
     void executeBatch(Shared::Results& results, const std::vector<SQLString>& queries);
 
   public:
-    ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster);
+    ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster, bool doNotLock= false);
 
   private:
     void executeBatchAggregateSemiColon(Shared::Results& results, const std::vector<SQLString>& queries, std::size_t totalLenEstimation= 0);
