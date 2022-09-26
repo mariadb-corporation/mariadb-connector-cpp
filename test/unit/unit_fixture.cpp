@@ -366,7 +366,6 @@ void unit_fixture::setUp()
 
 void unit_fixture::tearDown()
 {
-
   res.reset();
   for (int i=0; i < static_cast<int> (created_objects.size() - 1); i+=2)
   {

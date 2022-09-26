@@ -57,6 +57,7 @@ int main(int argc, char** argv)
   std::map<String, bool> defaultBoolValues;
 
   defaultBoolValues["useTls"]= USETLS_ENV_OR_DEFAULT;
+  defaultBoolValues["verbose"]= VERBOSE_ENV_OR_DEFAULT;
 
   testsuite::StartOptions options( unnamedStartParams, & defaultStringValues
     , & defaultBoolValues );

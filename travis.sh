@@ -34,6 +34,7 @@ export TEST_SERVER=$TEST_DB_HOST
 export TEST_PASSWORD=$TEST_DB_PASSWORD
 export TEST_PORT=$TEST_DB_PORT
 export TEST_SCHEMA=testcpp
+export TEST_VERBOSE=true
 if [ "${TEST_REQUIRE_TLS}" = "1" ] ; then
   export TEST_USETLS=true
 fi

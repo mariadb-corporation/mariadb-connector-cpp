@@ -1897,7 +1897,10 @@ void preparedstatement::concpp106_batchBulk()
       ssps->setString(2, val[0][row]);
       ssps->addBatch();*/
     }
+
+    logMsg("Executing batch");
     const sql::Ints& batchRes = pstmt->executeBatch();
+    logMsg("Executing batch - finished");
     ASSERT_EQUALS(static_cast<uint64_t>(sizeof(id) / sizeof(id[0])), static_cast<uint64_t>(batchRes.size()));
 
     res.reset(stmt->executeQuery(selectQuery));
@@ -1934,7 +1937,9 @@ void preparedstatement::concpp106_batchBulk()
       }
       pstmt->addBatch();
     }
+    logMsg("Executing largeBatch");
     const sql::Longs& batchLRes = pstmt->executeLargeBatch();
+    logMsg("Executing largeBatch - finished");
     ASSERT_EQUALS(static_cast<uint64_t>(sizeof(id) / sizeof(id[0])), static_cast<uint64_t>(batchLRes.size()));
 
     res.reset(stmt->executeQuery(selectQuery));
