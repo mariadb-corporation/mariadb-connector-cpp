@@ -382,7 +382,9 @@ namespace capi
     }
 
     // any select query is not applicable to bulk
-    if (StringImp::get(sql.toLowerCase()).find("select") != std::string::npos) {
+    // toLowerCase changes the string in the object
+    SQLString lcCopy(sql);
+    if (StringImp::get(lcCopy.toLowerCase()).find("select") != std::string::npos) {
       return false;
     }
 
@@ -396,8 +398,8 @@ namespace capi
       // **************************************************************************************
       // send PREPARE if needed
       // **************************************************************************************
-      if (!serverPrepareResult){
-        tmpServerPrepareResult= prepare(sql, true, true);
+      if (!tmpServerPrepareResult){
+        tmpServerPrepareResult= prepareInternal(sql, true);
       }
 
       // **************************************************************************************
@@ -585,50 +587,42 @@ namespace capi
   }
 
 
-  ServerPrepareResult* QueryProtocol::prepare(const SQLString& sql,bool executeOnMaster, bool doNotLock)
+  ServerPrepareResult* QueryProtocol::prepareInternal(const SQLString& sql, bool executeOnMaster)
   {
-    cmdPrologue();
-    std::unique_ptr<std::lock_guard<std::mutex>> localScopeLock;
+    if (options->cachePrepStmts && options->useServerPrepStmts) {
 
-    if (!doNotLock) {
-      localScopeLock.reset(new std::lock_guard<std::mutex>(*lock));
-    }
+      ServerPrepareResult* pr = serverPrepareStatementCache->get(database + "-" + sql);
 
-    //try {
-    if (options->cachePrepStmts && options->useServerPrepStmts){
-
-      ServerPrepareResult* pr= serverPrepareStatementCache->get(database+"-"+sql);
-
-      if (pr && pr->incrementShareCounter()){
+      if (pr && pr->incrementShareCounter()) {
         return pr;
       }
     }
 
-    capi::MYSQL_STMT* stmtId=  mysql_stmt_init(connection.get());
+    capi::MYSQL_STMT* stmtId = capi::mysql_stmt_init(connection.get());
 
     if (stmtId == nullptr)
     {
-      throw SQLException(mysql_error(connection.get()), mysql_sqlstate(connection.get()), mysql_errno(connection.get()));
+      throw SQLException(capi::mysql_error(connection.get()), capi::mysql_sqlstate(connection.get()), capi::mysql_errno(connection.get()));
     }
 
     static const my_bool updateMaxLength= 1;
 
-    mysql_stmt_attr_set(stmtId, STMT_ATTR_UPDATE_MAX_LENGTH, &updateMaxLength);
+    capi::mysql_stmt_attr_set(stmtId, STMT_ATTR_UPDATE_MAX_LENGTH, &updateMaxLength);
 
-    if (mysql_stmt_prepare(stmtId, sql.c_str(), static_cast<unsigned long>(sql.length())))
+    if (capi::mysql_stmt_prepare(stmtId, sql.c_str(), static_cast<unsigned long>(sql.length())))
     {
       SQLString err(mysql_stmt_error(stmtId)), sqlState(mysql_stmt_sqlstate(stmtId));
-      uint32_t errNo=  mysql_stmt_errno(stmtId);
+      uint32_t errNo = mysql_stmt_errno(stmtId);
 
-      mysql_stmt_close(stmtId);
+      capi::mysql_stmt_close(stmtId);
       throw SQLException(err, sqlState, errNo);
     }
 
-    ServerPrepareResult *res= new ServerPrepareResult(sql, stmtId, this);
+    ServerPrepareResult* res= new ServerPrepareResult(sql, stmtId, this);
 
-    if (getOptions()->cachePrepStmts
-      && getOptions()->useServerPrepStmts
-      && sql.length() < static_cast<size_t>(getOptions()->prepStmtCacheSqlLimit)) {
+    if (options->cachePrepStmts
+      && options->useServerPrepStmts
+      && sql.length() < static_cast<size_t>(options->prepStmtCacheSqlLimit)) {
       SQLString key(getDatabase() + "-" + sql);
 
       ServerPrepareResult* cachedServerPrepareResult= addPrepareInCache(key, res);
@@ -639,12 +633,16 @@ namespace capi
         res= cachedServerPrepareResult;
       }
     }
-
     return res;
-    /*} catch (std::runtime_error& e) {
-      throw handleIoException(e);
-    }*/
+  }
 
+
+  ServerPrepareResult* QueryProtocol::prepare(const SQLString& sql,bool executeOnMaster)
+  {
+    cmdPrologue();
+    std::unique_ptr<std::lock_guard<std::mutex>> localScopeLock;
+
+    return prepareInternal(sql, executeOnMaster);
   }
 
 

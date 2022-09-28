@@ -110,9 +110,10 @@ namespace capi
 
   private:
     void executeBatch(Shared::Results& results, const std::vector<SQLString>& queries);
-
+    /* Does actual prepare job w/out locking, i.e. is good to use if lock has been already acquired */
+    ServerPrepareResult* prepareInternal(const SQLString& sql, bool executeOnMaster);
   public:
-    ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster, bool doNotLock= false);
+    ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster);
 
   private:
     void executeBatchAggregateSemiColon(Shared::Results& results, const std::vector<SQLString>& queries, std::size_t totalLenEstimation= 0);

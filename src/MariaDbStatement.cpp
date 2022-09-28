@@ -232,7 +232,7 @@ namespace mariadb
 
   MariaDBExceptionThrower MariaDbStatement::handleFailoverAndTimeout(SQLException& sqle)
   {
-    if (sqle.getSQLState().empty() != true &&sqle.getSQLState().startsWith("08")){
+    if (sqle.getSQLState().empty() != true && sqle.getSQLState().startsWith("08")){
       try {
         close();
       }catch (SQLException&){
@@ -253,10 +253,14 @@ namespace mariadb
   {
     MariaDBExceptionThrower sqle(handleFailoverAndTimeout(initialSqle));
 
+    /* It does not make any sense to fill these arrays really - application won't see it since the exception will be thrown */
     if (!results || !results->commandEnd())
     {
-     // TODO would need new CArray method for this, but it's not used anyway
-     // batchRes.assign(size, Statement::EXECUTE_FAILED));
+      batchRes.reserve(size);
+      /* Thechnically it can't be harmful - the worst that can happen, is that next time reserve() called, it might think that
+         current array is not big enough, and delete and allocate the new one */
+      batchRes.length= size;
+      for (int32_t* p = batchRes.begin(); p < batchRes.end(); ++p) *p= static_cast<int32_t>(Statement::EXECUTE_FAILED);
     }
     else
     {
@@ -1288,7 +1292,7 @@ namespace mariadb
       return batchRes;
     }
 
-    std::lock_guard<std::mutex> localScopeLock(*lock);
+    std::unique_lock<std::mutex> localScopeLock(*lock);
     try
     {
       internalBatchExecution(size);
@@ -1298,6 +1302,7 @@ namespace mariadb
     }
     catch (SQLException& initialSqlEx){
       executeBatchEpilogue();
+      localScopeLock.unlock();
       throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }
     //To please compilers etc
@@ -1315,7 +1320,7 @@ namespace mariadb
       return largeBatchRes;
     }
 
-    std::lock_guard<std::mutex> localScopeLock(*lock);
+    std::unique_lock<std::mutex> localScopeLock(*lock);
     try
     {
       internalBatchExecution(size);
@@ -1327,6 +1332,7 @@ namespace mariadb
     catch (SQLException& initialSqlEx)
     {
       executeBatchEpilogue();
+      localScopeLock.unlock();
       throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }/* TODO: something with the finally was once here */
     //To please compilers etc

@@ -193,7 +193,7 @@ namespace mariadb
       return stmt->batchRes.wrap(nullptr, 0);
     }
 
-    std::lock_guard<std::mutex> localScopeLock(*protocol->getLock());
+    std::unique_lock<std::mutex> localScopeLock(*protocol->getLock());
     try {
       executeInternalBatch(size);
       stmt->getInternalResults()->commandEnd();
@@ -202,6 +202,7 @@ namespace mariadb
     }
     catch (SQLException& sqle) {
       stmt->executeBatchEpilogue();
+      localScopeLock.unlock();
       throw stmt->executeBatchExceptionEpilogue(sqle, size);
     }
     stmt->executeBatchEpilogue();
@@ -237,7 +238,7 @@ namespace mariadb
       return stmt->largeBatchRes.wrap(nullptr, 0);
     }
 
-    std::lock_guard<std::mutex> localScopeLock(*protocol->getLock());
+    std::unique_lock<std::mutex> localScopeLock(*protocol->getLock());
     try {
       executeInternalBatch(size);
       stmt->getInternalResults()->commandEnd();
@@ -245,6 +246,7 @@ namespace mariadb
     }
     catch (SQLException& sqle) {
       stmt->executeBatchEpilogue();
+      localScopeLock.unlock();
       throw stmt->executeBatchExceptionEpilogue(sqle, size);
     }
     stmt->executeBatchEpilogue();

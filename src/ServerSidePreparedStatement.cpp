@@ -237,7 +237,7 @@ namespace sql
 
   void ServerSidePreparedStatement::executeBatchInternal(int32_t queryParameterSize)
   {
-    std::lock_guard<std::mutex> localScopeLock(*protocol->getLock());
+    std::unique_lock<std::mutex> localScopeLock(*protocol->getLock());
 
     stmt->setExecutingFlag();
 
@@ -335,6 +335,7 @@ namespace sql
       stmt->getInternalResults()->commandEnd();
     }
     catch (SQLException& initialSqlEx) {
+      localScopeLock.unlock();
       throw stmt->executeBatchExceptionEpilogue(initialSqlEx, queryParameterSize);
     }
     stmt->executeBatchEpilogue();

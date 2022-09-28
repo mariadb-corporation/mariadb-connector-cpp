@@ -50,7 +50,7 @@ public:
     maxQuerySizeToLog(options->maxQuerySizeToLog), logQuery(nullptr)
   {}
 
-  ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster, bool doNotLock= false);
+  ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster);
   bool getAutocommit();
   bool noBackslashEscapes();
   void connect();

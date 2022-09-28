@@ -55,7 +55,7 @@ class Protocol
 {
 public:
   virtual ~Protocol() {}
-  virtual ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster, bool doNotLock= false)=0;
+  virtual ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster)=0;
   virtual bool getAutocommit()=0;
   virtual bool noBackslashEscapes()=0;
   virtual void connect()=0;

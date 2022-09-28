@@ -28,9 +28,9 @@ namespace mariadb
 {
   Shared::Logger ProtocolLoggingProxy::logger= LoggerFactory::getLogger(typeid(ProtocolLoggingProxy));
 
-  ServerPrepareResult* ProtocolLoggingProxy::prepare(const SQLString& sql, bool executeOnMaster, bool doNotLock)
+  ServerPrepareResult* ProtocolLoggingProxy::prepare(const SQLString& sql, bool executeOnMaster)
   {
-    return protocol->prepare(sql, executeOnMaster, doNotLock);
+    return protocol->prepare(sql, executeOnMaster);
   }
 
 
