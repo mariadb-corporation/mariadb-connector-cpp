@@ -17,12 +17,16 @@
 #   51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 # *************************************************************************************/
 
-cmake_minimum_required(VERSION 3.1)
-
+IF(APPLE)
+  # productbuild packaging stuff 
+  cmake_minimum_required(VERSION 3.23)
+ELSE()
+  cmake_minimum_required(VERSION 3.1)
+ENDIF()
 CMAKE_POLICY(SET CMP0048 NEW)
 
 PROJECT(mariadb_connector_cpp
-        VERSION 1.1.1
+        VERSION 1.1.2
 #        DESCRIPTION "MariaDB Connector/C++"
         LANGUAGES CXX C)
 
@@ -30,16 +34,14 @@ IF(CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
   MESSAGE(FATAL_ERROR "GCC version >=4.9 is required")
 ENDIF()
 
-SET(MACPP_VERSION_QUALITY "beta") #Empty also means GA
-SET(MACPP_VERSION "1.01.0001")
+SET(MACPP_VERSION_QUALITY "rc") #Empty also means GA
+SET(MACPP_VERSION "1.01.0002")
 SET(MARIADB_DEFAULT_PLUGINS_SUBDIR "plugin")
 
 SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 SET(LIBRARY_NAME "mariadbcpp")
-SET(CPACK_PACKAGE_NAME "${LIBRARY_NAME}")
-
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/Version.h.in
                ${CMAKE_SOURCE_DIR}/src/Version.h)
@@ -346,13 +348,7 @@ ELSE()
   MESSAGE(STATUS "Found math lib: ${LIB_MATH}")
   SET(PLATFORM_DEPENDENCIES ${LIB_MATH})
 ENDIF()
-MACRO(ADD_OPTION _name _text _default)
-  IF(NOT DEFINED ${_name})
-    OPTION(${OPT}${_name} "${_text}" "${_default}")
-  ELSE()
-    OPTION(${OPT}${_name} "${_text}" "${${_name}}")
-  ENDIF()
-ENDMACRO()
+
 # This has to be before C/C's cmake run, or it will build with /MD
 IF(WIN32)
   IF (MSVC)
@@ -377,31 +373,24 @@ IF(WIN32)
   ADD_DEFINITIONS("-DMARIADB_EXPORTED=__declspec(dllexport)")
   SET(INSTALL_PLUGINDIR "${MARIADB_DEFAULT_PLUGINS_SUBDIR}")
   SET(PLATFORM_DEPENDENCIES ${PLATFORM_DEPENDENCIES} version.lib)
-ELSE()
-  # This has been done before C/C cmake scripts are included
-  IF(NOT DEFINED INSTALL_LIB_SUFFIX)
-    SET(INSTALL_LIB_SUFFIX "lib" CACHE STRING "Directory, under which to install libraries, e.g. lib or lib64")
-    IF("${CMAKE_SIZEOF_VOID_P}" EQUAL "8" AND EXISTS "/usr/lib64/")
-      SET(INSTALL_LIB_SUFFIX "lib64")
-    ENDIF()
-  ENDIF()
-  MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIB_SUFFIX}")
-  MESSAGE(STATUS "Authentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
 ENDIF()
+
+### Build options, initial settings and platform defaults
+INCLUDE("${CMAKE_SOURCE_DIR}/cmake/options_defaults.cmake")
 
 ### Setting installation paths - should go before C/C subproject sets its own. We need to have control over those
 INCLUDE("${CMAKE_SOURCE_DIR}/cmake/install.cmake")
+MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIB_SUFFIX}")
+MESSAGE(STATUS "Authentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
 
 IF(WIN32)
-  ADD_OPTION(WITH_MSI "Build MSI installation package" ON)
-  ADD_OPTION(WITH_SIGNCODE "Digitally sign files" OFF)
   MESSAGE(STATUS "Generate MSI package: ${WITH_MSI}")
   MESSAGE(STATUS "Sign MSI package: ${WITH_SIGNCODE}")
 ENDIF()
 
 ADD_CUSTOM_TARGET(DEPENDENCIES_FOR_PACKAGE)
-IF("${WITH_SSL}" STREQUAL "")
-  MESSAGE(STATUS "Setting deafault value for WITH_SSL for libmariadb build to ON")
+IF(NOT WITH_SSL)
+  MESSAGE(STATUS "Setting default value for WITH_SSL for libmariadb build to ON")
   SET(CONC_WITH_SSL ON)
 ENDIF()
 ### Including C/C subproject
@@ -481,7 +470,17 @@ ELSE()
 #  MESSAGE(STATUS "Version script: ${CMAKE_SOURCE_DIR}/src/maconncpp.def")
   ADD_LIBRARY(${LIBRARY_NAME} SHARED ${MACPP_SOURCES})
   IF(APPLE)
-    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl")
+    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl"
+                                     INSTALL_RPATH_USE_LINK_PATH 0
+                                     BUILD_WITH_INSTALL_RPATH 1
+                                     XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES
+                                     XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--timestamp -f"
+                                     INSTALL_RPATH "${MAODBC_INSTALL_RPATH}")
+    IF(WITH_SIGNCODE)
+      SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Developer ID Application: ${DEVELOPER_ID}")
+    ELSE()
+      SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
+    ENDIF()
   ELSE()
 #    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_SOURCE_DIR}/src/maconncpp.def")
   ENDIF()
@@ -511,7 +510,7 @@ ELSE()
     #ADD_SUBDIRECTORY(osxinstall)
   ENDIF()
   INSTALL(TARGETS
-          ${LIBRARY_NAME} 
+          ${LIBRARY_NAME}
           LIBRARY DESTINATION ${INSTALL_LIB_SUFFIX}/mariadb
           COMPONENT CppLibs)
 
@@ -540,89 +539,10 @@ IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
 ENDIF()
 
 # Packaging
-SET(CPACK_PACKAGE_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
-SET(CPACK_COMPONENTS_ALL ClientPlugins  CppLibs ConCLib Documentation PublicAPI)
-SET(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
-SET(CPACK_PACKAGE_VENDOR "MariaDB Corporation Ab")
-SET(CPACK_PACKAGE_DESCRIPTION "MariaDB Connector/C++. C++ driver library for connecting to MariaDB and MySQL servers")
-IF(NOT SYSTEM_NAME)
-  STRING(TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_NAME)
-ENDIF()
-SET(QUALITY_SUFFIX "")
-IF (MACPP_VERSION_QUALITY AND NOT "${MACPP_VERSION_QUALITY}" STREQUAL "ga" AND NOT "${MACPP_VERSION_QUALITY}" STREQUAL "GA")
-  SET(QUALITY_SUFFIX "-${MACPP_VERSION_QUALITY}")
-ENDIF()
-IF(PACKAGE_PLATFORM_SUFFIX)
-  SET(CPACK_PACKAGE_FILE_NAME "mariadb-connector-cpp-${CPACK_PACKAGE_VERSION}${QUALITY_SUFFIX}-${PACKAGE_PLATFORM_SUFFIX}")
-ELSE()
-  SET(CPACK_PACKAGE_FILE_NAME "mariadb-connector-cpp-${CPACK_PACKAGE_VERSION}${QUALITY_SUFFIX}-${SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-ENDIF()
-MESSAGE(STATUS "Package Name: ${CPACK_PACKAGE_FILE_NAME}")
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/install_test/CMakeLists.txt.in
-               ${CMAKE_SOURCE_DIR}/install_test/CMakeLists.txt @ONLY)
-SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
-SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
-SET(CPACK_PACKAGE_API_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/")
-SET(CPACK_SOURCE_PACKAGE_FILE_NAME "mariadb-connector-cpp-${CPACK_PACKAGE_VERSION}${QUALITY_SUFFIX}-src")
-SET(CPACK_PACKAGE_CONTACT "info@mariadb.com")
-SET(CPACK_PACKAGE_VENDOR "MariaDB Corporation AB")
-SET(CPACK_SOURCE_IGNORE_FILES
-/test/
-/.git/
-.gitignore
-.gitmodules
-.gitattributes
-CMakeCache.txt
-cmake_dist.cmake
-CPackSourceConfig.cmake
-CPackConfig.cmake
-/.build/
-cmake_install.cmake
-CTestTestfile.cmake
-/CMakeFiles/
-/version_resources/
-.*vcxproj
-.*gz$
-.*zip$
-.*so$
-.*so.2
-.*so.3
-.*dll$
-.*a$
-.*pdb$
-.*sln$
-.*sdf$
-install_manifest_*txt
-Makefile$
-tests_config.h
-/autom4te.cache/
-/.travis/
-.travis.yml
-/libmariadb/
-/_CPack_Packages/
-)
-# Build source packages
-IF(GIT_BUILD_SRCPKG OR CONNCPP_GIT_BUILD_SRCPKG)
-  IF(WIN32)
-    EXECUTE_PROCESS(COMMAND git archive --format=zip --prefix=${CPACK_SOURCE_PACKAGE_FILE_NAME}/ --output=${CPACK_SOURCE_PACKAGE_FILE_NAME}.zip --worktree-attributes -v HEAD)
-  ELSE()
-    EXECUTE_PROCESS(COMMAND git archive ${GIT_BRANCH} --format=zip --prefix=${CPACK_SOURCE_PACKAGE_FILE_NAME}/ --output=${CPACK_SOURCE_PACKAGE_FILE_NAME}.zip -v HEAD)
-    EXECUTE_PROCESS(COMMAND git archive ${GIT_BRANCH} --format=tar --prefix=${CPACK_SOURCE_PACKAGE_FILE_NAME}/ --output=${CPACK_SOURCE_PACKAGE_FILE_NAME}.tar -v HEAD)
-    EXECUTE_PROCESS(COMMAND gzip -9 -f ${CPACK_SOURCE_PACKAGE_FILE_NAME}.tar)
-  ENDIF()
-ENDIF()
-IF(WIN32)
-  SET(DEFAULT_GENERATOR "ZIP")
-ELSE()
-  SET(DEFAULT_GENERATOR "TGZ")
-ENDIF()
-IF(NOT CPACK_GENERATOR)
-  SET(CPACK_GENERATOR "${DEFAULT_GENERATOR}")
-ENDIF()
-IF(NOT CPACK_SOURCE_GENERATOR)
-  SET(CPACK_SOURCE_GENERATOR "${DEFAULT_GENERATOR}")
-ENDIF()
+INCLUDE(cmake/packaging.cmake)
 MESSAGE(STATUS "License File: ${CPACK_RESOURCE_FILE_LICENSE}")
 MESSAGE(STATUS "ReadMe File: ${CPACK_PACKAGE_DESCRIPTION_FILE}")
 MESSAGE(STATUS "Source Package Filename: ${CPACK_SOURCE_PACKAGE_FILE_NAME}.${CPACK_SOURCE_GENERATOR}")
-INCLUDE(CPack)
+
+# install_test/CMakeLists.txt fuke configuration should go after packaging.cmake but before include(CPack). Since CPack included in packaging cmake,
+# that configuration has been moved there. For the same reason there also moved the message with package name

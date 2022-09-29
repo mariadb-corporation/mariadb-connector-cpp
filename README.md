@@ -65,18 +65,9 @@ std::unique_ptr<Connection> conn6(DriverManager::getConnection(failoverUrl));
 
 ```
 
-For URL syntax and options name you may find [here](https://mariadb.com/kb/en/about-mariadb-connector-j/)
-but not all options will have effect at the moment. In particular, not supported are(list may be incomplete):
-  - keyStore
-  - keyStorePassword
-  - trustStore
-  - trustStorePassword
-  - keyStoreType
-  - trustStoreType
-  - allowPublicKeyRetrieval
-  - tlsSocketType
+For URL syntax you may find [here](https://mariadb.com/kb/en/about-mariadb-connector-j/)
 
-Not complete list of supported options - mostly newly added or with new aliases:
+The list of supported options:
 
 |Option|Description|Type|Default|Aliases|
 |---:|---|:---:|:---:|---|
@@ -112,7 +103,10 @@ Not complete list of supported options - mostly newly added or with new aliases:
 | **`poolValidMinDelay`** |When the pool is requested for a connection, it will validate the connection state. "poolValidMinDelay" allows to disable this validation if the connection has been used recently, avoiding useless verifications in case of frequent reuse of connections. 0 means validation is done each time the connection is requested.|*int* |1000 ||
 | **`allowLocalInfile`** |Permits loading data from local file(on the client) with LOAD DATA LOCAL INFILE statement.|*bool* |false||
 | **`useResetConnection`** |Makes Connection::reset() method to issue conenction reset command at the server. This option existed from first version, but was not documented. Since 1.1.1 its default changed to true|*bool* |true||
-
+| **`allowLocalInfile`** |Permits loading data from local file(on the client) with LOAD DATA LOCAL INFILE statement.|*bool* |false||
+| **`useResetConnection`** |Makes Connection::reset() method to issue conenction reset command at the server.|*bool* |false||
+| **`rewriteBatchedStatements`** |For insert queries, rewrites batchedStatement to execute in a single executeQuery. Example: insert into ab (i) values (?) with first batch values = 1, second = 2 will be rewritten as INSERT INTO ab (i) VALUES (1), (2).  If query cannot be rewriten in "multi-values", rewrite will use multi-queries : INSERT INTO TABLE(col1) VALUES (?) ON DUPLICATE KEY UPDATE col2=? with values [1,2] and [2,3]\" will be rewritten as INSERT INTO TABLE(col1) VALUES (1) ON DUPLICATE KEY UPDATE col2=2;INSERT INTO TABLE(col1) VALUES (3) ON DUPLICATE KEY UPDATE col2=4 If active, the useServerPrepStmts option is set to false.|*bool* |false||
+| **`useBulkStmts`** |Use dedicated COM_STMT_BULK_EXECUTE protocol for executeBatch if possible. Can be significanlty faster. (works only with server MariaDB >= 10.2.7).|*bool* |false||
 
 
 Properties is map of strings, and is another way to pass optional parameters.

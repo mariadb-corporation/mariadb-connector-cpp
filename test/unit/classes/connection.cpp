@@ -42,6 +42,8 @@
 
 #include <memory>
 #include <list>
+#include <thread>
+#include <functional>
 
 namespace testsuite
 {
@@ -58,7 +60,7 @@ void connection::getClientInfo()
 
     //ret= con->getClientInfo();
     if (ret != "cppconn")
-      FAIL("Expecting 'cppconn' got '" + ret + "'.");
+      FAIL(("Expecting 'cppconn' got '" + ret + "'.").c_str());
 
   }
   catch (sql::SQLException &e)
@@ -187,7 +189,7 @@ void connection::getClientOption()
     }
 
     int serverVersion=getServerVersion(con);
-    if ( serverVersion >= 57003)
+    if ( serverVersion >= 507003)
     {
       try
       {
@@ -2135,6 +2137,9 @@ void connection::setTransactionIsolation()
   bool have_innodb=false;
   int cant_be_changed_error= -1;
   int server_dependent_insert= -1;
+  if (std::getenv("srv") != nullptr && strcmp(std::getenv("srv"), "mysql") == 0) {
+    SKIP("Skipping test for mysql since doesn't use tx_isolation");
+  }
 
   stmt.reset(con->createStatement());
   try
@@ -2363,7 +2368,7 @@ void connection::enableClearTextAuth()
 {
   int serverVersion=getServerVersion(con);
 
-  if ( ((serverVersion < 55027) || (serverVersion > 56000)) && (serverVersion < 56007))
+  if ( ((serverVersion < 505027) || (serverVersion > 506000)) && (serverVersion < 506007))
   {
     SKIP("The server does not support tested functionality(cleartext plugin enabling)");
   }
@@ -2747,7 +2752,7 @@ void connection::setAuthDir()
 {
   logMsg("connection::setAuthDir - MYSQL_PLUGIN_DIR");
   int serverVersion=getServerVersion(con);
-  if ( serverVersion >= 50703 )
+  if ( serverVersion >= 507003 )
   {
     SKIP("Server version >= 5.7.3 needed to run this test");
   }
@@ -2779,7 +2784,7 @@ void connection::setDefaultAuth()
 {
   logMsg("connection::setDefaultAuth - MYSQL_DEFAULT_AUTH");
   int serverVersion=getServerVersion(con);
-  if ( serverVersion < 50703 )
+  if ( serverVersion < 507003 )
   {
     SKIP("Server version >= 5.7.3 needed to run this test");
   }
@@ -3069,7 +3074,7 @@ void connection::tls_version()
 {
   logMsg("connection::tls_version - OPT_TLS_VERSION");
 
-  if (getServerVersion(con) < 104006)
+  if (getServerVersion(con) < 1004006)
   {
     SKIP("Server does not support tls_version variable");
   }
@@ -3157,7 +3162,7 @@ void connection::cached_sha2_auth()
   logMsg("connection::auth - MYSQL_OPT_GET_SERVER_PUBLIC_KEY");
 
   int serverVersion= getServerVersion(con);
-  if (serverVersion < 80000 || serverVersion > 100000)
+  if (serverVersion < 800000 || serverVersion > 1000000)
   {
     SKIP("Server doesn't support caching_sha2_password");
     return;
@@ -3185,8 +3190,8 @@ void connection::cached_sha2_auth()
     //need to close connection, otherwise will use fast auth!
     con->close();
     con.reset(driver->connect(opts));
-    FAIL("caching_sha2_password can't be used on unexcrypted connection");
-    throw "caching_sha2_password can't be used on unexcrypted connection";
+    FAIL("caching_sha2_password can't be used on unencrypted connection");
+    throw "caching_sha2_password can't be used on unencrypted connection";
   }
   catch(std::exception &e)
   {
@@ -3283,7 +3288,6 @@ void connection::useCharacterSet()
     // All is fine
   }
 }
-
 
 /* Using 1.0 API types with 1.1 driver. i.e. Properties was just a map, now it's defined in the driver class.
    getTables used std::list as parameter type.
@@ -3396,6 +3400,42 @@ void connection::concpp4_sequentialfailover()
   stmt.reset(con->createStatement());
   res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
   ASSERT(res->next());
+}
+
+
+void connection::concpp105_conn_concurrency()
+{
+  sql::Properties p{{"user", user}, {"password", passwd}};
+  std::vector<std::function<void()>> t1cbs;
+  std::vector<std::function<void()>> t2cbs;
+
+  /* There is no sense to test this against SkySQL and diatant servers in general */
+  if (std::getenv("SKYSQL") != nullptr || std::getenv("SKYSQL_HA") != nullptr) {
+    SKIP("It's not necessary to run this test against SkySQL");
+  }
+  for (int i = 0; i < 500; i++) {
+    t1cbs.push_back([&] {
+      std::unique_ptr<sql::Connection> conn(driver->connect(url, p));
+      //std::cout << "# t1:" << conn->getHostname().c_str() << std::endl;
+      });
+
+    t2cbs.push_back([&] {
+      std::unique_ptr<sql::Connection> conn(driver->connect(url, p));
+      //std::cout << "# t2:" << conn->getHostname().c_str() << std::endl;
+      });
+  }
+
+  std::thread t1([&] {
+    for (auto& cb : t1cbs)
+      cb();
+    });
+  std::thread t2([&] {
+    for (auto& cb : t2cbs)
+      cb();
+    });
+
+  t1.join();
+  t2.join();
 }
 
 } /* namespace connection */

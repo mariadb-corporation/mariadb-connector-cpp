@@ -54,7 +54,7 @@ private:
   static std::size_t parseIdentifier(const SQLString& part, std::size_t startPos, Identifier &identifier);
   static std::size_t parseIdentifierList(const SQLString& part, std::size_t startPos, std::vector<Identifier>& list);
   static std::size_t skipKeyword(const SQLString& part, std::size_t startPos, const SQLString& keyword);
-  static int32_t getImportedKeyAction(const SQLString& actionKey);
+  static int32_t getImportedKeyAction(const std::string& actionKey);
   static ResultSet* getImportedKeys(const SQLString& tableDef, const SQLString& tableName, const SQLString& catalog,
                                    MariaDbConnection* connection);
 

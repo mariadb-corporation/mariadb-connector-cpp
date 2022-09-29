@@ -237,7 +237,8 @@ namespace sql
 
   void ServerSidePreparedStatement::executeBatchInternal(int32_t queryParameterSize)
   {
-    std::lock_guard<std::mutex> localScopeLock(*protocol->getLock());
+    std::unique_lock<std::mutex> localScopeLock(*protocol->getLock());
+
     stmt->setExecutingFlag();
 
     try {
@@ -261,6 +262,7 @@ namespace sql
           nullptr,
           dummy));
 
+      serverPrepareResult->resetParameterTypeHeader();
 
       if ((protocol->getOptions()->useBatchMultiSend || protocol->getOptions()->useBulkStmts)
        && (protocol->executeBatchServer(
@@ -288,7 +290,6 @@ namespace sql
           std::vector<Shared::ParameterHolder>& parameterHolder= queryParameters[counter];
           try {
             protocol->stopIfInterrupted();
-            serverPrepareResult->resetParameterTypeHeader();
             protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults(), parameterHolder);
           }
           catch (SQLException& queryException)
@@ -312,7 +313,6 @@ namespace sql
         for (int32_t counter= 0; counter < queryParameterSize; counter++) {
           std::vector<Shared::ParameterHolder>& parameterHolder= queryParameters[counter];
           try {
-            serverPrepareResult->resetParameterTypeHeader();
             protocol->executePreparedQuery(
               mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults(), parameterHolder);
           }
@@ -335,6 +335,7 @@ namespace sql
       stmt->getInternalResults()->commandEnd();
     }
     catch (SQLException& initialSqlEx) {
+      localScopeLock.unlock();
       throw stmt->executeBatchExceptionEpilogue(initialSqlEx, queryParameterSize);
     }
     stmt->executeBatchEpilogue();

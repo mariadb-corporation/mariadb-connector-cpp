@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -91,6 +91,7 @@ public:
     TEST_CASE(concpp89_10to11upgrade);
     TEST_CASE(concpp94_loadLocalInfile);
     TEST_CASE(concpp4_sequentialfailover);
+    TEST_CASE(concpp105_conn_concurrency);
   }
 
   /**
@@ -285,6 +286,9 @@ public:
 
   /* Failover test */
   void concpp4_sequentialfailover();
+
+  /* Exception in the connector when attempting connections from multiple threads */
+  void concpp105_conn_concurrency();
 };
 
 

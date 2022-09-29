@@ -32,6 +32,7 @@
 #include "util/Utils.h"
 #include "ListImp.h"
 
+
 #define IMPORTED_KEYS_COLUMN_COUNT 14
 #define TYPE_INFO_COLUMN_COUNT 18
 #define CLIENT_INFO_COLUMN_COUNT 4
@@ -166,7 +167,7 @@ namespace sql
     return pos;
   }
 
-  int32_t MariaDbDatabaseMetaData::getImportedKeyAction(const SQLString& actionKey)
+  int32_t MariaDbDatabaseMetaData::getImportedKeyAction(const std::string& actionKey)
   {
     if (actionKey.empty()){
       return DatabaseMetaData::importedKeyRestrict;
@@ -193,7 +194,7 @@ namespace sql
     }
     else
     {
-      throw  SQLException("Illegal key action '"+actionKey +"' specified.");
+      throw  SQLException("Illegal key action '" + actionKey + "' specified.");
     }
   }
 
@@ -257,7 +258,7 @@ namespace sql
       int32_t onUpdateReferenceAction= DatabaseMetaData::importedKeyRestrict;
       int32_t onDeleteReferenceAction= DatabaseMetaData::importedKeyRestrict;
 
-      for (SQLString referenceAction : {"RESTRICT","CASCADE", "SET NULL","NO ACTION"}) {
+      for (const std::string& referenceAction : {"RESTRICT","CASCADE", "SET NULL","NO ACTION"}) {
         if (part.find("ON UPDATE " + referenceAction) != std::string::npos) {
           onUpdateReferenceAction= getImportedKeyAction(referenceAction);
         }

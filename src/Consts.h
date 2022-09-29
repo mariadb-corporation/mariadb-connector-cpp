@@ -214,12 +214,6 @@ namespace mariadb
   }
 } //---- namespace mariadb
 
-  //namespace Shared
-  //{
-  //}
-  //namespace Unique
-  //{
-  //}
 } //---- namespave sql
 
 #include "UrlParser.h"

@@ -63,6 +63,7 @@ namespace mariadb
     }
     rs->absolute(index);
   }
+
   bool CallableParameterMetaData::isSigned(uint32_t index)
   {
     setIndex(index);

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -239,13 +239,16 @@ void bugs::supportIssue_52319()
 
   logMsg("Test for MySQL support issue 52319");
 
-  stmt->execute("DROP TABLE IF EXISTS products");
   createSchemaObject("TABLE",
                      "products",
                      "(uiProductsIdx int(10) unsigned NOT NULL AUTO_INCREMENT, startTime timestamp NULL DEFAULT NULL, stopTime timestamp NULL DEFAULT NULL, uiProductsID int(10) DEFAULT NULL, uiParameterSetID int(10) unsigned DEFAULT NULL, PRIMARY KEY (uiProductsIdx))");
 
-  stmt->execute("DROP PROCEDURE IF EXISTS insertProduct");
-  stmt->execute("CREATE PROCEDURE insertProduct(IN dwStartTimeIN INT UNSIGNED, IN uiProductsIDIN INT UNSIGNED, IN dwParSetIDIN INT UNSIGNED) BEGIN DECLARE stStartTime TIMESTAMP; SET stStartTime = FROM_UNIXTIME(dwStartTimeIN); INSERT INTO `products` (startTime, uiProductsID, uiParameterSetID) VALUES (stStartTime, uiProductsIDIN, dwParSetIDIN); END");
+  createSchemaObject("PROCEDURE", "insertProduct", "(IN dwStartTimeIN INT UNSIGNED, IN uiProductsIDIN INT UNSIGNED, IN dwParSetIDIN INT UNSIGNED) "
+                "BEGIN"
+                " DECLARE stStartTime TIMESTAMP;"
+                " SET stStartTime= FROM_UNIXTIME(dwStartTimeIN);"
+                " INSERT INTO `products` (startTime, uiProductsID, uiParameterSetID) VALUES (stStartTime, uiProductsIDIN, dwParSetIDIN);"
+                "END");
 
   pstmt.reset(con->prepareStatement("CALL insertProduct(?, ?, ?)"));
   pstmt->setInt(1, uiStartTime);
@@ -283,7 +286,7 @@ void bugs::expired_pwd()
   //TODO: Enable it after fixing
   SKIP("Removed until fixed(testcase)");
 
-  if (getServerVersion(con) < 56006)
+  if (getServerVersion(con) < 506006)
   {
     SKIP("The server does not support tested functionality(expired password)");
   }
@@ -499,7 +502,7 @@ void bugs::bug71606()
 {
   logMsg("bugs::bug71606");
 
-  if (getServerVersion(con) < 56000)
+  if (getServerVersion(con) < 506000)
   {
     SKIP("The server does not support tested functionality(utf8mb4 charset)");
   }
@@ -549,7 +552,7 @@ void bugs::bug72700()
     res.reset(stmt->getResultSet());
     checkResultSetScrolling(res);
     ResultSetMetaData meta(res->getMetaData());
-    ASSERT_EQUALS((getServerVersion(con) > 103000) ? sql::Types::LONGVARCHAR : sql::Types::VARCHAR, meta->getColumnType(1));
+    ASSERT_EQUALS((getServerVersion(con) > 1003000) ? sql::Types::LONGVARCHAR : sql::Types::VARCHAR, meta->getColumnType(1));
     ASSERT_EQUALS("LONGTEXT", meta->getColumnTypeName(1));
   }
   catch (::sql::SQLException & /*e*/)
@@ -1102,7 +1105,7 @@ void bugs::bug21152054()
 
 void bugs::bug22292073()
 {
-  if ((getServerVersion(con) < 102000))
+  if ((getServerVersion(con) < 1002000))
   {
     SKIP("Server does not support tested functionality(JSON type)")
   }
@@ -1217,7 +1220,7 @@ void bugs::bug28204677()
 {
   logMsg("bugs::bug71606");
 
-  if (getServerVersion(con) < 57000)
+  if (getServerVersion(con) < 507000)
   {
     SKIP("The server does not support tested functionality(default utf8mb4 charset)");
   }

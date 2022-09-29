@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2021 MariaDB Corporation AB
+   Copyright (C) 2020, 2022 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -31,7 +31,6 @@
 #include "ColumnDefinitionCapi.h"
 #include "ExceptionFactory.h"
 #include "SqlStates.h"
-//#include "com/Packet.h"
 #include "com/RowProtocol.h"
 #include "protocol/capi/BinRowProtocolCapi.h"
 #include "protocol/capi/TextRowProtocolCapi.h"
@@ -78,7 +77,7 @@ namespace capi
     }
     else {
 
-      lock = protocol->getLock();
+      lock= protocol->getLock();
       protocol->setActiveStreamingResult(statement->getInternalResults());
 
       protocol->removeHasMoreResults();
@@ -1132,7 +1131,7 @@ namespace capi
 
   template <class T>T getObject(int32_t columnIndex, Classtemplate <class T>type) {
     if (type.empty() == true) {
-      throw SQLException("Class type cannot be NULL");
+      throw SQLException("Class type cannot be nullptr");
     }
     checkObjectRange(columnIndex);
     if (row->lastValueWasNull()) {

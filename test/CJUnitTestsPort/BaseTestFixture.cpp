@@ -52,14 +52,14 @@ TestProperties TestFixtureCommon::sqlProps;
 
 static const char * possiblePropertiesLocations[]={".."
                                                    , "test/CJUnitTestsPort"
-                                                   , NULL //last should be NULL
+                                                   , nullptr //last should be NULL
 };
 
 int TestFixtureCommon::propsLoaded=resources::LoadProperties("sql.properties",
                                                              sqlProps,
                                                              possiblePropertiesLocations);
 
-Driver * TestFixtureCommon::driver= NULL;
+Driver * TestFixtureCommon::driver= nullptr;
 
 TestFixtureCommon::TestFixtureCommon()
 {
@@ -134,7 +134,7 @@ void TestFixtureCommon::logErr(String message)
 
 String TestFixtureCommon::randomString()
 {
-  srand((unsigned) time(NULL));
+  srand((unsigned) time(nullptr));
 
   int length=(rand() % 32);
   String buf, ch("a");
@@ -226,10 +226,10 @@ BaseTestFixture::BaseTestFixture(const String & name)
   : super             (name),
     TestFixtureCommon (),
     myInstanceNumber  (0),
-    /*conn              (NULL),
-    pstmt(NULL),
-stmt(NULL),
-rs(NULL),
+    /*conn              (nullptr),
+    pstmt(nullptr),
+stmt(nullptr),
+rs(nullptr),
 dbClass           ( "sql::mysql::Driver"),*/
 hasSps(true)
 

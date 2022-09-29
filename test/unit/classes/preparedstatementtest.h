@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -49,6 +50,8 @@ class preparedstatement : public unit_fixture
 private:
   typedef unit_fixture super;
   bool createSP(std::string sp_code);
+  Connection sspsCon;
+  PreparedStatement ssps;
 
 public:
 
@@ -70,6 +73,9 @@ public:
     TEST_CASE(executeQuery);
     TEST_CASE(addBatch);
     TEST_CASE(concpp88);
+    TEST_CASE(bugConcpp96);
+    TEST_CASE(concpp99_batchRewrite);
+    TEST_CASE(concpp106_batchBulk);
   }
 
   /**
@@ -147,6 +153,19 @@ public:
   void addBatch();
   
   void concpp88();
+
+  void bugConcpp96();
+  /**
+   * checks batch execution using rewrite
+   */
+  void concpp99_batchRewrite();
+  /**
+   * checks batch execution using bulk execution with param arrays
+   */
+  void concpp106_batchBulk();
+
+  /* unit_fixture methods overriding */
+  void setUp();
 };
 
 REGISTER_FIXTURE(preparedstatement);

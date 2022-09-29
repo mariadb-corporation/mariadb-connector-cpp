@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -415,7 +415,7 @@ void connectionmetadata::getColumns()
 {
   logMsg("connectionmetadata::getColumn() - MySQL_ConnectionMetaData::getColumns");
 
-  if (getServerVersion(con) < 80000)
+  if (getServerVersion(con) < 800000)
   {
     SKIP("Due to changes on the VARBINARY, this test is disabled.");
     return;
@@ -535,7 +535,8 @@ void connectionmetadata::getColumns()
       }
       //res->isNull(13)
       /* Looks like 10.1 returns '' where we expect NULL, and there are also other problems with it. Thus, skipping this check altogether on 10.1*/
-      if (serverVersion < 101000 || serverVersion > 101999)
+      if ((std::getenv("srv") != nullptr && (strcmp(std::getenv("srv"), "mysql") == 0 && serverVersion < 800000))
+         || serverVersion > 1001999)
       {
         ASSERT_EQUALS(it->column_def, res->getString(13));
       }
@@ -688,7 +689,7 @@ void connectionmetadata::getDatabaseVersions()
     ASSERT_LT(100, dbmeta->getDatabaseMinorVersion());
     ASSERT_LT(100, dbmeta->getDatabasePatchVersion());
 
-    ASSERT_EQUALS("MariaDB", dbmeta->getDatabaseProductName());
+    //ASSERT_EQUALS("MariaDB", dbmeta->getDatabaseProductName());
 
     prodversion.str("");
     prodversion << dbmeta->getDatabaseMajorVersion() << "." << dbmeta->getDatabaseMinorVersion();
@@ -1193,7 +1194,7 @@ void connectionmetadata::getIndexInfo()
     ASSERT(!res->next());
 
     //Was wrong on previous versions....
-    if (getServerVersion(con) >= 80000)
+    if (getServerVersion(con) >= 800000)
     {
       stmt->execute("DROP TABLE IF EXISTS test");
       stmt->execute("CREATE TABLE test(col1 INT NOT NULL, col2 INT NOT NULL, col3 INT NOT NULL, col4 INT, col5 INT, PRIMARY KEY(col1))");
@@ -1204,7 +1205,7 @@ void connectionmetadata::getIndexInfo()
       ASSERT_EQUALS(false, res->getBoolean("NON_UNIQUE"));
       ASSERT(res->next());
       ASSERT_EQUALS("idx_col4_col5", res->getString("INDEX_NAME"));
-      ASSERT_EQUALS("A", res->getString("ASC_OR_DESC")); // Server does not support desc
+      ASSERT_EQUALS((("MariaDB" != dbmeta->getDatabaseProductName() && getServerVersion(con) > 800000) || getServerVersion(con) > 1008000) ? "D" : "A", res->getString("ASC_OR_DESC"));
       ASSERT_EQUALS("col5", res->getString("COLUMN_NAME"));
       ASSERT_EQUALS(true, res->getBoolean("NON_UNIQUE"));
       ASSERT(res->next());

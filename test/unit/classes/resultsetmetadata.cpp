@@ -186,7 +186,11 @@ void resultsetmetadata::doGetColumnDisplaySize(bool is_ps)
   ASSERT_EQUALS((unsigned int) 1, meta->getColumnDisplaySize(2));
   ASSERT_EQUALS((unsigned int) 5, meta->getColumnDisplaySize(3));
   ASSERT_EQUALS((unsigned int) 1, meta->getColumnDisplaySize(4));
-  ASSERT_EQUALS((unsigned int) 3, meta->getColumnDisplaySize(5));
+
+  DatabaseMetaData  dbmeta(con->getMetaData());
+  if( "MariaDB" == dbmeta->getDatabaseProductName() ) {
+    ASSERT_EQUALS((unsigned int) 3, meta->getColumnDisplaySize(5));
+  }
 
   try
   {

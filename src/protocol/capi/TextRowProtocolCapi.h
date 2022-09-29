@@ -38,7 +38,6 @@ class TextRowProtocolCapi  : public RowProtocol {
   std::unique_ptr<MYSQL_RES, decltype(&mysql_free_result)> capiResults;
   MYSQL_ROW  rowData;
   unsigned long* lengthArr;
-  sql::bytes txtFieldBuf;
 
 public:
   TextRowProtocolCapi(int32_t maxFieldSize, Shared::Options options, MYSQL_RES* capiTextResults);

@@ -67,6 +67,7 @@ public:
     TEST_CASE(queryTimeout);
     TEST_CASE(addBatch);
     TEST_CASE(concpp88);
+    TEST_CASE(concpp99_batchRewrite);
   }
 
   /**
@@ -118,6 +119,9 @@ public:
    * checks if RS' get closed by various events with parent statemeng object
    */
   void concpp88();
+
+  /* addBatch with rewrite option */
+  void concpp99_batchRewrite();
 };
 
 REGISTER_FIXTURE(statement);

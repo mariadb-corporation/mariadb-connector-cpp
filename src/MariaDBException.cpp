@@ -258,7 +258,7 @@ namespace sql
   {}
 
   ParseException::ParseException(const ParseException& other) :
-    SQLException(other)
+    SQLException(other), position(other.position)
   {}
 
   ParseException::ParseException(const SQLString& str, std::size_t pos) :
@@ -271,7 +271,7 @@ namespace sql
   {}
 
   MaxAllowedPacketException::MaxAllowedPacketException(const MaxAllowedPacketException& other) :
-    std::runtime_error(other)
+    std::runtime_error(other), mustReconnect(other.mustReconnect)
   {}
 
   MaxAllowedPacketException::MaxAllowedPacketException(const char* message, bool _mustReconnect)
@@ -281,7 +281,7 @@ namespace sql
   }
 
   /////////////////////////////
-  MariaDBExceptionThrower::MariaDBExceptionThrower(MariaDBExceptionThrower&& moved) : exceptionThrower(std::move(moved.exceptionThrower))
+  MariaDBExceptionThrower::MariaDBExceptionThrower(MariaDBExceptionThrower&& moved) noexcept : exceptionThrower(std::move(moved.exceptionThrower))
   {}
 
   void MariaDBExceptionThrower::assign(MariaDBExceptionThrower other) {

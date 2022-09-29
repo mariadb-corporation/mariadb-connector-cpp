@@ -500,7 +500,7 @@ namespace mariadb
     setParameter(
       parameterIndex,
       new DateParameter(
-        date, cal == nullptr ? cal.getTimeZone() : TimeZone.getDefault(), getProtocol()->getOptions()));
+        date, cal == nullptr ? cal->getTimeZone() : TimeZone::getDefault(), getProtocol()->getOptions());
   }
 
  /**
@@ -644,9 +644,9 @@ namespace mariadb
    *     statement; if a database access error occurs or this method is called on a closed <code>
    *     PreparedStatement</code>
    */
-  void BasePrepareStatement::setNull(int32_t parameterIndex,int32_t sqlType)
+  void BasePrepareStatement::setNull(int32_t parameterIndex, int32_t sqlType)
   {
-    setParameter(parameterIndex,new NullParameter());
+    setParameter(parameterIndex, new NullParameter());
   }
 
   /**

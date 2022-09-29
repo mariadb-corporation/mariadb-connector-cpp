@@ -158,7 +158,7 @@ ciString;
 
 #endif
 
-typedef std::vector<String>   TestList;
+typedef std::vector<String>       TestList;
 typedef TestList::iterator        Iterator;
 typedef TestList::const_iterator  ConstIterator;
 

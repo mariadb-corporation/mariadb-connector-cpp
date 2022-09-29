@@ -1608,7 +1608,7 @@ namespace mariadb
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
     SQLPermission sqlPermission= new SQLPermission("callAbort");
     SecurityManager securityManager= System.getSecurityManager();
-    if (securityManager !=NULL) {
+    if (securityManager != nullptr) {
       securityManager.checkPermission(sqlPermission);
     }
 #endif
@@ -1692,7 +1692,7 @@ namespace mariadb
     */
   void MariaDbConnection::reset()
   {
-    bool useComReset =
+    bool useComReset=
       options->useResetConnection
       && ((protocol->isServerMariaDb() && protocol->versionGreaterOrEqual(10, 2, 4))
        || (!protocol->isServerMariaDb() && protocol->versionGreaterOrEqual(5, 7, 3)));

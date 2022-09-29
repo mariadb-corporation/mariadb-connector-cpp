@@ -69,7 +69,6 @@ namespace capi
      length= lengthArr[newIndex];
      fieldBuf.wrap(rowData[index], length);
    }
-   
    else {
      // TODO: we need some good assert above instead of this
      throw std::runtime_error("Internal error in the TextRow class - data buffers are NULLs");
