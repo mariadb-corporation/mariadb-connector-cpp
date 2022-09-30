@@ -1441,7 +1441,8 @@ void resultset::concpp72_rs_streaming()
       ASSERT_EQUALS(id[i], res->getInt(1));
       ASSERT_EQUALS(strVal[i], res->getString(2));
       col3 = res->getString(3);
-      ASSERT_EQUALS(binVal[i].length(), col3.length());
+      /* Some how this is ambiquous without casting on macos */
+      ASSERT_EQUALS(static_cast<uint64_t>(binVal[i].length()), static_cast<uint64_t>(col3.length()));
       ASSERT(std::memcmp(col3.c_str(), binVal[i].c_str(), col3.length()) == 0);
       ASSERT(res->isNull(4));
     }
@@ -1457,7 +1458,7 @@ void resultset::concpp72_rs_streaming()
       ASSERT_EQUALS(static_cast<int64_t>(id[i]), rs2->getLong(1));
       ASSERT_EQUALS(strVal[i], rs2->getString(2));
       col3 = rs2->getString(3);
-      ASSERT_EQUALS(binVal[i].length(), col3.length());
+      ASSERT_EQUALS(static_cast<uint64_t>(binVal[i].length()), static_cast<uint64_t>(col3.length()));
       ASSERT(std::memcmp(col3.c_str(), binVal[i].c_str(), col3.length()) == 0);
       ASSERT(rs2->isNull(4));
       ASSERT_EQUALS(id[i], rs2->getInt(5));
