@@ -1,0 +1,13 @@
+<html>
+<head>
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+</style>
+<title>Welcome to MariaDB Connector/C++ Installer</title>
+</head>
+<body>
+<p>This is going to install MariaDB Connector/C++ 64bit version @CPACK_PACKAGE_VERSION@ - a database driver that implements JDBC-based API.</p>
+</body>
+</html>

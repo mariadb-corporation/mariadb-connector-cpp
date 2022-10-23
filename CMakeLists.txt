@@ -380,7 +380,7 @@ INCLUDE("${CMAKE_SOURCE_DIR}/cmake/options_defaults.cmake")
 
 ### Setting installation paths - should go before C/C subproject sets its own. We need to have control over those
 INCLUDE("${CMAKE_SOURCE_DIR}/cmake/install.cmake")
-MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIB_SUFFIX}")
+MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIBDIR}")
 MESSAGE(STATUS "Authentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
 
 IF(WIN32)
@@ -402,10 +402,9 @@ IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
   ENDIF()
   MESSAGE(STATUS "Running C/C cmake scripts")
   INCLUDE(${CMAKE_SOURCE_DIR}/cmake/connector_c.cmake)
-  INSTALL(FILES
-          $<TARGET_FILE:libmariadb>
-          DESTINATION ${INSTALL_LIBDIR}
- 	        COMPONENT ConCLib)
+  INSTALL(FILES $<TARGET_FILE:libmariadb>
+          DESTINATION "${INSTALL_LIBDIR}"
+ 	  COMPONENT ConnectorC)
   MESSAGE(STATUS "Configuring to install libmariadb to ${INSTALL_LIBDIR}")
 
   SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password)
@@ -419,10 +418,9 @@ IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
     IF(NOT PLUGINS_DYNAMIC OR "${PLUGIN_${CC_PLUGIN}_TYPE}" STREQUAL "MARIADB_CLIENT_PLUGIN_AUTH")
       MESSAGE(STATUS "Configuring to install ${CC_PLUGIN} to ${INSTALL_PLUGINDIR}")
       ADD_DEPENDENCIES(DEPENDENCIES_FOR_PACKAGE ${CC_PLUGIN})
-      INSTALL(FILES
-              $<TARGET_FILE:${CC_PLUGIN}>
+      INSTALL(FILES $<TARGET_FILE:${CC_PLUGIN}>
               DESTINATION ${INSTALL_PLUGINDIR}
- 	            COMPONENT ConCPlugins)
+              COMPONENT Plugins)
     ENDIF()
   ENDFOREACH()
 #  ADD_DEPENDENCIES(libmariadb DEPENDENCIES_FOR_PACKAGE)
@@ -509,10 +507,9 @@ ELSE()
     #MESSAGE(STATUS "Configuring to generate PKG package")
     #ADD_SUBDIRECTORY(osxinstall)
   ENDIF()
-  INSTALL(TARGETS
-          ${LIBRARY_NAME}
-          LIBRARY DESTINATION ${INSTALL_LIB_SUFFIX}/mariadb
-          COMPONENT CppLibs)
+  INSTALL(TARGETS ${LIBRARY_NAME}
+          DESTINATION ${INSTALL_LIBDIR}
+          COMPONENT ConnectorCpp)
 
   MESSAGE(STATUS "Documentation installed to ${INSTALL_DOCDIR}")
   MESSAGE(STATUS "License file installed to ${INSTALL_LICENSEDIR}")
@@ -520,12 +517,12 @@ ELSE()
   INSTALL(FILES
           ${CMAKE_SOURCE_DIR}/README
           DESTINATION
-          ${INSTALL_DOCDIR}
+          "${INSTALL_DOCDIR}"
           COMPONENT Documentation)
   INSTALL(FILES
           ${CMAKE_SOURCE_DIR}/COPYING
           DESTINATION
-          ${INSTALL_LICENSEDIR}
+          "${INSTALL_LICENSEDIR}"
           COMPONENT Documentation)
   ADD_SUBDIRECTORY(include)
 ENDIF()
