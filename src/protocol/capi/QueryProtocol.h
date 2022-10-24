@@ -63,14 +63,14 @@ namespace capi
   public:
     void reset();
     void executeQuery(const SQLString& sql);
-    void executeQuery(bool mustExecuteOnMaster, Shared::Results& results, const SQLString& sql);
-    void executeQuery(bool mustExecuteOnMaster, Shared::Results& results, const SQLString& sql, const Charset* charset);
+    void executeQuery(bool mustExecuteOnMaster, Results* results, const SQLString& sql);
+    void executeQuery(bool mustExecuteOnMaster, Results* results, const SQLString& sql, const Charset* charset);
 
     void executeQuery(
       bool mustExecuteOnMaster,
-      Shared::Results& results,
+      Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<Shared::ParameterHolder>& parameters);
+      std::vector<Unique::ParameterHolder>& parameters);
 
     /*void assemblePreparedQueryForExec(
       SQLString& out,
@@ -80,48 +80,48 @@ namespace capi
 
     void executeQuery(
       bool mustExecuteOnMaster,
-      Shared::Results& results,
+      Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<Shared::ParameterHolder>& parameters,
+      std::vector<Unique::ParameterHolder>& parameters,
       int32_t queryTimeout);
 
     bool executeBatchClient(
       bool mustExecuteOnMaster,
-      Shared::Results& results,
+      Results* results,
       ClientPrepareResult* prepareResult,
-      std::vector<std::vector<Shared::ParameterHolder>>& parametersList,
+      std::vector<std::vector<Unique::ParameterHolder>>& parametersList,
       bool hasLongData);
 
   private:
 
     bool executeBulkBatch(
-      Shared::Results& results, const SQLString& sql,
+      Results* results, const SQLString& sql,
       ServerPrepareResult* serverPrepareResult,
-      std::vector<std::vector<Shared::ParameterHolder>>& parametersList);
+      std::vector<std::vector<Unique::ParameterHolder>>& parametersList);
     void initializeBatchReader();
 
     void executeBatchMulti(
-      Shared::Results& results,
+      Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<std::vector<Shared::ParameterHolder>>& parametersList);
+      std::vector<std::vector<Unique::ParameterHolder>>& parametersList);
 
   public:
-    void executeBatchStmt(bool mustExecuteOnMaster, Shared::Results& results, const std::vector<SQLString>& queries);
+    void executeBatchStmt(bool mustExecuteOnMaster, Results* results, const std::vector<SQLString>& queries);
 
   private:
-    void executeBatch(Shared::Results& results, const std::vector<SQLString>& queries);
+    void executeBatch(Results* results, const std::vector<SQLString>& queries);
     /* Does actual prepare job w/out locking, i.e. is good to use if lock has been already acquired */
     ServerPrepareResult* prepareInternal(const SQLString& sql, bool executeOnMaster);
   public:
     ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster);
 
   private:
-    void executeBatchAggregateSemiColon(Shared::Results& results, const std::vector<SQLString>& queries, std::size_t totalLenEstimation= 0);
+    void executeBatchAggregateSemiColon(Results* results, const std::vector<SQLString>& queries, std::size_t totalLenEstimation= 0);
 
     void executeBatchRewrite(
-      Shared::Results& results,
+      Results* results,
       ClientPrepareResult* prepareResult,
-      std::vector<std::vector<Shared::ParameterHolder>>& parameterList,
+      std::vector<std::vector<Unique::ParameterHolder>>& parameterList,
       bool rewriteValues);
 
   public:
@@ -129,15 +129,15 @@ namespace capi
     bool executeBatchServer(
       bool mustExecuteOnMaster,
       ServerPrepareResult* serverPrepareResult,
-      Shared::Results& results, const SQLString& sql,
-      std::vector<std::vector<Shared::ParameterHolder>>& parametersList,
+      Results* results, const SQLString& sql,
+      std::vector<std::vector<Unique::ParameterHolder>>& parametersList,
       bool hasLongData);
 
     void executePreparedQuery(
       bool mustExecuteOnMaster,
       ServerPrepareResult* serverPrepareResult,
-      Shared::Results& results,
-      std::vector<Shared::ParameterHolder>& parameters);
+      Results* results,
+      std::vector<Unique::ParameterHolder>& parameters);
     void rollback();
     bool forceReleasePrepareStatement(capi::MYSQL_STMT* statementId);
     void forceReleaseWaitingPrepareStatement();

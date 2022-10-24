@@ -190,7 +190,7 @@ namespace mariadb
         stmt->setParameter(index +1, new NullParameter()); //TODO: check if memory not leaked. looks very much like that
       }
     }
-    stmt->validParameters();
+    stmt->validateParamset(stmt->getPrepareResult()->getParamCount());
   }
 
   const sql::Ints& MariaDbProcedureStatement::executeBatch()

@@ -206,6 +206,7 @@ namespace mariadb
     typedef std::unique_ptr<sql::mariadb::ServerSidePreparedStatement> ServerSidePreparedStatement;
     typedef std::unique_ptr<sql::mariadb::ClientSidePreparedStatement> ClientSidePreparedStatement;
     typedef std::unique_ptr<sql::mariadb::ServerPrepareResult> ServerPrepareResult;
+    typedef std::unique_ptr<sql::mariadb::ParameterHolder> ParameterHolder;
   }
 
   namespace Weak

@@ -134,7 +134,7 @@ namespace mariadb
     * @param serverPrepareResult prepare results
     * @return exception with query information
     */
-  SQLException LogQueryTool::exceptionWithQuery(std::vector<Shared::ParameterHolder>& parameters, SQLException& sqlEx, PrepareResult* serverPrepareResult)
+  SQLException LogQueryTool::exceptionWithQuery(std::vector<Unique::ParameterHolder>& parameters, SQLException& sqlEx, PrepareResult* serverPrepareResult)
   {
     if (sqlEx.getCause() && dynamic_cast<SocketTimeoutException*>(sqlEx.getCause()) != nullptr) {
       return SQLException("Connection* timed out", CONNECTION_EXCEPTION.getSqlState(), 0, &sqlEx);
@@ -186,7 +186,7 @@ namespace mariadb
     * @param parameters query parameters
     * @return exception message with query
     */
-  SQLString LogQueryTool::exWithQuery(const SQLString& message, PrepareResult* serverPrepareResult, std::vector<Shared::ParameterHolder>& parameters)
+  SQLString LogQueryTool::exWithQuery(const SQLString& message, PrepareResult* serverPrepareResult, std::vector<Unique::ParameterHolder>& parameters)
   {
     if (options->dumpQueriesOnException) {
       SQLString sql(serverPrepareResult->getSql());

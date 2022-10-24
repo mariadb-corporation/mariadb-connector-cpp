@@ -22,6 +22,7 @@
 
 #include "logger/LoggerFactory.h"
 #include "Results.h"
+#include "parameters/ParameterHolder.h"
 #include "util/LogQueryTool.h"
 #include "util/ClientPrepareResult.h"
 #include "util/ServerPrepareResult.h"
@@ -107,18 +108,17 @@ namespace capi
    */
   void QueryProtocol::executeQuery(const SQLString& sql)
   {
-    Shared::Results res(new Results());
-    executeQuery(isMasterConnection(), res, sql);
+    Results res;
+    executeQuery(isMasterConnection(), &res, sql);
   }
 
-  void QueryProtocol::executeQuery(bool mustExecuteOnMaster, Shared::Results& results, const SQLString& sql)
+  void QueryProtocol::executeQuery(bool mustExecuteOnMaster, Results* results, const SQLString& sql)
   {
-
     cmdPrologue();
     try {
 
       realQuery(sql);
-      getResult(results.get());
+      getResult(results);
 
     }catch (SQLException& sqlException){
       if (sqlException.getSQLState().compare("70100") == 0 && 1927 == sqlException.getErrorCode()){
@@ -130,13 +130,13 @@ namespace capi
     }
   }
 
-  void QueryProtocol::executeQuery( bool mustExecuteOnMaster, Shared::Results& results,const SQLString& sql, const Charset* charset)
+  void QueryProtocol::executeQuery( bool mustExecuteOnMaster, Results* results,const SQLString& sql, const Charset* charset)
   {
     cmdPrologue();
     try {
 
       realQuery(sql);
-      getResult(results.get());
+      getResult(results);
 
     }catch (SQLException& sqlException){
       throw logQuery->exceptionWithQuery(sql, sqlException, explicitClosed);
@@ -156,9 +156,9 @@ namespace capi
    */
   void QueryProtocol::executeQuery(
       bool mustExecuteOnMaster,
-      Shared::Results& results,
+      Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<Shared::ParameterHolder>& parameters)
+      std::vector<Unique::ParameterHolder>& parameters)
   {
     executeQuery(mustExecuteOnMaster, results, clientPrepareResult, parameters, -1);
   }
@@ -171,16 +171,36 @@ namespace capi
     return sql;
   }
 
+  std::size_t estimatePreparedQuerySize(ClientPrepareResult* clientPrepareResult, const std::vector<SQLString> &queryPart,
+      std::vector<Unique::ParameterHolder>& parameters)
+  {
+    std::size_t estimate= queryPart.front().length() + 1/* for \0 */, offset = 0;
+    if (clientPrepareResult->isRewriteType()) {
+      estimate+= queryPart[1].length() + queryPart[clientPrepareResult->getParamCount() + 2].length();
+      offset= 1;
+    }
+    for (uint32_t i = 0; i < clientPrepareResult->getParamCount(); ++i) {
+      estimate+= (parameters)[i]->getApproximateTextProtocolLength();
+      estimate+= queryPart[i + 1 + offset].length();
+    }
+    estimate= ((estimate + 7) / 8) * 8;
+    return estimate;
+  }
+
   void assemblePreparedQueryForExec(
     SQLString& out,
     ClientPrepareResult* clientPrepareResult,
-    std::vector<Shared::ParameterHolder>& parameters,
+    std::vector<Unique::ParameterHolder>& parameters,
     int32_t queryTimeout)
   {
     addQueryTimeout(out, queryTimeout);
 
     const std::vector<SQLString> &queryPart= clientPrepareResult->getQueryParts();
+    std::size_t estimate= estimatePreparedQuerySize(clientPrepareResult, queryPart, parameters);
 
+    if (estimate > StringImp::get(out).capacity() - out.length()) {
+      out.reserve(out.length() + estimate);
+    }
     if (clientPrepareResult->isRewriteType()) {
 
       out.append(queryPart[0]);
@@ -214,18 +234,17 @@ namespace capi
    */
   void QueryProtocol::executeQuery(
       bool mustExecuteOnMaster,
-      Shared::Results& results,
+      Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<Shared::ParameterHolder>& parameters,
+      std::vector<Unique::ParameterHolder>& parameters,
       int32_t queryTimeout)
   {
     cmdPrologue();
 
     SQLString sql;
-    addQueryTimeout(sql, queryTimeout);
 
     try {
-
+      addQueryTimeout(sql, queryTimeout);
       if (clientPrepareResult->getParamCount() == 0
         && !clientPrepareResult->isQueryMultiValuesRewritable()) {
         if (clientPrepareResult->getQueryParts().size() == 1) {
@@ -245,7 +264,7 @@ namespace capi
         assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, -1);
         realQuery(sql);
       }
-      getResult(results.get());
+      getResult(results);
 
     }
     catch (SQLException& queryException) {
@@ -268,9 +287,9 @@ namespace capi
    */
   bool QueryProtocol::executeBatchClient(
       bool mustExecuteOnMaster,
-      Shared::Results& results,
+      Results* results,
       ClientPrepareResult* prepareResult,
-      std::vector<std::vector<Shared::ParameterHolder>>& parametersList,
+      std::vector<std::vector<Unique::ParameterHolder>>& parametersList,
       bool hasLongData)
 
   {
@@ -335,9 +354,9 @@ namespace capi
    * @throws SQLException exception
    */
   bool QueryProtocol::executeBulkBatch(
-      Shared::Results& results, const SQLString& origSql,
+      Results* results, const SQLString& origSql,
       ServerPrepareResult* serverPrepareResult,
-      std::vector<std::vector<Shared::ParameterHolder>>& parametersList)
+      std::vector<std::vector<Unique::ParameterHolder>>& parametersList)
   {
     const int16_t NullType= ColumnType::_NULL.getType();
     // **************************************************************************************
@@ -353,7 +372,7 @@ namespace capi
 
     SQLString sql(origSql);
     // ensure that type doesn't change
-    std::vector<Shared::ParameterHolder> initParameters= parametersList.front();
+    std::vector<Unique::ParameterHolder> &initParameters= parametersList.front();
     std::size_t parameterCount= initParameters.size();
     std::vector<int16_t> types;
     types.reserve(parameterCount);
@@ -413,7 +432,6 @@ namespace capi
       unsigned int bulkArrSize= static_cast<unsigned int>(parametersList.size());
 
       capi::mysql_stmt_attr_set(statementId, STMT_ATTR_ARRAY_SIZE, (const void*)&bulkArrSize);
-      auto firstParameters= parametersList.front();
 
       tmpServerPrepareResult->bindParameters(parametersList, types.data());
       // **************************************************************************************
@@ -422,7 +440,7 @@ namespace capi
       capi::mysql_stmt_execute(statementId);
 
       try {
-        getResult(results.get(), tmpServerPrepareResult);
+        getResult(results, tmpServerPrepareResult);
       }catch (SQLException& sqle){
         if (sqle.getSQLState().compare("HY000") == 0 && sqle.getErrorCode()==1295){
           // query contain commands that cannot be handled by BULK protocol
@@ -445,11 +463,11 @@ namespace capi
       results->setRewritten(true);
       
       if (!serverPrepareResult && tmpServerPrepareResult){
-      releasePrepareStatement(tmpServerPrepareResult);
+        releasePrepareStatement(tmpServerPrepareResult);
       }
       return true;
 
-    }catch (std::runtime_error& e){
+    }catch (std::runtime_error& e) {
       if (!serverPrepareResult && tmpServerPrepareResult) {
         releasePrepareStatement(tmpServerPrepareResult);
       }
@@ -475,12 +493,10 @@ namespace capi
    * @throws SQLException exception
    */
   void QueryProtocol::executeBatchMulti(
-      Shared::Results& results,
+      Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<std::vector<Shared::ParameterHolder>>& parametersList)
-
+      std::vector<std::vector<Unique::ParameterHolder>>& parametersList)
   {
-
     cmdPrologue();
     initializeBatchReader();
 
@@ -492,7 +508,7 @@ namespace capi
 
       assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, -1);
       realQuery(sql);
-      getResult(results.get());
+      getResult(results);
     }
   }
 
@@ -504,7 +520,7 @@ namespace capi
    * @param queries queries
    * @throws SQLException if any exception occur
    */
-  void QueryProtocol::executeBatchStmt(bool mustExecuteOnMaster, Shared::Results& results, const std::vector<SQLString>& queries)
+  void QueryProtocol::executeBatchStmt(bool mustExecuteOnMaster, Results* results, const std::vector<SQLString>& queries)
   {
     cmdPrologue();
     if (this->options->rewriteBatchedStatements){
@@ -543,7 +559,7 @@ namespace capi
    * @param queries list of queries
    * @throws SQLException exception
    */
-  void QueryProtocol::executeBatch(Shared::Results& results, const std::vector<SQLString>& queries)
+  void QueryProtocol::executeBatch(Results* results, const std::vector<SQLString>& queries)
   {
     if (!options->useBatchMultiSend){
 
@@ -552,7 +568,7 @@ namespace capi
       for (auto& sql : queries) {
         try {
           realQuery(sql);
-          getResult(results.get());
+          getResult(results);
 
         }catch (SQLException& sqlException){
           if (!exception){
@@ -583,7 +599,7 @@ namespace capi
     for (auto& query : queries)
     {
       realQuery(query);
-      getResult(results.get());
+      getResult(results);
     }
   }
 
@@ -666,7 +682,6 @@ namespace capi
       sql.append(';').append(queries[currentIndex]);
       ++currentIndex;
     }
-
     return currentIndex;
   }
 
@@ -679,9 +694,8 @@ namespace capi
    * @param queries list of queries
    * @throws SQLException exception
    */
-  void QueryProtocol::executeBatchAggregateSemiColon(Shared::Results& results, const std::vector<SQLString>& queries, std::size_t totalLenEstimation)
+  void QueryProtocol::executeBatchAggregateSemiColon(Results* results, const std::vector<SQLString>& queries, std::size_t totalLenEstimation)
   {
-
     SQLString firstSql;
     size_t currentIndex= 0;
     size_t totalQueries= queries.size();
@@ -696,32 +710,33 @@ namespace capi
         if (totalLenEstimation == 0) {
           totalLenEstimation= firstSql.length()*queries.size() + queries.size() - 1;
         }
-        sql.reserve(((std::min<int64_t>(MAX_PACKET_LENGTH, totalLenEstimation) + 7) / 8) * 8);
+        sql.reserve(((std::min<int64_t>(MAX_PACKET_LENGTH, static_cast<int64_t>(totalLenEstimation)) + 7) / 8) * 8);
         currentIndex= assembleBatchAggregateSemiColonQuery(sql, firstSql, queries, currentIndex);
         realQuery(sql);
         sql.clear(); // clear is not supposed to release memory
 
-        getResult(results.get(), nullptr, true);
+        getResult(results, nullptr, true);
 
-      }catch (SQLException& sqlException){
+      }
+      catch (SQLException& sqlException) {
         if (exception.getMessage().empty()){
           exception= logQuery->exceptionWithQuery(firstSql, sqlException, explicitClosed);
           if (!options->continueBatchOnError){
             throw exception;
           }
         }
-      }catch (std::runtime_error& e){
+      }
+      catch (std::runtime_error& e) {
         throw handleIoException(e);
       }
       stopIfInterrupted();
 
-    }while (currentIndex < totalQueries);
+    } while (currentIndex < totalQueries);
 
     if (!exception.getMessage().empty()) {
       throw exception;
     }
   }
-
 
   /**
   * Client side PreparedStatement.executeBatch values rewritten (concatenate value params according
@@ -740,15 +755,14 @@ namespace capi
     const std::vector<SQLString> &queryParts,
     std::size_t currentIndex,
     std::size_t paramCount,
-    std::vector<std::vector<Shared::ParameterHolder>> &parameterList,
+    std::vector<std::vector<Unique::ParameterHolder>>& parameterList,
     bool rewriteValues)
-
   {
-    std::size_t index= currentIndex;
-    std::vector<Shared::ParameterHolder> &parameters= parameterList[index++];
+    std::size_t index= currentIndex, capacity= StringImp::get(pos).capacity(), estimatedLength;
+    std::vector<Unique::ParameterHolder> &parameters= parameterList[index++];
 
     const SQLString &firstPart= queryParts[1];
-    const SQLString &secondPart= queryParts[0];
+    const SQLString &secondPart= queryParts.front();
 
     if (!rewriteValues) {
 
@@ -762,17 +776,20 @@ namespace capi
 
       for (size_t i= 0; i < paramCount; i++) {
         parameters[i]->writeTo(pos);
-        pos.append(queryParts[i +2]);
+        pos.append(queryParts[i + 2]);
       }
-      pos.append(queryParts[paramCount +2]);
+      pos.append(queryParts[paramCount + 2]);
 
+      estimatedLength= pos.length() * (parameterList.size() - currentIndex);
+      if (estimatedLength > capacity) {
+        pos.reserve(((std::min<int64_t>(MAX_PACKET_LENGTH, static_cast<int64_t>(estimatedLength)) + 7) / 8) * 8);
+      }
 
-      while (index <parameterList.size()) {
-        parameters= parameterList[index];
-
-
+      while (index < parameterList.size()) {
+        auto& parameters= parameterList[index];
         int64_t parameterLength= 0;
         bool knownParameterSize= true;
+
         for (auto& parameter : parameters) {
           int64_t paramSize= parameter->getApproximateTextProtocolLength();
           if (paramSize == -1) {
@@ -784,7 +801,6 @@ namespace capi
 
         if (knownParameterSize) {
 
-
           if (checkRemainingSize(pos.length() + staticLength + parameterLength)) {
             pos.append(';');
             pos.append(firstPart);
@@ -793,7 +809,7 @@ namespace capi
               parameters[i]->writeTo(pos);
               pos.append(queryParts[i + 2]);
             }
-            pos.append(queryParts[paramCount +2]);
+            pos.append(queryParts[paramCount + 2]);
             ++index;
           }
           else {
@@ -828,9 +844,8 @@ namespace capi
         intermediatePartLength +=queryParts[i +2].length();
       }
 
-      while (index <parameterList.size()) {
-        parameters= parameterList[index];
-
+      while (index < parameterList.size()) {
+        auto& parameters= parameterList[index];
 
         int64_t parameterLength= 0;
         bool knownParameterSize= true;
@@ -844,7 +859,6 @@ namespace capi
         }
 
         if (knownParameterSize) {
-
 
           if (checkRemainingSize(pos.length() + 1 + parameterLength + intermediatePartLength + lastPartLength)) {
             pos.append(',');
@@ -888,9 +902,9 @@ namespace capi
    * @throws SQLException exception
    */
   void QueryProtocol::executeBatchRewrite(
-      Shared::Results& results,
+      Results* results,
       ClientPrepareResult* prepareResult,
-      std::vector<std::vector<Shared::ParameterHolder>>& parameterList,
+      std::vector<std::vector<Unique::ParameterHolder>>& parameterList,
       bool rewriteValues)
   {
     cmdPrologue();
@@ -905,7 +919,7 @@ namespace capi
         sql.clear();
         currentIndex= rewriteQuery(sql, prepareResult->getQueryParts(), currentIndex, prepareResult->getParamCount(), parameterList, rewriteValues);
         realQuery(sql);
-        getResult(results.get(), nullptr, !rewriteValues);
+        getResult(results, nullptr, !rewriteValues);
 
 #ifdef THE_TIME_HAS_COME
         if (Thread.currentThread().isInterrupted()){
@@ -939,8 +953,8 @@ namespace capi
   bool QueryProtocol::executeBatchServer(
       bool mustExecuteOnMaster,
       ServerPrepareResult* serverPrepareResult,
-      Shared::Results& results, const SQLString& sql,
-      std::vector<std::vector<Shared::ParameterHolder>>& parametersList,
+      Results* results, const SQLString& sql,
+      std::vector<std::vector<Unique::ParameterHolder>>& parametersList,
       bool hasLongData)
   {
     bool needToRelease= false;
@@ -984,8 +998,8 @@ namespace capi
   void QueryProtocol::executePreparedQuery(
       bool mustExecuteOnMaster,
       ServerPrepareResult* serverPrepareResult,
-      Shared::Results& results,
-      std::vector<Shared::ParameterHolder>& parameters)
+      Results* results,
+      std::vector<Unique::ParameterHolder>& parameters)
   {
 
     cmdPrologue();
@@ -1014,7 +1028,7 @@ namespace capi
         throwStmtError(serverPrepareResult->getStatementId());
       }
       /*CURSOR_TYPE_NO_CURSOR);*/
-      getResult(results.get(), serverPrepareResult);
+      getResult(results, serverPrepareResult);
 
     }catch (SQLException& qex){
       throw logQuery->exceptionWithQuery(parameters, qex, serverPrepareResult);
@@ -1051,7 +1065,6 @@ namespace capi
    */
   bool QueryProtocol::forceReleasePrepareStatement(MYSQL_STMT* statementId)
   {
-
     if (lock->try_lock()) {
       checkClose();
 
@@ -1089,7 +1102,6 @@ namespace capi
 
   bool QueryProtocol::ping()
   {
-
     cmdPrologue();
     std::lock_guard<std::mutex> localScopeLock(*lock);
     try {
@@ -1109,16 +1121,15 @@ namespace capi
     int32_t initialTimeout= -1;
     try {
       initialTimeout= this->socketTimeout;
-      if (initialTimeout == 0){
+      if (initialTimeout == 0) {
         this->changeSocketSoTimeout(timeout);
       }
-      if (isMasterConnection() && galeraAllowedStates->size() != 0){
+      if (isMasterConnection() && galeraAllowedStates->size() != 0) {
 
-
-        Shared::Results results(new Results());
-        executeQuery(true, results, CHECK_GALERA_STATE_QUERY);
-        results->commandEnd();
-        ResultSet* rs= results->getResultSet();
+        Results results;
+        executeQuery(true, &results, CHECK_GALERA_STATE_QUERY);
+        results.commandEnd();
+        ResultSet* rs= results.getResultSet();
 
         if (rs && rs->next())
         {
@@ -1161,7 +1172,6 @@ namespace capi
 
   SQLString QueryProtocol::getCatalog()
   {
-
     if ((serverCapabilities & MariaDbServerCapabilities::CLIENT_SESSION_TRACK)!=0){
 
       return database;
@@ -1170,10 +1180,10 @@ namespace capi
     cmdPrologue();
     std::lock_guard<std::mutex> localScopeLock(*lock);
 
-    Shared::Results results(new Results());
-    executeQuery(isMasterConnection(), results, "select database()");
-    results->commandEnd();
-    ResultSet* rs= results->getResultSet();
+    Results results;
+    executeQuery(isMasterConnection(), &results, "select database()");
+    results.commandEnd();
+    ResultSet* rs= results.getResultSet();
     if (rs->next()){
       this->database= rs->getString(1);
       return database;
@@ -1494,10 +1504,10 @@ namespace capi
     if (autoIncrementIncrement == 0) {
       std::lock_guard<std::mutex> localScopeLock(*lock);
       try {
-        Shared::Results results(new Results());
-        executeQuery(true, results,"select @@auto_increment_increment");
-        results->commandEnd();
-        ResultSet* rs= results->getResultSet();
+        Results results;
+        executeQuery(true, &results, "select @@auto_increment_increment");
+        results.commandEnd();
+        ResultSet* rs= results.getResultSet();
         rs->next();
         autoIncrementIncrement= rs->getInt(1);
       }catch (SQLException& e){

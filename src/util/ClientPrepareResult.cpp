@@ -66,7 +66,7 @@ namespace mariadb
 
     const char* query= queryString.c_str();
     std::size_t queryLength= queryString.length();
-    for (std::size_t i= 0; i <queryLength; i++) {
+    for (std::size_t i= 0; i < queryLength; i++) {
 
       char car= query[i];
       if (state == LexState::Escape
@@ -168,7 +168,7 @@ namespace mariadb
         break;
       default:
 
-        if (state == LexState::Normal &&endingSemicolon &&((int8_t)car >=40)) {
+        if (state == LexState::Normal && endingSemicolon && ((int8_t)car >= 40)) {
           endingSemicolon= false;
           multipleQueriesPrepare= true;
         }

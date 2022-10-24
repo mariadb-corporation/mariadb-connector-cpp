@@ -126,6 +126,7 @@ namespace sql
   void ServerSidePreparedStatement::setMetaFromResult()
   {
     parameterCount= static_cast<int32_t>(serverPrepareResult->getParameters().size());
+    initParamset(parameterCount);
     metadata.reset(new MariaDbResultSetMetaData(serverPrepareResult->getColumns(), protocol->getUrlParser().getOptions(), false));
     // TODO: these transfer of the vector can be optimized for sure
     parameterMetaData.reset(new MariaDbParameterMetaData(serverPrepareResult->getParameters()));
@@ -135,14 +136,7 @@ namespace sql
   {
     // TODO: does it really has to be map? can be, actually
     if (parameterIndex > 0 && parameterIndex < serverPrepareResult->getParamCount() + 1) {
-      auto it= currentParameterHolder.find(parameterIndex - 1);
-      if (it == currentParameterHolder.end()) {
-        Shared::ParameterHolder paramHolder(holder);
-        currentParameterHolder.emplace(parameterIndex - 1, paramHolder);
-      }
-      else {
-        it->second.reset(holder);
-      }
+      parameters[parameterIndex - 1].reset(holder);
     }
     else {
       SQLString error("Could not set parameter at position ");
@@ -173,28 +167,6 @@ namespace sql
     }
   }
 
-  void ServerSidePreparedStatement::addBatch()
-  {
-    validParameters();
-
-    queryParameters.push_back({});
-
-    std::vector<Shared::ParameterHolder>& newSet= queryParameters.back();
-    newSet.reserve(currentParameterHolder.size());
-
-    std::for_each(currentParameterHolder.cbegin(), currentParameterHolder.cend(), /*std::back_inserter(queryParameters),*/
-      [&newSet](const std::map<int32_t, Shared::ParameterHolder>::value_type& mapEntry) {newSet.push_back(mapEntry.second); });
-  }
-
-  void ServerSidePreparedStatement::addBatch(const SQLString& sql)
-  {
-    BasePrepareStatement::addBatch(sql);
-  }
-
-  void ServerSidePreparedStatement::clearBatch()
-  {
-    queryParameters.clear();
-  }
 
   ParameterMetaData* ServerSidePreparedStatement::getParameterMetaData()
   {
@@ -215,7 +187,7 @@ namespace sql
     stmt->checkClose();
     sql::Ints& res= stmt->getBatchResArr();
     res.wrap(nullptr, 0);
-    int32_t queryParameterSize= static_cast<int32_t>(queryParameters.size());
+    int32_t queryParameterSize= static_cast<int32_t>(parameterList.size());
     if (queryParameterSize == 0) {
       return res;
     }
@@ -227,7 +199,7 @@ namespace sql
   {
     stmt->checkClose();
     sql::Longs& res = stmt->getLargeBatchResArr();
-    int32_t queryParameterSize= static_cast<int32_t>(queryParameters.size());
+    int32_t queryParameterSize= static_cast<int32_t>(parameterList.size());
     if (queryParameterSize == 0) {
       return res;
     }
@@ -247,7 +219,7 @@ namespace sql
       if (stmt->getQueryTimeout() !=0) {
         stmt->setTimerTask(true);
       }
-      std::vector<Shared::ParameterHolder> dummy;
+      std::vector<Unique::ParameterHolder> dummy;
       stmt->setInternalResults(
         new Results(
           stmt.get(),
@@ -268,9 +240,9 @@ namespace sql
        && (protocol->executeBatchServer(
                                           mustExecuteOnMaster,
                                           serverPrepareResult.get(),
-                                          stmt->getInternalResults(),
+                                          stmt->getInternalResults().get(),
                                           sql,
-                                          queryParameters,
+                                          parameterList,
                                           hasLongData)))
       {
         if (!metadata) {
@@ -287,10 +259,10 @@ namespace sql
         for (int32_t counter= 0; counter < queryParameterSize; counter++)
         {
           // TODO: verify if paramsets are guaranteed to exist at this point for all queryParameterSize
-          std::vector<Shared::ParameterHolder>& parameterHolder= queryParameters[counter];
+          std::vector<Unique::ParameterHolder>& parameterHolder= parameterList[counter];
           try {
             protocol->stopIfInterrupted();
-            protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults(), parameterHolder);
+            protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults().get(), parameterHolder);
           }
           catch (SQLException& queryException)
           {
@@ -311,10 +283,10 @@ namespace sql
       }
       else {
         for (int32_t counter= 0; counter < queryParameterSize; counter++) {
-          std::vector<Shared::ParameterHolder>& parameterHolder= queryParameters[counter];
+          std::vector<Unique::ParameterHolder>& parameterHolder= parameterList[counter];
           try {
             protocol->executePreparedQuery(
-              mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults(), parameterHolder);
+              mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults().get(), parameterHolder);
           }
           catch (SQLException& queryException) {
             if (protocol->getOptions()->continueBatchOnError) {
@@ -353,30 +325,9 @@ namespace sql
   }
 
 
-  void ServerSidePreparedStatement::clearParameters()
-  {
-    currentParameterHolder.clear();
-    //currentParameterHolder.assign(serverPrepareResult->getParamCount(), Shared::ParameterHolder());
-    hasLongData= false;
-  }
-
-
-  void ServerSidePreparedStatement::validParameters()
-  {
-    for (int32_t i= 0; i < parameterCount; i++)
-    {
-      if (currentParameterHolder.find(i) == currentParameterHolder.end())
-      {
-        logger->error("Parameter at position " + std::to_string(i + 1) + " is not set" );
-        exceptionFactory->raiseStatementError(connection, stmt.get())->create("Parameter at position "+ std::to_string(i+1) + " is not set", "07004").Throw();
-      }
-    }
-  }
-
-
   bool ServerSidePreparedStatement::executeInternal(int32_t fetchSize)
   {
-    validParameters();
+    validateParamset(serverPrepareResult->getParamCount());
 
     std::unique_lock<std::mutex> localScopeLock(*protocol->getLock());
     try {
@@ -384,10 +335,6 @@ namespace sql
       if (stmt->getQueryTimeout() !=0) {
         stmt->setTimerTask(false);
       }
-
-      std::vector<Shared::ParameterHolder> parameterHolders;
-      std::for_each(currentParameterHolder.cbegin(), currentParameterHolder.cend(), /*std::back_inserter(queryParameters),*/
-        [&parameterHolders](const std::map<int32_t, Shared::ParameterHolder>::value_type& mapEntry) {parameterHolders.push_back(mapEntry.second); });
 
       stmt->setInternalResults(
         new Results(
@@ -401,11 +348,11 @@ namespace sql
           autoGeneratedKeys,
           protocol->getAutoIncrementIncrement(),
           sql,
-          parameterHolders));
+          parameters));
 
       serverPrepareResult->resetParameterTypeHeader();
       protocol->executePreparedQuery(
-        mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults(), parameterHolders);
+        mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults().get(), parameters);
 
       stmt->getInternalResults()->commandEnd();
       stmt->executeEpilogue();
@@ -465,19 +412,18 @@ namespace sql
     */
   SQLString ServerSidePreparedStatement::toString()
   {
-    SQLString sb("sql : '"+serverPrepareResult->getSql()+"'");
+    SQLString sb("sql : '" + serverPrepareResult->getSql() + "'");
     if (parameterCount > 0) {
       sb.append(", parameters : [");
       for (int32_t i= 0; i < parameterCount; i++)
       {
-        const auto cit= currentParameterHolder.find(i);
-        if (cit == currentParameterHolder.cend() || cit->second == nullptr) {
+        if (!parameters[i]) {
           sb.append("NULL");
         }
         else {
-          sb.append(cit->second->toString());
+          sb.append(parameters[i]->toString());
         }
-        if (i !=parameterCount -1) {
+        if (i != parameterCount - 1) {
           sb.append(",");
         }
       }

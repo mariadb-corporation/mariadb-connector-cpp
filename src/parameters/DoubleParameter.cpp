@@ -46,7 +46,7 @@ namespace mariadb
     pos.write(std::to_string(value).c_str());
   }
 
-  int64_t DoubleParameter::getApproximateTextProtocolLength()
+  int64_t DoubleParameter::getApproximateTextProtocolLength() const
   {
     return std::to_string(value).length();
   }

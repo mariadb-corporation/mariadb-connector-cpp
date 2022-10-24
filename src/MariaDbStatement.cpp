@@ -297,7 +297,7 @@ namespace mariadb
     std::unique_lock<std::mutex> localScopeLock(*lock);
 
     try {
-      std::vector<Shared::ParameterHolder> dummy;
+      std::vector<Unique::ParameterHolder> dummy;
       executeQueryPrologue(false);
       results.reset(
         new Results(
@@ -313,7 +313,7 @@ namespace mariadb
             sql,
             dummy));
 
-      protocol->executeQuery(protocol->isMasterConnection(), results, getTimeoutSql(Utils::nativeSql(sql, protocol.get())));
+      protocol->executeQuery(protocol->isMasterConnection(), results.get(), getTimeoutSql(Utils::nativeSql(sql, protocol.get())));
 
       results->commandEnd();
       executeEpilogue();
@@ -437,7 +437,7 @@ namespace mariadb
   {
     std::lock_guard<std::mutex> localScopeLock(*lock);
     try {
-      std::vector<Shared::ParameterHolder> dummy;
+      std::vector<Unique::ParameterHolder> dummy;
       executeQueryPrologue(false);
       results.reset(new Results(
             this,
@@ -454,7 +454,7 @@ namespace mariadb
 
       protocol->executeQuery(
           protocol->isMasterConnection(),
-          results,
+          results.get(),
           getTimeoutSql(Utils::nativeSql(sql, protocol.get())),
           &charset);
 
@@ -1357,7 +1357,7 @@ namespace mariadb
    */
   void MariaDbStatement::internalBatchExecution(std::size_t size)
   {
-    std::vector<Shared::ParameterHolder> dummy;
+    std::vector<Unique::ParameterHolder> dummy;
     executeQueryPrologue(true);
     results.reset(new Results(
           this,
@@ -1371,7 +1371,7 @@ namespace mariadb
           protocol->getAutoIncrementIncrement(),
           nullptr,
           dummy));
-    protocol->executeBatchStmt(protocol->isMasterConnection(),results,batchQueries);
+    protocol->executeBatchStmt(protocol->isMasterConnection(), results.get(), batchQueries);
     results->commandEnd();
   }
 

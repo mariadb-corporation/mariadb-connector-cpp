@@ -397,7 +397,12 @@ void unit_fixture::tearDown()
     }
     else {
       // resetting the connection for future use
-      con->reset();
+      try {
+        con->reset();
+      }
+      catch (sql::SQLException&) {
+        con.reset();
+      }
     }
   }
 }

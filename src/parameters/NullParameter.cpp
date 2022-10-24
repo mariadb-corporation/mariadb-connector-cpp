@@ -49,7 +49,7 @@ namespace mariadb
     os.write(_NULL);
   }
 
-  int64_t NullParameter::getApproximateTextProtocolLength()
+  int64_t NullParameter::getApproximateTextProtocolLength() const
   {
     return 4;
   }

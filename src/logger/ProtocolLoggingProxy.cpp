@@ -269,61 +269,61 @@ namespace mariadb
 	}
 
 
-  void ProtocolLoggingProxy::executeQuery(bool mustExecuteOnMaster, Shared::Results& results, const SQLString& sql)
+  void ProtocolLoggingProxy::executeQuery(bool mustExecuteOnMaster, Results* results, const SQLString& sql)
   {
     /* Add here logging if needed */
     protocol->executeQuery(mustExecuteOnMaster, results, sql);
   }
 
 
-  void ProtocolLoggingProxy::executeQuery(bool mustExecuteOnMaster, Shared::Results& results, const SQLString& sql, const Charset* charset)
+  void ProtocolLoggingProxy::executeQuery(bool mustExecuteOnMaster, Results* results, const SQLString& sql, const Charset* charset)
   {
     /* Add here logging if needed */
     protocol->executeQuery(mustExecuteOnMaster, results, sql, charset);
   }
 
 
-  void ProtocolLoggingProxy::executeQuery(bool mustExecuteOnMaster, Shared::Results& results, ClientPrepareResult* clientPrepareResult,
-    std::vector<Shared::ParameterHolder>& parameters)
+  void ProtocolLoggingProxy::executeQuery(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* clientPrepareResult,
+    std::vector<Unique::ParameterHolder>& parameters)
   {
     /* Add here logging if needed */
     protocol->executeQuery(mustExecuteOnMaster, results, clientPrepareResult, parameters);
   }
 
 
-  void ProtocolLoggingProxy::executeQuery(bool mustExecuteOnMaster, Shared::Results& results, ClientPrepareResult* clientPrepareResult,
-    std::vector<Shared::ParameterHolder>& parameters, int32_t timeout)
+  void ProtocolLoggingProxy::executeQuery(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* clientPrepareResult,
+    std::vector<Unique::ParameterHolder>& parameters, int32_t timeout)
   {
     /* Add here logging if needed */
     protocol->executeQuery(mustExecuteOnMaster, results, clientPrepareResult, parameters, timeout);
   }
 
 
-  bool ProtocolLoggingProxy::executeBatchClient(bool mustExecuteOnMaster, Shared::Results& results, ClientPrepareResult* prepareResult,
-    std::vector<std::vector<Shared::ParameterHolder>>& parametersList, bool hasLongData)
+  bool ProtocolLoggingProxy::executeBatchClient(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* prepareResult,
+    std::vector<std::vector<Unique::ParameterHolder>>& parametersList, bool hasLongData)
 	{
 		/* Add here logging if needed */
     return protocol->executeBatchClient(mustExecuteOnMaster, results, prepareResult, parametersList, hasLongData);
 	}
 
 
-  void ProtocolLoggingProxy::executeBatchStmt(bool mustExecuteOnMaster, Shared::Results& results, const std::vector<SQLString>& queries)
+  void ProtocolLoggingProxy::executeBatchStmt(bool mustExecuteOnMaster, Results* results, const std::vector<SQLString>& queries)
   {
     /* Add here logging if needed */
     protocol->executeBatchStmt(mustExecuteOnMaster, results, queries);
   }
 
 
-  void ProtocolLoggingProxy::executePreparedQuery(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Shared::Results& results,
-    std::vector<Shared::ParameterHolder>& parameters)
+  void ProtocolLoggingProxy::executePreparedQuery(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Results* results,
+    std::vector<Unique::ParameterHolder>& parameters)
   {
     /* Add here logging if needed */
     protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult, results, parameters);
   }
 
 
-  bool ProtocolLoggingProxy::executeBatchServer(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Shared::Results& results,
-    const SQLString& sql, std::vector<std::vector<Shared::ParameterHolder>>& parameterList, bool hasLongData)
+  bool ProtocolLoggingProxy::executeBatchServer(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Results* results,
+    const SQLString& sql, std::vector<std::vector<Unique::ParameterHolder>>& parameterList, bool hasLongData)
   {
     /* Add here logging if needed */
     return protocol->executeBatchServer(mustExecuteOnMaster, serverPrepareResult, results, sql, parameterList, hasLongData);

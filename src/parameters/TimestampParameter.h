@@ -41,7 +41,7 @@ public:
   TimestampParameter( const Timestamp& ts, const TimeZone* timeZone, bool fractionalSeconds);
   void writeTo(SQLString& str);
   void writeTo(PacketOutputStream& str);
-  int64_t getApproximateTextProtocolLength();
+  int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
   const ColumnType& getColumnType() const;
@@ -50,6 +50,7 @@ public:
   bool isLongData();
   void* getValuePtr();
   unsigned long getValueBinLen() const { return static_cast<unsigned long>(ts.length()); }
+  ParameterHolder* clone() { return new TimestampParameter(*this); }
   };
 }
 }

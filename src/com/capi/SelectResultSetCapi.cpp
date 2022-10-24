@@ -877,14 +877,7 @@ namespace capi
   SQLString SelectResultSetCapi::getString(int32_t columnIndex) const
   {
     checkObjectRange(columnIndex);
-    std::unique_ptr<SQLString> res= row->getInternalString(columnsInformation[columnIndex -1].get());
-
-    if (res) {
-      return std::move(*res);
-    }
-    else {
-      return emptyStr;
-    }
+    return std::move(row->getInternalString(columnsInformation[columnIndex - 1].get()));
   }
 
   /** {inheritDoc}. */

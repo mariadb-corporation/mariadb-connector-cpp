@@ -109,7 +109,7 @@ namespace mariadb
     *
     * @return approximated data length.
     */
-  int64_t ReaderParameter::getApproximateTextProtocolLength()
+  int64_t ReaderParameter::getApproximateTextProtocolLength() const
   {
     return -1;
   }

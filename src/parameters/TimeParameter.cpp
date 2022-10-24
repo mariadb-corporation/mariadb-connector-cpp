@@ -76,7 +76,7 @@ namespace mariadb
     pos.write(QUOTE);
   }
 
-  int64_t TimeParameter::getApproximateTextProtocolLength()
+  int64_t TimeParameter::getApproximateTextProtocolLength() const
   {
     return 15;
   }

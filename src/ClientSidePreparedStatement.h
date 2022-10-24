@@ -27,7 +27,7 @@
 #include "MariaDbStatement.h"
 
 #include "parameters/ParameterHolder.h"
-
+#include "util/ClientPrepareResult.h"
 namespace sql
 {
 namespace mariadb
@@ -36,10 +36,8 @@ namespace mariadb
 class ClientSidePreparedStatement : public BasePrepareStatement
 {
   static const Shared::Logger logger ; /*LoggerFactory.getLogger(typeid(ClientSidePreparedStatement))*/
-  std::vector<std::vector<Shared::ParameterHolder>> parameterList;
   Shared::ClientPrepareResult prepareResult;
   SQLString sqlQuery;
-  std::vector<Shared::ParameterHolder> parameters;
   Shared::ResultSetMetaData resultSetMetaData; /*NULL*/
   Shared::ParameterMetaData parameterMetaData ; /*NULL*/
 
@@ -59,15 +57,12 @@ public:
 
   ClientSidePreparedStatement* clone(MariaDbConnection* connection);
 
-  /* Need to define overloaded methods*/
-  void addBatch(const SQLString& sql) { BasePrepareStatement::addBatch(sql); }
-
 protected:
   bool executeInternal(int32_t fetchSize);
+  PrepareResult* getPrepareResult() { return dynamic_cast<PrepareResult*>(prepareResult.get()); }
+  Logger* getLogger() const { return logger.get(); }
 
 public:
-  void addBatch();
-  void clearBatch();
   sql::Ints& executeBatch();
   sql::Ints& getServerUpdateCounts();
   sql::Longs& executeLargeBatch();
@@ -84,13 +79,9 @@ private:
   void loadParametersData()
     ;
 public:
-  void clearParameters();
   void close();
   uint32_t getParameterCount();
   SQLString toString();
-
-protected:
-  ClientPrepareResult* getPrepareResult();
 };
 }
 }

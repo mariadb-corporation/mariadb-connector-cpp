@@ -40,13 +40,14 @@ public:
   ReaderParameter(std::istream& reader,bool noBackslashEscapes);
   void writeTo(SQLString& str);
   void  writeTo(PacketOutputStream& str);
-  int64_t getApproximateTextProtocolLength();
+  int64_t getApproximateTextProtocolLength() const;
   uint32_t writeBinary(sql::bytes& buffer);
   void writeBinary(PacketOutputStream& pos);
   const ColumnType& getColumnType() const;
   SQLString toString();
   bool isNullData() const;
   bool isLongData();
+  //ParameterHolder* clone() { return new ReaderParameter(*this); }
   };
 }
 }

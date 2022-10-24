@@ -124,87 +124,81 @@ namespace capi
   }
 
 
-  SQLString* BinRowProtocolCapi::convertToString(const char* asChar, ColumnDefinition* columnInfo)
+  SQLString BinRowProtocolCapi::convertToString(const char* asChar, ColumnDefinition* columnInfo)
   {
     if ((lastValueNull & BIT_LAST_FIELD_NULL)!=0) {
-      return nullptr;
+      return emptyStr;
     }
 
     switch (columnInfo->getColumnType().getType()) {
     case MYSQL_TYPE_STRING:
       if (getLengthMaxFieldSize() > 0) {
-        return new SQLString(asChar, getLengthMaxFieldSize());
+        return SQLString(asChar, getLengthMaxFieldSize());
         /*buf, pos, std::min(getMaxFieldSize()*3, length), UTF_8)
         .substr(0, std::min(getMaxFieldSize(), length));*/
       }
-      return new SQLString(asChar);//  UTF_8);
+      return SQLString(asChar);//  UTF_8);
 
     case MYSQL_TYPE_BIT:
-      return new SQLString(std::to_string(parseBit()));
+      return SQLString(std::to_string(parseBit()));
     case MYSQL_TYPE_TINY:
-      return new SQLString(zeroFillingIfNeeded(std::to_string(getInternalTinyInt(columnInfo)), columnInfo));
+      return SQLString(zeroFillingIfNeeded(std::to_string(getInternalTinyInt(columnInfo)), columnInfo));
     case MYSQL_TYPE_SHORT:
-      return new SQLString(zeroFillingIfNeeded(std::to_string(getInternalSmallInt(columnInfo)), columnInfo));
+      return SQLString(zeroFillingIfNeeded(std::to_string(getInternalSmallInt(columnInfo)), columnInfo));
     case MYSQL_TYPE_LONG:
     case MYSQL_TYPE_INT24:
-      return new SQLString(zeroFillingIfNeeded(std::to_string(getInternalMediumInt(columnInfo)), columnInfo));
+      return SQLString(zeroFillingIfNeeded(std::to_string(getInternalMediumInt(columnInfo)), columnInfo));
     case MYSQL_TYPE_LONGLONG:
       if (!columnInfo->isSigned()) {
-        return new SQLString(zeroFillingIfNeeded(std::to_string(getInternalULong(columnInfo)), columnInfo));
+        return SQLString(zeroFillingIfNeeded(std::to_string(getInternalULong(columnInfo)), columnInfo));
       }
-      return new SQLString(zeroFillingIfNeeded(std::to_string(getInternalLong(columnInfo)), columnInfo));
+      return SQLString(zeroFillingIfNeeded(std::to_string(getInternalLong(columnInfo)), columnInfo));
     case MYSQL_TYPE_DOUBLE:
-      return new SQLString(zeroFillingIfNeeded(std::to_string(getInternalDouble(columnInfo)), columnInfo));
+      return SQLString(zeroFillingIfNeeded(std::to_string(getInternalDouble(columnInfo)), columnInfo));
     case MYSQL_TYPE_FLOAT:
-      return new SQLString(zeroFillingIfNeeded(std::to_string(getInternalFloat(columnInfo)), columnInfo));
+      return SQLString(zeroFillingIfNeeded(std::to_string(getInternalFloat(columnInfo)), columnInfo));
     case MYSQL_TYPE_TIME:
-      return new SQLString(getInternalTimeString(columnInfo));
+      return SQLString(getInternalTimeString(columnInfo));
     case MYSQL_TYPE_DATE:
     {
       Date date= getInternalDate(columnInfo);// , cal, timeZone);
       if (date.empty() || date.compare(nullDate) == 0) {
-        return nullptr;
+        return emptyStr;
       }
-      return new SQLString(date);
+      return date;
     }
     case MYSQL_TYPE_YEAR:
     {
       if (options->yearIsDateType) {
         Date dateInter = getInternalDate(columnInfo);//, cal, timeZone);
-        return (dateInter.empty() || dateInter.compare(nullDate)) == 0 ? nullptr : new SQLString(dateInter);
+        return (dateInter.empty() || dateInter.compare(nullDate)) == 0 ? emptyStr : dateInter;
       }
       int32_t year= getInternalSmallInt(columnInfo);
-      SQLString *result;
 
       if (year < 10) {
-        result= new SQLString("0");
-        result->append(std::to_string(year));
+        SQLString result("0");
+        return result.append(std::to_string(year));
       }
       else {
-        result= new SQLString(std::to_string(year));
+        return std::to_string(year);
       }
-      return result;
     }
     case MYSQL_TYPE_TIMESTAMP:
     case MYSQL_TYPE_DATETIME:
     {
-      std::unique_ptr<Timestamp> timestamp= getInternalTimestamp(columnInfo);
-      if (!timestamp) {
-        return nullptr;
-      }
-      return timestamp.release();
+      return getInternalTimestamp(columnInfo);
     }
     case MYSQL_TYPE_NEWDECIMAL:
     case MYSQL_TYPE_DECIMAL:
     case MYSQL_TYPE_GEOMETRY:
-      return new SQLString(asChar, getLengthMaxFieldSize());
+      return SQLString(asChar, getLengthMaxFieldSize());
     case MYSQL_TYPE_NULL:
       return nullptr;
     default:
       if (getLengthMaxFieldSize() > 0) {
-        return new SQLString(asChar, getLengthMaxFieldSize());
+        return SQLString(asChar, getLengthMaxFieldSize());
       }
-      return new SQLString(asChar);
+      return SQLString(asChar);
     }
   }
 
@@ -217,11 +211,9 @@ namespace capi
     * @return String value of raw bytes
     * @throws SQLException if conversion failed
     */
-  std::unique_ptr<SQLString> BinRowProtocolCapi::getInternalString(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
+  SQLString BinRowProtocolCapi::getInternalString(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
   {
-    std::unique_ptr<SQLString> result(convertToString(fieldBuf.arr, columnInfo));
-
-    return std::move(result);
+    return std::move(convertToString(fieldBuf.arr, columnInfo));
   }
 
   /**
@@ -389,10 +381,8 @@ namespace capi
       case MYSQL_TYPE_NEWDECIMAL:
       case MYSQL_TYPE_DECIMAL:
       {
-        std::unique_ptr<BigDecimal> bigDecimal = getInternalBigDecimal(columnInfo);
         //rangeCheck("BigDecimal", static_cast<int64_t>(buf));
-
-        return std::stoll(StringImp::get(*bigDecimal));
+        return std::stoll(StringImp::get(getInternalBigDecimal(columnInfo)));
       }
       case MYSQL_TYPE_VAR_STRING:
       case MYSQL_TYPE_VARCHAR:
@@ -486,10 +476,8 @@ namespace capi
     case MYSQL_TYPE_NEWDECIMAL:
     case MYSQL_TYPE_DECIMAL:
     {
-      std::unique_ptr<BigDecimal> bigDecimal = getInternalBigDecimal(columnInfo);
       //rangeCheck("BigDecimal", static_cast<int64_t>(buf));
-
-      return sql::mariadb::stoull(*bigDecimal);
+      return sql::mariadb::stoull(getInternalBigDecimal(columnInfo));
     }
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
@@ -663,12 +651,11 @@ namespace capi
     * @return BigDecimal value
     * @throws SQLException if column is not numeric
     */
-  //TODO: probably unique_ptr makes sense only ofr string
-  std::unique_ptr<BigDecimal> BinRowProtocolCapi::getInternalBigDecimal(ColumnDefinition* columnInfo)
+  
+  BigDecimal BinRowProtocolCapi::getInternalBigDecimal(ColumnDefinition* columnInfo)
   {
-    std::unique_ptr<BigDecimal> nullBd;
     if (lastValueWasNull()) {
-      return nullBd;
+      return emptyStr;
     }
     switch (columnInfo->getColumnType().getType()) {
     case MYSQL_TYPE_BIT:
@@ -696,7 +683,7 @@ namespace capi
         //TODO: make it better
         while (ptr < end && ( *ptr == '.' || isdigit(*ptr))) ++ptr;
 
-        return std::unique_ptr<SQLString>(new SQLString(asChar, ptr - asChar));
+        return SQLString(asChar, ptr - asChar);
       }
     }
     default:
@@ -852,11 +839,16 @@ namespace capi
     * @return Time value
     * @throws SQLException if column cannot be converted to Time
     */
-  std::unique_ptr<Time> BinRowProtocolCapi::getInternalTime(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
+  Time BinRowProtocolCapi::getInternalTime(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
   {
-    std::unique_ptr<Time> nullTime(new Date("00:00:00"));
+    auto nullTime= std::ref(RowProtocol::nullTime);
+    Time nullTimeWithMicros;
 
-    padZeroMicros(*nullTime, columnInfo->getDecimals());
+    if (columnInfo->getDecimals() > 0) {
+      nullTimeWithMicros= RowProtocol::nullTime;
+      padZeroMicros(nullTimeWithMicros, columnInfo->getDecimals());
+      nullTime= std::ref(nullTimeWithMicros);
+    }
 
     if (lastValueWasNull()) {
       return nullTime;
@@ -866,7 +858,7 @@ namespace capi
     case MYSQL_TYPE_DATETIME:
     {
       MYSQL_TIME* mt= reinterpret_cast<MYSQL_TIME*>(fieldBuf.arr);
-      return std::unique_ptr<Time>(new Time(makeStringFromTimeStruct(mt, MYSQL_TYPE_TIME, columnInfo->getDecimals())));
+      return makeStringFromTimeStruct(mt, MYSQL_TYPE_TIME, columnInfo->getDecimals());
     }
     case MYSQL_TYPE_DATE:
       throw SQLException("Cannot read Time using a Types::DATE field");
@@ -874,12 +866,11 @@ namespace capi
     {
       SQLString rawValue(fieldBuf.arr, length);
 
-      /*if (rawValue.compare(*nullTime) == 0 || rawValue.compare("00:00:00") == 0) {
-        lastValueNull |= BIT_LAST_ZERO_DATE;
+      if (rawValue.compare(nullTime) == 0 || rawValue.compare(RowProtocol::nullTime) == 0) {
+        lastValueNull|= BIT_LAST_ZERO_DATE;
         return nullTime;
-      }*/
-
-      return std::unique_ptr<Time>(new Time(rawValue));
+      }
+      return rawValue;
     }
     default:
       throw SQLException(
@@ -899,17 +890,22 @@ namespace capi
     * @return timestamp value
     * @throws SQLException if column type is not compatible
     */
-  std::unique_ptr<Timestamp> BinRowProtocolCapi::getInternalTimestamp(ColumnDefinition* columnInfo, Calendar* userCalendar, TimeZone* timeZone)
+  Timestamp BinRowProtocolCapi::getInternalTimestamp(ColumnDefinition* columnInfo, Calendar* userCalendar, TimeZone* timeZone)
   {
-    std::unique_ptr<Timestamp> nullTs(new Timestamp("0000-00-00 00:00:00"));
+    auto nullTs= std::ref(RowProtocol::nullTs);
+    Timestamp nullTsWithMicros;
 
-    padZeroMicros(*nullTs, columnInfo->getDecimals());
+    if (columnInfo->getDecimals() > 0) {
+      nullTsWithMicros= RowProtocol::nullTs;
+      padZeroMicros(nullTsWithMicros, columnInfo->getDecimals());
+      nullTs= std::ref(nullTsWithMicros);
+    }
 
     if (lastValueWasNull()) {
       return nullTs;
     }
     if (length == 0) {
-      lastValueNull |=BIT_LAST_FIELD_NULL;
+      lastValueNull|= BIT_LAST_FIELD_NULL;
       return nullTs;
     }
 
@@ -933,19 +929,19 @@ namespace capi
         //TODO if timeis negaive - shouldn't we deduct it?
       }
 
-      return std::unique_ptr<Timestamp>(new Timestamp(makeStringFromTimeStruct(mt, MYSQL_TYPE_TIMESTAMP, columnInfo->getDecimals())));
+      return makeStringFromTimeStruct(mt, MYSQL_TYPE_TIMESTAMP, columnInfo->getDecimals());
     }
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_STRING:
     {
       SQLString rawValue(fieldBuf.arr, length);
 
-      if (rawValue.compare(*nullTs) == 0 || rawValue.compare("00:00:00") == 0) {
+      if (rawValue.compare(nullTs) == 0 || rawValue.compare("00:00:00") == 0) {
         lastValueNull |= BIT_LAST_ZERO_DATE;
         return nullTs;
       }
 
-      return std::unique_ptr<Timestamp>(new Timestamp(rawValue));
+      return rawValue;
     }
     default:
       throw SQLException(

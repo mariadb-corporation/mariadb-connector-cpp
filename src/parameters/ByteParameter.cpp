@@ -52,7 +52,7 @@ namespace mariadb
     os.append(hexArray[value &0x0F]);
   }
 
-  int64_t ByteParameter::getApproximateTextProtocolLength()
+  int64_t ByteParameter::getApproximateTextProtocolLength() const
   {
     return 4;
   }

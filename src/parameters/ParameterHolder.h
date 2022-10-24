@@ -42,7 +42,7 @@ public:
   virtual void writeTo(SQLString& str)=0;
   virtual void writeBinary(PacketOutputStream& pos)=0;
   virtual uint32_t writeBinary(sql::bytes& buffer)=0;
-  virtual int64_t getApproximateTextProtocolLength()=0;
+  virtual int64_t getApproximateTextProtocolLength() const=0;
   virtual SQLString toString()=0;
   virtual bool isNullData() const=0;
   virtual const ColumnType& getColumnType() const=0;
@@ -50,6 +50,7 @@ public:
   virtual void* getValuePtr()=0;
   virtual unsigned long getValueBinLen() const=0;
   virtual bool isUnsigned() const { return false; }
+  virtual ParameterHolder* clone()= 0;
 };
 }
 }

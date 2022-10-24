@@ -84,42 +84,41 @@ namespace capi
  * @return String value
  * @throws SQLException if column type doesn't permit conversion
  */
- std::unique_ptr<SQLString> TextRowProtocolCapi::getInternalString(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
+ SQLString TextRowProtocolCapi::getInternalString(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
  {
-   std::unique_ptr<SQLString> nullStr;
    if (lastValueWasNull()) {
-     return nullStr;
+     return emptyStr;
    }
 
    switch (columnInfo->getColumnType().getType()) {
    case MYSQL_TYPE_BIT:
-     return std::unique_ptr<SQLString>(new SQLString(std::to_string(parseBit())));
+     return SQLString(std::to_string(parseBit()));
    case MYSQL_TYPE_DOUBLE:
    case MYSQL_TYPE_FLOAT:
-     return std::unique_ptr<SQLString>(new SQLString(zeroFillingIfNeeded(fieldBuf.arr, columnInfo)));
+     return zeroFillingIfNeeded(fieldBuf.arr, columnInfo);
    case MYSQL_TYPE_TIME:
-     return std::unique_ptr<SQLString>(new SQLString(getInternalTimeString(columnInfo)));
+     return SQLString(getInternalTimeString(columnInfo));
    case MYSQL_TYPE_DATE:
    {
      Date date(getInternalDate(columnInfo, cal, timeZone));
      if (date.empty() || date.compare(nullDate) == 0) {
        if ((lastValueNull & BIT_LAST_ZERO_DATE) != 0) {
          lastValueNull^= BIT_LAST_ZERO_DATE;
-         return std::unique_ptr<SQLString>(new SQLString(fieldBuf, length));
+         return SQLString(fieldBuf, length);
        }
-       return nullStr;
+       return emptyStr;
      }
-     return std::unique_ptr<SQLString>(new SQLString(date));
+     return date;
    }
    case MYSQL_TYPE_YEAR:
    {
      if (options->yearIsDateType) {
        Date date1(getInternalDate(columnInfo, cal, timeZone));
        if (date1.empty() || date1.compare(nullDate) == 0) {
-         return nullStr;
+         return emptyStr;
        }
        else {
-         return std::unique_ptr<SQLString>(new SQLString(date1));
+         return date1;
        }
      }
      break;
@@ -127,34 +126,28 @@ namespace capi
    case MYSQL_TYPE_TIMESTAMP:
    case MYSQL_TYPE_DATETIME:
    {
-     std::unique_ptr<Timestamp> timestamp= getInternalTimestamp(columnInfo, cal, timeZone);
+     Timestamp timestamp= getInternalTimestamp(columnInfo, cal, timeZone);
      if (!timestamp) {
        if ((lastValueNull & BIT_LAST_ZERO_DATE)!=0) {
          lastValueNull ^=BIT_LAST_ZERO_DATE;
-         return std::unique_ptr<SQLString>(new SQLString(fieldBuf, length));
+         return SQLString(fieldBuf, length);
        }
-       return nullStr;
+       return emptyStr;
      }
      return timestamp;
    }
    case MYSQL_TYPE_NEWDECIMAL:
    case MYSQL_TYPE_DECIMAL:
    {
-     std::unique_ptr<BigDecimal> bigDecimal= getInternalBigDecimal(columnInfo);
-     if (!bigDecimal) {
-       return nullStr;
-     }
-     else {
-       return std::unique_ptr<SQLString>(new SQLString(zeroFillingIfNeeded(*bigDecimal, columnInfo)));
-     }
+     return zeroFillingIfNeeded(getInternalBigDecimal(columnInfo), columnInfo);
    }
    case MYSQL_TYPE_NULL:
-     return nullStr;
+     return emptyStr;
    default:
      break;
    }
 
-   return std::unique_ptr<SQLString>(new SQLString(fieldBuf, getLengthMaxFieldSize()));
+   return SQLString(fieldBuf, getLengthMaxFieldSize());
  }
 
 
@@ -195,11 +188,8 @@ namespace capi
    case MYSQL_TYPE_TIMESTAMP:
    case MYSQL_TYPE_DATETIME:
    {
-     std::unique_ptr<Timestamp> timestamp= getInternalTimestamp(columnInfo, cal, timeZone);
-     if (!timestamp) {
-       return nullDate;
-     }
-     return timestamp->substr(0, 10 + (timestamp->at(0) == '-' ? 1 : 0));
+     Timestamp timestamp= getInternalTimestamp(columnInfo, cal, timeZone);
+     return timestamp.substr(0, 10 + (timestamp.at(0) == '-' ? 1 : 0));
    }
    case MYSQL_TYPE_TIME:
      throw SQLException("Cannot read DATE using a Types::TIME field");
@@ -241,9 +231,9 @@ namespace capi
  * @return time value
  * @throws SQLException if column type doesn't permit conversion
  */
- std::unique_ptr<Time> TextRowProtocolCapi::getInternalTime(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
+ Time TextRowProtocolCapi::getInternalTime(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
  {
-   std::unique_ptr<Time> nullTime(new Time("00:00:00"));
+   static Time nullTime("00:00:00");
    if (lastValueWasNull()) {
      return nullTime;
    }
@@ -251,13 +241,7 @@ namespace capi
    if (columnInfo->getColumnType()==ColumnType::TIMESTAMP
      ||columnInfo->getColumnType()==ColumnType::DATETIME) {
 
-     std::unique_ptr<Timestamp> timestamp= getInternalTimestamp(columnInfo, cal, timeZone);
-     if (!timestamp) {
-       return nullTime;
-     }
-     else {
-       return std::unique_ptr<Time>(new Time(timestamp->substr(11)));
-     }
+     return getInternalTimestamp(columnInfo, cal, timeZone).substr(11);
    }
    else if (columnInfo->getColumnType() == ColumnType::DATE) {
 
@@ -289,7 +273,7 @@ namespace capi
        }
      }
 
-     return std::unique_ptr<Time>(new Time(matcher[0].str()));
+     return matcher[0].str();
    }
  }
 
@@ -302,9 +286,9 @@ namespace capi
  * @return timestamp value
  * @throws SQLException if column type doesn't permit conversion
  */
- std::unique_ptr<Timestamp> TextRowProtocolCapi::getInternalTimestamp(ColumnDefinition* columnInfo, Calendar* userCalendar, TimeZone* timeZone)
+ Timestamp TextRowProtocolCapi::getInternalTimestamp(ColumnDefinition* columnInfo, Calendar* userCalendar, TimeZone* timeZone)
  {
-   std::unique_ptr<Timestamp> nullTs(new Timestamp("0000-00-00 00:00:00"));
+   static Timestamp nullTs("0000-00-00 00:00:00");
    if (lastValueWasNull()) {
      return nullTs;
    }
@@ -382,15 +366,13 @@ namespace capi
        timestamp << "." << nanosStr;
      }
 
-     return std::unique_ptr<Timestamp>(new Timestamp(timestamp.str()));
+     return Timestamp(timestamp.str());
    }
    case MYSQL_TYPE_TIME:
    {
-     std::unique_ptr<Timestamp> tt(new Timestamp("1970-01-01 "));
-     std::unique_ptr<Time> timeValue= getInternalTime(columnInfo, userCalendar, timeZone);
+     Timestamp tt("1970-01-01 ");
 
-     tt->append(*timeValue);
-     return tt;
+     return tt.append(getInternalTime(columnInfo, userCalendar, timeZone));
    }
    default:
    {
@@ -957,16 +939,16 @@ namespace capi
   * @param columnInfo column information
   * @return BigDecimal value
   */
- std::unique_ptr<BigDecimal> TextRowProtocolCapi::getInternalBigDecimal(ColumnDefinition* columnInfo)
+ BigDecimal TextRowProtocolCapi::getInternalBigDecimal(ColumnDefinition* columnInfo)
  {
    if (lastValueWasNull()) {
-     return std::unique_ptr<BigDecimal>();
+     return emptyStr;
    }
 
    if (columnInfo->getColumnType()==ColumnType::BIT) {
-     return std::unique_ptr<BigDecimal>(new BigDecimal(std::to_string(parseBit())));
+     return std::to_string(parseBit());
    }
-   return std::unique_ptr<BigDecimal>(new BigDecimal(fieldBuf.arr + pos, length));
+   return BigDecimal(fieldBuf.arr + pos, length);
  }
 
 

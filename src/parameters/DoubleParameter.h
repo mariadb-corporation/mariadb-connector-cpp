@@ -37,7 +37,7 @@ public:
   DoubleParameter(long double value);
   void writeTo(SQLString& str);
   void  writeTo(PacketOutputStream& str);
-  int64_t getApproximateTextProtocolLength();
+  int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
   const ColumnType& getColumnType() const;
@@ -46,6 +46,7 @@ public:
   bool isLongData();
   void* getValuePtr() { return static_cast<void*>(&value); }
   unsigned long getValueBinLen() const { return sizeof(value); }
+  ParameterHolder* clone() { return new DoubleParameter(*this); }
   };
 }
 }

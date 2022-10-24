@@ -38,7 +38,7 @@ public:
   StringParameter(const SQLString& str,bool noBackslashEscapes);
   void writeTo(SQLString& str);
   void writeTo(PacketOutputStream& str);
-  int64_t getApproximateTextProtocolLength();
+  int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
   const ColumnType& getColumnType() const;
@@ -47,6 +47,7 @@ public:
   bool isLongData();
   void* getValuePtr() { return const_cast<void*>(static_cast<const void*>(stringValue.c_str())); }
   unsigned long getValueBinLen() const { return static_cast<unsigned long>(stringValue.length()); }
+  ParameterHolder* clone() { return new StringParameter(*this); }
   };
 }
 }

@@ -29,6 +29,7 @@
 #include "parameters/ParameterHolder.h"
 
 #include "MariaDbStatement.h"
+#include "PrepareResult.h"
 
 namespace sql
 {
@@ -70,8 +71,9 @@ protected:
   */
   Shared::ExceptionFactory exceptionFactory;
   Protocol* protocol;
+  std::vector<std::vector<Unique::ParameterHolder>> parameterList;
+  std::vector<Unique::ParameterHolder> parameters;
 
-//public:
   BasePrepareStatement(
     MariaDbConnection* connection,
     int32_t resultSetScrollType,
@@ -84,7 +86,12 @@ public:
 
 protected:
   virtual bool executeInternal(int32_t fetchSize)=0;
+  virtual PrepareResult* getPrepareResult()=0;
+  virtual Logger* getLogger() const=0;
+  void initParamset(std::size_t paramCount);
+
 public:
+  void validateParamset(std::size_t paramCount);
   operator MariaDbStatement* () { return stmt.get(); }
   /**
   * Retrieves the number, types and properties of this <code>PreparedStatement</code> object's
@@ -173,6 +180,9 @@ public:
   int64_t executeLargeUpdate();
   bool execute();
   ResultSet* executeQuery();
+  void clearParameters();
+  void addBatch();
+  void clearBatch();
 
   MariaDBExceptionThrower executeExceptionEpilogue(SQLException& sqle);
 

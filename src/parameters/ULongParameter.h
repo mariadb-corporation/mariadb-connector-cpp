@@ -37,7 +37,7 @@ public:
   ULongParameter(uint64_t value);
   void writeTo(SQLString& str);
   void  writeTo(PacketOutputStream& str);
-  int64_t getApproximateTextProtocolLength();
+  int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
   const ColumnType& getColumnType() const;
@@ -47,6 +47,7 @@ public:
   void* getValuePtr() { return static_cast<void*>(&value); }
   unsigned long getValueBinLen() const { return sizeof(value); }
   bool isUnsigned() const { return true; }
+  ParameterHolder* clone() { return new ULongParameter(*this); }
   };
 }
 }

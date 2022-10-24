@@ -57,15 +57,15 @@ public:
   void installCursorAtPosition(int32_t rowPtr);
 
   Date getInternalDate(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
-  std::unique_ptr<Time> getInternalTime(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
-  std::unique_ptr<Timestamp> getInternalTimestamp( ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
-  std::unique_ptr<SQLString> getInternalString(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
+  Time getInternalTime(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
+  Timestamp getInternalTimestamp( ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
+  SQLString getInternalString(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
   int32_t getInternalInt(ColumnDefinition* columnInfo);
   int64_t getInternalLong(ColumnDefinition* columnInfo);
   uint64_t getInternalULong(ColumnDefinition* columnInfo);
   float getInternalFloat(ColumnDefinition* columnInfo);
   long double getInternalDouble(ColumnDefinition* columnInfo);
-  std::unique_ptr<BigDecimal> getInternalBigDecimal(ColumnDefinition* columnInfo);
+  BigDecimal getInternalBigDecimal(ColumnDefinition* columnInfo);
 
   bool getInternalBoolean(ColumnDefinition* columnInfo);
   int8_t getInternalByte(ColumnDefinition* columnInfo);

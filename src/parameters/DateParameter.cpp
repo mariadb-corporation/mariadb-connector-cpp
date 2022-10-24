@@ -71,7 +71,7 @@ namespace mariadb
     return date.c_str();//sdf.format(date).getBytes();
   }
 
-  int64_t DateParameter::getApproximateTextProtocolLength()
+  int64_t DateParameter::getApproximateTextProtocolLength() const
   {
     return 16;
   }

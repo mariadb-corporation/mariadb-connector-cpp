@@ -241,7 +241,7 @@ namespace mariadb
   }
 
 
-  void bindParamValue(capi::MYSQL_BIND& bind, Shared::ParameterHolder& param)
+  void bindParamValue(capi::MYSQL_BIND& bind, Unique::ParameterHolder& param)
   {
     bind.is_null_value= '\0';
     bind.long_data_used= '\0';
@@ -265,7 +265,7 @@ namespace mariadb
   }
 
 
-  void ServerPrepareResult::bindParameters(std::vector<Shared::ParameterHolder>& paramValue)
+  void ServerPrepareResult::bindParameters(std::vector<Unique::ParameterHolder>& paramValue)
   {
     for (size_t i= 0; i < parameters.size(); ++i)
     {
@@ -281,7 +281,7 @@ namespace mariadb
   {
     static char indicator[]{'\0', capi::STMT_INDICATOR_NULL};
     std::size_t i= 0;
-    std::vector<Shared::ParameterHolder>& paramSet= (*static_cast<std::vector<std::vector<Shared::ParameterHolder>>*>(data))[row_nr];
+    std::vector<Unique::ParameterHolder>& paramSet= (*static_cast<std::vector<std::vector<Unique::ParameterHolder>>*>(data))[row_nr];
 
     for (auto& param : paramSet) {
       if (param->isNullData()) {
@@ -301,7 +301,7 @@ namespace mariadb
     return '\0';
   }
   
-  void ServerPrepareResult::bindParameters(std::vector<std::vector<Shared::ParameterHolder>>& paramValue, const int16_t *type)
+  void ServerPrepareResult::bindParameters(std::vector<std::vector<Unique::ParameterHolder>>& paramValue, const int16_t *type)
   {
     uint32_t i= 0;
     resetParameterTypeHeader();

@@ -434,7 +434,7 @@ namespace mariadb
   {
     if (!sql.empty())
     {
-      SQLString sqlQuery= Utils::nativeSql(sql, protocol.get());
+      SQLString sqlQuery(Utils::nativeSql(sql, protocol.get()));
 
       if (options->useServerPrepStmts && std::regex_search(StringImp::get(sqlQuery), PREPARABLE_STATEMENT_PATTERN))
       {

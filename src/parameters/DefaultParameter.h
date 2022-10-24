@@ -36,7 +36,7 @@ class DefaultParameter  : public ParameterHolder {
 public:
   void writeTo(SQLString& str);
   void  writeTo(PacketOutputStream& str);
-  int64_t getApproximateTextProtocolLength();
+  int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer) { return getValueBinLen(); }
   const ColumnType& getColumnType() const;
@@ -45,6 +45,7 @@ public:
   bool isLongData();
   void* getValuePtr() { return nullptr; }
   unsigned long getValueBinLen() const { return 0; }
+  ParameterHolder* clone() { return new DefaultParameter(*this); }
   };
 }
 }

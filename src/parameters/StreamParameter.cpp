@@ -115,7 +115,7 @@ namespace mariadb
     *
     * @return approximated data length.
     */
-  int64_t StreamParameter::getApproximateTextProtocolLength()
+  int64_t StreamParameter::getApproximateTextProtocolLength() const
   {
     return -1;
   }

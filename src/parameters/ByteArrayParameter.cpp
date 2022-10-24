@@ -54,9 +54,9 @@ namespace sql
     pos.write(QUOTE);
   }
 
-  int64_t ByteArrayParameter::getApproximateTextProtocolLength()
+  int64_t ByteArrayParameter::getApproximateTextProtocolLength() const
   {
-    return bytes.length *2;
+    return bytes.length*2;
   }
 
   /**

@@ -46,7 +46,7 @@ private:
   const char * dateByteFormat();
 
 public:
-  int64_t getApproximateTextProtocolLength();
+  int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
   const ColumnType& getColumnType() const;
@@ -55,6 +55,7 @@ public:
   bool isLongData();
   void* getValuePtr() { return const_cast<void*>(static_cast<const void*>(date.c_str())); }
   unsigned long getValueBinLen() const { return static_cast<unsigned long>(date.length()); }
+  ParameterHolder* clone() { return new DateParameter(*this); }
   };
 }
 }

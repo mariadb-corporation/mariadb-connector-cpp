@@ -83,7 +83,10 @@ public:
   static long double stringToDouble(const char* str, uint32_t len);
 
 protected:
-  static int32_t NULL_LENGTH_ ; /*-1*/
+  static const int32_t NULL_LENGTH_= -1;
+  static const Timestamp nullTs;//= "0000-00-00 00:00:00"
+  static const Time nullTime; //("00:00:00")
+
   uint32_t maxFieldSize;
   const Shared::Options options;
 
@@ -120,15 +123,15 @@ public:
   virtual void installCursorAtPosition(int32_t rowPtr)=0;
 
   virtual Date getInternalDate(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr)=0;
-  virtual std::unique_ptr<Time>  getInternalTime(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr)=0;
-  virtual std::unique_ptr<Timestamp> getInternalTimestamp(ColumnDefinition* columnInfo, Calendar* userCalendar=nullptr, TimeZone* timeZone=nullptr)=0;
-  virtual std::unique_ptr<SQLString> getInternalString(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr)=0;
+  virtual Time getInternalTime(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr)=0;
+  virtual Timestamp getInternalTimestamp(ColumnDefinition* columnInfo, Calendar* userCalendar=nullptr, TimeZone* timeZone=nullptr)=0;
+  virtual SQLString getInternalString(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr)=0;
   virtual int32_t getInternalInt(ColumnDefinition* columnInfo)=0;
   virtual int64_t getInternalLong(ColumnDefinition* columnInfo)=0;
   virtual uint64_t getInternalULong(ColumnDefinition* columnInfo)=0;
   virtual float getInternalFloat(ColumnDefinition* columnInfo)=0;
   virtual long double getInternalDouble(ColumnDefinition* columnInfo)=0;
-  virtual std::unique_ptr<BigDecimal> getInternalBigDecimal(ColumnDefinition* columnInfo)=0;
+  virtual BigDecimal getInternalBigDecimal(ColumnDefinition* columnInfo)=0;
 
   virtual bool getInternalBoolean(ColumnDefinition* columnInfo)=0;
   virtual int8_t getInternalByte(ColumnDefinition* columnInfo)=0;

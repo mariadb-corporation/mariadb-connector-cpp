@@ -41,7 +41,7 @@ namespace mariadb
     str.append(bigDecimal);
   }
 
-  int64_t BigDecimalParameter::getApproximateTextProtocolLength()
+  int64_t BigDecimalParameter::getApproximateTextProtocolLength() const
   {
     return bigDecimal.length();
   }
@@ -93,9 +93,15 @@ namespace mariadb
   {
     return const_cast<void*>(static_cast<const void*>(bigDecimal.c_str()));
   }
+
   unsigned long BigDecimalParameter::getValueBinLen() const
   {
     return static_cast<unsigned long>(bigDecimal.length());
+  }
+  
+  ParameterHolder* BigDecimalParameter::clone()
+  {
+    return new BigDecimalParameter(*this);
   }
 }
 }

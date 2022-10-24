@@ -40,7 +40,7 @@ public:
   ByteArrayParameter(const sql::bytes &bytes, bool noBackslashEscapes);
   void writeTo(SQLString& str);
   void  writeTo(PacketOutputStream& str);
-  int64_t getApproximateTextProtocolLength();
+  int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buf);
   const ColumnType& getColumnType() const;
@@ -49,6 +49,7 @@ public:
   bool isLongData();
   void* getValuePtr() { return static_cast<void*>(bytes.arr); }
   unsigned long getValueBinLen() const { return static_cast<unsigned long>(bytes.size()); }
+  ParameterHolder* clone() { return new ByteArrayParameter(*this); }
   };
 }
 }

@@ -52,7 +52,7 @@ namespace mariadb
   }
 
 
-  int64_t StringParameter::getApproximateTextProtocolLength()
+  int64_t StringParameter::getApproximateTextProtocolLength() const
   {
     return stringValue.size()*3;
   }

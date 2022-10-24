@@ -20,6 +20,7 @@
 
 #include "BasePrepareStatement.h"
 
+#include "logger/LoggerFactory.h"
 #include "Results.h"
 #include "Parameters.h"
 
@@ -1444,6 +1445,70 @@ namespace mariadb
     return SelectResultSet::createEmptyResultSet();
   }
 
+
+  void BasePrepareStatement::initParamset(std::size_t paramCount)
+  {
+    parameters.reserve(paramCount);
+    for (std::size_t i = 0; i < paramCount; ++i) {
+      parameters.emplace_back(nullptr);
+    }
+  }
+
+
+  void BasePrepareStatement::validateParamset(std::size_t paramCount)
+  {
+    // valid parameters
+    for (std::size_t i = 0; i < paramCount; i++) {
+      if (i > parameters.size() || !parameters[i]) {
+        getLogger()->error("Parameter at position " + std::to_string(i + 1) + " is not set");
+        exceptionFactory->raiseStatementError(connection, this)->create("Parameter at position "
+          + std::to_string(i + 1) + " is not set", "07004").Throw();
+      }
+    }
+  }
+
+  /**
+    * Clears the current parameter values immediately.
+    *
+    * <p>In general, parameter values remain in force for repeated use of a statement. Setting a
+    * parameter value automatically clears its previous value. However, in some cases it is useful to
+    * immediately release the resources used by the current parameter values; this can be done by
+    * calling the method <code>clearParameters</code>.
+    */
+  void BasePrepareStatement::clearParameters()
+  {
+    parameters.clear();
+    initParamset(getPrepareResult()->getParamCount());
+    hasLongData= false;
+  }
+
+  /**
+  * Adds a set of parameters to this <code>PreparedStatement</code> object's batch of send. <br>
+  * <br>
+  *
+  * @throws SQLException if a database access error occurs or this method is called on a closed
+  *     <code>PreparedStatement</code>
+  * @see Statement#addBatch
+  * @since 1.2
+  */
+  void BasePrepareStatement::addBatch()
+  {
+    std::size_t paramCount= getPrepareResult()->getParamCount();
+    validateParamset(paramCount);
+
+    parameterList.emplace_back();
+    parameterList.back().reserve(paramCount);
+
+    for (auto& it : parameters) {
+      parameterList.back().emplace_back(it->clone());
+    }
+  }
+
+
+  void BasePrepareStatement::clearBatch()
+  {
+    parameterList.clear();
+  }
 
   int32_t BasePrepareStatement::executeUpdate()
   {

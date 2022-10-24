@@ -40,7 +40,7 @@ namespace mariadb
     os.write(std::to_string(value).c_str());
   }
 
-  int64_t FloatParameter::getApproximateTextProtocolLength()
+  int64_t FloatParameter::getApproximateTextProtocolLength() const
   {
     return std::to_string(value).length();
   }

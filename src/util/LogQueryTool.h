@@ -44,11 +44,11 @@ private:
 public:
   SQLException exceptionWithQuery(const SQLString& sql, SQLException& sqlException, bool explicitClosed);
   SQLException exceptionWithQuery(SQLString& buffer, SQLException& sqlEx, bool explicitClosed);
-  SQLException exceptionWithQuery(std::vector<Shared::ParameterHolder>& parameters, SQLException& sqlEx, PrepareResult* serverPrepareResult);
+  SQLException exceptionWithQuery(std::vector<Unique::ParameterHolder>& parameters, SQLException& sqlEx, PrepareResult* serverPrepareResult);
   SQLException exceptionWithQuery(SQLException& sqlEx, PrepareResult* prepareResult);
 
 private:
-  SQLString exWithQuery(const SQLString& message, PrepareResult* serverPrepareResult, std::vector<Shared::ParameterHolder>& parameters);
+  SQLString exWithQuery(const SQLString& message, PrepareResult* serverPrepareResult, std::vector<Unique::ParameterHolder>& parameters);
   };
 }
 }

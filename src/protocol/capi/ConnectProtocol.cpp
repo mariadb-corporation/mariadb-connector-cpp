@@ -798,10 +798,10 @@ namespace capi
   void ConnectProtocol::requestSessionDataWithShow(std::map<SQLString, SQLString>& serverData)
   {
     try {
-      Shared::Results results(new Results());
+      Unique::Results results(new Results());
       executeQuery(
           true,
-          results,
+          results.get(),
           "SHOW VARIABLES WHERE Variable_name in ("
           "'max_allowed_packet',"
           "'system_time_zone',"

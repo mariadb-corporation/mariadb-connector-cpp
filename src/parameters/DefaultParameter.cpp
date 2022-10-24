@@ -42,7 +42,7 @@ namespace mariadb
     pos.write(defaultBytes);
   }
 
-  int64_t DefaultParameter::getApproximateTextProtocolLength()
+  int64_t DefaultParameter::getApproximateTextProtocolLength() const
   {
     return 7;
   }

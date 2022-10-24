@@ -39,7 +39,7 @@ public:
   ByteParameter(char value);
   void writeTo(PacketOutputStream& os);
   void writeTo(SQLString& os);
-  int64_t getApproximateTextProtocolLength();
+  int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
   const ColumnType& getColumnType() const;
@@ -48,6 +48,7 @@ public:
   bool isLongData();
   void* getValuePtr() { return static_cast<void*>(&value); }
   unsigned long getValueBinLen() const { return 1; }
+  ParameterHolder* clone() { return new ByteParameter(*this); }
   };
 }
 }

@@ -40,7 +40,7 @@ public:
   StreamParameter(std::istream&is,bool noBackSlashEscapes);
   void writeTo(SQLString& str);
   void writeTo(PacketOutputStream& str);
-  int64_t getApproximateTextProtocolLength();
+  int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
   SQLString toString();
@@ -49,6 +49,7 @@ public:
   bool isLongData();
   void* getValuePtr() { return nullptr; }
   unsigned long getValueBinLen() const { return 0; }
+  ParameterHolder* clone() { return new StreamParameter(*this); }
   };
 }
 }

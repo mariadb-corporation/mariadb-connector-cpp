@@ -41,7 +41,7 @@ namespace mariadb
     str.append(value ? '1' : '0');
   }
 
-  int64_t BooleanParameter::getApproximateTextProtocolLength()
+  int64_t BooleanParameter::getApproximateTextProtocolLength() const
   {
     return 1;
   }

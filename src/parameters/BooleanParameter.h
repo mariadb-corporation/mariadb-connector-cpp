@@ -38,7 +38,7 @@ public:
   BooleanParameter(bool value);
   void  writeTo(PacketOutputStream& os);
   void writeTo(SQLString& str);
-  int64_t getApproximateTextProtocolLength();
+  int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
   const ColumnType& getColumnType() const;
@@ -47,6 +47,7 @@ public:
   bool isLongData();
   void* getValuePtr();
   unsigned long getValueBinLen() const { return 1; }
+  ParameterHolder* clone() { return new BooleanParameter(*this); }
   };
 }
 }

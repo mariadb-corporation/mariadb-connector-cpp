@@ -51,9 +51,6 @@ private:
   Shared::MariaDbResultSetMetaData metadata;
   Shared::MariaDbParameterMetaData parameterMetaData;
 
-  std::map<int32_t,Shared::ParameterHolder> currentParameterHolder;
-  std::vector<std::vector<Shared::ParameterHolder>> queryParameters;
-
   bool mustExecuteOnMaster;
 
 public:
@@ -80,9 +77,6 @@ private:
 
 public:
   void setParameter(int32_t parameterIndex,/*const*/ ParameterHolder* holder);
-  void addBatch();
-  void addBatch(const SQLString& sql);
-  void clearBatch();
   sql::ParameterMetaData* getParameterMetaData();
   sql::ResultSetMetaData* getMetaData();
   const sql::Ints& executeBatch();
@@ -91,12 +85,10 @@ public:
 private:
   void executeBatchInternal(int32_t queryParameterSize);
   void executeQueryPrologue(ServerPrepareResult* serverPrepareResult);
+  Logger* getLogger() const { return logger.get(); }
 
 public:
-  void clearParameters();
-
-//protected: //TODO: again, not the best idea to have these public
-  void validParameters();
+  PrepareResult* getPrepareResult() { return dynamic_cast<PrepareResult*>(serverPrepareResult.get()); }
   bool executeInternal(int32_t fetchSize);
 
 public:
@@ -108,7 +100,6 @@ public:
 public:
   SQLString toString();
   int64_t getServerThreadId();
-  inline ServerPrepareResult* getPrepareResult() { return serverPrepareResult.get(); }
   };
 }
 }
