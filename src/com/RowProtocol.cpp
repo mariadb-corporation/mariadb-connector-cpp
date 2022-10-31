@@ -39,8 +39,8 @@ namespace mariadb
   std::regex RowProtocol::timeRegex("^(-?)(\\d{2}):(\\d{2}):(\\d{2})(\\.\\d+)?", std::regex_constants::ECMAScript);
   std::regex RowProtocol::timestampRegex("^-?\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.?", std::regex_constants::ECMAScript);
 
-  const Timestamp RowProtocol::nullTs("0000-00-00 00:00:00");
-  const Time RowProtocol::nullTime("00:00:00");
+  Timestamp RowProtocol::nullTs("0000-00-00 00:00:00");
+  Time RowProtocol::nullTime("00:00:00");
 
 #ifdef WE_HAVE_JAVA_TYPES_IMPLEMENTED
   const RowProtocol::TEXT_LOCAL_DATE_TIME= new DateTimeFormatterBuilder()

@@ -84,8 +84,9 @@ public:
 
 protected:
   static const int32_t NULL_LENGTH_= -1;
-  static const Timestamp nullTs;//= "0000-00-00 00:00:00"
-  static const Time nullTime; //("00:00:00")
+  // Should be const
+  static Timestamp nullTs;//= "0000-00-00 00:00:00"
+  static Time nullTime; //("00:00:00")
 
   uint32_t maxFieldSize;
   const Shared::Options options;

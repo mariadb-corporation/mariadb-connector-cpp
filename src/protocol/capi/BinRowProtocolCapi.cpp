@@ -841,7 +841,7 @@ namespace capi
     */
   Time BinRowProtocolCapi::getInternalTime(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
   {
-    auto nullTime= std::ref(RowProtocol::nullTime);
+    std::reference_wrapper<Time> nullTime= std::ref(RowProtocol::nullTime);
     Time nullTimeWithMicros;
 
     if (columnInfo->getDecimals() > 0) {
@@ -892,7 +892,7 @@ namespace capi
     */
   Timestamp BinRowProtocolCapi::getInternalTimestamp(ColumnDefinition* columnInfo, Calendar* userCalendar, TimeZone* timeZone)
   {
-    auto nullTs= std::ref(RowProtocol::nullTs);
+    std::reference_wrapper<Timestamp> nullTs= std::ref(RowProtocol::nullTs);
     Timestamp nullTsWithMicros;
 
     if (columnInfo->getDecimals() > 0) {
