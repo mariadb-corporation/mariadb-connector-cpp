@@ -70,7 +70,7 @@ namespace mariadb
 
       char car= query[i];
       if (state == LexState::Escape
-        &&!((car == '\''&&singleQuotes)||(car == '"'&&!singleQuotes))) {
+        && !((car == '\'' && singleQuotes) || (car == '"' && !singleQuotes))) {
         state= LexState::SqlString;
         lastChar= car;
         continue;

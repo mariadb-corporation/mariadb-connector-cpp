@@ -54,7 +54,7 @@ namespace capi
     /*volatile*/
     MYSQL_STMT* statementIdToRelease; /*-1*/
     FutureTask* activeFutureTask;
-    bool interrupted;
+    bool interrupted= false;
 
   protected:
     QueryProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo, Shared::mutex& lock);
