@@ -390,9 +390,9 @@ void connectionmetadata::getColumnPrivileges()
   }
   try
   {
-    stmt->execute("DROP TABLE IF EXISTS test_getcolpriv");
     stmt->execute("REVOKE SELECT (col1,col2) ON test_getcolpriv FROM '" + this->user + "'" + userLocation);
     stmt->execute("REVOKE INSERT (col1) ON test_getcolpriv FROM '" + this->user + "'" + userLocation);
+    stmt->execute("DROP TABLE IF EXISTS test_getcolpriv");
 
     res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test_getcolpriv", "col2"));
     ASSERT(!res->next());

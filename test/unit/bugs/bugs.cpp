@@ -836,7 +836,7 @@ void bugs::bug21066575()
         std::string out(res->getString(2));
         ASSERT_EQUALS(1024000UL, static_cast<uint64_t>(out.length()));
         ss << "f1 = " << out;
-        logMsg(ss.str().c_str());
+        logMsg(ss.str().substr(0, 32).c_str());
       }
       //Detect if process frees ResultSet resources.
       res.reset();
