@@ -47,6 +47,8 @@ jobs:
     - env: srv=xpand
     - env: srv=mysql v=5.7
     - env: srv=mysql v=8.0
+    - env: srv=mariadb v=10.8
+      os: windows
   include:
     - stage: Minimal
       env: srv=mariadb v=10.6 local=1
