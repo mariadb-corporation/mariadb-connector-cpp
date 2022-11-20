@@ -2,13 +2,13 @@
 
 set -ex
 
-if [ -n "$BENCH" ] ; then
-  sudo benchmark/build.sh
-  cd benchmark
-  sudo ./installation.sh
-  sudo ./launch.sh
-  exit
-fi
+#if [ -n "$BENCH" ] ; then
+#  sudo benchmark/build.sh
+#  cd benchmark
+#  sudo ./installation.sh
+#  sudo ./launch.sh
+#  exit
+#fi
 
 # Setting test environment before building connector to configure tests default credentials
 if [ "$TRAVIS_OS_NAME" = "windows" ] ; then

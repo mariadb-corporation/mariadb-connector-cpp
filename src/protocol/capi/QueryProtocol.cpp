@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2022 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -94,7 +94,7 @@ namespace capi
     }catch (SQLException& sqlException){
       throw logQuery->exceptionWithQuery("COM_RESET_CONNECTION failed.", sqlException, explicitClosed);
     }catch (std::runtime_error& e){
-      throw handleIoException(e);
+      handleIoException(e).Throw();
     }
   }
 
@@ -141,7 +141,7 @@ namespace capi
     }catch (SQLException& sqlException){
       throw logQuery->exceptionWithQuery(sql, sqlException, explicitClosed);
     }catch (std::runtime_error& e){
-      throw handleIoException(e);
+      handleIoException(e).Throw();
     }
   }
 
@@ -271,7 +271,7 @@ namespace capi
       throw logQuery->exceptionWithQuery(parameters, queryException, clientPrepareResult);
     }
     catch (std::runtime_error& e) {
-      throw handleIoException(e);
+      handleIoException(e).Throw();
     }
   }
 
@@ -471,7 +471,7 @@ namespace capi
       if (!serverPrepareResult && tmpServerPrepareResult) {
         releasePrepareStatement(tmpServerPrepareResult);
       }
-      throw handleIoException(e);
+      handleIoException(e).Throw();
     }
     //To please compilers etc
     return false;
@@ -727,7 +727,7 @@ namespace capi
         }
       }
       catch (std::runtime_error& e) {
-        throw handleIoException(e);
+        handleIoException(e).Throw();
       }
       stopIfInterrupted();
 
@@ -932,7 +932,7 @@ namespace capi
     }catch (SQLException& sqlEx){
       throw logQuery->exceptionWithQuery(sqlEx,prepareResult);
     }catch (std::runtime_error& e){
-      throw handleIoException(e);
+      handleIoException(e).Throw();
     }/* TODO: something with the finally was once here */ {
       results->setRewritten(rewriteValues);
     }
@@ -1033,14 +1033,13 @@ namespace capi
     }catch (SQLException& qex){
       throw logQuery->exceptionWithQuery(parameters, qex, serverPrepareResult);
     }catch (std::runtime_error& e){
-      throw handleIoException(e);
+      handleIoException(e).Throw();
     }
   }
 
   /** Rollback transaction. */
   void QueryProtocol::rollback()
   {
-
     cmdPrologue();
 
     std::lock_guard<std::mutex> localScopeLock(*lock);
@@ -1050,8 +1049,7 @@ namespace capi
         executeQuery("ROLLBACK");
       }
 
-    }catch (std::runtime_error&){
-
+    } catch (std::runtime_error&){
     }
   }
 
@@ -1640,7 +1638,7 @@ namespace capi
         writer.writeEmptyPacket();
 
       }catch (std::runtime_error& ioe){
-        throw handleIoException(ioe);
+        handleIoException(ioe).Throw();
       }/* TODO: something with the finally was once here */ {
         is.close();
       }
@@ -1648,7 +1646,7 @@ namespace capi
       getResult(results.get());
 
     }catch (std::runtime_error& ioe){
-      throw handleIoException(e);
+      handleIoException(e.Throw();
     }
 #endif
 
@@ -1693,7 +1691,7 @@ namespace capi
       throw e;
     }
     catch (std::runtime_error& e){
-      throw handleIoException(e);
+      handleIoException(e).Throw();
     }
   }
 
@@ -1723,19 +1721,19 @@ namespace capi
       throw SQLNonTransientConnectionException("execute() is called on closed connection", "08000");
     }
 
-    if (!hasProxy && shouldReconnectWithoutProxy()){
+    if (!hasProxy && shouldReconnectWithoutProxy()) {
       try {
         connectWithoutProxy();
-      }catch (SQLException& qe){
-
-        ExceptionFactory::of(serverThreadId, options)->create(qe).Throw();
+      } catch (SQLException& qe){
+        exceptionFactory.reset(ExceptionFactory::of(serverThreadId, options));
+        exceptionFactory->create(qe).Throw();
       }
     }
 
     try {
       setMaxRows(maxRows);
     }catch (SQLException& qe){
-      ExceptionFactory::of(serverThreadId, options)->create(qe).Throw();
+      exceptionFactory->create(qe).Throw();
     }
 
     connection->reenableWarnings();

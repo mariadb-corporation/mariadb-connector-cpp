@@ -63,14 +63,16 @@ bool SimpleParameterMetaData::isSigned(uint32_t param)
 int32_t SimpleParameterMetaData::getPrecision(uint32_t param)
 {
   validateParameter(param);
-  throw ExceptionFactory::INSTANCE.create("Unknown parameter metadata precision");
+  ExceptionFactory::INSTANCE.create("Unknown parameter metadata precision").Throw();
+  return 0;
 }
 
 
 int32_t SimpleParameterMetaData::getScale(uint32_t param)
 {
   validateParameter(param);
-  throw ExceptionFactory::INSTANCE.create("Unknown parameter metadata scale");
+  ExceptionFactory::INSTANCE.create("Unknown parameter metadata scale").Throw();
+  return 0;
 }
 
 
@@ -85,14 +87,16 @@ int32_t SimpleParameterMetaData::getParameterType(uint32_t param)
 SQLString SimpleParameterMetaData::getParameterTypeName(uint32_t param)
 {
   validateParameter(param);
-  throw ExceptionFactory::INSTANCE.create("Unknown parameter metadata type name");
+  ExceptionFactory::INSTANCE.create("Unknown parameter metadata type name").Throw();
+  return 0;
 }
 
 
 SQLString SimpleParameterMetaData::getParameterClassName(uint32_t param)
 {
   validateParameter(param);
-  throw ExceptionFactory::INSTANCE.create("Unknown parameter metadata class name");
+  ExceptionFactory::INSTANCE.create("Unknown parameter metadata class name").Throw();
+  return 0;
 }
 
 

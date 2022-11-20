@@ -1074,7 +1074,7 @@ void connection::connectUsingMap()
     connection_properties.erase("port");
     {
       sql::SQLString port("-1");
-      if (url.compare(0, sizeof ("tcp://") - 1, "tcp://") == 0)
+      if (url.compare(0, sizeof ("tcp://") - 1, "tcp://") == 0 || url.compare(0, sizeof("jdbc:mariadb:") - 1, "jdbc:mariadb://") == 0)
       {
         size_t port_pos;
         port_pos=url.find_last_of(":", std::string::npos);
@@ -2043,7 +2043,6 @@ void connection::connectOptReconnect()
 
     logMsg("... OPT_RECONNECT disabled and KILL");
 
-
     connection_properties.erase("OPT_RECONNECT");
     connection_properties["OPT_RECONNECT"]= "false";
 
@@ -2120,7 +2119,6 @@ void connection::connectOptReconnect()
     {
       /* KILL has failed - that is OK, we may not have permissions */
     }
-
   }
   catch (sql::SQLException &e)
   {
@@ -2128,8 +2126,8 @@ void connection::connectOptReconnect()
     logErr("SQLState: " + std::string(e.getSQLState()));
     fail(e.what(), __FILE__, __LINE__);
   }
-
 }
+
 
 void connection::setTransactionIsolation()
 {

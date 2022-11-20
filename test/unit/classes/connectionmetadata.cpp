@@ -292,8 +292,8 @@ void connectionmetadata::getColumnPrivileges()
   }
   try
   {
-    stmt->execute("GRANT SELECT (col1,col2) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
-    stmt->execute("GRANT INSERT (col1) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+    stmt->executeUpdate("GRANT SELECT (col1,col2) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+    stmt->executeUpdate("GRANT INSERT (col1) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
   }
   catch (sql::SQLException & e)
   {
@@ -303,8 +303,8 @@ void connectionmetadata::getColumnPrivileges()
     {
       userLocation= "@'localhost'";
 
-      stmt->execute("GRANT SELECT (col1,col2) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
-      stmt->execute("GRANT INSERT (col1) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+      stmt->executeUpdate("GRANT SELECT (col1,col2) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+      stmt->executeUpdate("GRANT INSERT (col1) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
     }
     catch (sql::SQLException & e)
     {
@@ -317,6 +317,7 @@ void connectionmetadata::getColumnPrivileges()
   }
   try
   {
+    stmt->executeUpdate("FLUSH PRIVILEGES");
     res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test_getcolpriv", "id"));
     ASSERT_EQUALS(false, res->next());
   }
@@ -390,9 +391,9 @@ void connectionmetadata::getColumnPrivileges()
   }
   try
   {
-    stmt->execute("DROP TABLE IF EXISTS test_getcolpriv");
     stmt->execute("REVOKE SELECT (col1,col2) ON test_getcolpriv FROM '" + this->user + "'" + userLocation);
     stmt->execute("REVOKE INSERT (col1) ON test_getcolpriv FROM '" + this->user + "'" + userLocation);
+    stmt->execute("DROP TABLE IF EXISTS test_getcolpriv");
 
     res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test_getcolpriv", "col2"));
     ASSERT(!res->next());

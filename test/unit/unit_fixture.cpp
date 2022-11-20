@@ -327,7 +327,7 @@ void unit_fixture::init()
   }
   else
   {
-    urlWithoutSchema= url.substr(0, slashPos - 1);
+    urlWithoutSchema= url.substr(0, slashPos);
   }
 }
 
