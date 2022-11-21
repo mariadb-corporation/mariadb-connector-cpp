@@ -434,7 +434,7 @@ void connectionmetadata::getColumns()
     int32_t serverVersion = getServerVersion(con);
 
     logMsg("... looping over all kinds of column types");
-    for (it=columns.begin(); it != columns.end(); it++)
+    for (it = columns.begin(); it != columns.end(); it++)
     {
       stmt->execute("DROP TABLE IF EXISTS test");
       msg.str("");
@@ -447,7 +447,7 @@ void connectionmetadata::getColumns()
         msg << "... testing " << it->sqldef;
         logMsg(msg.str());
       }
-      catch (sql::SQLException &)
+      catch (sql::SQLException&)
       {
         msg.str("");
         msg << "... skipping " << it->sqldef;
@@ -459,7 +459,7 @@ void connectionmetadata::getColumns()
       ASSERT_EQUALS(true, res->next());
       if (con->getCatalog() != "" && res->getString(1) != "" && con->getCatalog() != res->getString("TABLE_CAT"))
       {
-        got_todo_warning=true;
+        got_todo_warning = true;
         msg.str("");
         msg << "...\t\tWARNING - expecting TABLE_CAT = '" << con->getCatalog() << "'";
         msg << " got '" << res->getString("TABLE_CAT") << "'";
@@ -478,7 +478,7 @@ void connectionmetadata::getColumns()
         msg << "... \t\tWARNING - check DATA_TYPE for " << it->sqldef;
         msg << " - expecting type " << it->ctype << " got " << res->getInt("DATA_TYPE");
         logMsg(msg.str());
-        got_warning=true;
+        got_warning = true;
       }
       // ASSERT_EQUALS(it->ctype, res->getInt("DATA_TYPE"));
       ASSERT_EQUALS(res->getInt(5), res->getInt("DATA_TYPE"));
@@ -489,7 +489,7 @@ void connectionmetadata::getColumns()
         msg << "... \t\tWARNING - check TYPE_NAME for " << it->sqldef;
         msg << " - expecting type " << it->name << " got " << res->getString("TYPE_NAME");
         logMsg(msg.str());
-        got_warning=true;
+        got_warning = true;
       }
       // ASSERT_EQUALS(it->name, res->getString("TYPE_NAME"));
       ASSERT_EQUALS(res->getString(6), res->getString("TYPE_NAME"));
@@ -500,7 +500,7 @@ void connectionmetadata::getColumns()
         msg << "... \t\tWARNING - check COLUMN_SIZE for " << it->sqldef;
         msg << " - expecting pecision " << it->precision << " got " << res->getUInt64(7);
         logMsg(msg.str());
-        got_warning=true;
+        got_warning = true;
       }
       ASSERT_EQUALS(res->getUInt(7), res->getUInt("COLUMN_SIZE"));
 
@@ -520,12 +520,18 @@ void connectionmetadata::getColumns()
         msg << " columnNullable = " << sql::DatabaseMetaData::columnNullable << ", ";
         msg << " columnNullableUnknown = " << sql::DatabaseMetaData::columnNullableUnknown;
         logMsg(msg.str());
-        got_warning=true;
+        got_warning = true;
       }
       ASSERT_EQUALS(it->nullable, res->getInt(11));
       ASSERT_EQUALS(res->getInt(11), res->getInt("NULLABLE"));
       ASSERT_EQUALS(it->remarks, res->getString(12));
       ASSERT_EQUALS(res->getString(12), res->getString("REMARKS"));
+
+      if (it->column_def.compare("'0000-00-00 00:00:00'") == 0 && serverVersion > 1010000)
+      {
+        // At least at 10.10.2(maybe in previous, but it's first ga) COLUMN_DEFAULT becomes NULL
+        it->column_def.assign("NULL");
+      }
       if(it->column_def != res->getString(13))
       {
         msg.str("");
