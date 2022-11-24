@@ -26,20 +26,25 @@ else
   if [ -n "$MYSQL_TEST_SSL_PORT" ] ; then
     export TEST_SSL_PORT=$MYSQL_TEST_SSL_PORT
   fi
+  if ! [ "$TRAVIS_OS_NAME" = "osx" ] ; then
+    sudo apt install cmake
+  fi
 fi
 
 export CCPP_DIR=/home/travis/build/mariadb-corporation/mariadb-connector-cpp
 export TEST_UID=$TEST_DB_USER
 export TEST_SERVER=$TEST_DB_HOST
+set +x
 export TEST_PASSWORD=$TEST_DB_PASSWORD
+# Just to see in log that this was done
+echo "export TEST_PASSWORD=******************"
+set -ex
 export TEST_PORT=$TEST_DB_PORT
 export TEST_SCHEMA=testcpp
 export TEST_VERBOSE=true
 if [ "${TEST_REQUIRE_TLS}" = "1" ] ; then
   export TEST_USETLS=true
 fi
-
-sudo apt install cmake
 
 if [ "$TRAVIS_OS_NAME" = "windows" ] ; then
   cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DWITH_MSI=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=SCHANNEL -DTEST_HOST="jdbc:mariadb://$TEST_DB_HOST:$TEST_DB_PORT" .

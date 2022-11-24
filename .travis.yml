@@ -47,7 +47,7 @@ jobs:
     - env: srv=xpand
     - env: srv=mysql v=5.7
     - env: srv=mysql v=8.0
-    - env: srv=mariadb v=10.8
+    - env: srv=mariadb v=10.6
       os: windows
   include:
     - stage: Minimal
@@ -75,10 +75,10 @@ jobs:
 
 
     - stage: Community
-      env: srv=mariadb v=10.8
+      env: srv=mariadb v=10.6
       os: windows
       language: shell
-      name: "CS 10.8 - Windows"
+      name: "CS 10.6 - Windows"
     - env: srv=mariadb v=10.3 local=1
       name: "CS 10.3"
     - env: srv=mariadb v=10.4 local=1
@@ -96,4 +96,4 @@ jobs:
     - env: srv=build
       name: "CS build"
 
-script: sudo ./travis.sh
+script: ./travis.sh
