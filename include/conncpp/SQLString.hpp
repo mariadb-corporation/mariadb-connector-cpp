@@ -81,6 +81,7 @@ public:
   std::string::const_iterator cbegin() const { return begin(); }
   std::string::const_iterator cend() const { return end(); }
   void clear();
+  std::string toString();
 
   /* Few extensions to mimic some java's String functionality. Probably should be moved to standalone functions */
   int64_t hashCode() const;

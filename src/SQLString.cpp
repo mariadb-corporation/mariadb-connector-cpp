@@ -333,4 +333,8 @@ namespace sql
     SQLString lcThis((*theString)->c_str(), (*theString)->length()), lsThat(other.c_str(), other.length());
     return lcThis.toLowerCase().compare(lsThat.toLowerCase());
   }
+  std::string SQLString::toString()
+  {
+    return theString->get();
+  }
 }
