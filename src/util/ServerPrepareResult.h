@@ -59,14 +59,14 @@ public:
   ~ServerPrepareResult();
 
   ServerPrepareResult(
-    SQLString sql,
+    const SQLString& sql,
     capi::MYSQL_STMT* statementId,
     std::vector<Shared::ColumnDefinition>& columns,
     std::vector<Shared::ColumnDefinition>& parameters,
     Protocol* unProxiedProtocol);
 
   ServerPrepareResult(
-    SQLString sql,
+    const SQLString& sql,
     capi::MYSQL_STMT* statementId,
     Protocol* unProxiedProtocol);
 

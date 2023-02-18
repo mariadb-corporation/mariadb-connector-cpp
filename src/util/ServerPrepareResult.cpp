@@ -45,7 +45,7 @@ namespace mariadb
     * @param unProxiedProtocol indicate the protocol on which the prepare has been done
     */
   ServerPrepareResult::ServerPrepareResult(
-    SQLString _sql,
+    const SQLString& _sql,
     capi::MYSQL_STMT* _statementId,
     std::vector<Shared::ColumnDefinition>& _columns,
     std::vector<Shared::ColumnDefinition>& _parameters,
@@ -69,7 +69,7 @@ namespace mariadb
   * @param unProxiedProtocol indicate the protocol on which the prepare has been done
   */
   ServerPrepareResult::ServerPrepareResult(
-    SQLString _sql,
+    const SQLString& _sql,
     capi::MYSQL_STMT* _statementId,
     Protocol* _unProxiedProtocol)
     : sql(_sql)
