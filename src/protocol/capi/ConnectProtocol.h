@@ -155,6 +155,7 @@ namespace capi
 
 
     void compressionHandler(const Shared::Options& options);
+    void setConnectionAttributes(const SQLString& attributes);
     void assignStream(const Shared::Options& options);
     void postConnectionQueries();
     void sendPipelineAdditionalData();

@@ -38,6 +38,7 @@ namespace capi
 {
   static const char OptionSelected= 1, OptionNotSelected= 0;
   static const unsigned int uintOptionSelected= 1, uintOptionNotSelected= 0;
+  const char * attrPairSeparators= ",";
 
   const SQLString ConnectProtocol::SESSION_QUERY("SELECT @@max_allowed_packet,"
     "@@system_time_zone,"
@@ -442,12 +443,13 @@ namespace capi
           host);
 
       compressionHandler(options);
-
-    }catch (SQLException& sqlException){
+      setConnectionAttributes(options->connectionAttributes);
+    }
+    catch (SQLException& sqlException) {
       destroySocket();
       throw sqlException;
-
-    }catch (std::exception& ioException){
+    }
+    catch (std::exception& ioException) {
       destroySocket();
       if (!host.empty()){
         ExceptionFactory::INSTANCE.create(
@@ -597,6 +599,40 @@ namespace capi
   {
     if (options->useCompression){
       mysql_optionsv(connection.get(), MYSQL_OPT_COMPRESS, NULL);
+    }
+  }
+
+  /* Parses connectAttributes option and sets connection atttributes uxing it
+   */
+  void ConnectProtocol::setConnectionAttributes(const SQLString & attributes)
+  {
+    mysql_optionsv(connection.get(), MYSQL_OPT_CONNECT_ATTR_ADD, (void *)"_client_name2", (void *)"maconcpp");
+    mysql_optionsv(connection.get(), MYSQL_OPT_CONNECT_ATTR_ADD, (void *)"_client_version2", (void *)Version::version);
+
+    if (attributes.length() > 0)
+    {
+      std::vector<sql::bytes> token;
+      std::size_t pairs= Utils::tokenize(token, attributes, attrPairSeparators);
+
+      for (std::size_t i= 0; i < pairs; ++i)
+      {
+        const char *value= std::strchr(token[i].arr, ':');
+        if (value == nullptr || static_cast<std::size_t>(value - token[i].arr) > token[i].size())
+        {
+          //result= true;
+          continue;
+          /*SQLString keyCopy(key, token[i].size() - (key - token[i].arr));
+          rtrim(keyCopy);
+          mysql_optionsv(mariadb, MYSQL_OPT_CONNECT_ATTR_ADD, (void *)keyCopy.data());*/
+        }
+        else
+        {
+          SQLString keyCopy(token[i].arr, value - token[i].arr), valueCopy(value + 1, token[i].size() - (value - token[i].arr) - 1);
+          keyCopy.trim();
+          valueCopy.trim();
+          mysql_optionsv(connection.get(), MYSQL_OPT_CONNECT_ATTR_ADD, (void *)keyCopy.c_str(), (void *)valueCopy.c_str());
+        }
+      }
     }
   }
 

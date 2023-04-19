@@ -1025,5 +1025,21 @@ namespace mariadb
     }
     return false;
   }
+
+
+  std::size_t Utils::tokenize(std::vector<sql::bytes>& tokens, const char * cstring, const char * separator)
+  {
+    const char *current= cstring, *next= nullptr, *end= cstring + strlen(cstring);
+    while (next= std::strpbrk(current, separator))
+    {
+      tokens.emplace_back(current, next - current);
+      current= next + 1;
+    }
+    if (current < end)
+    {
+      tokens.emplace_back(current, end - current);
+    }
+    return tokens.size();
+  }
 }
 }

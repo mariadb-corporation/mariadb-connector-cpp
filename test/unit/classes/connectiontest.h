@@ -47,6 +47,9 @@ class connection : public unit_fixture
 private:
   typedef unit_fixture super;
 
+  bool perfschemaEnabled= false;
+  sql::SQLString driverVersion;
+
 protected:
 public:
 
@@ -90,6 +93,7 @@ public:
     TEST_CASE(useCharacterSet);
     TEST_CASE(concpp94_loadLocalInfile);
     TEST_CASE(concpp105_conn_concurrency);
+    TEST_CASE(concpp112_connection_attributes);
   }
 
   /**
@@ -282,6 +286,10 @@ public:
   /* Exception in the connector when attempting connections from multiple threads */
   void concpp105_conn_concurrency();
 
+  /* Setting of connection attributes for perfschema */
+  void concpp112_connection_attributes();
+
+  void setUp();
 };
 
 

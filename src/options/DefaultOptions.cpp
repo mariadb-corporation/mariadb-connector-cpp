@@ -452,13 +452,13 @@ namespace sql
         int32_t(0)}},
       {
         "connectionAttributes", {"connectionAttributes",
-        "0.9.1",
-        "When performance_schema is active, permit to send server "
-        "some client information in a key;value pair format "
+        "1.0.3",
+        "If performance_schema is enabled, permits to send server "
+        "some client information in a key:value pair format "
         "(example: connectionAttributes=key1:value1,key2,value2).\n"
-        "Those informations can be retrieved on server within tables performance_schema.session_connect_attrs "
+        "This information can be retrieved on server within tables performance_schema.session_connect_attrs "
         "and performance_schema.session_account_connect_attrs.\n"
-        "This can permit from server an identification of client/application",
+        "This allowa an identification of client/application on server",
         false}},
       {
         "useBatchMultiSend", {"useBatchMultiSend",

@@ -90,7 +90,7 @@ public:
   static bool isIPv6(const SQLString& ip);
   static int32_t transactionFromString(const SQLString& txIsolation);
   static bool validateFileName(const SQLString& sql, std::vector<ParameterHolder*>& parameters, const SQLString& fileName);
-
+  static std::size_t tokenize(std::vector<sql::bytes>& tokens, const char* cstring, const char *separator);
   enum Parse {
     Normal,
     String,

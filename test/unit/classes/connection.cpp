@@ -3360,5 +3360,107 @@ void connection::concpp105_conn_concurrency()
   t2.join();
 }
 
+/* Test of setting of connection attributes */
+void connection::concpp112_connection_attributes()
+{
+  if (!perfschemaEnabled)
+  {
+    SKIP("Test requires performance_schema to be on");
+  }
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_name2");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("maconcpp", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_version2");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS(driverVersion, res->getString(1));
+  res->close();
+
+  sql::Properties p{{"user", user}, {"password", passwd}};
+  sql::SQLString localUrl(url);
+  localUrl.append("?connectionAttributes=_client_attr1: attr1_value , _client_attr2 :attr2_value");
+
+  con.reset(driver->connect(localUrl, p));
+
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr1");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr1_value", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_attr2");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr2_value", res->getString(1));
+  res->close();
+
+  con->close();
+
+  localUrl= url;
+  p.emplace("connectionAttributes", "_client_attr12, _client_attr22: attr2_value2");
+  con.reset(driver->connect(localUrl, p));
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+                                    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr22");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr2_value2", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_attr12");
+  res.reset(pstmt->executeQuery());
+  ASSERT(!res->next());
+  //ASSERT(res->next());
+  ///* Not sure why, but setting attribute with name, but without value results in blank space value of the attribute(with Windows client) */
+  //ASSERT_EQUALS(" ", my_fetch_str(Hstmt, buffer, 1), 2);
+
+  p["connectionAttributes"]= "_client_attr13 :attr1_value3, _client_attr23 ";
+  con.reset(driver->connect(localUrl, p));
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+                                    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr13");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr1_value3", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_attr23");
+  res.reset(pstmt->executeQuery());
+  ASSERT(!res->next());
+  /*ASSERT(res->next());
+  ASSERT_EQUALS(" ", my_fetch_str(Hstmt, buffer, 1), 2);*/
+
+  p["connectionAttributes"]= "_client_attr14";
+  con.reset(driver->connect(localUrl, p));
+
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+                                    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr14");
+  res.reset(pstmt->executeQuery());
+  ASSERT(!res->next());
+  /*ASSERT(res->next());
+  ASSERT_EQUALS(" ", res->getString(1));*/
+
+  pstmt.reset();
+  con.reset();
+}
+
+void connection::setUp()
+{
+  super::setUp();
+
+  std::unique_ptr<sql::DatabaseMetaData> meta(con->getMetaData());
+  driverVersion= meta->getDriverVersion();
+
+  res.reset(stmt->executeQuery("SELECT 1 FROM dual where @@performance_schema=1"));
+  perfschemaEnabled= res->next();
+
+  res.reset();
+  stmt.reset(con->createStatement());
+}
+
 } /* namespace connection */
 } /* namespace testsuite */
