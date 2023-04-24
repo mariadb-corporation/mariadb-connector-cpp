@@ -85,6 +85,16 @@ namespace mariadb
     SET = 2048
   };
 
+  enum LexState
+  {
+    Normal= 0,
+    SqlString,
+    SlashStarComment,
+    Escape,
+    EOLComment,
+    Backtick
+  };
+
   /* Also probably temporary location. Using it as it's generally included by everybody */
   /* typedefs for shared_ptr types, so the code looks nicer and cleaner */
   class Pool;

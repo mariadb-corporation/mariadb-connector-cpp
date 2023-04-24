@@ -481,11 +481,11 @@ namespace capi
     parseVersion(serverVersion);
 
     if (serverVersion.startsWith(MARIADB_RPL_HACK_PREFIX)) {
-      serverMariaDb = true;
-      serverVersion = serverVersion.substr(MARIADB_RPL_HACK_PREFIX.length());
+      serverMariaDb= true;
+      serverVersion= serverVersion.substr(MARIADB_RPL_HACK_PREFIX.length());
     }
     else {
-      serverMariaDb = StringImp::get(serverVersion).find("MariaDB") != std::string::npos;
+      serverMariaDb= StringImp::get(serverVersion).find("MariaDB") != std::string::npos;
     }
     unsigned long baseCaps, extCaps;
     mariadb_get_infov(connection.get(), MARIADB_CONNECTION_EXTENDED_SERVER_CAPABILITIES, (void*)&extCaps);

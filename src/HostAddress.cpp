@@ -68,14 +68,15 @@ namespace sql
       Tokens tokens= split(spec.trim(), ",");
       size_t size= tokens->size();
 
+      /* AURORA is not supported atm */
       if (haMode == HaMode::AURORA) {
-        std::regex clusterPattern("(.+)\\.cluster-([a-z0-9]+\\.[a-z0-9\\-]+\\.rds\\.amazonaws\\.com)",
+        /*std::regex clusterPattern("(.+)\\.cluster-([a-z0-9]+\\.[a-z0-9\\-]+\\.rds\\.amazonaws\\.com)",
           std::regex_constants::ECMAScript | std::regex_constants::icase);
         if (!std::regex_search(StringImp::get(spec), clusterPattern)) {
           logger->warn("Aurora recommended connection URL must only use cluster end-point like "
             "\"jdbc:mariadb:aurora://xx.cluster-yy.zz.rds.amazonaws.com\". "
             "Using end-point permit auto-discovery of new replicas");
-        }
+        }*/
       }
       for (auto& token : *tokens) {
         if (token.startsWith("address=")) {
@@ -142,7 +143,7 @@ namespace sql
       std::unique_ptr<HostAddress> result(new HostAddress());
       Tokens array= split(_str, "(?=\\()|(?<=\\))");
 
-      for (size_t i= 1; i <array->size(); i++)
+      for (size_t i= 1; i < array->size(); i++)
       {
         SQLString str((*array)[i]);
         str= std::regex_replace(StringImp::get(str), std::regex("[\\(\\)]"), StringImp::get(emptyStr));

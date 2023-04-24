@@ -60,18 +60,6 @@ class MariaDbConnection  : public Connection
 {
     static std::shared_ptr<sql::mariadb::Logger> logger ; /*LoggerFactory.getLogger(MariaDbConnection.class)*/
 
-    static std::regex CALLABLE_STATEMENT_PATTERN ; /*Pattern.compile(
-"^(\\s*\\{)?\\s*((\\?\\s*=)?(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*"
-+"call(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*((((`[^`]+`)|([^`\\}]+))\\.)?"
-+"((`[^`]+`)|([^`\\}\\(]+)))\\s*(\\(.*\\))?(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*"
-+"\\s*(#.*)?)\\s*(\\}\\s*)?$",
-Pattern.CASE_INSENSITIVE |Pattern.DOTALL)*/
-
-    static std::regex PREPARABLE_STATEMENT_PATTERN ; /*Pattern.compile(
-"^(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*(SELECT|UPDATE|INSERT|DELETE|REPLACE|DO|CALL)",
-Pattern.CASE_INSENSITIVE)*/
-
-
     Shared::Protocol protocol;
     Shared::Options options;
 

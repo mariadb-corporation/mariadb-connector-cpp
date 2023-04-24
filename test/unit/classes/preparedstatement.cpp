@@ -1176,7 +1176,7 @@ void preparedstatement::callSPInOut()
 
     try
     {
-      cstmt.reset(con->prepareCall("CALL p('myver', @version)"));
+      cstmt.reset(con->prepareCall(" {CALL p('myver', @version) }"));
       ASSERT(!cstmt->execute());
     }
     catch (sql::SQLException &e)

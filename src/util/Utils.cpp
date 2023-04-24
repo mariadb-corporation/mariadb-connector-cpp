@@ -344,58 +344,63 @@ namespace mariadb
 
   SQLString Utils::resolveEscapes( SQLString& escaped, Protocol* protocol)
   {
-    if (escaped.at(0) != '{' || escaped.at(escaped.size()-1) != '}')
+    if (escaped.at(0) != '{' || escaped.at(escaped.size() - 1) != '}')
     {
       throw SQLException("unexpected escaped string");
     }
-    size_t endIndex= escaped.size()-1;
+    size_t endIndex= escaped.size() - 1;
     SQLString escapedLower(escaped);
     escapedLower.toLowerCase();
 
     if (escaped.startsWith("{fn "))
     {
-      SQLString resolvedParams= replaceFunctionParameter(escaped.substr(4,endIndex), protocol);
+      SQLString resolvedParams= replaceFunctionParameter(escaped.substr(4, endIndex - 4), protocol);
       return nativeSql(resolvedParams, protocol);
     }
     else if (escapedLower.startsWith("{oj "))
     {
-      return nativeSql(escaped.substr(4,endIndex), protocol);
+      return nativeSql(escaped.substr(4, endIndex - 4), protocol);
     }
     else if (escaped.startsWith("{d "))
     {
-      return escaped.substr(3,endIndex);
+      return escaped.substr(3, endIndex - 3);
     }
     else if (escaped.startsWith("{t "))
     {
-      return escaped.substr(3,endIndex);
+      return escaped.substr(3, endIndex - 3);
     }
     else if (escaped.startsWith("{ts "))
     {
-      return escaped.substr(4,endIndex);
+      return escaped.substr(4, endIndex - 4);
     }
     else if (escaped.startsWith("{d'"))
     {
-      return escaped.substr(2,endIndex);
+      return escaped.substr(2, endIndex - 2);
     }
     else if (escaped.startsWith("{t'"))
     {
-      return escaped.substr(2,endIndex);
+      return escaped.substr(2, endIndex - 2);
     }
     else if (escaped.startsWith("{ts'"))
     {
-      return escaped.substr(3,endIndex);
+      return escaped.substr(3, endIndex - 3);
     }
-    else if (escaped.startsWith("{call ")||escaped.startsWith("{CALL "))
+    else if (escapedLower.startsWith("{call "))
     {
-      return nativeSql(escaped.substr(1,endIndex), protocol);
+      return nativeSql(escaped.substr(1, endIndex - 1), protocol);
     }
     else if (escaped.startsWith("{escape "))
     {
-      return escaped.substr(1,endIndex);
+      return escaped.substr(1, endIndex - 1);
     }
     else if (escaped.startsWith("{?"))
     {
-      return nativeSql(escaped.substr(1,endIndex), protocol);
+      if (escaped[2] == '=') {
+        return nativeSql(escaped.substr(3, endIndex - 3), protocol);
+      }
+      else {
+        return nativeSql(escaped.substr(2, endIndex - 2), protocol);
+      }
     }
     else if (escaped.startsWith("{ ") || escaped.startsWith("{\n"))
     {
@@ -425,16 +430,16 @@ namespace mariadb
     //throw SQLException("unknown escape sequence "+escaped);
   }
 
+
   SQLString Utils::nativeSql(const SQLString& sql, Protocol* protocol)
   {
-    if (!(sql.find_first_of('{') != std::string::npos)){
+    if (sql.find_first_of('{') == std::string::npos) {
       return sql;
     }
 
     SQLString escapeSequenceBuf;
     SQLString sqlBuffer;
 
-    std::vector<char> charArray(sql.begin(), sql.end());
     char lastChar= 0;
     bool inQuote= false;
     char quoteChar= 0;
@@ -442,9 +447,9 @@ namespace mariadb
     bool isSlashSlashComment= false;
     int32_t inEscapeSeq= 0;
 
-    for (size_t i= 0;i <charArray.size();i++)
+    for (auto it= sql.begin(); it < sql.end(); ++it)
     {
-      char car= charArray[i];
+      char car= *it;
       if (lastChar == '\\' && !protocol->noBackslashEscapes()){
         sqlBuffer.append(car);
         lastChar = 0;
@@ -458,7 +463,7 @@ namespace mariadb
         case '`':
           if (!inComment){
             if (inQuote){
-              if (quoteChar ==car){
+              if (quoteChar == car){
                 inQuote= false;
               }
             }else {
@@ -500,13 +505,13 @@ namespace mariadb
           }
           break;
         case '{':
-          if (!inQuote &&!inComment){
+          if (!inQuote && !inComment){
             inEscapeSeq++;
           }
           break;
 
         case '}':
-          if (!inQuote &&!inComment){
+          if (!inQuote && !inComment){
             inEscapeSeq--;
             if (inEscapeSeq == 0){
               escapeSequenceBuf.append(car);
@@ -521,9 +526,9 @@ namespace mariadb
           break;
       }
       lastChar= car;
-      if (inEscapeSeq > 0){
+      if (inEscapeSeq > 0) {
         escapeSequenceBuf.append(car);
-      }else {
+      } else {
         sqlBuffer.append(car);
       }
     }
@@ -850,7 +855,7 @@ namespace mariadb
 
     for (auto car : sessionVariable)
     {
-      if (state ==Parse::Escape)
+      if (state == Parse::Escape)
       {
         sb.append(car);
         state= singleQuotes ? Parse::Quote : Parse::String;
@@ -863,7 +868,7 @@ namespace mariadb
           {
             state= Parse::String;
             singleQuotes= false;
-          }else if (state ==Parse::String && !singleQuotes){
+          }else if (state == Parse::String && !singleQuotes){
             state= Parse::Normal;
           }
           break;
@@ -872,13 +877,13 @@ namespace mariadb
           if (state ==Parse::Normal){
             state= Parse::String;
             singleQuotes= true;
-          }else if (state ==Parse::String &&singleQuotes){
+          }else if (state == Parse::String &&singleQuotes){
             state= Parse::Normal;
           }
           break;
 
         case '\\':
-          if (state ==Parse::String){
+          if (state == Parse::String){
             state= Parse::Escape;
           }
           break;
@@ -1040,6 +1045,64 @@ namespace mariadb
       tokens.emplace_back(current, end - current);
     }
     return tokens.size();
+  }
+
+
+  std::size_t Utils::skipCommentsAndBlanks(const SQLString &sql, std::size_t start)
+  {
+    LexState state= LexState::Normal;
+    char lastChar= '\0';
+
+    for (size_t i= start; i < sql.length(); ++i) {
+      char car= sql[i];
+      
+      switch (car) {
+      case '*':
+        if (state == LexState::Normal && lastChar == '/') {
+          state= LexState::SlashStarComment;
+        }
+        break;
+
+      case '/':
+        if (state == LexState::SlashStarComment && lastChar == '*') {
+          state= LexState::Normal;
+        }
+        else if (state == LexState::Normal && lastChar == '/') {
+          state= LexState::EOLComment;
+        }
+        break;
+
+      case '#':
+        if (state == LexState::Normal) {
+          state= LexState::EOLComment;
+        }
+        break;
+
+      case '-':
+        if (state == LexState::Normal && lastChar == '-') {
+          state= LexState::EOLComment;
+        }
+        break;
+
+      case '\n':
+        if (state == LexState::EOLComment) {
+          state= LexState::Normal;
+        }
+        break;
+      default:
+        if (state == LexState::Normal) {
+          if (std::isspace(sql[i])) {
+            continue;
+          }
+          else {
+            return i;
+          }
+        }
+      }
+      lastChar= car;
+    }
+    /* Like we have only comments and/or blanks */
+    return sql.length();
   }
 }
 }

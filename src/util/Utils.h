@@ -91,6 +91,8 @@ public:
   static int32_t transactionFromString(const SQLString& txIsolation);
   static bool validateFileName(const SQLString& sql, std::vector<ParameterHolder*>& parameters, const SQLString& fileName);
   static std::size_t tokenize(std::vector<sql::bytes>& tokens, const char* cstring, const char *separator);
+  static std::size_t skipCommentsAndBlanks(const SQLString &sql, std::size_t start= 0);
+
   enum Parse {
     Normal,
     String,

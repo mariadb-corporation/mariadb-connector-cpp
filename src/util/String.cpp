@@ -53,7 +53,6 @@ namespace mariadb
         break;
       }
     }
-
     std::string tmp(it, str.cend());
     result->emplace_back(tmp);
 

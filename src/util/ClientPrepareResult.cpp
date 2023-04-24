@@ -60,15 +60,13 @@ namespace mariadb
     LexState state= LexState::Normal;
     char lastChar= '\0';
     bool endingSemicolon= false;
-
     bool singleQuotes= false;
     std::size_t lastParameterPosition= 0;
 
-    const char* query= queryString.c_str();
     std::size_t queryLength= queryString.length();
-    for (std::size_t i= 0; i <queryLength; i++) {
+    for (std::size_t i= 0; i < queryLength; i++) {
 
-      char car= query[i];
+      char car= queryString[i];
       if (state == LexState::Escape
         && !((car == '\'' && singleQuotes) || (car == '"' && !singleQuotes))) {
         state= LexState::SqlString;
@@ -77,16 +75,16 @@ namespace mariadb
       }
       switch (car) {
       case '*':
-        if (state == LexState::Normal &&lastChar == '/') {
+        if (state == LexState::Normal && lastChar == '/') {
           state= LexState::SlashStarComment;
         }
         break;
 
       case '/':
-        if (state == LexState::SlashStarComment &&lastChar == '*') {
+        if (state == LexState::SlashStarComment && lastChar == '*') {
           state= LexState::Normal;
         }
-        else if (state == LexState::Normal &&lastChar == '/') {
+        else if (state == LexState::Normal && lastChar == '/') {
           state= LexState::EOLComment;
         }
         break;
@@ -98,7 +96,7 @@ namespace mariadb
         break;
 
       case '-':
-        if (state == LexState::Normal &&lastChar == '-') {
+        if (state == LexState::Normal && lastChar == '-') {
           state= LexState::EOLComment;
           multipleQueriesPrepare= false;
         }
@@ -129,10 +127,10 @@ namespace mariadb
           state= LexState::SqlString;
           singleQuotes= true;
         }
-        else if (state == LexState::SqlString &&singleQuotes) {
+        else if (state == LexState::SqlString && singleQuotes) {
           state= LexState::Normal;
         }
-        else if (state == LexState::Escape &&singleQuotes) {
+        else if (state == LexState::Escape && singleQuotes) {
           state= LexState::SqlString;
         }
         break;
@@ -168,7 +166,7 @@ namespace mariadb
         break;
       default:
 
-        if (state == LexState::Normal &&endingSemicolon &&((int8_t)car >=40)) {
+        if (state == LexState::Normal && endingSemicolon && ((int8_t)car >= 40)) {
           endingSemicolon= false;
           multipleQueriesPrepare= true;
         }

@@ -21,7 +21,6 @@
 #ifndef _ROWPROTOCOL_H_
 #define _ROWPROTOCOL_H_
 
-#include <regex>
 #include <iostream>
 
 #include "Consts.h"
@@ -64,6 +63,9 @@ struct memBuf : std::streambuf
   }
 };
 
+bool isDate(const SQLString& str);
+bool isTime(const SQLString& str);
+bool parseTime(const SQLString& str, std::vector<std::string>& time);
 
 class RowProtocol  {
 
@@ -76,10 +78,7 @@ public:
   static const DateTimeFormatter* TEXT_LOCAL_DATE_TIME;
   static const DateTimeFormatter* TEXT_OFFSET_DATE_TIME;
   static const DateTimeFormatter* TEXT_ZONED_DATE_TIME;
-  static std::regex isIntegerRegex ; /*Pattern.compile("^-?\\d+\\.[0-9]+$")*/
-  static std::regex dateRegex;
-  static std::regex timeRegex;
-  static std::regex timestampRegex;
+
   static long double stringToDouble(const char* str, uint32_t len);
 
 protected:

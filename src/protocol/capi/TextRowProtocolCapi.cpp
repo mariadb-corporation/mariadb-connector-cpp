@@ -221,7 +221,7 @@ namespace capi
    default:
    {
      std::string str(fieldBuf.arr + pos, length);
-     if (std::regex_match(str, dateRegex))
+     if (isDate(str))
      {
        return str.substr(0, 10 + (str.at(0) == '-' ? 1 : 0));
      }
@@ -264,23 +264,23 @@ namespace capi
 
    }
    else {
-     std::string raw(fieldBuf.arr + pos, length);
-     std::smatch matcher;
+     SQLString raw(fieldBuf.arr + pos, length);
+     std::vector<std::string> matcher;
 
-     if (!std::regex_search(raw, matcher, timeRegex)) {
-       throw SQLException("Time format \""+raw +"\" incorrect, must be HH:mm:ss");
+     if (!parseTime(raw, matcher)) {
+       throw SQLException("Time format \"" + raw + "\" incorrect, must be [-]HH+:[0-59]:[0-59]");
      }
-     bool negate= !matcher[1].str().empty();
+     bool negate= !matcher[1].empty();
 
      int32_t hour= std::stoi(matcher[2]);
      int32_t minutes= std::stoi(matcher[3]);
      int32_t seconds= std::stoi(matcher[4]);
-     std::string parts(matcher[5].str());
+     auto &parts= matcher.back();
      int32_t nanoseconds= 0;
 
      if (parts.length() > 1)
      {
-       size_t digitsCnt= parts.length() - 1;
+       std::size_t digitsCnt= parts.length() - 1;
        nanoseconds= std::stoi(parts.substr(1, std::min(digitsCnt, (size_t)9U)));
 
        while (digitsCnt++ < 9) {
@@ -288,7 +288,7 @@ namespace capi
        }
      }
 
-     return std::unique_ptr<Time>(new Time(matcher[0].str()));
+     return std::unique_ptr<Time>(new Time(matcher[0]));
    }
  }
 
@@ -841,7 +841,6 @@ namespace capi
          return std::stoull(value.substr(0, value.find_first_of('.')));
        }
        catch (std::exception&) {
-
        }
      }*/
      throw SQLException(

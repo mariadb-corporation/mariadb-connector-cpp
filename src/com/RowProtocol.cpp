@@ -34,10 +34,129 @@ namespace mariadb
   int32_t RowProtocol::TINYINT1_IS_BIT= 1;
   int32_t RowProtocol::YEAR_IS_DATE_TYPE= 2;
 
-  std::regex RowProtocol::isIntegerRegex("^-?\\d+\\.[0-9]+$", std::regex_constants::ECMAScript);
-  std::regex RowProtocol::dateRegex("^-?\\d{4}-\\d{2}-\\d{2}", std::regex_constants::ECMAScript);
-  std::regex RowProtocol::timeRegex("^(-?)(\\d{2}):(\\d{2}):(\\d{2})(\\.\\d+)?", std::regex_constants::ECMAScript);
-  std::regex RowProtocol::timestampRegex("^-?\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.?", std::regex_constants::ECMAScript);
+  bool isDate(std::string::const_iterator it)
+  {
+    if (*it == '-') {
+      ++it;
+    }
+
+    if (std::isdigit(*it) && std::isdigit(*++it) && std::isdigit(*++it) && std::isdigit(*++it) &&
+      *++it == '-' &&
+      std::isdigit(*it) && std::isdigit(*++it) && std::isdigit(*++it) && std::isdigit(*++it) &&
+      *++it == '-' &&
+      std::isdigit(*it) && std::isdigit(*++it) && std::isdigit(*++it) && std::isdigit(*it)) {
+      return true;
+    }
+    return false;
+  }
+
+  bool isDate(const SQLString& str)
+  {
+    const std::string& realStr= StringImp::get(str);
+    if (str.length() < 10) {
+      return false;
+    }
+    return isDate(str.cbegin());
+  }
+
+
+  bool isTime(std::string::const_iterator it, bool canBeNegative= true)
+  {
+    if (canBeNegative && *it == '-') {
+      ++it;
+    }
+
+    if (std::isdigit(*it) && std::isdigit(*++it) &&
+      *++it == ':' &&
+      std::isdigit(*it) && std::isdigit(*++it) &&
+      *++it == ':' &&
+      std::isdigit(*it) && std::isdigit(*it)) {
+      return true;
+    }
+    return false;
+  }
+
+
+  bool isTime(const SQLString& str)
+  {
+    auto& realStr= StringImp::get(str);
+    if (str.length() < 8) {
+      return false;
+    }
+    return isTime(str.cbegin());
+  }
+
+
+  bool parseTime(const SQLString& str2parse, std::vector<std::string>& time)
+  {
+    auto& str= StringImp::get(str2parse);
+    constexpr std::size_t minTimeLength= 5; /*N:N:N*/
+    std::string::const_iterator it = str.cbegin(), colon = it + str.find(':'), colon2 = str.cbegin();
+
+    if (str.length() < minTimeLength || colon >= str.cend()) {
+      return false;
+    }
+    colon2+= str.find(':', colon - str.cbegin() + 1);
+    if (colon2 >= str.cend() || colon2 - colon > 3) {
+      return false;
+    }
+
+    // Reserving first element for complete time string
+    time.emplace_back("");
+
+    std::size_t offset = 0;
+    if (*it == '-') {
+      time.emplace_back("-");
+      offset= 1;
+      ++it;
+}
+    else {
+      time.emplace_back("");
+    }
+
+    while (it < colon && std::isdigit(*it)) {
+      ++it;
+    }
+    if (it < colon) {
+      return false;
+    }
+
+    if (std::isdigit(*++it) && (std::isdigit(*++it) || it == colon2))
+    {
+      time.emplace_back(str.cbegin() + offset, colon);
+      time.emplace_back(colon + 1, colon2);
+      it= colon2;
+      while (++it < str.cend() && std::isdigit(*it));
+
+      if (it - colon2 > 3) {
+        return false;
+      }
+      if (it - colon2 == 1) {
+        time.emplace_back("");
+      }
+      else {
+        time.emplace_back(colon2 + 1, it);
+      }
+      if (it < str.cend() && *it == '.') {
+        auto secondPartsBegin= ++it;
+        while (it < str.cend() && std::isdigit(*it)) {
+          ++it;
+        }
+        if (it > secondPartsBegin) {
+          time.emplace_back(secondPartsBegin, it);
+        }
+        else {
+          time.emplace_back("");
+        }
+      }
+      else {
+        time.emplace_back("");
+      }
+      time[0].assign(str.begin(), it);
+      return true;
+    }
+    return false;
+  }
 
   int32_t RowProtocol::NULL_LENGTH_= -1;
 
