@@ -639,7 +639,8 @@ namespace capi
     case MYSQL_TYPE_STRING:
     case MYSQL_TYPE_DECIMAL:
       try {
-        return std::stold(static_cast<char*>(fieldBuf.arr));
+        std::string raw(fieldBuf.arr, fieldBuf.size());
+        return std::stold(raw);
       }
       // Common parent for std::invalid_argument and std::out_of_range
       catch (std::logic_error& nfe) {

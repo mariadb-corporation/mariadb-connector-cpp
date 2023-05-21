@@ -1037,12 +1037,15 @@ namespace mariadb
     const char *current= cstring, *next= nullptr, *end= cstring + strlen(cstring);
     while (next= std::strpbrk(current, separator))
     {
-      tokens.emplace_back(current, next - current);
+      /* This is rather bad CArray API - constructor from const array creates copy, while constructor from array creates "wrapping" object,
+       and here we need the wrapping one - there is no need to create copy, plus copy will not terminate array with \0, and that will create
+       problems. Possibly more clear way would be to push empty object and than explicitly wrap the string area we need */
+      tokens.emplace_back(const_cast<char*>(current), next - current);
       current= next + 1;
     }
     if (current < end)
     {
-      tokens.emplace_back(current, end - current);
+      tokens.emplace_back(const_cast<char*>(current), end - current);
     }
     return tokens.size();
   }

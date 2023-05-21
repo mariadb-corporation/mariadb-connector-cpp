@@ -1,5 +1,5 @@
 # ************************************************************************************
-#   Copyright (C) 2013,2021 MariaDB Corporation AB
+#   Copyright (C) 2013,2023 MariaDB Corporation AB
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Library General Public
@@ -41,14 +41,20 @@ SET(MARIADB_DEFAULT_PLUGINS_SUBDIR "plugin")
 SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+GET_PROPERTY(MAODBC_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+# We don't need RC for what we need MAODBC_LANGUAGES for
+LIST(REMOVE_ITEM MAODBC_LANGUAGES "RC")
+
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+
 SET(LIBRARY_NAME "mariadbcpp")
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/Version.h.in
                ${CMAKE_SOURCE_DIR}/src/Version.h)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.rc.in
                ${CMAKE_SOURCE_DIR}/src/maconncpp.rc)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/SearchLibrary.cmake)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/SetValueMacro.cmake)
+INCLUDE(SearchLibrary)
+INCLUDE(SetValueMacro)
 
 
 SET (MACPP_SOURCES src/MariaDbDriver.cpp
@@ -333,19 +339,56 @@ ELSE()
   SET(PLATFORM_DEPENDENCIES ${LIB_MATH})
 ENDIF()
 
+INCLUDE(check_compiler_flag)
+IF(WITH_ASAN)
+  IF(MSVC)
+    MA_SET_COMPILER_FLAG("-fsanitize=address" DEBUG RELWITHDEBINFO)
+    SET(MAODBC_LINKER_FLAGS ${MAODBC_LINKER_FLAGS} /INCREMENTAL:NO)
+    MA_SET_LINKER_FLAG("${MAODBC_LINKER_FLAGS}" DEBUG RELWITHDEBINFO)
+  ELSE()
+    MY_CHECK_AND_SET_COMPILER_FLAG("-U_FORTIFY_SOURCE" DEBUG RELWITHDEBINFO)
+    MY_CHECK_AND_SET_COMPILER_FLAG("-fsanitize=address -fPIC" DEBUG RELWITHDEBINFO)
+
+    SET(WITH_ASAN_OK 1)
+    FOREACH(lang ${MAODBC_LANGUAGES})
+      IF(NOT ${have_${lang}__fsanitize_address__fPIC})
+        SET(WITH_ASAN_OK 0)
+      ENDIF()
+    ENDFOREACH()
+    IF(WITH_ASAN_OK)
+      OPTION(WITH_ASAN_SCOPE "Enable -fsanitize-address-use-after-scope" OFF)
+      IF(WITH_ASAN_SCOPE)
+        MY_CHECK_AND_SET_COMPILER_FLAG("-fsanitize=address -fsanitize-address-use-after-scope" DEBUG RELWITHDEBINFO)
+      ENDIF()
+    ELSE()
+      MESSAGE(FATAL_ERROR "Do not know how to enable address sanitizer")
+    ENDIF()
+  ENDIF()
+ENDIF()
+
+IF (WITH_UBSAN)
+  MY_CHECK_AND_SET_COMPILER_FLAG("-fsanitize=undefined -fno-sanitize=alignment -U_FORTIFY_SOURCE -DWITH_UBSAN" DEBUG RELWITHDEBINFO)
+ENDIF()
+
+IF (WITH_MSAN)
+  MY_CHECK_AND_SET_COMPILER_FLAG("-fsanitize=memory -fsanitize-memory-track-origins -U_FORTIFY_SOURCE" DEBUG RELWITHDEBINFO)
+ENDIF()
+
 # This has to be before C/C's cmake run, or it will build with /MD
 IF(WIN32)
   IF (MSVC)
     SET(CONFIG_TYPES "DEBUG" "RELEASE" "RELWITHDEBINFO" "MINSIZEREL")
     FOREACH(BUILD_TYPE ${CONFIG_TYPES})
-      FOREACH(COMPILER CXX C)
+      FOREACH(COMPILER ${MAODBC_LANGUAGES})
         SET(COMPILER_FLAGS "${CMAKE_${COMPILER}_FLAGS_${BUILD_TYPE}}")
         IF (NOT COMPILER_FLAGS STREQUAL "")
-          STRING(REPLACE "/MD" "/MT" COMPILER_FLAGS ${COMPILER_FLAGS})
-          IF (BUILD_TYPE STREQUAL "Debug")
-            SET(COMPILER_FLAGS "${COMPILER_FLAGS} /RTC1 /RTCc")
+          IF(NOT WITH_ASAN)
+            STRING(REPLACE "/MD" "/MT" COMPILER_FLAGS ${COMPILER_FLAGS})
+            IF (BUILD_TYPE STREQUAL "Debug")
+              SET(COMPILER_FLAGS "${COMPILER_FLAGS} /RTC1 /RTCc")
+            ENDIF()
             STRING(REPLACE "/Zi" "/ZI" COMPILER_FLAGS ${COMPILER_FLAGS})
-          ENDIF()
+          ENDIF(NOT WITH_ASAN)
           MESSAGE (STATUS "CMAKE_${COMPILER}_FLAGS_${BUILD_TYPE}= ${COMPILER_FLAGS}")
           SET(CMAKE_${COMPILER}_FLAGS_${BUILD_TYPE} ${COMPILER_FLAGS} CACHE
                STRING "overwritten by mariadb-cpp" FORCE)
@@ -360,10 +403,10 @@ IF(WIN32)
 ENDIF()
 
 ### Build options, initial settings and platform defaults
-INCLUDE("${CMAKE_SOURCE_DIR}/cmake/options_defaults.cmake")
+INCLUDE("options_defaults")
 
 ### Setting installation paths - should go before C/C subproject sets its own. We need to have control over those
-INCLUDE("${CMAKE_SOURCE_DIR}/cmake/install.cmake")
+INCLUDE("install")
 MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIB_SUFFIX}")
 MESSAGE(STATUS "Authentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
 
@@ -385,7 +428,7 @@ IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
     SET(CONNCPP_GIT_BUILD_SRCPKG TRUE)
   ENDIF()
   MESSAGE(STATUS "Running C/C cmake scripts")
-  INCLUDE(${CMAKE_SOURCE_DIR}/cmake/connector_c.cmake)
+  INCLUDE(connector_c)
   INSTALL(FILES
           $<TARGET_FILE:libmariadb>
           DESTINATION ${INSTALL_LIBDIR}
@@ -523,10 +566,10 @@ IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
 ENDIF()
 
 # Packaging
-INCLUDE(cmake/packaging.cmake)
+INCLUDE(packaging)
 MESSAGE(STATUS "License File: ${CPACK_RESOURCE_FILE_LICENSE}")
 MESSAGE(STATUS "ReadMe File: ${CPACK_PACKAGE_DESCRIPTION_FILE}")
 MESSAGE(STATUS "Source Package Filename: ${CPACK_SOURCE_PACKAGE_FILE_NAME}.${CPACK_SOURCE_GENERATOR}")
 
-# install_test/CMakeLists.txt fuke configuration should go after packaging.cmake but before include(CPack). Since CPack included in packaging cmake,
+# install_test/CMakeLists.txt configuration should go after packaging.cmake but before include(CPack). Since CPack included in packaging cmake,
 # that configuration has been moved there. For the same reason there also moved the message with package name

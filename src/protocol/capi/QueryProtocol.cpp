@@ -422,7 +422,13 @@ namespace capi
 
       try {
         getResult(results.get(), tmpServerPrepareResult);
-      }catch (SQLException& sqle){
+      }
+      catch (SQLException& sqle) {
+        if (!serverPrepareResult && tmpServerPrepareResult) {
+          releasePrepareStatement(tmpServerPrepareResult);
+          // releasePrepareStatement basically cares only about releasing stmt on server(and C API handle)
+          delete tmpServerPrepareResult;
+        }
         if (sqle.getSQLState().compare("HY000") == 0 && sqle.getErrorCode()==1295){
           // query contain commands that cannot be handled by BULK protocol
           // clear error and special error code, so it won't leak anywhere
@@ -444,13 +450,18 @@ namespace capi
       results->setRewritten(true);
       
       if (!serverPrepareResult && tmpServerPrepareResult){
-      releasePrepareStatement(tmpServerPrepareResult);
+        releasePrepareStatement(tmpServerPrepareResult);
+        // releasePrepareStatement basically cares only about releasing stmt on server(and C API handle)
+        delete tmpServerPrepareResult;
       }
       return true;
 
-    }catch (std::runtime_error& e){
+    }
+    catch (std::runtime_error& e) {
       if (!serverPrepareResult && tmpServerPrepareResult) {
         releasePrepareStatement(tmpServerPrepareResult);
+        // releasePrepareStatement basically cares only about releasing stmt on server(and C API handle)
+        delete tmpServerPrepareResult;
       }
       handleIoException(e).Throw();
     }

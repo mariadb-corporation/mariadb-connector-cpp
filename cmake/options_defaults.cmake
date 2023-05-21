@@ -1,18 +1,28 @@
 #
-#  Copyright (C) 2021-2022 MariaDB Corporation AB
+#  Copyright (C) 2021,2023 MariaDB Corporation AB
 #
 #  Redistribution and use is allowed according to the terms of the New
 #  BSD license.
 #  For details see the COPYING-CMAKE-SCRIPTS file.
 #
 
+OPTION(CONC_WITH_UNIT_TESTS "Build C/C unit tests" OFF)
+OPTION(WITH_ASAN "Compile with ASAN" OFF)
+OPTION(WITH_UBSAN "Enable undefined behavior sanitizer" OFF)
+OPTION(WITH_MSAN "Enable memory sanitizer" OFF)
 
 IF(WIN32)
   OPTION(WITH_MSI "Build MSI installation package" ON)
+  OPTION(CONC_WITH_MSI "Build C/C MSI installation package" OFF)
   OPTION(WITH_SIGNCODE "Digitally sign files" OFF)
 
   OPTION(MARIADB_LINK_DYNAMIC "Link Connector/C library dynamically" OFF)
   OPTION(ALL_PLUGINS_STATIC "Compile all plugins in, i.e. make them static" OFF)
+  SET(CLIENT_PLUGIN_PVIO_NPIPE "STATIC")
+  # We don't provide its support in ODBC yet, thus there is no need to bloat the library size
+  #SET(CLIENT_PLUGIN_PVIO_SHMEM "STATIC")
+  SET(WITH_UBSAN OFF)
+  SET(WITH_MSAN OFF)
 ELSE()
   OPTION(WITH_MSI "Build MSI installation package" OFF)
   IF(APPLE)
@@ -79,4 +89,6 @@ IF(WIN32)
     SET(CLIENT_PLUGIN_MYSQL_OLD_PASSWORD "STATIC")
     SET(MARIADB_LINK_DYNAMIC OFF)
   ENDIF()
+ELSE()
+  SET(WITH_MSI OFF)
 ENDIF()
