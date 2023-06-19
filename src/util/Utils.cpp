@@ -38,12 +38,6 @@ namespace mariadb
   }
 
   const char Utils::hexArray[]= "0123456789ABCDEF";
-  std::regex Utils::IP_V4(
-      "^(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){1}"
-      "(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){2}"
-      "([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$");
-  std::regex Utils::IP_V6("^[0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}$", std::regex_constants::ECMAScript );
-  std::regex Utils::IP_V6_COMPRESSED( "^(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){0,5})?)" "::(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){0,5})?)$");
   SocketHandlerFunction* Utils::socketHandler;
   /**
     * Use standard socket implementation.
@@ -113,56 +107,6 @@ namespace mariadb
     }
   }
 
-  /**
-    * Encrypts a password.
-    *
-    * <p>protocol for authentication is like this: 1. Server sends a random array of bytes (the seed)
-    * 2. client makes a sha1 digest of the password 3. client hashes the output of 2 4. client
-    * digests the seed 5. client updates the digest with the output from 3 6. an xor of the output of
-    * 5 and 2 is sent to server 7. server does the same thing and verifies that the scrambled
-    * passwords match
-    *
-    * @param password the password to encrypt
-    * @param seed the seed to use
-    * @param passwordCharacterEncoding password character encoding
-    * @return a scrambled password
-    * @throws NoSuchAlgorithmException if SHA1 is not available on the platform we are using
-    * @throws UnsupportedEncodingException if passwordCharacterEncoding is not a valid charset name
-    */
-  static const char* encryptPassword( const SQLString&& password, const char* seed, SQLString& passwordCharacterEncoding)
-  {
-    // Should probably return SQLString once we really implement it
-    if (password.empty()){
-      return emptyStr.c_str();
-    }
-#ifdef WE_HAVE_MESSAGEDIGEST_CLASS_OR_WANT_TO_SOMEHOW_REWRITE_IT_ANYWAY
-    const MessageDigest messageDigest= MessageDigest::getInstance("SHA-1");
-    char* bytePwd;
-    if (passwordCharacterEncoding.empty() == false &&!passwordCharacterEncoding.empty()){
-      bytePwd= password.getBytes(passwordCharacterEncoding);
-    }else {
-      bytePwd= password.getBytes();
-    }
-
-    const char* stage1= messageDigest.digest(bytePwd);
-    messageDigest.reset();
-
-    const char* stage2= messageDigest.digest(stage1);
-    messageDigest.reset();
-
-    messageDigest.update(seed);
-    messageDigest.update(stage2);
-
-    const char* digest= messageDigest.digest();
-    char* returnBytes= char[digest.length];
-    for (int32_t i= 0;i <digest.length;i++){
-      returnBytes[i]= (char)(stage1[i] ^digest[i]);
-    }
-   return returnBytes;
-#else
-    return emptyStr.c_str();
-#endif
-  }
 
   /**
     * Copies the original byte array content to a new byte array. The resulting byte array is always
@@ -431,8 +375,9 @@ namespace mariadb
   }
 
 
-  SQLString Utils::nativeSql(const SQLString& sql, Protocol* protocol)
+  SQLString Utils::nativeSql(const SQLString& sqlStr, Protocol* protocol)
   {
+    const std::string &sql= StringImp::get(sqlStr);
     if (sql.find_first_of('{') == std::string::npos) {
       return sql;
     }
@@ -446,6 +391,10 @@ namespace mariadb
     bool inComment= false;
     bool isSlashSlashComment= false;
     int32_t inEscapeSeq= 0;
+
+    // To stars something from
+    sqlBuffer.reserve((sql.length()+7)/8*8);
+    escapeSequenceBuf.reserve(std::min(sql.length(), std::size_t(64)));
 
     for (auto it= sql.begin(); it < sql.end(); ++it)
     {
@@ -851,8 +800,6 @@ namespace mariadb
     bool first= true;
     SQLString key;
 
-    const char *chars= sessionVariable.c_str();
-
     for (auto car : sessionVariable)
     {
       if (state == Parse::Escape)
@@ -953,13 +900,75 @@ namespace mariadb
 
   bool Utils::isIPv4(const SQLString& ip)
   {
-    return std::regex_search(StringImp::get(ip), IP_V4);
+    /* IP_V4(
+    "^(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){1}"
+      "(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){2}"
+      "([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"); */
+    Tokens groups= split(ip, ".");
+    if (groups->size() == 4) {
+      for (auto& group : *groups) {
+        if (group.length() > 3)
+          return false;
+        for (auto c : StringImp::get(group)) {
+          if (!std::isdigit(c))
+            return false;
+        }
+        if (group.size() == 3 && (group.at(0) > '2' ||
+          group.at(0) == '2' && (group.at(1) > 5 ||
+            group.at(1) == 5 && group.at(2) > 5)))
+          return false;
+      }
+    }
+    return false;
   }
 
   bool Utils::isIPv6(const SQLString& ip)
   {
-    return std::regex_search(StringImp::get(ip), IP_V6) ||
-           std::regex_search(StringImp::get(ip), IP_V6_COMPRESSED);
+    /*      IP_V6("^[0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}$")
+IP_V6_COMPRESSED( "^(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){0,5})?)::(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){0,5})?)$"); */
+    Tokens groups= split(ip, ":");
+    auto& g= *groups;
+    std::size_t end= g.size();
+
+    if (end < 9 && end > 3) {
+      bool noMoreEmpty= false;
+      std::size_t begin= 0;
+      if (g[0].empty()) {
+        if (!g[1].empty()) {
+          return false;
+        }
+        begin= 2;
+        noMoreEmpty= true;
+      }
+      else if (g[end - 1].empty()) {
+        if (!g[end - 2].empty()) {
+          return false;
+        }
+        end-= 2;
+        noMoreEmpty= true;
+      }
+      for (auto i= begin; i < end; ++i) {
+        if (g[i].length() > 4) {
+          return false;
+        }
+        if (g[i].length() == 0) {
+          if (noMoreEmpty) {
+            return false;
+          }
+          else {
+            noMoreEmpty= true;
+          }
+        }
+        else {
+          for (auto c : StringImp::get(g[i])) {
+            if (!std::isxdigit(c)) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+    return false;
   }
 
   /**
@@ -996,6 +1005,77 @@ namespace mariadb
     }
   }
 
+  /* The function expects that sring starting at it is not shorter then len, and str is lowercase */
+  bool Utils::strnicmp(std::string::const_iterator & it, const char * str, std::size_t len)
+  {
+    while (len--) {
+      if (std::tolower(*it) != *str++) {
+        return true;
+      }
+      // Not movivng the iterator before we know current characters are equeal
+      ++it;
+    }
+    return false;
+  }
+
+
+  std::string::const_iterator isLoadDataLocalInFile(const std::string& sql)
+  {
+    auto cit= sql.cbegin();
+
+    Utils::skipCommentsAndBlanks(sql, cit);
+    
+    if (sql.cend() - cit < 23/* min len that, LOAD DATA LOCAL INFILE? can take */) {
+      return sql.cend();
+    }
+    if (Utils::strnicmp(cit, "load", 4)) {
+      return sql.cend();
+    }
+    Utils::skipCommentsAndBlanks(sql, cit);
+    if (sql.cend() - cit < 18 /* DATA LOCAL INFILE? */) {
+      return sql.cend();
+    }
+    if (Utils::strnicmp(cit, "data", 4)) {
+      return sql.cend();
+    }
+    Utils::skipCommentsAndBlanks(sql, cit);
+
+    auto optional= cit;
+    bool move= false;
+    if (sql.cend() - cit > 22) // Have enough place with optional CONCURRENT
+    {
+      if (!Utils::strnicmp(optional, "concurrent", 10)) {
+        move= true;
+      }
+    }
+    if (!move && (sql.end() - cit) > 24) // Have enough place with optional CONCURRENT
+    {
+      optional= cit;
+      if (!Utils::strnicmp(optional, "low_priority", 12)) {
+        move= true;
+      }
+    }
+    if (move)
+      cit= optional;
+
+    if (sql.cend() - cit < 13 /* LOCAL INFILE? */) {
+      return sql.cend();
+    }
+    if (Utils::strnicmp(cit, "local", 5)) {
+      return sql.cend();
+    }
+    Utils::skipCommentsAndBlanks(sql, cit);
+    if (sql.cend() - cit < 7 /* INFILE? */) {
+      return sql.cend();
+    }
+    if (Utils::strnicmp(cit, "infile", 6)) {
+      return sql.cend();
+    }
+    Utils::skipCommentsAndBlanks(sql, cit);
+
+    return cit;
+  }
+
   /**
     * Validate that file name correspond to send query.
     *
@@ -1004,28 +1084,26 @@ namespace mariadb
     * @param fileName server file name
     * @return true if correspond
     */
-   bool Utils::validateFileName( const SQLString& sql, std::vector<ParameterHolder*>& parameters, const SQLString& fileName)
-   {
-    std::regex pattern(
-          ("^(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*LOAD\\s+DATA\\s+((LOW_PRIORITY|CONCURRENT)\\s+)?LOCAL\\s+INFILE\\s+'"
-          +fileName
-          +"'").c_str(), std::regex_constants::ECMAScript | std::regex_constants::icase);
+  bool Utils::validateFileName( const SQLString& query, std::vector<ParameterHolder*>& parameters, const SQLString& fileName)
+  {
+    /*pattern(
+         ("^(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*LOAD\\s+DATA\\s+((LOW_PRIORITY|CONCURRENT)\\s+)?LOCAL\\s+INFILE\\s+'"
+         +fileName
+         +"'").c_str()*/
+    const std::string &sql= StringImp::get(query);
+    auto filename= isLoadDataLocalInFile(sql);
 
-    if (std::regex_search(StringImp::get(sql), pattern))
-    {
-      return true;
-    }
-
-    if (parameters.size() > 0)
-    {
-      pattern.assign("^(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*LOAD\\s+DATA\\s+((LOW_PRIORITY|CONCURRENT)\\s+)?LOCAL\\s+INFILE\\s+\\?",
-        std::regex_constants::ECMAScript | std::regex_constants::icase);
-
-      if (std::regex_search(StringImp::get(sql), pattern) && parameters.size() > 0)
-      {
-        SQLString param(parameters[0]->toString());
-        SQLString fn(fileName);
-        return (param.toLowerCase().compare("'" + fn.toLowerCase() + "'") == 0);
+    if (filename < sql.cend()) {
+      SQLString fn(fileName);
+      fn.toLowerCase();
+      if (parameters.size() > 0) {
+        if (*filename == '?') {
+          SQLString param(parameters[0]->toString().toLowerCase());
+          return (param.compare("'" + fn + "'") == 0);
+        }
+      }
+      else if (sql.cend() >= filename + fn.length()) {
+        return !Utils::strnicmp(filename, fn, fn.length());
       }
     }
     return false;
@@ -1035,7 +1113,7 @@ namespace mariadb
   std::size_t Utils::tokenize(std::vector<sql::bytes>& tokens, const char * cstring, const char * separator)
   {
     const char *current= cstring, *next= nullptr, *end= cstring + strlen(cstring);
-    while (next= std::strpbrk(current, separator))
+    while ((next= std::strpbrk(current, separator)) != nullptr)
     {
       /* This is rather bad CArray API - constructor from const array creates copy, while constructor from array creates "wrapping" object,
        and here we need the wrapping one - there is no need to create copy, plus copy will not terminate array with \0, and that will create
@@ -1050,15 +1128,14 @@ namespace mariadb
     return tokens.size();
   }
 
-
-  std::size_t Utils::skipCommentsAndBlanks(const SQLString &sql, std::size_t start)
+  std::string::const_iterator& Utils::skipCommentsAndBlanks(const std::string &sql, std::string::const_iterator &start)
   {
     LexState state= LexState::Normal;
     char lastChar= '\0';
 
-    for (size_t i= start; i < sql.length(); ++i) {
-      char car= sql[i];
-      
+    for (; start < sql.cend(); ++start) {
+      char car= *start;
+
       switch (car) {
       case '*':
         if (state == LexState::Normal && lastChar == '/') {
@@ -1094,18 +1171,26 @@ namespace mariadb
         break;
       default:
         if (state == LexState::Normal) {
-          if (std::isspace(sql[i])) {
+          if (std::isspace(car)) {
             continue;
           }
           else {
-            return i;
+            return start;
           }
         }
       }
       lastChar= car;
     }
     /* Like we have only comments and/or blanks */
-    return sql.length();
+    return start;
+  }
+
+
+  std::size_t Utils::skipCommentsAndBlanks(const std::string &sql, std::size_t start)
+  {
+    auto it= sql.cbegin() + start;
+    skipCommentsAndBlanks(sql, it);
+    return it - sql.cbegin();
   }
 }
 }

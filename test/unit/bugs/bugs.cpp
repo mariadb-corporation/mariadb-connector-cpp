@@ -1096,9 +1096,8 @@ void bugs::bug21152054()
     --line;
     ASSERT_EQUALS(line, res->getInt(1));
   }  while(res->relative(-1));
-
-
 }
+
 
 void bugs::bug22292073()
 {

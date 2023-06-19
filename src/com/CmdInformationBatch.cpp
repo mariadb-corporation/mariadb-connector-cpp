@@ -106,7 +106,7 @@ namespace mariadb
 
     size_t pos= updateCounts.size();
 
-    for (auto& updCnt : updateCounts) {
+    for (auto updCnt : updateCounts) {
       batchRes.push_back(static_cast<int32_t>(updCnt));
     }
 
@@ -124,7 +124,7 @@ namespace mariadb
     batchRes.clear();
     batchRes.reserve(updateCounts.size());
 
-    for (auto& updCnt : updateCounts) {
+    for (auto updCnt : updateCounts) {
       batchRes.push_back(static_cast<int32_t>(updCnt));
     }
     return batchRes;
@@ -145,7 +145,7 @@ namespace mariadb
       else {
         resultValue= 0;
 
-        for (auto& updCnt : updateCounts) {
+        for (auto updCnt : updateCounts) {
           if (updCnt != 0) {
             resultValue= Statement::SUCCESS_NO_INFO;
           }
@@ -160,7 +160,7 @@ namespace mariadb
     largeBatchRes.reserve(std::max(updateCounts.size(), expectedSize));
 
     size_t pos= updateCounts.size();
-    for (auto& updCnt : updateCounts) {
+    for (auto updCnt : updateCounts) {
       largeBatchRes.push_back(updCnt);
     }
 

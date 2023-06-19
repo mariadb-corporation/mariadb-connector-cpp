@@ -708,6 +708,8 @@ namespace sql
 
 //---------------------------------------- Aliases ------------------------------------------------------------------------------------
     bool addAliases(std::map<std::string, DefaultOptions*>& completeOptionsMap) {
+      // Here it has to be reference, otherwise it will create (short living) copy of the mapped DefaultOptions
+      // object. Plus we don't want extra copy-constructing anyway
       for (auto& defaultOption : OptionsMap) {
         completeOptionsMap.emplace(defaultOption.first, &defaultOption.second);
       }
@@ -872,7 +874,7 @@ namespace sql
         for (SQLString& parameter : *parameters)
         {
           size_t pos= parameter.find_first_of('=');
-          if (pos == std::string::npos){
+          if (pos == std::string::npos) {
             if (properties.find(parameter) == properties.end()){
               properties.insert({ parameter, emptyStr });
             }
@@ -898,7 +900,7 @@ namespace sql
           const std::string& key= StringImp::get(it.first);
           SQLString propertyValue(it.second);
 
-          auto cit= OPTIONS_MAP.find(key);
+          const auto& cit= OPTIONS_MAP.find(key);
 
           if (cit != OPTIONS_MAP.end()/* && !propertyValue.empty()*/)
           {
@@ -1085,7 +1087,7 @@ namespace sql
       try
       {
         bool first= true;
-        for (auto  it : OptionsMap)
+        for (auto& it : OptionsMap)
         {
           DefaultOptions& o= it.second;
           const ClassField<Options> field= Options::getField(o.optionName);

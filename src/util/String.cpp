@@ -19,9 +19,9 @@
 
 
 #include <cctype>
-#include <regex>
 #include <string>
 #include <cstring>
+#include <stdexcept>
 
 #include "util/String.h"
 #include "StringImp.h"
@@ -33,6 +33,7 @@ namespace sql
 
 namespace mariadb
 {
+  /* split does not accept regexp delimiter any more */
   sql::mariadb::Tokens split(const SQLString& str, const SQLString & delimiter)
   {
     std::unique_ptr<std::vector<sql::SQLString>> result(new std::vector<sql::SQLString>());
@@ -60,14 +61,21 @@ namespace mariadb
   }
 
 
-  SQLString& replaceInternal(SQLString& str, const SQLString& substr, const SQLString &subst)
+  SQLString& replaceInternal(SQLString& str, const SQLString& _substr, const SQLString &subst)
   {
-    /* as a matter of fact, (regex symbols in)substr has to be escaped */
-    str= std::regex_replace(StringImp::get(str), std::regex(StringImp::get(substr)), StringImp::get(subst));
+    size_t pos= 0, prev= 0;
+    std::string &real= StringImp::get(str);
+    const std::string &realSub= StringImp::get(subst), &substr= StringImp::get(_substr);
+
+    while ((pos= real.find(substr, prev)) != std::string::npos)
+    {
+      real.replace(pos, substr.length(), realSub);
+      prev+= realSub.length();
+    }
     return str;
   }
 
-
+  /* replace does not accept regexp */
   SQLString& replace(SQLString& str, const SQLString& substr, const SQLString& subst)
   {
     return replaceInternal(str, substr, subst);
@@ -82,16 +90,28 @@ namespace mariadb
     return replaceInternal(result, substr, subst);
   }
 
-
-  SQLString& replaceAll(SQLString& str, const SQLString& substr, const SQLString &subst)
+  /* This function is to repace occurrences of any character in the substr(ing) to subst(itution) string.
+   * It covers the case of regexp dfining class of characters.
+   */
+  SQLString& replaceAny(SQLString& str, const SQLString& substr, const SQLString &subst)
   {
-    return replace(str, substr, subst);
+    size_t pos= 0, prev= 0;
+    std::string &real= StringImp::get(str);
+    const std::string &realSub= StringImp::get(subst);
+
+    while ((pos= real.find_first_of(substr.c_str(), prev)) != std::string::npos)
+    {
+      real.replace(pos, 1, realSub);
+      prev+= realSub.length();
+    }
+    return str;
   }
 
 
-  SQLString replaceAll(const SQLString& str, const SQLString& substr, const SQLString &subst)
+  SQLString replaceAny(const SQLString& str, const SQLString& substr, const SQLString &subst)
   {
-    return replace(str, substr, subst);
+    SQLString changeble(str);
+    return replaceAny(changeble, substr, subst);
   }
 
 

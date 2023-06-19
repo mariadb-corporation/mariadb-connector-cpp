@@ -89,7 +89,7 @@ namespace mariadb
   {
     //synchronized(poolMap)
     {
-      for (auto it : poolMap)
+      for (auto& it : poolMap)
       {
         try {
           it.second->close();
@@ -116,7 +116,7 @@ namespace mariadb
     }
     //synchronized(poolMap)
     {
-      for (auto it : poolMap)
+      for (auto& it : poolMap)
       {
         if (poolName.compare(it.second->getUrlParser()->getOptions()->poolName) == 0)
         {

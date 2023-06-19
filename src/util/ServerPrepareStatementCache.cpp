@@ -98,7 +98,7 @@ namespace mariadb
   SQLString ServerPrepareStatementCache::toString()
   {
     SQLString stringBuilder("ServerPrepareStatementCache.map[");
-    for (auto& entry :this->cache){
+    for (auto& entry: this->cache){
       stringBuilder
         .append("\n")
         .append(entry.first)

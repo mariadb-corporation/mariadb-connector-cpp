@@ -21,7 +21,6 @@
 #ifndef __MARIADBCONNCPP_H_
 #define __MARIADBCONNCPP_H_
 
-#include <regex>
 /* Might be, that we don't really need list */
 #include <list>
 #include <vector>

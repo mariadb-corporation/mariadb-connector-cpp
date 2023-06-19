@@ -18,7 +18,6 @@
 *************************************************************************************/
 
 
-#include <regex>
 #include <cassert>
 
 #include "Consts.h"
@@ -50,6 +49,27 @@ namespace sql
     {
     }
 
+    HostAddress::HostAddress(const HostAddress& other)
+      : host(other.host)
+      , port(other.port)
+      , type(other.type)
+    {}
+
+    HostAddress& HostAddress::operator=(const HostAddress& right)
+    {
+      host= right.host;
+      port= right.port;
+      type= right.type;
+      return *this;
+    }
+
+    HostAddress::HostAddress(HostAddress &&moved) :
+      host(std::move(moved.host)), port(moved.port), type(std::move(moved.type))
+    {
+    }
+
+    HostAddress::~HostAddress()
+    {}
 
     std::vector<HostAddress> HostAddress::parse(const SQLString& specOrig, enum HaMode haMode) {
       //TODO: "upstream has here difference between NULL and empty str, and looks like that has reason for us in this case, too
@@ -70,7 +90,7 @@ namespace sql
 
       /* AURORA is not supported atm */
       if (haMode == HaMode::AURORA) {
-        /*std::regex clusterPattern("(.+)\\.cluster-([a-z0-9]+\\.[a-z0-9\\-]+\\.rds\\.amazonaws\\.com)",
+        /* clusterPattern("(.+)\\.cluster-([a-z0-9]+\\.[a-z0-9\\-]+\\.rds\\.amazonaws\\.com)",
           std::regex_constants::ECMAScript | std::regex_constants::icase);
         if (!std::regex_search(StringImp::get(spec), clusterPattern)) {
           logger->warn("Aurora recommended connection URL must only use cluster end-point like "
@@ -80,13 +100,13 @@ namespace sql
       }
       for (auto& token : *tokens) {
         if (token.startsWith("address=")) {
-          arr.emplace_back(*parseParameterHostAddress(token));
+          arr.emplace_back(parseParameterHostAddress(token));
         }
         else {
-          arr.emplace_back(*parseSimpleHostAddress(token));
+          arr.emplace_back(parseSimpleHostAddress(token));
         }
       }
-      if (haMode ==HaMode::REPLICATION)
+      if (haMode == HaMode::REPLICATION)
       {
         for (size_t i= 0; i < size; i++)
         {
@@ -102,28 +122,28 @@ namespace sql
     }
 
 
-    std::unique_ptr<HostAddress> HostAddress::parseSimpleHostAddress(const SQLString& str)
+    HostAddress HostAddress::parseSimpleHostAddress(const SQLString& str)
     {
-      std::unique_ptr<HostAddress> result(new HostAddress());
+      HostAddress result;
 
-      if (str.at(0)=='[') {
+      if (str.at(0) == '[') {
         size_t ind= str.find_first_of(']');
-        result->host= str.substr(1, ind);
-        if (ind !=(str.length()-1)&&str.at(ind +1)==':') {
-          result->port= getPort(str.substr(ind +2));
+        result.host= str.substr(1, ind);
+        if (ind != (str.length() - 1) && str.at(ind + 1) == ':') {
+          result.port= getPort(str.substr(ind +2));
         }
       }
       else if ((str.find_first_of(':') != std::string::npos)) {
         Tokens hostPort= split(str, ":");
-        result->host= (*hostPort)[0];
+        result.host= (*hostPort)[0];
         assert(hostPort->size() > 1);
-        result->port= getPort((*hostPort)[1]);
+        result.port= getPort((*hostPort)[1]);
       }
       else {
-        result->host= str;
-        result->port= 3306;
+        result.host= str;
+        result.port= 3306;
       }
-      return result;
+      return std::move(result);
     }
 
 
@@ -138,19 +158,22 @@ namespace sql
     }
 
 
-    std::unique_ptr<HostAddress> HostAddress::parseParameterHostAddress(SQLString& _str)
+    HostAddress HostAddress::parseParameterHostAddress(const SQLString& _str)
     {
-      std::unique_ptr<HostAddress> result(new HostAddress());
+      HostAddress result;
       Tokens array= split(_str, "(?=\\()|(?<=\\))");
-
-      for (size_t i= 1; i < array->size(); i++)
+      std::size_t parenthesis= 0, closing= 0;
+      while ((parenthesis= _str.find_first_of('(')) != std::string::npos) 
       {
-        SQLString str((*array)[i]);
-        str= std::regex_replace(StringImp::get(str), std::regex("[\\(\\)]"), StringImp::get(emptyStr));
+        closing= _str.find_first_of(')', parenthesis + 1);
+        if (closing == std::string::npos) {
+          throw IllegalArgumentException("Invalid connection URL, expected (key=value) pairs, found " + _str);
+        }
+        SQLString str(_str.c_str() + parenthesis + 1, closing - parenthesis - 1);
         Tokens token= split(str.trim(), "=");
 
         if (token->size() != 2) {
-          throw IllegalArgumentException("Invalid connection URL, expected key=value pairs, found " + (*array)[i]);
+          throw IllegalArgumentException("Invalid connection URL, expected key=value pairs, found " + str);
         }
 
         SQLString key((*token)[0].toLowerCase());
@@ -158,41 +181,44 @@ namespace sql
 
         if ((key.compare("host") == 0))
         {
-          result->host= std::regex_replace(StringImp::get(value), std::regex("[\\[\\]]"), StringImp::get(emptyStr));
+          replaceAny(result.host, "[]", "");
         }
         else if ((key.compare("port") == 0)) {
-          result->port= getPort(value);
+          result.port= getPort(value);
         }
         else if ((key.compare("type") == 0)
           && (value.compare(ParameterConstant::TYPE_MASTER) == 0
             || value.compare(ParameterConstant::TYPE_SLAVE) == 0 )) {
-          result->type= value;
+          result.type= value;
         }
+        ++closing;
       }
-
-      return result;
+      return std::move(result);
     }
+
+
     SQLString HostAddress::toString(std::vector<HostAddress> addrs)
     {
       /* stringstream would probably be more optimal to use here */
       SQLString str;
-      for (size_t i= 0; i <addrs.size(); i++) {
-        if (! addrs[i].type.empty()) {
+      for (std::size_t i= 0; i < addrs.size(); ++i) {
+        auto& addr= addrs[i];
+        if (! addr.type.empty()) {
           str.append("address=(host=")
-            .append(addrs[i].host)
+            .append(addr.host)
             .append(")(port=")
-            .append(std::to_string(addrs[i].port))
+            .append(std::to_string(addr.port))
             .append(")(type=")
-            .append(addrs[i].type)
+            .append(addr.type)
             .append(")");
         }
         else
         {
-          bool isIPv6= !addrs[i].host.empty() && (addrs[i].host.find_first_of(':') != std::string::npos);
-          SQLString host= (isIPv6) ? ("["+addrs[i].host +"]") : addrs[i].host;
-          str.append(host).append(":").append(std::to_string(addrs[i].port));
+          bool isIPv6= !addr.host.empty() && (addr.host.find_first_of(':') != std::string::npos);
+          SQLString host= (isIPv6) ? ("["+addr.host +"]") : addr.host;
+          str.append(host).append(":").append(std::to_string(addr.port));
         }
-        if (i <addrs.size()-1) {
+        if (i < addrs.size() - 1) {
           str.append(",");
         }
       }

@@ -30,9 +30,6 @@ namespace sql
 {
 namespace mariadb
 {
-  std::regex UrlParser::URL_PARAMETER("(\\/([^\\?]*))?(\\?(.+))*", std::regex_constants::ECMAScript);
-  std::regex UrlParser::AWS_PATTERN("(.+)\\.([a-z0-9\\-]+\\.rds\\.amazonaws\\.com)", std::regex_constants::ECMAScript | std::regex_constants::icase);
-
   const SQLString mysqlTcp("tcp://"), mysqlSocket("unix://"), mysqlPipe("pipe://");
 
 
@@ -165,18 +162,21 @@ namespace mariadb
   {
     if (!additionalParameters.empty())
     {
-      std::string temp(additionalParameters.c_str(), additionalParameters.length());
-      std::smatch matcher;
-
-      if (std::regex_search(temp, matcher, URL_PARAMETER))
-      {
-        urlParser.database= matcher[2].str();
-        urlParser.options= DefaultOptions::parse(urlParser.haMode, matcher[4].str(), properties, urlParser.options);
+      SQLString urlParameters;
+      const std::string &temp= StringImp::get(additionalParameters);
+      // URL_PARAMETER("(\\/([^\\?]*))?(\\?(.+))*")
+      std::size_t qm= temp.find('?'), slash= temp.find('/');
+      if (slash == std::string::npos) {
+        slash= 0;
       }
       else {
-        urlParser.database= "";
-        urlParser.options= DefaultOptions::parse(urlParser.haMode, emptyStr, properties, urlParser.options);
+        slash+= 1;
       }
+      urlParser.database= temp.substr(slash, qm - slash);
+      if (qm != std::string::npos) {
+        urlParameters= temp.substr(qm + 1);
+      }
+      urlParser.options= DefaultOptions::parse(urlParser.haMode, urlParameters, properties, urlParser.options);
     }
     else {
       urlParser.database= "";
@@ -228,7 +228,7 @@ namespace mariadb
       }
     }
     else {
-      for (HostAddress hostAddress : urlParser.addresses) {
+      for (HostAddress& hostAddress : urlParser.addresses) {
         if (hostAddress.type.empty()) {
           hostAddress.type= ParameterConstant::TYPE_MASTER;
         }
@@ -248,7 +248,7 @@ namespace mariadb
     }
     sb.append("//");
     bool notFirst= false;
-    for (auto hostAddress : addresses) {
+    for (auto& hostAddress : addresses) {
       if (notFirst) {
         sb.append(",");
       }
@@ -300,9 +300,11 @@ namespace mariadb
     if (haMode ==HaMode::AURORA) {
       return true;
     }
-    for (auto hostAddress : addresses)
-    {
-      if (std::regex_search(StringImp::get(hostAddress.toString()), AWS_PATTERN)) {
+    for (auto& hostAddress : addresses) {
+      // We don't support this anyway
+      // AWS_PATTERN("(.+)\\.([a-z0-9\\-]+\\.rds\\.amazonaws\\.com)"
+      if (false)//std::regex_search(StringImp::get(hostAddress.toString()), AWS_PATTERN))
+      {
         return true;
       }
     }

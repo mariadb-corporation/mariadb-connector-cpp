@@ -88,14 +88,14 @@ namespace mariadb
 
 
   SQLString MariaDbConnection::quoteIdentifier(const SQLString& string) {
-    return "`"+replaceAll(string, "`", "``")+"`";
+    return "`" + replace(string, "`", "``") + "`";
   }
 
 
   SQLString MariaDbConnection::unquoteIdentifier(SQLString& string)
   {
     if (string.startsWith("`") && string.endsWith("`") && string.length() >= 2) {
-      return replace(string.substr(1, string.length()-1), "``", "`");
+      return replace(string.substr(1, string.length() - 2), "``", "`");
     }
     return string;
   }
@@ -386,8 +386,8 @@ namespace mariadb
 
   /* Checking the type of the query to decide on whether it prepareable on server and it makes sense to prepare on server */
   bool shouldPrepareOnServer(const SQLString& sql) {
-    std::size_t firstUseful= Utils::skipCommentsAndBlanks(sql);
-    auto it= sql.begin() + firstUseful;
+    auto it= sql.cbegin();
+    Utils::skipCommentsAndBlanks(StringImp::get(sql), it);
 
     switch (*it)
     {
@@ -510,19 +510,20 @@ namespace mariadb
 
     const SQLString *query= &sql;
     SQLString native("");
+    const std::string &real= StringImp::get(sql);
     bool isFunction= false, wrongFormat= false;;
 
-    std::size_t firstUsefulChar= Utils::skipCommentsAndBlanks(sql);
+    std::size_t firstUsefulChar= Utils::skipCommentsAndBlanks(real);
 
     if (sql[firstUsefulChar] == '{')
     {
-      firstUsefulChar= Utils::skipCommentsAndBlanks(sql, firstUsefulChar + 1);
+      firstUsefulChar= Utils::skipCommentsAndBlanks(real, firstUsefulChar + 1);
 
       if (sql[firstUsefulChar] == '?') {
-        firstUsefulChar= Utils::skipCommentsAndBlanks(sql, firstUsefulChar + 1);
+        firstUsefulChar= Utils::skipCommentsAndBlanks(real, firstUsefulChar + 1);
         if (sql[firstUsefulChar] == '=') {
           isFunction= true;
-          firstUsefulChar= Utils::skipCommentsAndBlanks(sql, firstUsefulChar + 1);
+          firstUsefulChar= Utils::skipCommentsAndBlanks(real, firstUsefulChar + 1);
         }
         else {
           wrongFormat= true;
@@ -532,19 +533,18 @@ namespace mariadb
       if (!wrongFormat) {
         native= Utils::nativeSql(sql, protocol.get());
         query= &native;
-        firstUsefulChar= Utils::skipCommentsAndBlanks(native);
+        firstUsefulChar= Utils::skipCommentsAndBlanks(StringImp::get(native));
       }
     }
 
-    auto it= query->begin() + firstUsefulChar;
-    if (wrongFormat || query->length() - firstUsefulChar < 6 ||
-      !(std::tolower(*it) == 'c' && std::tolower(*++it) == 'a' && std::tolower(*++it) == 'l' && std::tolower(*++it) == 'l')) {
+    auto it= query->cbegin() + firstUsefulChar;
+    if (wrongFormat || query->length() - firstUsefulChar < 6 || Utils::strnicmp(it, "call", 4)) {
       throw SQLSyntaxErrorException(
         "invalid callable syntax. must be like [{][?=]call <procedure/function name>[(?,?, ...)][}]\n but was : "
         + sql);
     }
 
-    firstUsefulChar= Utils::skipCommentsAndBlanks(*query, firstUsefulChar + 5/* "CALL " */);
+    firstUsefulChar= Utils::skipCommentsAndBlanks(StringImp::get(*query), firstUsefulChar + 5/* "CALL " */);
     SQLString databaseAndProcedure, database, procedureName, arguments;
 
     size_t charOfInterest= query->find_first_of('(', firstUsefulChar);

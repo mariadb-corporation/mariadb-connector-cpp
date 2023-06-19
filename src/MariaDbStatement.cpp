@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -29,10 +29,6 @@ namespace sql
 {
 namespace mariadb
 {
-  //\\u0080-\\uFFFF "[\u0000'\"\b\n\r\t\u001A\\\\]"
-  std::regex MariaDbStatement::identifierPattern("[0-9a-zA-Z\\$_]*", std::regex_constants::ECMAScript);
-  //| Pattern.UNICODE_CASE |Pattern.CANON_EQ);
-  std::regex MariaDbStatement::escapePattern("['\"\b\n\r\t\\\\]", std::regex_constants::ECMAScript );
   const std::map<std::string, std::string> MariaDbStatement::mapper= {
     {"\u0000", "\\0"},
     {"'",      "\\\\'"},
@@ -332,20 +328,24 @@ namespace mariadb
    */
   SQLString MariaDbStatement::enquoteLiteral(const SQLString& val)
   {
-    std::smatch matcher;
     SQLString escapedVal("'");
     std::string Value(StringImp::get(val));
 
-    while (std::regex_search(Value, matcher, escapePattern))
-    {
-      escapedVal.append(matcher.prefix().str());
-      auto cit= mapper.find(matcher.str());
-      escapedVal.append(cit->second);
-      Value= matcher.suffix().str();
+    // 2 quotes + we don't usually expect to have many chars to be escaped, but do reserve for a few
+    escapedVal.reserve((Value.size() + 10 + 7) / 8 * 8);
+
+    for (auto& cit : mapper) {
+      std::size_t pos= 0, prev= 0;
+      while ((pos= Value.find(cit.first, prev)) != std::string::npos)
+      {
+        escapedVal.append(Value.substr(prev, pos - prev));
+        escapedVal.append(cit.second);
+        prev+= cit.first.length();
+      }
+      /* Appending last suffix where has been nothing left */
+      escapedVal.append(Value.substr(prev));
     }
-    /* Appending last suffix where has been nothing left */
-    escapedVal.append(Value);
-    escapedVal.append("'");
+    escapedVal.append('\'');
     return escapedVal;
   }
 
@@ -371,13 +371,12 @@ namespace mariadb
       }
 
       std::string result(StringImp::get(identifier));
-      std::regex rx("^`.+`$");
 
-      if (std::regex_search(result, rx))
+      if (result.front() == '`' && result.back() == '`')
       {
-        result= result.substr(1, result.size()-1);
+        result= result.substr(1, result.size() - 2);
       }
-      return "`"+replace(result, "`", "``")+"`";
+      return "`" + replace(result, "`", "``") + "`";
     }
   }
 
@@ -393,7 +392,18 @@ namespace mariadb
    */
   bool MariaDbStatement::isSimpleIdentifier(const SQLString& identifier)
   {
-    return !identifier.empty() && std::regex_search(StringImp::get(identifier), identifierPattern);
+    // identifierPattern("[0-9a-zA-Z\\$_\\u0080-\\uFFFF]*"
+    const std::string &str= StringImp::get(identifier);
+    if (!str.empty() && str.front() == '`' && str.back() == '`') {
+      for (size_t i= 1; i < str.size() - 1; ++i) {
+        int c= str.at(i);
+        if (!(std::isalpha(c) || std::isdigit(c) || c == '$' || c == '_')) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -410,7 +420,7 @@ namespace mariadb
 
   SQLString MariaDbStatement::getTimeoutSql(const SQLString& sql)
   {
-    if (queryTimeout > 0 && canUseServerTimeout){
+    if (queryTimeout > 0 && canUseServerTimeout) {
       return "SET STATEMENT max_statement_time="+ std::to_string(queryTimeout) +" FOR "+ sql;
     }
     return sql;

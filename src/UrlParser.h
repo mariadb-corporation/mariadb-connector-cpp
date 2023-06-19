@@ -21,7 +21,6 @@
 #ifndef _URLPARSER_H_
 #define _URLPARSER_H_
 
-#include <regex>
 #include <memory>
 #include <vector>
 
@@ -38,9 +37,6 @@ extern const SQLString mysqlTcp, mysqlSocket, mysqlPipe;
 
 class UrlParser
 {
-  static std::regex URL_PARAMETER;
-  static std::regex AWS_PATTERN;
-
   SQLString database;
   Shared::Options options;
   std::vector<HostAddress> addresses;

@@ -186,7 +186,7 @@ namespace mariadb
     {
       options= DefaultOptions::parse(HaMode::NONE, emptyStr, info, options);
     }
-    for (auto o : OptionsMap)
+    for (auto &o : OptionsMap)
     {
       try
       {

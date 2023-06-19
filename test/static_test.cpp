@@ -66,7 +66,7 @@ get_connection(const std::string& host, const std::string& user, const std::stri
 static void driver_test_new_driver_exception()
 {
   try {
-//		new sql::mariadb::MySQL_Driver();
+//		new sql::mariadb::MariaDbDriver();
 //		ensure("Exception not thrown", false);
   } catch (sql::InvalidArgumentException&) { }
 }
@@ -74,7 +74,7 @@ static void driver_test_new_driver_exception()
 
 int main(int argc, const char **argv)
 {
-  driver_test_new_driver_exception();
-
+  // We are not exposing driver implementation
+  //driver_test_new_driver_exception();
   return run_tests(argc, argv);
 }

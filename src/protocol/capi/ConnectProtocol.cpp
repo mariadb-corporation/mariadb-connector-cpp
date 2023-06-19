@@ -1084,7 +1084,6 @@ namespace capi
     std::vector<HostAddress>& addrs= urlParser->getHostAddresses();
     std::vector<HostAddress> hosts(addrs);
 
-
     if (urlParser->getHaMode() == HaMode::LOADBALANCE) {
       static auto rnd= std::default_random_engine{};
       std::shuffle(hosts.begin(), hosts.end(), rnd);

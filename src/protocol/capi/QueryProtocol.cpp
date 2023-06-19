@@ -1120,7 +1120,7 @@ namespace capi
       if (initialTimeout == 0){
         this->changeSocketSoTimeout(timeout);
       }
-      if (isMasterConnection() && galeraAllowedStates->size() != 0){
+      if (isMasterConnection() && galeraAllowedStates && galeraAllowedStates->size() != 0){
 
 
         Shared::Results results(new Results());

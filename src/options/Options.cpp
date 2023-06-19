@@ -34,7 +34,7 @@ namespace mariadb
   {
     int64_t result= 0;
 
-    for (auto it : props)
+    for (auto& it : props)
     {
       result+= (it.first.hashCode() ^ (it.second.hashCode() << 1));
     }
