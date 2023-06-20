@@ -54,8 +54,8 @@ namespace mariadb
   {}
 
   UrlParser::UrlParser(SQLString& database, std::vector<HostAddress>& addresses, Shared::Options options, enum HaMode haMode) :
-    options(options),
     database(database),
+    options(options),
     addresses(addresses),
     haMode(haMode)
   {
@@ -197,12 +197,12 @@ namespace mariadb
   enum HaMode UrlParser::parseHaMode(const SQLString& url, size_t separator)
   {
     size_t firstColonPos= url.find_first_of(':');
-    size_t secondColonPos= url.find_first_of(':', firstColonPos +1);
-    size_t thirdColonPos= url.find_first_of(':', secondColonPos +1);
+    size_t secondColonPos= url.find_first_of(':', firstColonPos + 1);
+    size_t thirdColonPos= url.find_first_of(':', secondColonPos + 1);
 
-    if (thirdColonPos >separator ||thirdColonPos ==-1)
+    if (thirdColonPos > separator || thirdColonPos == std::size_t(-1))
     {
-      if (secondColonPos ==separator -1) {
+      if (secondColonPos == separator - 1) {
         return HaMode::NONE;
       }
       thirdColonPos= separator;
@@ -303,7 +303,7 @@ namespace mariadb
     for (auto& hostAddress : addresses) {
       // We don't support this anyway
       // AWS_PATTERN("(.+)\\.([a-z0-9\\-]+\\.rds\\.amazonaws\\.com)"
-      if (false)//std::regex_search(StringImp::get(hostAddress.toString()), AWS_PATTERN))
+      if (StringImp::get(hostAddress.host).find(".rds.amazonaws.com") != std::string::npos)
       {
         return true;
       }

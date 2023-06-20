@@ -43,7 +43,7 @@ struct memBuf : std::streambuf
     this->setg(begin, begin, end);
   }
 
-  pos_type seekoff(off_type offset, std::ios_base::seekdir direction, std::ios_base::openmode which = std::ios_base::in) override
+  pos_type seekoff(off_type offset, std::ios_base::seekdir direction, std::ios_base::openmode /*which = std::ios_base::in*/) override
   {
     if (direction == std::ios_base::cur) {
       gbump(static_cast<int32_t>(offset));

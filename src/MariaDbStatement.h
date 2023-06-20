@@ -57,12 +57,12 @@ protected:
   bool canUseServerTimeout;
   Shared::ExceptionFactory exceptionFactory;
 
-  volatile bool closed ; /*false*/
-  int32_t queryTimeout;
-  int64_t maxRows;
+  volatile bool closed= false;
+  int32_t queryTimeout= 0;
+  int64_t maxRows= 0;
   Shared::Results results;
   int32_t fetchSize;
-  volatile bool executing;
+  volatile bool executing= false;
   sql::Ints batchRes;
   sql::Longs largeBatchRes;
 
@@ -70,14 +70,14 @@ private:
 #ifdef MAYBE_IN_NEXTVERSION
   ScheduledExecutorService timeoutScheduler;
 #endif
-  bool warningsCleared;
-  bool mustCloseOnCompletion ; /*false*/
+  bool warningsCleared= true;
+  bool mustCloseOnCompletion= false;
   std::vector<SQLString> batchQueries;
 #ifdef MAYBE_IN_NEXTVERSION
   Future<?>timerTaskFuture;
 #endif
-  bool isTimedout;
-  uint32_t maxFieldSize;
+  bool isTimedout= false;
+  uint32_t maxFieldSize= 0;
 
 public:
   MariaDbStatement(MariaDbConnection* connection, int32_t resultSetScrollType, int32_t resultSetConcurrency, Shared::ExceptionFactory& factory);

@@ -36,7 +36,7 @@ namespace sql
     Cause(other.Cause)
   {}
 
-  SQLException::SQLException(const char* msg, const char* state, int32_t error, const std::exception *e) : std::runtime_error(msg),
+  SQLException::SQLException(const char* msg, const char* state, int32_t error, const std::exception* /*e*/) : std::runtime_error(msg),
     SqlState(state), ErrorCode(error)
   {}
 
@@ -53,7 +53,7 @@ namespace sql
     return std::runtime_error::what();
   }
 
-  void SQLException::setNextException(sql::SQLException& nextException)
+  void SQLException::setNextException(sql::SQLException& /*nextException*/)
   {
     /* Doing nothing so far */
   }
@@ -198,7 +198,7 @@ namespace sql
     SQLException(other)
   {}
 
-  BatchUpdateException::BatchUpdateException(const SQLString& msg, const SQLString& state, int32_t error, int64_t* updCts, const std::exception* e) :
+  BatchUpdateException::BatchUpdateException(const SQLString& msg, const SQLString& state, int32_t error, int64_t* /*updCts*/, const std::exception* e) :
     SQLException(msg, state, error, e)
   {}
 

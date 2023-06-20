@@ -27,8 +27,8 @@ struct DriverPropertyInfo {
   std::vector<SQLString> choices;
   SQLString              description;
   SQLString              name;
-  bool                   required;
   SQLString              value;
+  bool                   required;
   DriverPropertyInfo(const SQLString& Name, const SQLString& Value) : name(Name), value(Value), required(false) {}
 };
 }

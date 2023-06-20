@@ -43,7 +43,7 @@ class Utils
   static SocketHandlerFunction* socketHandler;
 
 public:
-  static Socket* standardSocket(Shared::Options options, SQLString& host);
+  static Socket* standardSocket(Shared::Options& options, SQLString& host);
 
   static SQLString escapeString(const SQLString& value, bool noBackslashEscapes);
   static void escapeData(const char* in, size_t len, bool noBackslashEscapes, SQLString& out);
@@ -78,6 +78,7 @@ public:
   static bool isIPv6(const SQLString& ip);
   static int32_t transactionFromString(const SQLString& txIsolation);
   static bool strnicmp(std::string::const_iterator &it, const char *str, std::size_t len);
+  static std::size_t findstrni(const std::string &str, const char* substr, std::size_t len);
   static bool validateFileName(const SQLString& sql, std::vector<ParameterHolder*>& parameters, const SQLString& fileName);
   static std::size_t tokenize(std::vector<sql::bytes>& tokens, const char* cstring, const char *separator);
   static std::string::const_iterator& skipCommentsAndBlanks(const std::string &sql, std::string::const_iterator& start);

@@ -196,7 +196,7 @@ void connection::getClientOption()
         sql::ConnectOptionsMap opts;
         int input_value=111;
         int output_value=2367;
-        void * output;
+        void *output;
 
         opts["hostName"]=url;
         opts["userName"]=user;
@@ -206,8 +206,8 @@ void connection::getClientOption()
         created_objects.clear();
         con.reset(driver->connect(opts));
 
-        output=(static_cast<int *> (&output_value));
-        //con->getClientOption("OPT_READ_TIMEOUT", output);
+        output= static_cast<void *> (&output_value);
+        con->getClientOption("OPT_READ_TIMEOUT", output);
         ASSERT_EQUALS(input_value, output_value);
       }
       catch (sql::SQLException &e)
@@ -222,7 +222,7 @@ void connection::getClientOption()
         sql::ConnectOptionsMap opts;
         bool input_value=true;
         bool output_value=false;
-        void * output;
+        void *output;
 
         opts["hostName"]=url;
         opts["userName"]=user;
@@ -232,8 +232,8 @@ void connection::getClientOption()
         created_objects.clear();
         con.reset(driver->connect(opts));
 
-        output=(static_cast<bool *> (&output_value));
-        //con->getClientOption("OPT_RECONNECT", output);
+        output= static_cast<void *> (&output_value);
+        con->getClientOption("OPT_RECONNECT", output);
         ASSERT_EQUALS(input_value, output_value);
       }
       catch (sql::SQLException &e)
@@ -248,7 +248,7 @@ void connection::getClientOption()
         sql::ConnectOptionsMap opts;
         sql::SQLString input_value("../lib/plugin/");
         const char *output_value="../lib/plugin/";
-        void * output;
+        void *output;
 
         opts["hostName"]=url;
         opts["userName"]=user;
@@ -258,8 +258,8 @@ void connection::getClientOption()
         created_objects.clear();
         con.reset(driver->connect(opts));
 
-        output=(static_cast<const char **> (&output_value));
-        //con->getClientOption("pluginDir", output);
+        output= static_cast<void*> (&output_value);
+        con->getClientOption("pluginDir", output);
 
         ASSERT_EQUALS(input_value, output_value);
       }

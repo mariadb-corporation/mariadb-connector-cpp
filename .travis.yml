@@ -79,8 +79,8 @@ jobs:
       os: windows
       language: shell
       name: "CS 10.6 - Windows"
-    - env: srv=mariadb v=10.3 local=1
-      name: "CS 10.3"
+    - env: srv=mariadb v=11.0 local=1
+      name: "CS 11.0"
     - env: srv=mariadb v=10.4 local=1
       name: "CS 10.4"
     - env: srv=mariadb v=10.5 local=1

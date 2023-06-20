@@ -102,6 +102,7 @@ SQLString SimpleParameterMetaData::getParameterClassName(uint32_t param)
 
 int32_t SimpleParameterMetaData::getParameterMode(uint32_t param)
 {
+  validateParameter(param);
   return parameterModeIn;
 }
 

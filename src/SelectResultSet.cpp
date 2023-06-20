@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -55,12 +55,12 @@ namespace mariadb
     * @throws SQLException if any connection error occur
     */
   SelectResultSet* SelectResultSet::create(
-    std::vector<Shared::ColumnDefinition>& columnInformation,
-    Results* results,
-    Protocol* protocol,
-    PacketInputStream* reader,
-    bool callableResult,
-    bool eofDeprecated)
+    std::vector<Shared::ColumnDefinition>& /*columnInformation*/,
+    Results* /*results*/,
+    Protocol* /*protocol*/,
+    PacketInputStream* /*reader*/,
+    bool /*callableResult*/,
+    bool /*eofDeprecated*/)
   {
     return nullptr;// new SelectResultSetPacket(columnInformation, results, protocol, reader, callableResult, eofDeprecated);
   }
@@ -141,7 +141,7 @@ namespace mariadb
 
   SelectResultSet* SelectResultSet::createEmptyResultSet() {
     static bool inited= InitIdColumns();
-    static std::vector<std::vector<sql::bytes>> emptyRs;
+    static std::vector<std::vector<sql::bytes>> emptyRs(inited ? 0 : 0); //Shutting up warning about unused inited
 
     return create(INSERT_ID_COLUMNS, emptyRs, nullptr, TYPE_SCROLL_SENSITIVE);
   }

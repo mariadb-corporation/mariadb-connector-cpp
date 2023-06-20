@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -270,11 +270,14 @@ namespace capi
      if (!parseTime(raw, matcher)) {
        throw SQLException("Time format \"" + raw + "\" incorrect, must be [-]HH+:[0-59]:[0-59]");
      }
+/* It makes sense to do here, as everything is ready */     
+#ifdef WE_FOUND_USE_FOR_THIS_TRANSITION_AT_THIS_LEVEL
      bool negate= !matcher[1].empty();
 
      int32_t hour= std::stoi(matcher[2]);
      int32_t minutes= std::stoi(matcher[3]);
      int32_t seconds= std::stoi(matcher[4]);
+#endif
      auto &parts= matcher.back();
      int32_t nanoseconds= 0;
 
@@ -1026,7 +1029,7 @@ namespace capi
   * @param columnInfo column information
   * @return String representation of time
   */
- SQLString TextRowProtocolCapi::getInternalTimeString(ColumnDefinition* columnInfo)
+ SQLString TextRowProtocolCapi::getInternalTimeString(ColumnDefinition* /*columnInfo*/)
  {
    if (lastValueWasNull()) {
      return "";

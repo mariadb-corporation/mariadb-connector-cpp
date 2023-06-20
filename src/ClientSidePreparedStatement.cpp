@@ -103,7 +103,7 @@ namespace mariadb
   bool ClientSidePreparedStatement::executeInternal(int32_t fetchSize)
   {
     // valid parameters
-    for (int32_t i= 0; i <prepareResult->getParamCount(); i++) {
+    for (uint32_t i= 0; i < prepareResult->getParamCount(); ++i) {
       if (!parameters[i]) {
         logger->error("Parameter at position " + std::to_string(i + 1) + " is not set");
         exceptionFactory->raiseStatementError(connection, this)->create("Parameter at position "
@@ -162,7 +162,7 @@ namespace mariadb
   void ClientSidePreparedStatement::addBatch()
   {
     std::vector<Shared::ParameterHolder> holder(prepareResult->getParamCount());
-    for (int32_t i= 0; i < holder.size(); i++) {
+    for (uint32_t i= 0; i < holder.size(); i++) {
       holder[i]= parameters[i];
       if (!holder[i]) {
         logger->error(
@@ -367,7 +367,7 @@ namespace mariadb
     */
   void ClientSidePreparedStatement::setParameter(int32_t parameterIndex, ParameterHolder* holder)
   {
-    if (parameterIndex >= 1 && parameterIndex < prepareResult->getParamCount() + 1) {
+    if (parameterIndex >= 1 && static_cast<std::size_t>(parameterIndex) < prepareResult->getParamCount() + 1) {
       parameters[parameterIndex - 1].reset(holder);
     }
     else {
@@ -386,7 +386,7 @@ namespace mariadb
 
       if (stmt->options->maxQuerySizeToLog > 0) {
         error.append(" - \"");
-        if (sqlQuery.size() < stmt->options->maxQuerySizeToLog) {
+        if (sqlQuery.size() < static_cast<std::size_t>(std::max(0, stmt->options->maxQuerySizeToLog))) {
           error.append(sqlQuery);
         }
         else {
@@ -472,7 +472,7 @@ namespace mariadb
   {
     SQLString sb("sql : '"+sqlQuery +"'");
     sb.append(", parameters : [");
-    for (const auto cit:parameters ) {
+    for (const auto& cit:parameters ) {
       if (!cit) {
         sb.append("NULL");
       }

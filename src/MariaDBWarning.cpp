@@ -28,18 +28,29 @@ namespace mariadb
   {
   }
 
-  MariaDBWarning::MariaDBWarning(const MariaDBWarning& other) : msg(other.msg), sqlState(other.sqlState), errorCode(other.errorCode), next()
+  MariaDBWarning::MariaDBWarning(const MariaDBWarning& other)
+    : msg(other.msg)
+    , sqlState(other.sqlState)
+    , errorCode(other.errorCode)
+    , next()
   {}
 
-  MariaDBWarning::MariaDBWarning(const SQLString& message)  : msg(message), next(), errorCode(0)
+  MariaDBWarning::MariaDBWarning(const SQLString& message)
+    : msg(message)
+    , errorCode(0)
+    , next()
   {}
 
   /*MariaDBWarning::MariaDBWarning(const SQLString& message, const SQLString& state, int32_t error, const std::exception* e ) :
     msg(message), sqlState(state), errorCode(error), next()
   {}*/
 
-  MariaDBWarning::MariaDBWarning(const char* message, const char* state, int32_t error, const std::exception* e ) :
-    msg(message), sqlState(state), errorCode(error), next()
+  MariaDBWarning::MariaDBWarning(const char* message, const char* state, int32_t error, const std::exception* /*e*/)
+    :
+    msg(message)
+    , sqlState(state)
+    , errorCode(error)
+    , next()
   {}
 
   SQLWarning* MariaDBWarning::getNextWarning() const

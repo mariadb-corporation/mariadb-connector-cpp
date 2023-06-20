@@ -52,7 +52,6 @@ namespace mariadb
 
   bool isDate(const SQLString& str)
   {
-    const std::string& realStr= StringImp::get(str);
     if (str.length() < 10) {
       return false;
     }
@@ -79,7 +78,6 @@ namespace mariadb
 
   bool isTime(const SQLString& str)
   {
-    auto& realStr= StringImp::get(str);
     if (str.length() < 8) {
       return false;
     }
@@ -198,12 +196,12 @@ namespace mariadb
   RowProtocol::RowProtocol(uint32_t _maxFieldSize, Shared::Options options)
     : maxFieldSize(_maxFieldSize)
     , options(options)
+    , lastValueNull(0)
     , buf(nullptr)
     , fieldBuf()
-    , length(0)
-    , lastValueNull(0)
-    , index(0)
     , pos(0)
+    , length(0)
+    , index(0)
   {
   }
 

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2022 MariaDB Corporation AB
+   Copyright (C) 2020, 2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -57,28 +57,23 @@ namespace capi
                                            ServerPrepareResult* spr,
                                            bool callableResult,
                                            bool eofDeprecated)
-    : statement(results->getStatement()),
-      isClosedFlag(false),
-      protocol(protocol),
+    :
       options(protocol->getOptions()),
-      noBackslashEscapes(protocol->noBackslashEscapes()),
       columnsInformation(spr->getColumns()),
-      columnNameMap(new ColumnNameMap(columnsInformation)),
       columnInformationLength(static_cast<int32_t>(columnsInformation.size())),
-      fetchSize(results->getFetchSize()),
-      dataSize(0),
-      resultSetScrollType(results->getResultSetScrollType()),
-      dataFetchTime(0),
-      rowPointer(-1),
+      noBackslashEscapes(protocol->noBackslashEscapes()),
+      protocol(protocol),
       callableResult(callableResult),
-      eofDeprecated(eofDeprecated),
-      isEof(false),
+      statement(results->getStatement()),
       capiConnHandle(nullptr),
       capiStmtHandle(spr->getStatementId()),
-      timeZone(nullptr),
-      forceAlias(false),
-      lastRowPointer(-1)
-    //      timeZone(protocol->getTimeZone(),
+      dataSize(0),
+      fetchSize(results->getFetchSize()),
+      resultSetScrollType(results->getResultSetScrollType()),
+      columnNameMap(new ColumnNameMap(columnsInformation)),
+      eofDeprecated(eofDeprecated),
+      forceAlias(false)
+    //timeZone(protocol->getTimeZone(),
   {
     if (fetchSize == 0 || callableResult) {
       data.reserve(10);//= new char[10]; // This has to be array of arrays. Need to decide what to use for its representation
@@ -104,28 +99,24 @@ namespace capi
     row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
   }
 
+
   SelectResultSetCapi::SelectResultSetCapi(Results * results,
                                            Protocol * _protocol,
                                            MYSQL* capiConnHandle,
                                            bool eofDeprecated)
-    : statement(results->getStatement()),
-      isClosedFlag(false),
-      protocol(_protocol),
+    :
       options(_protocol->getOptions()),
       noBackslashEscapes(_protocol->noBackslashEscapes()),
-      fetchSize(results->getFetchSize()),
-      dataSize(0),
-      resultSetScrollType(results->getResultSetScrollType()),
-      dataFetchTime(0),
-      rowPointer(-1),
+      protocol(_protocol),
       callableResult(false),
-      eofDeprecated(eofDeprecated),
-      isEof(false),
+      statement(results->getStatement()),
       capiConnHandle(capiConnHandle),
       capiStmtHandle(nullptr),
-      timeZone(nullptr),
-      forceAlias(false),
-      lastRowPointer(-1)
+      dataSize(0),
+      fetchSize(results->getFetchSize()),
+      resultSetScrollType(results->getResultSetScrollType()),
+      eofDeprecated(eofDeprecated),
+      forceAlias(false)
   {
     MYSQL_RES* textNativeResults= nullptr;
     if (fetchSize == 0 || callableResult) {
@@ -183,29 +174,26 @@ namespace capi
     std::vector<std::vector<sql::bytes>>& resultSet,
     Protocol* _protocol,
     int32_t resultSetScrollType)
-    : statement(nullptr),
-      protocol(_protocol),
-      row(new capi::TextRowProtocolCapi(0, this->options, nullptr)),
-      data(std::move(resultSet)),
-      dataSize(data.size()),
-      isClosedFlag(false),
+    :
       columnsInformation(columnInformation),
-      columnNameMap(new ColumnNameMap(columnsInformation)),
       columnInformationLength(static_cast<int32_t>(columnInformation.size())),
+      noBackslashEscapes(false),
+      protocol(_protocol),
       isEof(true),
-      fetchSize(0),
-      resultSetScrollType(resultSetScrollType),
-      dataFetchTime(0),
-      rowPointer(-1),
       callableResult(false),
-      streaming(false),
+      statement(nullptr),
+      row(new capi::TextRowProtocolCapi(0, this->options, nullptr)),
       capiConnHandle(nullptr),
       capiStmtHandle(nullptr),
-      timeZone(nullptr),
-      forceAlias(false),
-      lastRowPointer(-1),
+      streaming(false),
+      data(std::move(resultSet)),
+      dataSize(data.size()),
+      fetchSize(0),
+      resultSetScrollType(resultSetScrollType),
+      rowPointer(-1),
+      columnNameMap(new ColumnNameMap(columnsInformation)),
       eofDeprecated(false),
-      noBackslashEscapes(false)
+      forceAlias(false)
   {
     if (protocol != nullptr) {
       this->options= protocol->getOptions();
@@ -702,7 +690,7 @@ namespace capi
           handleIoException(ioe);
         }
 
-        return dataSize == rowPointer;
+        return dataSize == static_cast<std::size_t>(rowPointer);
       }
       // has read all data and pointer is after last result
       // so result would have to always to be true,
@@ -722,7 +710,7 @@ namespace capi
       return false;
     }
     else if (isEof) {
-      return rowPointer == dataSize -1 && dataSize >0;
+      return static_cast<std::size_t>(rowPointer) == (dataSize - 1) && dataSize > 0;
     }
     else {
       // when streaming and not having read all results,
@@ -738,8 +726,7 @@ namespace capi
       }
 
       if (isEof) {
-
-        return rowPointer == dataSize -1 &&dataSize >0;
+        return static_cast<std::size_t>(rowPointer) == (dataSize - 1) && dataSize > 0;
       }
 
       return false;
@@ -1493,12 +1480,12 @@ namespace capi
   }
 
   /** {inheritDoc}. */
-  RowId* SelectResultSetCapi::getRowId(int32_t columnIndex) {
+  RowId* SelectResultSetCapi::getRowId(int32_t /*columnIndex*/) {
     throw ExceptionFactory::INSTANCE.notSupported("RowIDs not supported");
   }
 
   /** {inheritDoc}. */
-  RowId* SelectResultSetCapi::getRowId(const SQLString& columnLabel) {
+  RowId* SelectResultSetCapi::getRowId(const SQLString& /*columnLabel*/) {
     throw ExceptionFactory::INSTANCE.notSupported("RowIDs not supported");
   }
 

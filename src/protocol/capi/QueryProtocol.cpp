@@ -65,10 +65,6 @@ namespace capi
   QueryProtocol::QueryProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo, Shared::mutex& lock)
     : super(urlParser, globalInfo, lock)
     , logQuery(new LogQueryTool(options))
-    , activeFutureTask(nullptr)
-    , statementIdToRelease(nullptr)
-    , maxRows(0)
-    , transactionIsolationLevel(0)
   {
     if (!urlParser->getOptions()->galeraAllowedState.empty())
     {
@@ -111,7 +107,8 @@ namespace capi
     executeQuery(isMasterConnection(), res, sql);
   }
 
-  void QueryProtocol::executeQuery(bool mustExecuteOnMaster, Shared::Results& results, const SQLString& sql)
+
+  void QueryProtocol::executeQuery(bool /*mustExecuteOnMaster*/, Shared::Results& results, const SQLString& sql)
   {
 
     cmdPrologue();
@@ -130,7 +127,8 @@ namespace capi
     }
   }
 
-  void QueryProtocol::executeQuery( bool mustExecuteOnMaster, Shared::Results& results,const SQLString& sql, const Charset* charset)
+
+  void QueryProtocol::executeQuery( bool /*mustExecuteOnMaster*/, Shared::Results& results, const SQLString& sql, const Charset* /*charset*/)
   {
     cmdPrologue();
     try {
@@ -213,7 +211,7 @@ namespace capi
    * @throws SQLException exception
    */
   void QueryProtocol::executeQuery(
-      bool mustExecuteOnMaster,
+      bool /*mustExecuteOnMaster*/,
       Shared::Results& results,
       ClientPrepareResult* clientPrepareResult,
       std::vector<Shared::ParameterHolder>& parameters,
@@ -267,7 +265,7 @@ namespace capi
    * @throws SQLException exception
    */
   bool QueryProtocol::executeBatchClient(
-      bool mustExecuteOnMaster,
+      bool /*mustExecuteOnMaster*/,
       Shared::Results& results,
       ClientPrepareResult* prepareResult,
       std::vector<std::vector<Shared::ParameterHolder>>& parametersList,
@@ -382,9 +380,7 @@ namespace capi
     }
 
     // any select query is not applicable to bulk
-    // toLowerCase changes the string in the object
-    SQLString lcCopy(sql);
-    if (StringImp::get(lcCopy.toLowerCase()).find("select") != std::string::npos) {
+    if (Utils::findstrni(StringImp::get(sql), "select", 6) != std::string::npos) {
       return false;
     }
 
@@ -428,15 +424,16 @@ namespace capi
           releasePrepareStatement(tmpServerPrepareResult);
           // releasePrepareStatement basically cares only about releasing stmt on server(and C API handle)
           delete tmpServerPrepareResult;
+          tmpServerPrepareResult= nullptr;
         }
-        if (sqle.getSQLState().compare("HY000") == 0 && sqle.getErrorCode()==1295){
+        if (sqle.getSQLState().compare("HY000") == 0 && sqle.getErrorCode()==1295) {
           // query contain commands that cannot be handled by BULK protocol
           // clear error and special error code, so it won't leak anywhere
           // and wouldn't be misinterpreted as an additional update count
           results->getCmdInformation()->reset();
           return false;
         }
-        if (exception.getMessage().empty()){
+        if (exception.getMessage().empty()) {
           exception= logQuery->exceptionWithQuery(sql, sqle, explicitClosed);
           if (!options->continueBatchOnError){
             throw exception;
@@ -444,12 +441,12 @@ namespace capi
         }
       }
 
-      if (!exception.getMessage().empty()){
+      if (!exception.getMessage().empty()) {
         throw exception;
       }
       results->setRewritten(true);
       
-      if (!serverPrepareResult && tmpServerPrepareResult){
+      if (!serverPrepareResult && tmpServerPrepareResult) {
         releasePrepareStatement(tmpServerPrepareResult);
         // releasePrepareStatement basically cares only about releasing stmt on server(and C API handle)
         delete tmpServerPrepareResult;
@@ -514,10 +511,10 @@ namespace capi
    * @param queries queries
    * @throws SQLException if any exception occur
    */
-  void QueryProtocol::executeBatchStmt(bool mustExecuteOnMaster, Shared::Results& results, const std::vector<SQLString>& queries)
+  void QueryProtocol::executeBatchStmt(bool /*mustExecuteOnMaster*/, Shared::Results& results, const std::vector<SQLString>& queries)
   {
     cmdPrologue();
-    if (this->options->rewriteBatchedStatements){
+    if (this->options->rewriteBatchedStatements) {
 
       // check that queries are rewritable
       bool canAggregateSemiColumn= true;
@@ -530,12 +527,12 @@ namespace capi
         totalLen+= query.length() + 1/*;*/;
       }
 
-      if (isInterrupted()){
+      if (isInterrupted()) {
         // interrupted by timeout, must throw an exception manually
         throw SQLTimeoutException("Timeout during batch execution", "00000");
       }
 
-      if (canAggregateSemiColumn){
+      if (canAggregateSemiColumn) {
         executeBatchAggregateSemiColon(results, queries, totalLen);
       }else {
         executeBatch(results,queries);
@@ -598,7 +595,7 @@ namespace capi
   }
 
 
-  ServerPrepareResult* QueryProtocol::prepareInternal(const SQLString& sql, bool executeOnMaster)
+  ServerPrepareResult* QueryProtocol::prepareInternal(const SQLString& sql, bool /*executeOnMaster*/)
   {
     if (options->cachePrepStmts && options->useServerPrepStmts) {
 
@@ -947,7 +944,7 @@ namespace capi
    * @throws SQLException if parameter error or connection error occur.
    */
   bool QueryProtocol::executeBatchServer(
-      bool mustExecuteOnMaster,
+      bool /*mustExecuteOnMaster*/,
       ServerPrepareResult* serverPrepareResult,
       Shared::Results& results, const SQLString& sql,
       std::vector<std::vector<Shared::ParameterHolder>>& parametersList,
@@ -968,17 +965,10 @@ namespace capi
     }
     initializeBatchReader();
 
-    capi::MYSQL_STMT *stmt= nullptr;
-
     if (serverPrepareResult == nullptr) {
       serverPrepareResult= prepare(sql, true);
       needToRelease= true;
     }
-
-    stmt= serverPrepareResult->getStatementId();
-
-    std::size_t totalExecutionNumber= parametersList.size();
-    //std::size_t parameterCount= serverPrepareResult->getParameters().size();
 
     for (auto& paramset : parametersList) {
       executePreparedQuery(true, serverPrepareResult, results, paramset);
@@ -992,7 +982,7 @@ namespace capi
 
 
   void QueryProtocol::executePreparedQuery(
-      bool mustExecuteOnMaster,
+      bool /*mustExecuteOnMaster*/,
       ServerPrepareResult* serverPrepareResult,
       Shared::Results& results,
       std::vector<Shared::ParameterHolder>& parameters)
@@ -1527,14 +1517,20 @@ namespace capi
     this->hasWarningsFlag= false;
 
     int32_t errorNumber= errorOccurred(pr);
-    SQLString message(mysql_error(connection.get()));
-    SQLString sqlState(mysql_sqlstate(connection.get()));
+    const char *message, *sqlState;
+    if (pr != nullptr) {
+      message= capi::mysql_stmt_error(pr->getStatementId());
+      sqlState= capi::mysql_stmt_sqlstate(pr->getStatementId());
+    }
+    else {
+      message= capi::mysql_error(connection.get());
+      sqlState= mysql_sqlstate(connection.get());
+    }
 
     results->addStatsError(false);
-
     serverStatus |= ServerStatus::IN_TRANSACTION;
-
     removeActiveStreamingResult();
+
     return SQLException(message, sqlState, errorNumber);
   }
 
@@ -1546,7 +1542,7 @@ namespace capi
    * @throws SQLException if sub-result connection fail
    * @see <a href="https://mariadb.com/kb/en/mariadb/local_infile-packet/">local_infile packet</a>
    */
-  void QueryProtocol::readLocalInfilePacket(Shared::Results& results)
+  void QueryProtocol::readLocalInfilePacket(Shared::Results& /*results*/)
   {
 
 #ifdef UNLIKELY_WE_HAVE_TO_DO_ANYTHING_HERE_CARED_BY_CAPI
@@ -1692,7 +1688,7 @@ namespace capi
 
 
   void QueryProtocol::prologProxy(
-      ServerPrepareResult* serverPrepareResult,
+      ServerPrepareResult* /*serverPrepareResult*/,
       int64_t maxRows,
       bool hasProxy,
       MariaDbConnection* connection, MariaDbStatement* statement)
@@ -1710,7 +1706,7 @@ namespace capi
    * @param statement current statement
    * @throws SQLException if any error occur.
    */
-  void QueryProtocol::prolog(int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement)
+  void QueryProtocol::prolog(int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* /*statement*/)
   {
     if (explicitClosed){
       throw SQLNonTransientConnectionException("execute() is called on closed connection", "08000");

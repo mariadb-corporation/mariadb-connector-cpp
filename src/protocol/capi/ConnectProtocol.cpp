@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -56,32 +56,17 @@ namespace capi
    * @param lock the lock for thread synchronisation
    */
   ConnectProtocol::ConnectProtocol(std::shared_ptr<UrlParser>& _urlParser, GlobalStateInfo* _globalInfo, Shared::mutex& lock)
-    : lock(lock)
+    :
+      connection(nullptr, &mysql_close)
+    , lock(lock)
     , urlParser(_urlParser)
     , options(_urlParser->getOptions())
-    , database(_urlParser->getDatabase())
     , username(_urlParser->getUsername())
     , globalInfo(_globalInfo)
-    , connection(nullptr, &mysql_close)
-    , currentHost(localhost, 3306)
-    , explicitClosed(false)
-    , majorVersion(0)
-    , minorVersion(0)
-    , patchVersion(0)
-    , proxy(nullptr)
-    , connected(false)
-    , serverPrepareStatementCache(nullptr)
     , autoIncrementIncrement(_globalInfo ? _globalInfo->getAutoIncrementIncrement() : 1)
-    , eofDeprecated(false)
-    , hasWarningsFlag(false)
-    , hostFailed(false)
-    , readOnly(false)
-    , serverCapabilities(0)
-    , serverMariaDb(true)
-    , serverStatus(0)
-    , serverThreadId(0)
-    , socketTimeout(0)
-    , timeZone(nullptr)
+    , database(_urlParser->getDatabase())
+    , serverPrepareStatementCache(nullptr)
+    , currentHost(localhost, 3306)
   {
     urlParser->auroraPipelineQuirks();
     if (options->cachePrepStmts && options->useServerPrepStmts){
@@ -522,11 +507,12 @@ namespace capi
     }
   }
 
+
   void ConnectProtocol::sslWrapper(
-      const SQLString& host,
+      const SQLString& /*host*/,
       const Shared::Options& options,
       int64_t& clientCapabilities,
-      int8_t exchangeCharset)
+      int8_t /*exchangeCharset*/)
   {
     const unsigned int safeCApiTrue= 0x01010101;
 
@@ -580,12 +566,13 @@ namespace capi
     assignStream(options);
   }
 
+
   void ConnectProtocol::authenticationHandler(
-    int8_t exchangeCharset,
-    int64_t clientCapabilities, const SQLString& authenticationPluginType,
-    sql::bytes& seed,
+    int8_t /*exchangeCharset*/,
+    int64_t /*clientCapabilities*/, const SQLString& /*authenticationPluginType*/,
+    sql::bytes& /*seed*/,
     const Shared::Options& options, const SQLString& database,
-    Credential* credential, const SQLString& host)
+    Credential* credential, const SQLString& /*host*/)
   {
     mysql_optionsv(connection.get(), MARIADB_OPT_USER, (void*)credential->getUser().c_str());
     mysql_optionsv(connection.get(), MARIADB_OPT_PASSWORD, (void*)credential->getPassword().c_str());
@@ -904,7 +891,7 @@ namespace capi
     return !this->connected;
   }
 
-  void ConnectProtocol::loadCalendar(const SQLString& srvTimeZone, const SQLString& srvSystemTimeZone)
+  void ConnectProtocol::loadCalendar(const SQLString& /*srvTimeZone*/, const SQLString& /*srvSystemTimeZone*/)
   {
 
     timeZone= nullptr;// Calendar.getInstance().getTimeZone();
@@ -913,9 +900,9 @@ namespace capi
     else {
 
       SQLString tz= options->serverTimezone;
-      if (!tz){
+      if (!tz) {
         tz= srvTimeZone;
-        if (){
+        if () {
           tz= srvSystemTimeZone;
         }
       }
@@ -1381,12 +1368,12 @@ namespace capi
    *
    * @param setTcpNoDelay value to set.
    */
-  void ConnectProtocol::changeSocketTcpNoDelay(bool setTcpNoDelay)
+  void ConnectProtocol::changeSocketTcpNoDelay(bool /*setTcpNoDelay*/)
   {
     try {
       //TODO is there anything libmariadb for that?
       //socket->setTcpNoDelay(setTcpNoDelay);
-    }catch (std::runtime_error& ){
+    } catch (std::runtime_error& ) {
 
     }
   }

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2022 MariaDB Corporation AB
+   Copyright (C) 2020, 2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -751,58 +751,62 @@ namespace sql
     std::map<std::string, DefaultOptions*> DefaultOptions::OPTIONS_MAP;
     static bool aliasesAdded= addAliases(DefaultOptions::OPTIONS_MAP);
 //-------------------------------------------------------------------------------------------------------------------------------------
-    DefaultOptions::DefaultOptions(const char * optionName, const char * implementationVersion, const char* description, bool required)
-      : optionName(optionName),  description(description), required(required), defaultValue(""), minValue (), maxValue()
+    DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char* description, bool required)
+      : optionName(optionName)
+      , description(description), required(required)
+      , minValue()
+      , maxValue()
+      , defaultValue("")
     {
     }
 
-    DefaultOptions::DefaultOptions(const char * optionName, const char * implementationVersion, const char * description,
-        bool required, const char * defaultValue):
+    DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char * description,
+        bool required, const char * defaultValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(),
-      maxValue()
+      maxValue(),
+      defaultValue(defaultValue)
     {
     }
 
-    DefaultOptions::DefaultOptions(const char * optionName, const char * implementationVersion, const char * description,
+    DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char * description,
         bool required, bool defaultValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(),
-      maxValue()
+      maxValue(),
+      defaultValue(defaultValue)
     {
     }
 
-    DefaultOptions::DefaultOptions(const char* optionName, const char* implementationVersion, const char* description,
+    DefaultOptions::DefaultOptions(const char* optionName, const char* /*implementationVersion*/, const char* description,
         bool required, int32_t defaultValue, int32_t minValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(minValue),
-      maxValue(INT32_MAX)
+      maxValue(INT32_MAX),
+      defaultValue(defaultValue)
     {
     }
 
-    DefaultOptions::DefaultOptions(const char* optionName, const char* implementationVersion, const char* description,
+    DefaultOptions::DefaultOptions(const char* optionName, const char* /*implementationVersion*/, const char* description,
         int64_t defaultValue, bool required, int64_t minValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(minValue),
-      maxValue(INT64_MAX)
+      maxValue(INT64_MAX),
+      defaultValue(defaultValue)
     {
     }
 
 #ifdef WE_NEED_INT_ARRAY_DEFAULT_VALUE
     DefaultOptions::DefaultOptions(const SQLString& optionName, int32_t* defaultValue, int32_t minValue,
-      const SQLString& implementationVersion, SQLString& description, bool required) :
+      const SQLString& /*implementationVersion*/, SQLString& description, bool required) :
       optionName(optionName),
       defaultValue(defaultValue),
       minValue(minValue),
@@ -1082,7 +1086,7 @@ namespace sql
      * @param haMode high availability Mode
      * @param sb String builder
      */
-    void DefaultOptions::propertyString(const Shared::Options options,const enum HaMode haMode, SQLString& sb)
+    void DefaultOptions::propertyString(const Shared::Options options, const enum HaMode /*haMode*/, SQLString& sb)
     {
       try
       {

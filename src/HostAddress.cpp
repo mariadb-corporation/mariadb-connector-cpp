@@ -143,7 +143,7 @@ namespace sql
         result.host= str;
         result.port= 3306;
       }
-      return std::move(result);
+      return result;
     }
 
 
@@ -193,7 +193,7 @@ namespace sql
         }
         ++closing;
       }
-      return std::move(result);
+      return result;
     }
 
 

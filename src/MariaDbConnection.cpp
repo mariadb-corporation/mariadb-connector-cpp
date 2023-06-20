@@ -48,18 +48,13 @@ namespace mariadb
     */
   MariaDbConnection::MariaDbConnection(Shared::Protocol& _protocol) :
     protocol(_protocol),
-    lock(_protocol->getLock()),
     options(protocol->getOptions()),
-    _canUseServerTimeout(protocol->versionGreaterOrEqual(10, 1, 2)),
-    sessionStateAware(protocol->sessionStateAware()),
-    nullCatalogMeansCurrent(options->nullCatalogMeansCurrent),
     exceptionFactory(ExceptionFactory::of(this->getServerThreadId(), options)),
-    lowercaseTableNames(-1),
+    lock(_protocol->getLock()),
     pooledConnection(nullptr),
-    stateFlag(0),
-    defaultTransactionIsolation(0),
-    savepointCount(0),
-    warningsCleared(true)
+    nullCatalogMeansCurrent(options->nullCatalogMeansCurrent),
+    _canUseServerTimeout(protocol->versionGreaterOrEqual(10, 1, 2)),
+    sessionStateAware(protocol->sessionStateAware())
   {
     if (options->cacheCallableStmts)
     {
@@ -156,7 +151,7 @@ namespace mariadb
     *     with the given type, concurrency, and holdability
     * @see ResultSet
     */
-  Statement* MariaDbConnection::createStatement(int32_t resultSetType, int32_t resultSetConcurrency, int32_t resultSetHoldability) {
+  Statement* MariaDbConnection::createStatement(int32_t resultSetType, int32_t resultSetConcurrency, int32_t /*resultSetHoldability*/) {
     return new MariaDbStatement(this, resultSetType, resultSetConcurrency, exceptionFactory);
   }
 
@@ -276,7 +271,7 @@ namespace mariadb
     const SQLString& sql,
     int32_t resultSetType,
     int32_t resultSetConcurrency,
-    int32_t resultSetHoldability)
+    int32_t /*resultSetHoldability*/)
   {
     return internalPrepareStatement(
       sql, resultSetType, resultSetConcurrency, Statement::NO_GENERATED_KEYS);
@@ -345,7 +340,7 @@ namespace mariadb
     * @throws SQLException if a database access error occurs or this method is called on a closed
     *     connection
     */
-  PreparedStatement* MariaDbConnection::prepareStatement(const SQLString& sql, int32_t* columnIndexes) {
+  PreparedStatement* MariaDbConnection::prepareStatement(const SQLString& sql, int32_t* /*columnIndexes*/) {
     return prepareStatement(sql, Statement::RETURN_GENERATED_KEYS);
   }
   /**
@@ -380,7 +375,7 @@ namespace mariadb
     * @throws SQLException if a database access error occurs or this method is called on a closed
     *     connection
     */
-  PreparedStatement* MariaDbConnection::prepareStatement(const SQLString& sql, const SQLString* columnNames) {
+  PreparedStatement* MariaDbConnection::prepareStatement(const SQLString& sql, const SQLString* /*columnNames*/) {
     return prepareStatement(sql, Statement::RETURN_GENERATED_KEYS);
   }
 
@@ -649,9 +644,9 @@ namespace mariadb
     */
   CallableStatement* MariaDbConnection::prepareCall(
     const SQLString& sql,
-    int32_t resultSetType,
-    int32_t resultSetConcurrency,
-    int32_t resultSetHoldability)
+    int32_t /*resultSetType*/,
+    int32_t /*resultSetConcurrency*/,
+    int32_t /*resultSetHoldability*/)
   {
     return prepareCall(sql);
   }
@@ -659,7 +654,7 @@ namespace mariadb
 
   CallableStatement* MariaDbConnection::createNewCallableStatement(
     SQLString query, SQLString& procedureName,
-    bool isFunction, SQLString& databaseAndProcedure, SQLString& database, SQLString& arguments,
+    bool /*isFunction*/, SQLString& /*databaseAndProcedure*/, SQLString& database, SQLString& /*arguments*/,
     int32_t resultSetType,
     int32_t resultSetConcurrency,
     Shared::ExceptionFactory& expFactory)
@@ -876,7 +871,7 @@ namespace mariadb
     *     connection
     * @see #getCatalog
     */
-  void MariaDbConnection::setCatalog(const SQLString& catalog) {
+  void MariaDbConnection::setCatalog(const SQLString& /*catalog*/) {
   }
 
 
@@ -1060,7 +1055,7 @@ namespace mariadb
     return ResultSet::HOLD_CURSORS_OVER_COMMIT;
   }
 
-  void MariaDbConnection::setHoldability(int32_t holdability) {
+  void MariaDbConnection::setHoldability(int32_t /*holdability*/) {
   }
 
   /**
@@ -1121,22 +1116,22 @@ namespace mariadb
   }
 
 
-  sql::Connection* MariaDbConnection::setClientOption(const SQLString& name, void* value) {
+  sql::Connection* MariaDbConnection::setClientOption(const SQLString& /*name*/, void* /*value*/) {
     throw SQLFeatureNotImplementedException("setClientOption support is not implemented yet");
   }
 
 
-  sql::Connection* MariaDbConnection::setClientOption(const SQLString& name, const SQLString& value) {
+  sql::Connection* MariaDbConnection::setClientOption(const SQLString& /*name*/, const SQLString& /*value*/) {
     throw SQLFeatureNotImplementedException("setClientOption support is not implemented yet");
   }
 
 
-  void MariaDbConnection::getClientOption(const SQLString& n, void* v) {
+  void MariaDbConnection::getClientOption(const SQLString& /*n*/, void* /*v*/) {
     throw SQLFeatureNotSupportedException("getClientOption is not supported");
   }
   
 
-  SQLString MariaDbConnection::getClientOption(const SQLString& n) {
+  SQLString MariaDbConnection::getClientOption(const SQLString& /*n*/) {
     throw SQLFeatureNotSupportedException("getClientOption is not supported");
   }
   /**
@@ -1647,7 +1642,7 @@ namespace mariadb
     * @param executor executor
     * @throws SQLException if security manager doesn't permit it.
     */
-  void MariaDbConnection::abort(sql::Executor* executor)
+  void MariaDbConnection::abort(sql::Executor* /*executor*/)
   {
     if (this->isClosed()) {
       return;
@@ -1703,7 +1698,7 @@ namespace mariadb
     * @param milliseconds network timeout in milliseconds.
     * @throws SQLException if security manager doesn't permit it.
     */
-  void MariaDbConnection::setNetworkTimeout(Executor* executor, int32_t milliseconds)
+  void MariaDbConnection::setNetworkTimeout(Executor* /*executor*/, int32_t /*milliseconds*/)
   {
     throw SQLFeatureNotImplementedException("setNetworkTimeout is not yet implemented");
 

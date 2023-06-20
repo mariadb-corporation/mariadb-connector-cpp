@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -74,13 +74,13 @@ public:
   bool nullCatalogMeansCurrent;
 private:
   std::unique_ptr<CallableStatementCache> callableStatementCache;
-  volatile int32_t lowercaseTableNames ; /*-1*/
+  volatile int32_t lowercaseTableNames= -1;
   bool _canUseServerTimeout;
   bool sessionStateAware;
-  int32_t stateFlag ; /*0*/
-  int32_t defaultTransactionIsolation ; /*0*/
-  int32_t savepointCount; /*0*/
-  bool warningsCleared;
+  int32_t stateFlag= 0 ;
+  int32_t defaultTransactionIsolation= 0;
+  int32_t savepointCount= 0;
+  bool warningsCleared= true;
 
 public:
   MariaDbConnection(Shared::Protocol& protocol);

@@ -47,7 +47,7 @@ namespace mariadb
     * @return socket
     * @throws IOException in case of error establishing socket.
     */
-  Socket* Utils::standardSocket(Shared::Options options, SQLString& host)
+  Socket* Utils::standardSocket(Shared::Options& /*options*/, SQLString& /*host*/)
   {
     //SocketFactory* socketFactory;
     // This(socketFactory) is unlikely something we can do in C++. And unlikely we need and will support socketFactory
@@ -913,9 +913,10 @@ namespace mariadb
           if (!std::isdigit(c))
             return false;
         }
-        if (group.size() == 3 && (group.at(0) > '2' ||
-          group.at(0) == '2' && (group.at(1) > 5 ||
-            group.at(1) == 5 && group.at(2) > 5)))
+        if (group.size() == 3 &&
+            (group.at(0) > '2' ||
+             (group.at(0) == '2' &&
+              (group.at(1) > 5 || (group.at(1) == 5 && group.at(2) > 5)))))
           return false;
       }
     }
@@ -1016,6 +1017,24 @@ IP_V6_COMPRESSED( "^(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4}){0,5})?)::(([0-9A-Fa-f]
       ++it;
     }
     return false;
+  }
+
+
+  std::size_t Utils::findstrni(const std::string & str, const char* substr, std::size_t len)
+  {
+    const char first[2]= {*substr, static_cast<char>(std::toupper(*substr))};
+    std::size_t pos= 0, prev= 0;
+    const std::size_t firstbad= str.length() - len + 1;
+
+    /*Mix of iterator and index opertaions makes me think, that it could be done better */
+    while ((pos= str.find_first_of(first, prev, 2)) < firstbad) {
+      auto it= str.cbegin() + pos;
+      if (!strnicmp(it, substr + 1, len - 1)) {
+        return pos;
+      }
+      prev= pos + 1;
+    }
+    return std::string::npos;
   }
 
 

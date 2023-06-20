@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -55,8 +55,8 @@ namespace mariadb
     : outputResultSet(nullptr),
       connection(_connection),
       parameterMetadata(nullptr),
-      stmt(new ServerSidePreparedStatement(_connection, query, resultSetType, resultSetConcurrency, Statement::NO_GENERATED_KEYS, factory)),
       hasInOutParameters(false),
+      stmt(new ServerSidePreparedStatement(_connection, query, resultSetType, resultSetConcurrency, Statement::NO_GENERATED_KEYS, factory)),
       database(_database),
       procedureName(_procedureName)
   {

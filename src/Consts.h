@@ -109,7 +109,6 @@ namespace mariadb
   class ClientSidePreparedStatement;
   class ServerSidePreparedStatement;
   class SelectResultSet;
-  //typedef ServerSidePreparedStatement ClientSidePreparedStatement;
   typedef SelectResultSet UpdatableResultSet;
   class ServerPrepareResult;
   class MariaDbParameterMetaData;
@@ -223,13 +222,6 @@ namespace mariadb
     typedef std::weak_ptr<Results> Results;
   }
 } //---- namespace mariadb
-
-  //namespace Shared
-  //{
-  //}
-  //namespace Unique
-  //{
-  //}
 } //---- namespave sql
 
 //#include "UrlParser.h"

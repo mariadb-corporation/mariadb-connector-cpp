@@ -266,11 +266,11 @@ std::vector< udtattribute > unit_fixture::attributes = {
 
 unit_fixture::unit_fixture(const String & name)
 : super(name),
+useTls(false),
 con(nullptr),
 pstmt(nullptr),
 stmt(nullptr),
-res(nullptr),
-useTls(false)
+res(nullptr)
 {
   init();
 }

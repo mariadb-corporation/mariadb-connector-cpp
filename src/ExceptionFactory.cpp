@@ -34,7 +34,11 @@ namespace mariadb
   void ExceptionFactory::Throw(std::unique_ptr<sql::SQLException> e)
   {
     sql::SQLSyntaxErrorException* asSyntaxError= dynamic_cast<sql::SQLSyntaxErrorException*>(e.get());
-
+    if (asSyntaxError != nullptr)
+    {
+      e.release();
+      throw *asSyntaxError;
+    }
   }
 
   ExceptionFactory::ExceptionFactory(int64_t threadId, Shared::Options& options, MariaDbConnection* connection, Statement* statement)

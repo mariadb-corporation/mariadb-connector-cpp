@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -34,10 +34,10 @@ namespace mariadb
     bool _rewriteType)
     : sql(_sql)
     , queryParts(_queryParts)
+    , rewriteType(_rewriteType)
+    , paramCount(static_cast<uint32_t>(queryParts.size()) - (_rewriteType ? 3 : 1))
     , isQueryMultiValuesRewritableFlag(isQueryMultiValuesRewritable)
     , isQueryMultipleRewritableFlag(isQueryMultipleRewritable)
-    , paramCount(static_cast<uint32_t>(queryParts.size()) - (_rewriteType ? 3 : 1))
-    , rewriteType(_rewriteType)
   {
   }
 

@@ -35,8 +35,8 @@ namespace mariadb
     */
   CmdInformationSingle::CmdInformationSingle(int64_t _insertId, int64_t _updateCount, int32_t _autoIncrement)
     : insertId(_insertId)
-    , updateCount(_updateCount)
     , autoIncrement(_autoIncrement)
+    , updateCount(_updateCount)
   {
   }
 
@@ -186,12 +186,14 @@ namespace mariadb
     return updateCount != RESULT_SET_VALUE;
   }
 
-  void CmdInformationSingle::addSuccessStat(int64_t updateCount, int64_t insertId)
+  /* Have nothing to do, but must implement */
+  void CmdInformationSingle::addSuccessStat(int64_t /*updateCount*/, int64_t /*insertId*/)
   {
 
   }
 
-  void CmdInformationSingle::setRewrite(bool rewritten)
+  /* Have nothing to do, but must implement */
+  void CmdInformationSingle::setRewrite(bool /*rewritten*/)
   {
 
   }

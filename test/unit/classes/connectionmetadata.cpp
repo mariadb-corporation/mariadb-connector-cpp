@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -47,12 +47,12 @@ void connectionmetadata::getSchemata()
 {
   logMsg("connectionmetadata::getSchemata() - MySQL_ConnectionMetaData::getSchemata");
   SKIP("Not supported methods");
-  bool schema_found=false;
-  std::stringstream msg;
   try
   {
     DatabaseMetaData  dbmeta(con->getMetaData());
     /*ResultSet resdbm1(dbmeta->getSchemata());
+    bool schema_found=false;
+    std::stringstream msg;
     checkResultSetScrolling(resdbm1);
     ResultSet resdbm2(dbmeta->getSchemaObjects(con->getCatalog(), "", "schema"));
     logMsg("... checking if getSchemata() and getSchemaObjects() report the same schematas");
@@ -692,7 +692,7 @@ void connectionmetadata::getDatabaseVersions()
   {
     DatabaseMetaData  dbmeta(con->getMetaData());
     ASSERT_GT(5, dbmeta->getDatabaseMajorVersion());
-    ASSERT_LT(10, dbmeta->getDatabaseMajorVersion());
+    ASSERT_LT(11, dbmeta->getDatabaseMajorVersion());
     ASSERT_LT(100, dbmeta->getDatabaseMinorVersion());
     ASSERT_LT(100, dbmeta->getDatabasePatchVersion());
 

@@ -39,9 +39,9 @@ namespace mariadb
   CmdInformationBatch::CmdInformationBatch(std::size_t _expectedSize, int32_t _autoIncrement)
     : expectedSize(_expectedSize)
     , autoIncrement(_autoIncrement)
-    , rewritten(false)
     , insertIdNumber(0)
     , hasException(false)
+    , rewritten(false)
   {
   }
 
@@ -216,7 +216,7 @@ namespace mariadb
     * @param sql SQL command
     * @return a resultSet with insert ids.
     */
-  ResultSet* CmdInformationBatch::getGeneratedKeys(Protocol* protocol, const SQLString& sql)
+  ResultSet* CmdInformationBatch::getGeneratedKeys(Protocol* protocol, const SQLString& /*sql*/)
   {
     std::vector<int64_t> ret;
     int32_t position= 0;

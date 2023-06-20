@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -1809,7 +1809,7 @@ void preparedstatement::concpp99_batchRewrite()
     pstmt.reset(con->prepareStatement(insertQuery[i]));
     //ssps.reset(sspsCon->prepareStatement(insertQuery[i]));
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (size_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row]);
       pstmt->setString(2, val[i][row]);
       pstmt->addBatch();
@@ -1823,7 +1823,7 @@ void preparedstatement::concpp99_batchRewrite()
 
     res.reset(stmt->executeQuery(selectQuery));
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (size_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       ASSERT(res->next());
       ASSERT_EQUALS(id[row], res->getInt(1));
       ASSERT_EQUALS(val[i][row], res->getString(2));
@@ -1838,7 +1838,7 @@ void preparedstatement::concpp99_batchRewrite()
     pstmt->clearBatch();
     pstmt->clearParameters();
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (size_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row] + 3);
       pstmt->setString(2, val[0][row]);
       pstmt->addBatch();
@@ -1847,7 +1847,7 @@ void preparedstatement::concpp99_batchRewrite()
     ASSERT_EQUALS(3ULL, static_cast<uint64_t>(batchLRes.size()));
 
     res.reset(stmt->executeQuery(selectQuery));
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (size_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       ASSERT(res->next());
       ASSERT_EQUALS(id[row] + 3, res->getInt(1));
       ASSERT_EQUALS(val[i][row], res->getString(2));
@@ -1884,7 +1884,7 @@ void preparedstatement::concpp106_batchBulk()
     pstmt.reset(con->prepareStatement(insertQuery[i]));
     //ssps.reset(sspsCon->prepareStatement(insertQuery[i]));
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row]);
       if (val[i][row] != nullptr) {
         pstmt->setString(2, val[0][row]);
@@ -1905,7 +1905,7 @@ void preparedstatement::concpp106_batchBulk()
 
     res.reset(stmt->executeQuery(selectQuery));
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       ASSERT(res->next());
       ASSERT_EQUALS(id_expected[row], res->getInt(1));
       if (val_expected[i][row] == nullptr) {
@@ -1927,7 +1927,7 @@ void preparedstatement::concpp106_batchBulk()
     pstmt->clearBatch();
     pstmt->clearParameters();
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row] + 3);
       if (val[i][row] != nullptr) {
         pstmt->setString(2, val[0][row]);
@@ -1943,7 +1943,7 @@ void preparedstatement::concpp106_batchBulk()
     ASSERT_EQUALS(static_cast<uint64_t>(sizeof(id) / sizeof(id[0])), static_cast<uint64_t>(batchLRes.size()));
 
     res.reset(stmt->executeQuery(selectQuery));
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       ASSERT(res->next());
       ASSERT_EQUALS(id_expected[row] + 3, res->getInt(1));
       if (val_expected[i][row] == nullptr) {

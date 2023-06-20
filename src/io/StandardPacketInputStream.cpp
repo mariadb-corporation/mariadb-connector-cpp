@@ -34,8 +34,8 @@ namespace mariadb
     * @param options connection options
     */
   StandardPacketInputStream::StandardPacketInputStream(std::istream* in, Shared::Options options)
-    : maxQuerySizeToLog(options->maxQuerySizeToLog)
-    , inputStream(in)
+    : inputStream(in)
+    , maxQuerySizeToLog(options->maxQuerySizeToLog)
   {
     /*inputStream=
       options->useReadAheadInput
@@ -222,7 +222,7 @@ namespace mariadb
         int32_t currentBufferLength= static_cast<int32_t>(rawBytes.size());
         sql::bytes newRawBytes(currentBufferLength + packetLength);
         std::memcpy(newRawBytes, rawBytes, currentBufferLength);
-        rawBytes= newRawBytes;
+        //rawBytes= newRawBytes;
 
         remaining= packetLength;
         off= currentBufferLength;

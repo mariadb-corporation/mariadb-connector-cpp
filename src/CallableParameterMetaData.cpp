@@ -162,7 +162,7 @@ namespace mariadb
   }
 
 
-  SQLString CallableParameterMetaData::getParameterClassName(uint32_t index)
+  SQLString CallableParameterMetaData::getParameterClassName(uint32_t /*index*/)
   {
     return emptyStr;
   }
