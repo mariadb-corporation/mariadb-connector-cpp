@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -494,7 +494,14 @@ void connection::invalidCredentials()
       try
       {
         con.reset(driver->connect(url, user, mypasswd));
-        FAIL("... using invalid password should have failed");
+        if (getServerVersion(con) > 1100000)
+        {
+          logMsg("... with server version > 11.0 and root/Administrator account running tests, this may happen");
+        }
+        else
+        {
+          FAIL("... using invalid password should have failed");
+        }
       }
       catch (sql::SQLException &)
       {

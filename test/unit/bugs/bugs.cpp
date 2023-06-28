@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -1560,7 +1560,15 @@ void bugs::concpp60()
       try
       {
         getConnection(&connProps);
-        fail("Connection was supposed to fail", __FILE__, __LINE__);
+        if (getServerVersion(con) > 1100000)
+        {
+          logMsg("... with server version > 11.0 and root/Administrator account running tests, this may happen");
+        }
+        else
+        {
+          FAIL("Connection was supposed to fail");
+        }
+      
       }
       catch (sql::SQLException & e)
       {
