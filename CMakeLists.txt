@@ -169,9 +169,6 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    ####CPP####
                    )
 
-# Raw class implementations of classes we are not gonna use atm
-#                   src/pool/Pool.cpp
-
 IF(WIN32)
   SET(MACPP_SOURCES ${MACPP_SOURCES}
                    src/Dll.c
@@ -412,6 +409,24 @@ IF(WIN32)
   MESSAGE(STATUS "Sign MSI package: ${WITH_SIGNCODE}")
 ENDIF()
 
+# By now we have everything needed by tests. If we need to build them only - firing config now and exit
+# There is "normal" tests config below
+IF(BUILD_TESTS_ONLY)
+  IF(WIN32)
+    LINK_DIRECTORIES("$ENV{ProgramFiles}/MariaDB/MariaDB C++ Connector 64-bit")
+  ELSE()
+    MESSAGE(STATUS "Configurig Tests: tcp://${TEST_UID}@${TEST_SERVER}:${TEST_PORT}/${TEST_SCHEMA} socket: ${TEST_SOCKET}")
+    SET(DRIVER_LIB_LOCATION "${libmariadb_prefix}/${INSTALL_LIBDIR}")
+  ENDIF()
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include/conncpp)
+  # At some point use of String.cpp from the driver was added to tests. Need to verify if it's still needed/a good idea.
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
+  ADD_SUBDIRECTORY(test)
+  # Only means only
+  RETURN()
+ENDIF()
+
 ADD_CUSTOM_TARGET(DEPENDENCIES_FOR_PACKAGE)
 IF(NOT WITH_SSL)
   MESSAGE(STATUS "Setting default value for WITH_SSL for libmariadb build to ON")
@@ -554,7 +569,7 @@ ELSE()
   ADD_SUBDIRECTORY(include)
 ENDIF()
 # Tests. Checking if we have them. May be not the case if we are building from source package
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
+IF(WITH_UNIT_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
   ADD_SUBDIRECTORY(test)
   ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
 	  COMMAND ${CMAKE_COMMAND} ARGS -E copy $<TARGET_FILE:${LIBRARY_NAME}> test)
