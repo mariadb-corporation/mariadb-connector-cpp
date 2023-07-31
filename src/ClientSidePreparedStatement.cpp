@@ -206,6 +206,8 @@ namespace mariadb
       throw stmt->executeBatchExceptionEpilogue(sqle, size);
     }
     stmt->executeBatchEpilogue();
+    // Silencing compiler
+    return stmt->batchRes.wrap(nullptr, 0);
   }
 
   /**
@@ -250,6 +252,8 @@ namespace mariadb
       throw stmt->executeBatchExceptionEpilogue(sqle, size);
     }
     stmt->executeBatchEpilogue();
+    // Silencing compiler
+    return stmt->largeBatchRes.wrap(nullptr, 0);
   }
 
   /**

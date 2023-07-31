@@ -3312,6 +3312,7 @@ void connection::concpp94_loadLocalInfile()
   p["user"] = user;
   p["password"] = passwd;
   p["allowLocalInfile"] = "true";
+  p["useTls"] = useTls ? "true" : "false";
 
   con.reset(driver->connect(url, p));
   ASSERT(con.get());
