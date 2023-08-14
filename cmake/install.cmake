@@ -46,7 +46,7 @@ IF(NOT INSTALL_LAYOUT)
 ENDIF()
 
 SET(INSTALL_LAYOUT ${INSTALL_LAYOUT} CACHE
-  STRING "Installation layout. Currently supported options are DEFAULT (tar.gz and zip), PKG")
+  STRING "Installation layout. Currently supported options are DEFAULT (tar.gz and zip), DEB, RPM and PKG")
 
 # On Windows we only provide zip and .msi. The latter uses a different packager.
 IF(UNIX)
@@ -91,7 +91,7 @@ SET(LIBMARIADB_STATIC_DEFAULT "mariadbclient")
 # RPM layout
 #
 SET(INSTALL_BINDIR_RPM "${CMAKE_INSTALL_BINDIR}")
-SET(INSTALL_LIBDIR_RPM "${CMAKE_INSTALL_LIBDIR}/mariadb")
+SET(INSTALL_LIBDIR_RPM "${CMAKE_INSTALL_LIBDIR}")
 SET(INSTALL_PCDIR_RPM "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 SET(INSTALL_PLUGINDIR_RPM "${CMAKE_INSTALL_LIBDIR}/mariadb/plugin")
 SET(INSTALL_INCLUDEDIR_RPM "${CMAKE_INSTALL_INCLUDEDIR}/mariadb")

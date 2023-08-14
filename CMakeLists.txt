@@ -38,6 +38,15 @@ SET(MACPP_VERSION_QUALITY "ga") #Empty also means GA
 SET(MACPP_VERSION "1.00.0003")
 SET(MARIADB_DEFAULT_PLUGINS_SUBDIR "plugin")
 
+# For C/C
+IF(CMAKE_VERSION VERSION_LESS "3.1")
+  IF(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    SET (CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-std=gnu99 ${CMAKE_C_FLAGS}")
+  ENDIF()
+ELSE()
+  SET(CMAKE_C_STANDARD 99)
+ENDIF()
+
 SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -401,8 +410,6 @@ INCLUDE("options_defaults")
 
 ### Setting installation paths - should go before C/C subproject sets its own. We need to have control over those
 INCLUDE("install")
-MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIB_SUFFIX}")
-MESSAGE(STATUS "Authentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
 
 IF(WIN32)
   MESSAGE(STATUS "Generate MSI package: ${WITH_MSI}")
@@ -554,7 +561,7 @@ ELSE()
   ENDIF()
   INSTALL(TARGETS
           ${LIBRARY_NAME}
-          LIBRARY DESTINATION ${INSTALL_LIB_SUFFIX}/mariadb
+          LIBRARY DESTINATION ${INSTALL_LIBDIR}
           COMPONENT CppLibs)
 
   MESSAGE(STATUS "Documentation installed to ${INSTALL_DOCDIR}")
