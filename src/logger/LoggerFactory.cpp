@@ -50,12 +50,11 @@ namespace mariadb
 
   bool LoggerFactory::initLoggersIfNeeded()
   {
-      if (!NO_LOGGER) {
-          NO_LOGGER = Shared::Logger(new NoLogger());
-      }
-      return true;
+    if (!NO_LOGGER) {
+      NO_LOGGER = Shared::Logger(new NoLogger());
+    }
+    return true;
   }
-
 
   Shared::Logger LoggerFactory::getLogger(const std::type_info& /*typeId*/)
   {
