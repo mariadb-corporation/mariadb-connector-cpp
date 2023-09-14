@@ -25,7 +25,7 @@ namespace sql
 {
 namespace mariadb
 {
-  Shared::Logger LoggerFactory::NO_LOGGER= (NO_LOGGER ? NO_LOGGER : Shared::Logger(new NoLogger()));
+//  Shared::Logger LoggerFactory::NO_LOGGER= (NO_LOGGER ? NO_LOGGER : Shared::Logger(new NoLogger()));
   bool LoggerFactory::hasToLog= false;
 
   void LoggerFactory::init(bool mustLog)
@@ -50,13 +50,14 @@ namespace mariadb
 
   bool LoggerFactory::initLoggersIfNeeded()
   {
-    if (!NO_LOGGER) {
-      NO_LOGGER.reset(new NoLogger());
-    }
-    return true;
+      if (!NO_LOGGER) {
+          NO_LOGGER = Shared::Logger(new NoLogger());
+      }
+      return true;
   }
 
-  Shared::Logger LoggerFactory::getLogger(const std::type_info& /*typeId*/)
+
+    Shared::Logger LoggerFactory::getLogger(const std::type_info& /*typeId*/)
   {
     static bool inited= initLoggersIfNeeded();
     // Just to use inited and shut up the compiler
