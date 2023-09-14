@@ -3046,7 +3046,6 @@ int run_tests(int argc, const char **argv)
         printf("not ok\n");
         return 1;
       }
-
       std::unique_ptr<sql::Statement> stmt(conn->createStatement());
       stmt->execute("SHOW ENGINES");
       {
