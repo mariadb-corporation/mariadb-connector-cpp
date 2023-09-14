@@ -57,7 +57,7 @@ namespace mariadb
   }
 
 
-    Shared::Logger LoggerFactory::getLogger(const std::type_info& /*typeId*/)
+  Shared::Logger LoggerFactory::getLogger(const std::type_info& /*typeId*/)
   {
     static bool inited= initLoggersIfNeeded();
     // Just to use inited and shut up the compiler
