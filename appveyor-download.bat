@@ -1,6 +1,6 @@
 @echo off
-set archive=http://ftp.hosteurope.de/mirror/archive.mariadb.org/mariadb-%DB%/winx64-packages/mariadb-%DB%-winx64.msi
-set last=http://mirror.i3d.net/pub/mariadb/mariadb-%DB%/winx64-packages/mariadb-%DB%-winx64.msi
+set archive=https://archive.mariadb.org//mariadb-%DB%/winx64-packages/mariadb-%DB%-winx64.msi
+set last=https://archive.mariadb.org//mariadb-%DB%/winx64-packages/mariadb-%DB%-winx64.msi
 
 echo Downloading from %archive%
 curl -fLsS -o server.msi %archive%
