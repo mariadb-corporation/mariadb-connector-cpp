@@ -117,10 +117,9 @@ namespace mariadb
 
 
     for (int64_t rowData : data) {
-      std::vector<sql::bytes> row;
       if (rowData != 0) {
         idAsStr= std::to_string(rowData);
-        BYTES_ASSIGN_STR(row[0], idAsStr);
+        std::vector<sql::bytes> row= {BYTES_STR_INIT(idAsStr)};
         rows.push_back(row);
       }
     }

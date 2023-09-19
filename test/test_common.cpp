@@ -607,7 +607,7 @@ static void test_statement_5(std::unique_ptr<sql::Connection> & conn, std::uniqu
     /* Get a result set */
     try {
       std::unique_ptr<sql::ResultSet> rset(stmt->executeQuery("INSERT INTO test_function VALUES(2,200)"));
-      ensure("NULL returned for result set", rset.get() == NULL);
+      ensure("NULL returned for result set", rset.get() != NULL);
       ensure_equal_int("Non-empty result set", false, rset->next());
     } catch (sql::SQLException &) {
     } catch (...) {

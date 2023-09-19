@@ -504,7 +504,30 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.def.in
 # Dynamic linking is default on non-Windows
 IF(MARIADB_LINK_DYNAMIC OR NOT WIN32)# OR USE_SYSTEM_INSTALLED_LIB)
   IF(USE_SYSTEM_INSTALLED_LIB)
-    SET(MARIADB_CLIENT_TARGET_NAME mariadb)
+    FIND_LIBRARY(CCLIB libmariadb.so)
+    IF (${CCLIB} STREQUAL "CCLIB-NOTFOUND")
+      # It won't be found by linker either unless user does some magic before build, so we actually could stop here with error
+      MESSAGE(STATUS "C/C library has not been found")
+      SET(MARIADB_CLIENT_TARGET_NAME mariadb)
+    ELSE()
+      MESSAGE(STATUS "C/C library found here ${CCLIB}")
+      SET(MARIADB_CLIENT_TARGET_NAME ${CCLIB})
+    ENDIF()
+    FIND_FILE(CCHEADER NAMES "mysql.h"
+              PATHS /usr/include/mariadb
+                    /usr/include/mysql
+                    /usr/local/include/mariadb
+                    /usr/local/include/mysql)
+              #PATH_SUFFIXES mariadb mysql)
+    IF (${CCHEADER} STREQUAL "CCHEADER-NOTFOUND")
+      # Again should probably stop
+      MESSAGE(STATUS "C/C headers have not been found")
+      INCLUDE_DIRECTORIES(/usr/include/mariadb /usr/include/mysql)
+    ELSE()
+      GET_FILENAME_COMPONENT(CCHEADERDIR ${CCHEADER} DIRECTORY)
+      MESSAGE(STATUS "C/C headers have been found here ${CCHEADERDIR}")
+      INCLUDE_DIRECTORIES(${CCHEADERDIR})
+    ENDIF()
   ELSE()
     SET(MARIADB_CLIENT_TARGET_NAME libmariadb)
   ENDIF()
