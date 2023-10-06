@@ -124,7 +124,7 @@ public:
   void releasePrepareStatement(ServerPrepareResult* serverPrepareResult);
   bool forceReleasePrepareStatement(capi::MYSQL_STMT* statementId);
   void forceReleaseWaitingPrepareStatement();
-  ServerPrepareStatementCache* prepareStatementCache();
+  Cache* prepareStatementCache();
   TimeZone* getTimeZone();
   void prolog(int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement);
   void prologProxy( ServerPrepareResult* serverPrepareResult, int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement);

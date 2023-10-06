@@ -21,6 +21,7 @@
 
 #include "ProtocolLoggingProxy.h"
 #include "logger/LoggerFactory.h"
+#include "util/ServerPrepareStatementCache.h"
 
 namespace sql
 {
@@ -418,10 +419,12 @@ namespace mariadb
 	  return protocol->versionGreaterOrEqual(major, minor, patch);
 	}
 
+#ifdef WE_DO_OWN_PROTOCOL_IMPEMENTATION
   void ProtocolLoggingProxy::setLocalInfileInputStream(std::istream& inputStream)
   {
     protocol->setLocalInfileInputStream(inputStream);
   }
+#endif
 
   int32_t ProtocolLoggingProxy::getTimeout()
 	{
@@ -516,7 +519,7 @@ namespace mariadb
 	}
 
 
-  ServerPrepareStatementCache* ProtocolLoggingProxy::prepareStatementCache()
+  Cache* ProtocolLoggingProxy::prepareStatementCache()
 	{
 		/* Add here logging if needed */
     return protocol->prepareStatementCache();

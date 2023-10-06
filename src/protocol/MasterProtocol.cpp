@@ -23,7 +23,6 @@
 #include <thread>
 
 #include "MasterProtocol.h"
-
 #include "UrlParser.h"
 #include "pool/GlobalStateInfo.h"
 #include "failover/FailoverProxy.h"

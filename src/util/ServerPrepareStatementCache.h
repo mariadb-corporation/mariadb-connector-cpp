@@ -24,29 +24,18 @@
 #include <unordered_map>
 #include <mutex>
 
+#include "lru/pscache.h"
 #include "Consts.h"
 
 namespace sql
 {
 namespace mariadb
 {
+  typedef ::mariadb::PsCache<ServerPrepareResult> ServerPrepareStatementCache;
+  typedef ::mariadb::Cache<std::string, ServerPrepareResult> Cache;
+  // Base class has empty methods eimplementations
+  typedef ::mariadb::Cache<std::string,ServerPrepareResult> NoCache;
 
-
-class ServerPrepareStatementCache final {
-  std::mutex lock;
-  uint32_t maxSize;
-  const Shared::Protocol protocol;
-  ServerPrepareStatementCache(uint32_t size, Shared::Protocol& protocol);
-  std::unordered_map<std::string, ServerPrepareResult*> cache;
-  typedef std::unordered_map<std::string, ServerPrepareResult*>::iterator iterator;
-public:
-  typedef std::unordered_map<std::string, ServerPrepareResult*>::value_type value_type;
-  static ServerPrepareStatementCache* newInstance(uint32_t size, Shared::Protocol& protocol);
-  bool removeEldestEntry(value_type eldest);
-  /*synchronized*/ ServerPrepareResult* put(const SQLString& key, ServerPrepareResult* result);
-  /*synchronized*/ ServerPrepareResult* get(const SQLString& key);
-  SQLString toString();
-  };
 }
 }
 #endif

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -20,85 +20,16 @@
 
 #include "ServerPrepareStatementCache.h"
 #include "util/ServerPrepareResult.h"
-#include "Protocol.h"
 
 namespace sql
 {
 namespace mariadb
 {
-
-  ServerPrepareStatementCache::ServerPrepareStatementCache(uint32_t size, Shared::Protocol& protocol)
-    : maxSize(size)
-    , protocol(protocol)
-  {
-  }
-
-  ServerPrepareStatementCache* ServerPrepareStatementCache::newInstance(uint32_t size, Shared::Protocol& protocol)
-  {
-    return new ServerPrepareStatementCache(size, protocol);
-  }
-
-  bool ServerPrepareStatementCache::removeEldestEntry(value_type eldest)
-  {
-    bool mustBeRemoved= cache.size() > maxSize;
-
-    if (mustBeRemoved){
-      ServerPrepareResult* serverPrepareResult= eldest.second;
-      serverPrepareResult->setRemoveFromCache();
-      if (serverPrepareResult->canBeDeallocate()) {
-        try {
-          protocol->forceReleasePrepareStatement(serverPrepareResult->getStatementId());
-        }catch (SQLException&){
-
-        }
-      }
-    }
-    return mustBeRemoved;
-  }
-
-  /**
-   * Associates the specified value with the specified key in this map. If the map previously
-   * contained a mapping for the key, the existing cached prepared result shared counter will be
-   * incremented.
-   *
-   * @param key key
-   * @param result new prepare result.
-   * @return the previous value associated with key if not been deallocate, or null if there was no
-   *     mapping for key.
-   */
-  ServerPrepareResult* ServerPrepareStatementCache::put(const SQLString& key, ServerPrepareResult* result)
-  {
-    std::lock_guard<std::mutex> localScopeLock(lock);
-
-    iterator cachedServerPrepareResult= cache.find(StringImp::get(key));
-
-    if (cachedServerPrepareResult != cache.end() && cachedServerPrepareResult->second->incrementShareCounter()){
-      return cachedServerPrepareResult->second;
-    }
-
-    result->setAddToCache();
-    cache.emplace(StringImp::get(key), result);
-
-    return nullptr;
-  }
-
-
-  /* Calls have to be guarded*/
-  ServerPrepareResult* ServerPrepareStatementCache::get(const SQLString& key)
-  {
-
-    iterator cachedServerPrepareResult= cache.find(StringImp::get(key));
-
-    if (cachedServerPrepareResult != cache.end() && cachedServerPrepareResult->second->incrementShareCounter()){
-      return cachedServerPrepareResult->second;
-    }
-
-    return nullptr;
-  }
-  SQLString ServerPrepareStatementCache::toString()
+  
+  /*SQLString ServerPrepareStatementCache::toString()
   {
     SQLString stringBuilder("ServerPrepareStatementCache.map[");
-    for (auto& entry :this->cache){
+    for (const auto& entry: this->cache){
       stringBuilder
         .append("\n")
         .append(entry.first)
@@ -107,6 +38,6 @@ namespace mariadb
     }
     stringBuilder.append("]");
     return stringBuilder;
-  }
+  }*/
 }
 }

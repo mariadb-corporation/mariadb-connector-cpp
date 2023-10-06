@@ -27,6 +27,7 @@
 #include "Consts.h"
 
 #include "protocol/capi/QueryProtocol.h"
+#include "util/ServerPrepareStatementCache.h"
 #include "HostAddress.h"
 
 namespace sql

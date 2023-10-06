@@ -39,7 +39,14 @@ namespace sql
     // MariaDBStatement might need to fetch remaining results(in case of streaming). Basically, closing stmt handle would be enough - this
     // fetches remaining results as well, but we can also have here CSPS, not only SSPS
     stmt.reset();
-    serverPrepareResult.reset();
+    if (serverPrepareResult) {
+      if (serverPrepareResult->canBeDeallocate()) {
+        delete serverPrepareResult;
+      }
+      else {
+        serverPrepareResult->decrementShareCounter();
+      }
+    }
   }
   /**
     * Constructor for creating Server prepared statement.
@@ -109,7 +116,7 @@ namespace sql
   void ServerSidePreparedStatement::prepare(const SQLString& sql)
   {
     try {
-      serverPrepareResult.reset(protocol->prepare(sql, mustExecuteOnMaster));
+      serverPrepareResult= protocol->prepare(sql, mustExecuteOnMaster);
       setMetaFromResult();
     }
     catch (SQLException& e) {
@@ -214,9 +221,9 @@ namespace sql
     stmt->setExecutingFlag();
 
     try {
-      executeQueryPrologue(serverPrepareResult.get());
+      executeQueryPrologue(serverPrepareResult);
 
-      if (stmt->getQueryTimeout() !=0) {
+      if (stmt->getQueryTimeout() != 0) {
         stmt->setTimerTask(true);
       }
       std::vector<Unique::ParameterHolder> dummy;
@@ -239,7 +246,7 @@ namespace sql
       if ((protocol->getOptions()->useBatchMultiSend || protocol->getOptions()->useBulkStmts)
        && (protocol->executeBatchServer(
                                           mustExecuteOnMaster,
-                                          serverPrepareResult.get(),
+                                          serverPrepareResult,
                                           stmt->getInternalResults().get(),
                                           sql,
                                           parameterList,
@@ -262,7 +269,7 @@ namespace sql
           std::vector<Unique::ParameterHolder>& parameterHolder= parameterList[counter];
           try {
             protocol->stopIfInterrupted();
-            protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults().get(), parameterHolder);
+            protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult, stmt->getInternalResults().get(), parameterHolder);
           }
           catch (SQLException& queryException)
           {
@@ -286,7 +293,7 @@ namespace sql
           std::vector<Unique::ParameterHolder>& parameterHolder= parameterList[counter];
           try {
             protocol->executePreparedQuery(
-              mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults().get(), parameterHolder);
+              mustExecuteOnMaster, serverPrepareResult, stmt->getInternalResults().get(), parameterHolder);
           }
           catch (SQLException& queryException) {
             if (protocol->getOptions()->continueBatchOnError) {
@@ -331,7 +338,7 @@ namespace sql
 
     std::unique_lock<std::mutex> localScopeLock(*protocol->getLock());
     try {
-      executeQueryPrologue(serverPrepareResult.get());
+      executeQueryPrologue(serverPrepareResult);
       if (stmt->getQueryTimeout() !=0) {
         stmt->setTimerTask(false);
       }
@@ -352,7 +359,7 @@ namespace sql
 
       serverPrepareResult->resetParameterTypeHeader();
       protocol->executePreparedQuery(
-        mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults().get(), parameters);
+        mustExecuteOnMaster, serverPrepareResult, stmt->getInternalResults().get(), parameters);
 
       stmt->getInternalResults()->commandEnd();
       stmt->executeEpilogue();
@@ -385,10 +392,11 @@ namespace sql
 
     if (serverPrepareResult != nullptr && protocol) {
       try {
-        serverPrepareResult->getUnProxiedProtocol()->releasePrepareStatement(serverPrepareResult.get());
+        serverPrepareResult->getUnProxiedProtocol()->releasePrepareStatement(serverPrepareResult);
       }
       catch (SQLException&) {
       }
+      serverPrepareResult= nullptr;
     }
     if (protocol->isClosed()
      || !connection->poolConnection

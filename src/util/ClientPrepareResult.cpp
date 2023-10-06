@@ -54,7 +54,6 @@ namespace mariadb
     */
   ClientPrepareResult* ClientPrepareResult::parameterParts(const SQLString& queryString, bool noBackslashEscapes)
   {
-    bool reWritablePrepare= false;
     bool multipleQueriesPrepare= true;
     std::vector<SQLString> partList;
     LexState state= LexState::Normal;
@@ -187,7 +186,7 @@ namespace mariadb
     }
 
     return new ClientPrepareResult(
-      queryString, partList, reWritablePrepare, multipleQueriesPrepare, false);
+      queryString, partList, false, multipleQueriesPrepare, false);
   }
 
   /**

@@ -40,7 +40,7 @@ namespace mariadb
     capi::MYSQL_FIELD* md= new capi::MYSQL_FIELD;
 
     std::memset(md, 0, sizeof(capi::MYSQL_FIELD));
-
+    //TODO: this feels wrong
     md->name= (char*)name.c_str();
     md->org_name= (char*)name.c_str();
     md->name_length= static_cast<unsigned int>(name.length());
@@ -66,7 +66,6 @@ namespace mariadb
 
     return Shared::ColumnDefinition(new capi::ColumnDefinitionCapi(md, true));
   }
-
 }
 }
 

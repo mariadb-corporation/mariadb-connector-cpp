@@ -81,7 +81,7 @@ namespace mariadb
     : maxFieldSize(_maxFieldSize)
     , options(options)
     , buf(nullptr)
-    , fieldBuf(0)
+    , fieldBuf(0LL)
     , length(0)
     , lastValueNull(0)
     , index(0)

@@ -30,6 +30,7 @@
 #define BYTES_INIT(STR) {STR, STR!=nullptr ? strlen(STR) + 1 : 1}
 #define BYTES_STR_INIT(STR) {STR.c_str(), STR.length()}
 #define BYTES_ASSIGN_STR(BYTES, STR) BYTES.assign(STR.c_str(), STR.length())
+#define BYTES_FROM_STR(STR) STR.c_str(), STR.length()
 
 namespace sql
 {

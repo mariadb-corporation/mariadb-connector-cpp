@@ -24,6 +24,7 @@
 #include <atomic>
 #include <map>
 
+#include "lru/pscache.h"
 #include "Consts.h"
 
 #include "Protocol.h"
@@ -50,9 +51,8 @@ namespace capi
     static const SQLString SESSION_QUERY; /*("SELECT @@max_allowed_packet,"
     +"@@system_time_zone,"
     +"@@time_zone,"
-    +"@@auto_increment_increment")
-    .getBytes(StandardCharsets.UTF_8)*/
-    static const SQLString IS_MASTER_QUERY; /*"select @@innodb_read_only".getBytes(StandardCharsets.UTF_8)*/
+    +"@@auto_increment_increment")*/
+    static const SQLString IS_MASTER_QUERY; /*"select @@innodb_read_only"*/
     static Shared::Logger logger;
 
   protected:
@@ -65,15 +65,15 @@ namespace capi
 
   private:
     const SQLString username;
-    //const LruTraceCache traceCache; /*new LruTraceCache()*/
+    //const LruTraceCache traceCache;
     //TODO: can it really be unique?
     std::unique_ptr<GlobalStateInfo> globalInfo;
 
   public:
-    bool hasWarningsFlag; /*false*/
+    bool hasWarningsFlag= false;
     /* This cannot be Shared as long as C/C stmt handle is owned by  statement(SSPS class in this case) object */
     Weak::Results activeStreamingResult; /*NULL*/
-    uint32_t serverStatus;
+    uint32_t serverStatus= 0;
 
   protected:
     int32_t autoIncrementIncrement;
@@ -84,7 +84,7 @@ namespace capi
     bool explicitClosed; /*false*/
     SQLString database;
     int64_t serverThreadId;
-    ServerPrepareStatementCache* serverPrepareStatementCache;
+    std::unique_ptr<Cache> serverPrepareStatementCache;
     bool eofDeprecated; /*false*/
     int64_t serverCapabilities;
     int32_t socketTimeout;
@@ -230,7 +230,7 @@ namespace capi
     void removeActiveStreamingResult();
     Shared::mutex& getLock();
     bool hasMoreResults();
-    ServerPrepareStatementCache* prepareStatementCache();
+    Cache* prepareStatementCache();
     void changeSocketTcpNoDelay(bool setTcpNoDelay);
     void changeSocketSoTimeout(int32_t setSoTimeout);
     bool isServerMariaDb();

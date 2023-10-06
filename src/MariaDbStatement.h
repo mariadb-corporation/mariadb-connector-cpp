@@ -135,7 +135,9 @@ public:
   void setEscapeProcessing(bool enable);
   int32_t getQueryTimeout();
   void setQueryTimeout(int32_t seconds);
+#ifdef WE_DO_OWN_PROTOCOL_IMPEMENTATION
   void setLocalInfileInputStream(std::istream* inputStream);
+#endif
   void cancel();
   SQLWarning* getWarnings();
   void clearWarnings();

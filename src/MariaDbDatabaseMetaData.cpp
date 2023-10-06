@@ -279,31 +279,30 @@ namespace sql
 
         // NULL in 1st column
         row.emplace_back(0); // PKTABLE_CAT
-
         if (pkTable.schema.empty())
         {
-          row.push_back(BYTES_STR_INIT(catalog));
+          row.emplace_back(BYTES_FROM_STR(catalog));
         }
         else
         {
-          row.push_back(BYTES_STR_INIT(pkTable.schema)); // PKTABLE_SCHEM
+          row.emplace_back(BYTES_FROM_STR(pkTable.schema)); // PKTABLE_SCHEM
         }
         
         f8= std::to_string(i + 1);
 
-        row.push_back(BYTES_STR_INIT(pkTable.name)); // PKTABLE_NAME
-        row.push_back(BYTES_STR_INIT(primaryKeyCols[i].name));
+        row.emplace_back(BYTES_FROM_STR(pkTable.name)); // PKTABLE_NAME
+        row.emplace_back(BYTES_FROM_STR(primaryKeyCols[i].name));
         // NULL in 5th column
         row.emplace_back(0);
-        row.push_back(BYTES_STR_INIT(catalog));
-        row.push_back(BYTES_STR_INIT(tableName));
-        row.push_back(BYTES_STR_INIT(foreignKeyCols[i].name));
-        row.push_back(BYTES_STR_INIT(f8));
-        row.push_back(BYTES_STR_INIT(f9));
-        row.push_back(BYTES_STR_INIT(f10));
-        row.push_back(BYTES_STR_INIT(constraintName.name));
+        row.emplace_back(BYTES_FROM_STR(catalog));
+        row.emplace_back(BYTES_FROM_STR(tableName));
+        row.emplace_back(BYTES_FROM_STR(foreignKeyCols[i].name));
+        row.emplace_back(BYTES_FROM_STR(f8));
+        row.emplace_back(BYTES_FROM_STR(f9));
+        row.emplace_back(BYTES_FROM_STR(f10));
+        row.emplace_back(BYTES_FROM_STR(constraintName.name));
         row.emplace_back(0); // PK_NAME - unlike using information_schema, cannot know constraint name
-        row.push_back(BYTES_STR_INIT(f13));
+        row.emplace_back(BYTES_FROM_STR(f13));
         data.push_back(row);
       }
     }

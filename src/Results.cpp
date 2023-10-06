@@ -250,7 +250,7 @@ namespace mariadb
       }else if (moreResultAvailable){
         cmdInformation.reset(new CmdInformationMultiple(expectedSize, autoIncrement));
       }else {
-        cmdInformation.reset(new CmdInformationSingle(0, -1, autoIncrement));
+        cmdInformation.reset(new CmdInformationSingle(0, CmdInformation::RESULT_SET_VALUE, autoIncrement));
         return;
       }
     }
@@ -317,36 +317,39 @@ namespace mariadb
    * @throws SQLException if any connection error occur
    */
   void Results::loadFully(bool skip, Protocol* protocol) {
-    if (fetchSize != 0){
+
+    if (fetchSize != 0) {
+
       fetchSize= 0;
       SelectResultSet* rs= resultSet;
       if (rs == nullptr) {
         rs= currentRs.get();
       }
-      if (rs){
-        if (skip){
+      if (rs) {
+        if (skip) {
           rs->close();
-        }else {
+        }
+        else {
           rs->fetchRemaining();
         }
-      }else {
+      }
+      else {
         Unique::SelectResultSet firstResult;
         auto it= executionResults.begin();
 
         if (it != executionResults.end())
         {
           firstResult.reset(it->release());
-          if (skip){
+          if (skip) {
             firstResult->close();
           }else {
             firstResult->fetchRemaining();
           }
         }
       }
-
-      if (protocol->hasMoreResults()){
-        protocol->getResult(this);
-      }
+    }
+    while (protocol->hasMoreResults()) {
+      protocol->getResult(this);
     }
   }
 
@@ -415,12 +418,12 @@ namespace mariadb
       }
     }
 
-    if (protocol->hasMoreResults()){
+    if (protocol->hasMoreResults()) {
       protocol->moveToNextResult(this, serverPrepResult);
       protocol->getResult(this, serverPrepResult);
     }
 
-    if (cmdInformation->moreResults() && !batch){
+    if (cmdInformation->moreResults() && !batch) {
 
       if (current == Statement::CLOSE_CURRENT_RESULT && resultSet){
         resultSet->close();

@@ -64,10 +64,6 @@ public:
 
 private:
   const ColumnDefinition& getColumnDefinition(uint32_t column);
-
-// It's rather useless(at least in this form). Commenting out so far
-/*public:
-  bool isWrapperFor(ResultSetMetaData *iface);*/
   };
 }
 }

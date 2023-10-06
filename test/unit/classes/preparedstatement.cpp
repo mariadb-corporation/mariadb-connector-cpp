@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -59,6 +59,8 @@ void preparedstatement::setUp()
   commonProperties["useServerPrepStmts"] = "true";
   try
   {
+    // We do not reset ssps to test it can be safely destroyed after destroying (createdd in previous test) connection
+    // ssps.reset();
     sspsCon.reset(this->getConnection(&commonProperties));
   }
   catch (sql::SQLException& sqle)
@@ -2001,6 +2003,76 @@ void preparedstatement::concpp106_batchBulk()
     stmt->executeUpdate(deleteQuery);
   }
   // To make sure the framework provides next test with "standard" connection
+  con.reset();
+}
+
+
+int32_t getPsCount(Connection& con)
+{
+  PreparedStatement ps(con->prepareStatement("SHOW GLOBAL STATUS LIKE 'Prepared_stmt_count'"));
+  ResultSet res(ps->executeQuery());
+  res->next();
+  return res->getInt(2);
+}
+
+/** Test of prepared statement cache. Requires exclusive server - otherwise may fail
+ */
+void preparedstatement::psCache()
+{
+  sql::ConnectOptionsMap connection_properties{{"userName", user},
+                                               {"password", passwd},
+                                               {"useServerPrepStmts", "true"},
+                                               {"cachePrepStmts", "true"},
+                                               {"prepStmtCacheSize", "2"},
+                                               {"prepStmtCacheSqlLimit", std::to_string(45 + 1 + db.length())},
+                                               {"useTls", useTls ? "true" : "false"}};
+
+  con.reset(driver->connect(url, connection_properties));
+  stmt.reset(con->createStatement());
+  createSchemaObject("TABLE", "psCache", "(id int not NULL PRIMARY KEY AUTO_INCREMENT, val VARCHAR(31))");
+
+  // getPsCount uses PS and thus - adds to cache and to total number of statements
+  int32_t initialCount= getPsCount(con);
+  pstmt.reset(con->prepareStatement("INSERT INTO psCache(val) values('XXX')"));
+
+  int32_t newCount= getPsCount(con);
+  ASSERT_EQUALS(initialCount + 1, newCount);
+
+  PreparedStatement ps2(con->prepareStatement("INSERT INTO psCache(val) values('XXX')"));
+  newCount= getPsCount(con);
+  ASSERT_EQUALS(initialCount + 1, newCount);
+
+  ps2->execute();
+  pstmt.reset();
+
+  newCount= getPsCount(con);
+  ASSERT_EQUALS(initialCount + 1,newCount);
+
+  // Should not get into the cache
+  pstmt.reset(con->prepareStatement("SELECT '12345648901234567890123456789012345 > 45'"));
+  ps2.reset(con->prepareStatement("SELECT '12345648901234567890123456789012345 > 45'"));
+
+  newCount= getPsCount(con);
+  ASSERT_EQUALS(initialCount + 3, newCount);
+
+  // Should still be in cache
+  pstmt.reset(con->prepareStatement("INSERT INTO psCache(val) values('XXX')"));
+  // ... and one of previously prepared now closed
+  newCount= getPsCount(con);
+  ASSERT_EQUALS(initialCount + 2, newCount);
+
+  // This should push other INSERT out of the cache, as it is full by now, and the query in the getPsCount
+  // was last requested from cache.
+  ps2.reset(con->prepareStatement("INSERT INTO psCache(val) values('0')"));
+  // Statement count is the same, as last SELECT PS is now closed, but pstmt is not closed, and holds reference to 1st INSERT PS
+  newCount= getPsCount(con);
+  ASSERT_EQUALS(initialCount + 2, newCount);
+  pstmt.reset();
+  
+  newCount= getPsCount(con);
+  ASSERT_EQUALS(initialCount + 1, newCount);
+
+  // To make sure cache is cleared cleanly, and the framework provides next test with "standard" connection
   con.reset();
 }
 

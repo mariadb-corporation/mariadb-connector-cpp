@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -76,6 +76,7 @@ public:
     TEST_CASE(bugConcpp96);
     TEST_CASE(concpp99_batchRewrite);
     TEST_CASE(concpp106_batchBulk);
+    TEST_CASE(psCache);
   }
 
   /**
@@ -163,6 +164,11 @@ public:
    * checks batch execution using bulk execution with param arrays
    */
   void concpp106_batchBulk();
+  
+  /**
+   * checks if ssps cache used and works
+   */
+  void psCache();
 
   /* unit_fixture methods overriding */
   void setUp();

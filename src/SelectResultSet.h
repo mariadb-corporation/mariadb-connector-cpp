@@ -37,7 +37,7 @@
 #include "io/StandardPacketInputStream.h"
 
 #include "jdbccompat.hpp"
-
+#include "util/ServerPrepareResult.h"
 
 namespace sql
 {
@@ -47,7 +47,7 @@ class TimeZone;
 class RowProtocol;
 class PacketInputStream;
 class ColumnDefinition;
-class ServerPrepareResult;
+//class ServerPrepareResult;
 
 namespace capi
 {

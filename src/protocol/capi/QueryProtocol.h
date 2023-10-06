@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -48,12 +48,14 @@ namespace capi
     std::unique_ptr<LogQueryTool> logQuery;
     Tokens galeraAllowedStates;
     //ThreadPoolExecutor readScheduler; /*NULL*/
-    int32_t transactionIsolationLevel; /*0*/
+    int32_t transactionIsolationLevel= 0;
+#ifdef WE_DO_OWN_PROTOCOL_IMPEMENTATION
     std::unique_ptr<std::istream> localInfileInputStream;
-    int64_t maxRows;
+#endif
+    int64_t maxRows= 0;
     /*volatile*/
-    MYSQL_STMT* statementIdToRelease; /*-1*/
-    FutureTask* activeFutureTask;
+    MYSQL_STMT* statementIdToRelease= nullptr;
+    FutureTask* activeFutureTask= nullptr;
     bool interrupted= false;
 
   protected:
@@ -154,7 +156,9 @@ namespace capi
     void releasePrepareStatement(ServerPrepareResult* serverPrepareResult);
     int64_t getMaxRows();
     void setMaxRows(int64_t max);
+#ifdef WE_DO_OWN_PROTOCOL_IMPEMENTATION
     void setLocalInfileInputStream(std::istream& inputStream);
+#endif
     int32_t getTimeout();
     void setTimeout(int32_t timeout);
     void setTransactionIsolation(int32_t level);

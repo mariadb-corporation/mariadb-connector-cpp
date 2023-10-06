@@ -78,8 +78,8 @@ namespace mariadb
       isTimedout(false),
       queryTimeout(0),
       executing(false),
-      batchRes(0),
-      largeBatchRes(0)
+      batchRes(0LL),
+      largeBatchRes(0LL)
   {
     // This would check and reset fetchSize, if not FORWARD_ONLY
     setResultSetType(_resultSetScrollType);
@@ -866,6 +866,7 @@ namespace mariadb
     this->queryTimeout= seconds;
   }
 
+#ifdef WE_DO_OWN_PROTOCOL_IMPEMENTATION
   /**
    * Sets the inputStream that will be used for the next execute that uses "LOAD DATA LOCAL INFILE".
    * The name specified as local file/URL will be ignored.
@@ -878,6 +879,7 @@ namespace mariadb
     checkClose();
     protocol->setLocalInfileInputStream(*inputStream);
   }
+#endif
 
   /**
    * Cancels this <code>Statement</code> object if both the DBMS and driver support aborting an SQL

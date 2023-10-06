@@ -44,7 +44,8 @@ namespace mariadb
 
   int64_t ShortParameter::getApproximateTextProtocolLength() const
   {
-    return std::to_string(value).length();
+    // TODO: approximate does not need exact - it's rather bad idea to make string each time it's called
+    return 6;
   }
 
   /**

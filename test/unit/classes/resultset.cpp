@@ -35,6 +35,7 @@
 
 #include <sstream>
 #include <cstdlib>
+#include <cstring>
 #include <stdlib.h>
 #include "ResultSet.hpp"
 #include "conncpp/Types.hpp"

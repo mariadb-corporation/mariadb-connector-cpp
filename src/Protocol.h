@@ -30,6 +30,7 @@
 #include "HostAddress.h"
 #include "options/Options.h"
 #include "parameters/ParameterHolder.h"
+#include "util/ServerPrepareStatementCache.h"
 
 namespace sql
 {
@@ -47,7 +48,6 @@ class Results;
 class Charset;
 //class ParameterHolder;
 class TimeZone;
-class ServerPrepareStatementCache;
 class MariaDbStatement;
 class FutureTask;
 
@@ -117,7 +117,9 @@ public:
   virtual uint32_t getMinorServerVersion()=0;
   virtual uint32_t getPatchServerVersion()=0;
   virtual bool versionGreaterOrEqual(uint32_t major, uint32_t minor, uint32_t patch) const=0;
+#ifdef WE_DO_OWN_PROTOCOL_IMPEMENTATION
   virtual void setLocalInfileInputStream(std::istream& inputStream)=0;
+#endif
   virtual int32_t getTimeout()=0;
   virtual void setTimeout(int32_t timeout)=0;
   virtual bool getPinGlobalTxToPhysicalConnection() const=0;
@@ -132,7 +134,7 @@ public:
   virtual void releasePrepareStatement(ServerPrepareResult* serverPrepareResult)=0;
   virtual bool forceReleasePrepareStatement(capi::MYSQL_STMT* statementId)=0;
   virtual void forceReleaseWaitingPrepareStatement()=0;
-  virtual ServerPrepareStatementCache* prepareStatementCache()=0;
+  virtual Cache* prepareStatementCache()=0;
   virtual TimeZone* getTimeZone()=0;
   virtual void prolog(int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement)= 0;
   virtual void prologProxy(ServerPrepareResult* serverPrepareResult, int64_t maxRows, bool hasProxy, MariaDbConnection* connection,

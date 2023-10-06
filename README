@@ -152,6 +152,14 @@ rewriteBatchedStatements For insert queries, rewrites batchedStatement to execut
 useBulkStmts             Use dedicated COM_STMT_BULK_EXECUTE protocol for
             executeBatch if possible. Can be significanlty faster.
             (works only with server MariaDB >= 10.2.7). Default false                 bool
+cachePrepStmts           Enable/disable Server Side Prepared Statement cache.
+                         (default false)                                              bool
+prepStmtCacheSize        This sets the number of prepared statements that the driver
+                         will cache per connection if "cachePrepStmts" is enabled.
+                         (default 250)                                                int
+prepStmtCacheSqlLimit    This is the maximum length of a (SQL query length + schema
+                         name length + 1) for the statement that the driver will cache
+                         if "cachePrepStmts" is enabled(default 2048)                 int
 
 
 Properties is map of strings, and is another way to pass optional parameters.

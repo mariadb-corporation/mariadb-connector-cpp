@@ -21,6 +21,8 @@
 #include <random>
 #include <chrono>
 
+#include "util/ServerPrepareStatementCache.h"
+
 #include "ConnectProtocol.h"
 
 #include "logger/LoggerFactory.h"
@@ -83,8 +85,11 @@ namespace capi
     , timeZone(nullptr)
   {
     urlParser->auroraPipelineQuirks();
-    if (options->cachePrepStmts && options->useServerPrepStmts){
-      //ServerPrepareStatementCache::newInstance(options->prepStmtCacheSize, this);
+    if (options->cachePrepStmts && options->useServerPrepStmts) {
+      serverPrepareStatementCache.reset(new ServerPrepareStatementCache(options->prepStmtCacheSize, static_cast<std::size_t>(options->prepStmtCacheSqlLimit)));
+    }
+    else {
+      serverPrepareStatementCache.reset(new NoCache());
     }
   }
 
@@ -353,9 +358,7 @@ namespace capi
 
   void ConnectProtocol::cleanMemory()
   {
-    if (options->cachePrepStmts && options->useServerPrepStmts && serverPrepareStatementCache){
-      //serverPrepareStatementCache.clear();
-    }
+    serverPrepareStatementCache->clear();
     if (options->enablePacketDebug){
       //traceCache->clearMemory();
     }
@@ -685,7 +688,6 @@ namespace capi
 
   void ConnectProtocol::sendSessionInfos()
   {
-
     SQLString sessionOption("autocommit=");
     sessionOption.append(options->autocommit ? "1" : "0");
 
@@ -715,6 +717,7 @@ namespace capi
 
   void ConnectProtocol::readRequestSessionVariables(std::map<SQLString, SQLString>& serverData)
   {
+    // This is very strange piece of code
     Unique::Results results(new Results());
     getResult(results.get());
 
@@ -1336,9 +1339,9 @@ namespace capi
     return (serverStatus & ServerStatus::MORE_RESULTS_EXISTS) != 0;
   }
 
-  ServerPrepareStatementCache* ConnectProtocol::prepareStatementCache()
+  Cache* ConnectProtocol::prepareStatementCache()
   {
-    return serverPrepareStatementCache;
+    return serverPrepareStatementCache.get();
   }
 
   /**

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2022 MariaDB Corporation AB
+   Copyright (C) 2020, 2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -280,13 +280,13 @@ namespace sql
         int32_t(0)}},
       {
         "cachePrepStmts", {"cachePrepStmts",
-        "0.9.1",
-        "enable/disable prepare Statement cache, default true.",
+        "1.1.3",
+        "enable/disable prepare Statement cache, default false.",
         false,
         false}},
       {
         "prepStmtCacheSize", {"prepStmtCacheSize",
-        "0.9.1",
+        "1.1.3",
         "This sets the number of prepared statements that the "
         "driver will cache per connection if \"cachePrepStmts\" is enabled.",
         false,
@@ -294,9 +294,9 @@ namespace sql
         int32_t(0)}},
       {
         "prepStmtCacheSqlLimit", {"prepStmtCacheSqlLimit",
-        "0.9.1",
-        "This is the maximum length of a prepared SQL"
-        " statement that the driver will cache  if \"cachePrepStmts\" is enabled.",
+        "1.1.3",
+        "This is the maximum length of a (SQL query length + schema name length + 1) "
+        "the statement that the driver will cache  if \"cachePrepStmts\" is enabled.",
         false,
         (int32_t)2048,
         int32_t(0)}},
@@ -1049,8 +1049,8 @@ namespace sql
           : std::min(options->minPoolSize, options->maxPoolSize);
       }
 
-      if (options->cacheCallableStmts || options->cachePrepStmts) {
-        throw SQLFeatureNotImplementedException("Callable/Prepared statement caches are not supported yet");
+      if (options->cacheCallableStmts) {// || options->cachePrepStmts) {
+        throw SQLFeatureNotImplementedException("Callable statement caches are not supported yet");
       }
 
       if (options->defaultFetchSize < 0) {

@@ -107,7 +107,9 @@ The list of supported options:
 | **`useResetConnection`** |Makes Connection::reset() method to issue conenction reset command at the server.|*bool* |false||
 | **`rewriteBatchedStatements`** |For insert queries, rewrites batchedStatement to execute in a single executeQuery. Example: insert into ab (i) values (?) with first batch values = 1, second = 2 will be rewritten as INSERT INTO ab (i) VALUES (1), (2).  If query cannot be rewriten in "multi-values", rewrite will use multi-queries : INSERT INTO TABLE(col1) VALUES (?) ON DUPLICATE KEY UPDATE col2=? with values [1,2] and [2,3]\" will be rewritten as INSERT INTO TABLE(col1) VALUES (1) ON DUPLICATE KEY UPDATE col2=2;INSERT INTO TABLE(col1) VALUES (3) ON DUPLICATE KEY UPDATE col2=4 If active, the useServerPrepStmts option is set to false.|*bool* |false||
 | **`useBulkStmts`** |Use dedicated COM_STMT_BULK_EXECUTE protocol for executeBatch if possible. Can be significanlty faster. (works only with server MariaDB >= 10.2.7).|*bool* |false||
-
+| **`cachePrepStmts`**|Enable/disable Server Side Prepared Statement cache.|*bool*|false||
+| **`prepStmtCacheSize`**|This sets the number of prepared statements that the driver will cache per connection if "cachePrepStmts" is enabled.|*int*|250||
+| **`prepStmtCacheSqlLimit`**|This is the maximum length of a (SQL query length + schema name length + 1) for the statement that the driver will cache  if "cachePrepStmts" is enabled.|*int*|2048||
 
 Properties is map of strings, and is another way to pass optional parameters.
 

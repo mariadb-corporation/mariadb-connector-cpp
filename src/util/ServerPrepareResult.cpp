@@ -20,6 +20,7 @@
 
 #include "ServerPrepareResult.h"
 
+#include "Protocol.h"
 #include "ColumnType.h"
 #include "ColumnDefinition.h"
 #include "parameters/ParameterHolder.h"
@@ -32,8 +33,20 @@ namespace mariadb
 {
   ServerPrepareResult::~ServerPrepareResult()
   {
-    std::lock_guard<std::mutex> localScopeLock(lock);
-    capi::mysql_stmt_close(statementId);
+    if (statementId) {
+      // if connection has been already destroyed before - we are busted
+      // Dirty hack - mysql is cleared in stmt handlers when conneciton is being closed. if that did not happen yet -
+      // we are rather good to use proxy object - connection is closed by its destructor
+      // Normally I would expect application to take care of that, and destroys statement objects before connection
+      // Probably a good solution would be to have a weak pointer to the protocol
+      if (statementId->mysql != nullptr) {
+        unProxiedProtocol->forceReleasePrepareStatement(statementId);
+      }
+      else {
+        // If do this while connected and connection is busy - this can break the protocol
+        capi::mysql_stmt_close(statementId);
+      }
+    }
   }
   /**
     * PrepareStatement Result object.
@@ -44,7 +57,7 @@ namespace mariadb
     * @param parameters parameters information
     * @param unProxiedProtocol indicate the protocol on which the prepare has been done
     */
-  ServerPrepareResult::ServerPrepareResult(
+  /*ServerPrepareResult::ServerPrepareResult(
     SQLString _sql,
     capi::MYSQL_STMT* _statementId,
     std::vector<Shared::ColumnDefinition>& _columns,
@@ -57,7 +70,7 @@ namespace mariadb
     , unProxiedProtocol(_unProxiedProtocol)
     , metadata(mysql_stmt_result_metadata(statementId), &capi::mysql_free_result)
   {
-  }
+  }*/
 
   /**
   * PrepareStatement Result object.
@@ -69,7 +82,7 @@ namespace mariadb
   * @param unProxiedProtocol indicate the protocol on which the prepare has been done
   */
   ServerPrepareResult::ServerPrepareResult(
-    SQLString _sql,
+    const SQLString _sql,
     capi::MYSQL_STMT* _statementId,
     Protocol* _unProxiedProtocol)
     : sql(_sql)
@@ -78,12 +91,11 @@ namespace mariadb
     , metadata(mysql_stmt_result_metadata(statementId), &capi::mysql_free_result)
   {
     columns.reserve(mysql_stmt_field_count(statementId));
-
     for (uint32_t i= 0; i < mysql_stmt_field_count(statementId); ++i) {
       columns.emplace_back(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata.get(), i)));
     }
-    parameters.reserve(mysql_stmt_param_count(statementId));
 
+    parameters.reserve(mysql_stmt_param_count(statementId));
     for (uint32_t i= 0; i < mysql_stmt_param_count(statementId); ++i) {
       parameters.emplace_back();
     }
@@ -129,15 +141,6 @@ namespace mariadb
     this->isBeingDeallocate= false;
   }
 
-  void ServerPrepareResult::setAddToCache()
-  {
-    inCache.store(true);
-  }
-
-  void ServerPrepareResult::setRemoveFromCache()
-  {
-    inCache.store(false);
-  }
 
   /**
     * Increment share counter.
@@ -150,15 +153,14 @@ namespace mariadb
     if (isBeingDeallocate) {
       return false;
     }
-
-    shareCounter++;
+    ++shareCounter;
     return true;
   }
 
   void ServerPrepareResult::decrementShareCounter()
   {
     std::lock_guard<std::mutex> localScopeLock(lock);
-    shareCounter--;
+    --shareCounter;
   }
 
   /**
@@ -171,15 +173,13 @@ namespace mariadb
   {
     std::lock_guard<std::mutex> localScopeLock(lock);
 
-    if (shareCounter >0 || isBeingDeallocate) {
+    if (shareCounter > 1 || isBeingDeallocate) {
       return false;
     }
-    if (!inCache.load()) {
-      isBeingDeallocate= true;
-      return true;
-    }
-    return false;
+    isBeingDeallocate= true;
+    return true;
   }
+
 
   size_t ServerPrepareResult::getParamCount() const
   {
@@ -193,10 +193,18 @@ namespace mariadb
     return shareCounter;
   }
 
+
   capi::MYSQL_STMT* ServerPrepareResult::getStatementId()
   {
     return statementId;
   }
+
+
+  void ServerPrepareResult::resetStmtId()
+  {
+    statementId= nullptr;
+  }
+
 
   const std::vector<Shared::ColumnDefinition>& ServerPrepareResult::getColumns() const
   {

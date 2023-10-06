@@ -46,7 +46,7 @@ protected:
 private:
   SQLString sql;
 
-  Unique::ServerPrepareResult serverPrepareResult;
+  ServerPrepareResult *serverPrepareResult;
 
   Shared::MariaDbResultSetMetaData metadata;
   Shared::MariaDbParameterMetaData parameterMetaData;
@@ -88,7 +88,7 @@ private:
   Logger* getLogger() const { return logger.get(); }
 
 public:
-  PrepareResult* getPrepareResult() { return dynamic_cast<PrepareResult*>(serverPrepareResult.get()); }
+  PrepareResult* getPrepareResult() { return dynamic_cast<PrepareResult*>(serverPrepareResult); }
   bool executeInternal(int32_t fetchSize);
 
 public:

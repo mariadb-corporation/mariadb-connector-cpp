@@ -44,29 +44,28 @@ class ParameterHolder;
 class ServerPrepareResult  : public PrepareResult {
 
   std::vector<Shared::ColumnDefinition> columns;
-  std::vector<Shared::ColumnDefinition> parameters;
+  std::vector<Shared::ColumnDefinition> parameters; // atm it's always containempty elements and only used for parameters number
   const SQLString sql;
-  std::atomic_bool inCache;
   capi::MYSQL_STMT* statementId;
   std::unique_ptr<capi::MYSQL_RES, decltype(&capi::mysql_free_result)> metadata;
   std::vector<capi::MYSQL_BIND> paramBind;
   Protocol* unProxiedProtocol;
-  volatile int32_t shareCounter; /*1*/
-  volatile bool isBeingDeallocate;
+  volatile int32_t shareCounter= 1;
+  volatile bool isBeingDeallocate= false;
   std::mutex lock;
 
 public:
   ~ServerPrepareResult();
 
-  ServerPrepareResult(
+  /*ServerPrepareResult(
     SQLString sql,
     capi::MYSQL_STMT* statementId,
     std::vector<Shared::ColumnDefinition>& columns,
     std::vector<Shared::ColumnDefinition>& parameters,
-    Protocol* unProxiedProtocol);
+    Protocol* unProxiedProtocol);*/
 
   ServerPrepareResult(
-    SQLString sql,
+    const SQLString sql,
     capi::MYSQL_STMT* statementId,
     Protocol* unProxiedProtocol);
 
@@ -74,14 +73,13 @@ public:
 
   void resetParameterTypeHeader();
   void failover(capi::MYSQL_STMT* statementId, Shared::Protocol& unProxiedProtocol);
-  void setAddToCache();
-  void setRemoveFromCache();
   bool incrementShareCounter();
   void decrementShareCounter();
   bool canBeDeallocate();
   size_t getParamCount() const;
   int32_t getShareCounter();
   capi::MYSQL_STMT* getStatementId();
+  void resetStmtId();
   const std::vector<Shared::ColumnDefinition>& getColumns() const;
   const std::vector<Shared::ColumnDefinition>& getParameters() const;
   Protocol* getUnProxiedProtocol();

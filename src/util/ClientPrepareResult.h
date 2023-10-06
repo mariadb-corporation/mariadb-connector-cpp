@@ -48,15 +48,15 @@ class ClientPrepareResult : public PrepareResult
   const std::vector<SQLString> queryParts;
   bool rewriteType;
   uint32_t paramCount;
-  bool isQueryMultiValuesRewritableFlag; /*true*/
-  bool isQueryMultipleRewritableFlag; /*true*/
+  bool isQueryMultiValuesRewritableFlag= true;
+  bool isQueryMultipleRewritableFlag= true;
 
  ClientPrepareResult(
-  const SQLString& sql,
-  std::vector<SQLString>& queryParts,
-  bool isQueryMultiValuesRewritable,
-  bool isQueryMultipleRewritable,
-  bool rewriteType);
+   const SQLString& sql,
+   std::vector<SQLString>& queryParts,
+   bool isQueryMultiValuesRewritable,
+   bool isQueryMultipleRewritable,
+   bool rewriteType);
 
 public:
   static ClientPrepareResult* parameterParts(const SQLString& queryString, bool noBackslashEscapes);
