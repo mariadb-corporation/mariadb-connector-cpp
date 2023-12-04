@@ -1216,7 +1216,6 @@ namespace capi
       }
     }
 
-
     if (type == 2){
       patchVersion= val;
     }

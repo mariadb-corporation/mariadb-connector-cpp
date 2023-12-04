@@ -1223,7 +1223,80 @@ void preparedstatement::callSPInOut()
   }
 }
 
-void preparedstatement::callSPWithPS()
+void preparedstatement::callSPInOutWithPs()
+{
+  logMsg("preparedstatement::callSPInOut() - MySQL_PreparedStatement::*()");
+  std::string sp_code("CREATE PROCEDURE p(IN ver_in VARCHAR(25), OUT ver_out VARCHAR(25)) BEGIN SELECT ver_in INTO ver_out; END;");
+  bool autoCommit = con->getAutoCommit();
+
+  /* Version on the server can be different from the one reported by MaxScale. And we are testing here SP, not the connection metadata */
+  if (isSkySqlHA() || isMaxScale())
+  {
+    con->setAutoCommit(false);
+  }
+  try
+  {
+    if (!createSP(sp_code))
+    {
+      logMsg("... skipping: cannot create SP");
+      if (isSkySqlHA() || isMaxScale())
+      {
+        con->setAutoCommit(autoCommit);
+      }
+      return;
+    }
+
+    try
+    {
+      pstmt.reset(con->prepareStatement("CALL p('myver', @version)"));
+      ASSERT(!pstmt->execute());
+    }
+    catch (sql::SQLException &e)
+    {
+      if (isSkySqlHA() || isMaxScale())
+      {
+        con->setAutoCommit(autoCommit);
+      }
+      if (e.getErrorCode() != 1295)
+      {
+        logErr(e.what());
+        std::stringstream msg1;
+        msg1.str("");
+        msg1 << "SQLState: " << e.getSQLState() << ", MySQL error code: " << e.getErrorCode();
+        logErr(msg1.str());
+        fail(e.what(), __FILE__, __LINE__);
+      }
+      // PS protocol does not support CALL
+      logMsg("... skipping: PS protocol does not support CALL");
+      return;
+    }
+    pstmt.reset(con->prepareStatement("SELECT @version AS _version"));
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT_EQUALS("myver", res->getString("_version"));
+
+    if (isSkySqlHA() || isMaxScale())
+    {
+      con->setAutoCommit(autoCommit);
+    }
+  }
+  catch (sql::SQLException &e)
+  {
+    if (isSkySqlHA() || isMaxScale())
+    {
+      con->setAutoCommit(autoCommit);
+    }
+    logErr(e.what());
+    std::stringstream msg2;
+    msg2.str("");
+    msg2 << "SQLState: " << e.getSQLState() << ", MySQL error code: " << e.getErrorCode();
+    logErr(msg2.str());
+    fail(e.what(), __FILE__, __LINE__);
+  }
+}
+
+
+void preparedstatement::callSP2()
 {
   logMsg("preparedstatement::callSPWithPS() - MySQL_PreparedStatement::*()");
 
@@ -1262,8 +1335,9 @@ void preparedstatement::callSPWithPS()
     msg2 << "... val = '" << res->getString(1) << "'";
     logMsg(msg2.str());
 
-    while(cstmt->getMoreResults())
-    {}
+    while (cstmt->getMoreResults())
+    {
+    }
 
     try
     {
@@ -1303,6 +1377,89 @@ void preparedstatement::callSPWithPS()
     }
   }
 }
+
+
+void preparedstatement::callSP2WithPS()
+{
+  logMsg("preparedstatement::callSPWithPS() - MySQL_PreparedStatement::*()");
+
+  try
+  {
+    std::string sp_code("CREATE PROCEDURE p(IN val VARCHAR(25)) BEGIN SET @sql = CONCAT('SELECT \"', val, '\"'); PREPARE stmt FROM @sql; EXECUTE stmt; DROP PREPARE stmt; END;");
+    if (!createSP(sp_code))
+    {
+      logMsg("... skipping:");
+      return;
+    }
+
+    try
+    {
+      pstmt.reset(con->prepareStatement("CALL p('abc')"));
+      res.reset(pstmt->executeQuery());
+    }
+    catch (sql::SQLException &e)
+    {
+      if (e.getErrorCode() != 1295)
+      {
+        logErr(e.what());
+        std::stringstream msg1;
+        msg1.str("");
+        msg1 << "SQLState: " << e.getSQLState() << ", MySQL error code: " << e.getErrorCode();
+        logErr(msg1.str());
+        fail(e.what(), __FILE__, __LINE__);
+      }
+      // PS interface cannot call this kind of statement
+      return;
+    }
+    ASSERT(res->next());
+    ASSERT_EQUALS("abc", res->getString(1));
+    std::stringstream msg2;
+    msg2.str("");
+    msg2 << "... val = '" << res->getString(1) << "'";
+    logMsg(msg2.str());
+
+    while(pstmt->getMoreResults())
+    {}
+
+    try
+    {
+      pstmt.reset(con->prepareCall("CALL p(?)"));
+      pstmt->setString(1, "123");
+      res.reset(pstmt->executeQuery());
+      ASSERT(res->next());
+      ASSERT_EQUALS("123", res->getString(1));
+      ASSERT(!res->next());
+    }
+    catch (sql::SQLException &e)
+    {
+      if (e.getErrorCode() != 1295)
+      {
+        logErr(e.what());
+        std::stringstream msg3;
+        msg3.str("");
+        msg3 << "SQLState: " << e.getSQLState() << ", MySQL error code: " << e.getErrorCode();
+        logErr(msg3.str());
+        fail(e.what(), __FILE__, __LINE__);
+      }
+      // PS interface cannot call this kind of statement
+      return;
+    }
+    res->close();
+  }
+  catch (sql::SQLException &e)
+  {
+    if (e.getErrorCode() != 1295)
+    {
+      logErr(e.what());
+      std::stringstream msg4;
+      msg4.str("");
+      msg4 << "SQLState: " << e.getSQLState() << ", MySQL error code: " << e.getErrorCode();
+      logErr(msg4.str());
+      fail(e.what(), __FILE__, __LINE__);
+    }
+  }
+}
+
 
 void preparedstatement::callSPMultiRes()
 {

@@ -66,7 +66,9 @@ public:
     TEST_CASE(getMetaData);
     TEST_CASE(callSP);
     TEST_CASE(callSPInOut);
-    TEST_CASE(callSPWithPS);
+    TEST_CASE(callSPInOutWithPs);
+    TEST_CASE(callSP2);
+    TEST_CASE(callSP2WithPS);
     TEST_CASE(callSPMultiRes);
     TEST_CASE(getWarnings);
     TEST_CASE(blob);
@@ -116,11 +118,12 @@ public:
    * Calls a stored procedure with IN and OUT parameters
    */
   void callSPInOut();
-
+  void callSPInOutWithPs();
   /**
    * Calls a stored procedure which contains a prepared statement
    */
-  void callSPWithPS();
+  void callSP2();
+  void callSP2WithPS();
 
   /**
    * Calls a stored procedure which returns multiple result sets
