@@ -2,3 +2,8 @@
     path = libmariadb
     url = https://github.com/joaquinbejar/mariadb-connector-c.git
     branch = 3.3-bejarjo-warning-fix
+
+[submodule "libmariadb/external/zlib"]
+    path = libmariadb/external/zlib
+    url = https://github.com/joaquinbejar/zlib.git
+    branch = fix-warnings
