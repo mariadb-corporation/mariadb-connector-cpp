@@ -39,6 +39,8 @@ benchmark/mysql-connector-cpp/
 benchmark/mariadb.json
 benchmark/mysql.json
 benchmark/main-benchmark
+cmake-build-*/
+build/
 
 # Prerequisites
 *.d
