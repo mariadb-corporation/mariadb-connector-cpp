@@ -116,15 +116,25 @@ namespace mariadb
     std::string idAsStr;
 
 
-    for (int64_t rowData : data) {
-      std::vector<sql::bytes> row;
-      if (rowData != 0) {
-        idAsStr= std::to_string(rowData);
-        BYTES_ASSIGN_STR(row[0], idAsStr);
-        rows.push_back(row);
+//    for (int64_t rowData : data) {
+//      std::vector<sql::bytes> row;
+//      if (rowData != 0) {
+//        idAsStr= std::to_string(rowData);
+//        BYTES_ASSIGN_STR(row[0], idAsStr);
+//        rows.push_back(row);
+//      }
+//    }
+      for (int64_t rowData : data) {
+          std::vector<sql::bytes> row;
+          row.emplace_back();
+          if (rowData != 0) {
+              idAsStr = std::to_string(rowData);
+              BYTES_ASSIGN_STR(row[0], idAsStr);
+              rows.push_back(row);
+          }
       }
-    }
-    if (findColumnReturnsOne) {
+
+      if (findColumnReturnsOne) {
       return create(columns, rows, protocol, TYPE_SCROLL_SENSITIVE);
       /*int32_t SelectResultSet::findColumn(const SQLString& name) {
         return 1;
