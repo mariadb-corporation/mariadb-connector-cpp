@@ -2531,7 +2531,7 @@ void connectionmetadata::bugCpp25()
 
   ASSERT_EQUALS(3ULL, static_cast<uint64_t>(verParts->size()));
   ASSERT_EQUALS(major, std::stoul((*verParts)[0].c_str()));
-  if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+  if (std::getenv("srv") == nullptr || strcmp(std::getenv("srv"), "maxscale") != 0) {
     ASSERT_EQUALS(minor, std::stoul((*verParts)[1].c_str()));
     std::size_t dashPos = (*verParts)[2].find_first_of('-');
     ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? (*verParts)[2].c_str() : (*verParts)[2].substr(0, dashPos).c_str()));
@@ -2555,7 +2555,7 @@ void connectionmetadata::bugCpp25()
   ASSERT_EQUALS(minor, std::stoul(verParts[1].c_str()));
 
   std::size_t dashPos = verParts[2].find_first_of('-');
-  if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+  if (std::getenv("srv") == nullptr || strcmp(std::getenv("srv"), "maxscale") != 0) {
     ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? verParts[2].c_str() : verParts[2].substr(0, dashPos).c_str()));
   }
 #endif // !_WIN32

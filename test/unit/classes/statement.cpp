@@ -252,7 +252,7 @@ void statement::callSP()
     ASSERT(stmt->execute("SELECT @version AS _version"));
     res.reset(stmt->getResultSet());
     ASSERT(res->next());
-    if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+    if (std::getenv("srv") == nullptr || strcmp(std::getenv("srv"), "maxscale") != 0) {
       ASSERT_EQUALS(dbmeta->getDatabaseProductVersion(), res->getString("_version"));
     }
 

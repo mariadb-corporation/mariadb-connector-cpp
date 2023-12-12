@@ -284,7 +284,7 @@ static void test_connection_0(std::unique_ptr<sql::Connection> & conn)
   ENTER_FUNCTION();
   try {
     char buff[64];
-    if (std::getenv("MAXSCALE_TEST_DISABLE") != nullptr) {
+    if (std::getenv("srv") != nullptr && strcmp(std::getenv("srv"), "maxscale") == 0) {
         LEAVE_FUNCTION();
         return void();
     }
