@@ -718,9 +718,12 @@ namespace capi
    if (lastValueWasNull()) {
      return 0;
    }
+   if (needsBinaryConversion(columnInfo)) {
+     return parseBinaryAsInteger<int32_t>(columnInfo);
+   }
+   // else
    int64_t value= getInternalLong(columnInfo);
    rangeCheck("int32_t", INT32_MIN, INT32_MAX, value, columnInfo);
-
    return static_cast<int32_t>(value);
  }
 
@@ -772,7 +775,12 @@ namespace capi
          "Conversion to integer not available for data field type "
          + columnInfo->getColumnType().getCppTypeName());
      default:
-       return std::stoll(std::string(fieldBuf.arr + pos, length));
+       if (needsBinaryConversion(columnInfo)) {
+         return parseBinaryAsInteger<int64_t>(columnInfo);
+       }
+       else {
+         return std::stoll(std::string(fieldBuf.arr + pos, length));
+       }
      }
 
    }
@@ -831,21 +839,16 @@ namespace capi
          "Conversion to integer not available for data field type "
          + columnInfo->getColumnType().getCppTypeName());
      default:
-       value= sql::mariadb::stoull(fieldBuf.arr + pos, length);
+       if (needsBinaryConversion(columnInfo)) {
+         return parseBinaryAsInteger<uint64_t>(columnInfo);
+       }
+       else {
+         value= sql::mariadb::stoull(fieldBuf.arr + pos, length);
+       }
      }
-
    }
    // Common parent for std::invalid_argument and std::out_of_range
    catch (std::logic_error&) {
-     /*std::stoll and std::stoull take care of */
-     /*std::string value(fieldBuf.arr + pos, length);
-     if (std::regex_match(value, isIntegerRegex)) {
-       try {
-         return std::stoull(value.substr(0, value.find_first_of('.')));
-       }
-       catch (std::exception&) {
-       }
-     }*/
      throw SQLException(
        "Out of range value for column '" + columnInfo->getName() + "' : value " + value,
        "22003",
@@ -1001,6 +1004,11 @@ namespace capi
    if (lastValueWasNull()) {
      return 0;
    }
+
+   if (needsBinaryConversion(columnInfo)) {
+     return parseBinaryAsInteger<int8_t>(columnInfo);
+   }
+   // else
    int64_t value= getInternalLong(columnInfo);
    rangeCheck("Byte", INT8_MIN, INT8_MAX, value, columnInfo);
    return static_cast<int8_t>(value);
@@ -1018,6 +1026,10 @@ namespace capi
    if (lastValueWasNull()) {
      return 0;
    }
+   if (needsBinaryConversion(columnInfo)) {
+     return parseBinaryAsInteger<int16_t>(columnInfo);
+   }
+   // else
    int64_t value= getInternalLong(columnInfo);
    rangeCheck("int16_t", INT16_MIN, INT16_MAX, value, columnInfo);
    return static_cast<int16_t>(value);

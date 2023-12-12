@@ -375,29 +375,25 @@ void resultset::getTypes()
         {
           throw e;
         }
-        try
+        if (it->name.compare("TINYBLOB") != 0 && it->name.compare("BLOB") != 0 && it->name.compare("MEDIUMBLOB") != 0 &&
+          it->name.compare("LONGBLOB") != 0)
         {
-          res->getInt(id);
-          FAIL("getInt shouldn't be available for this type");
-        }
-        catch (sql::SQLException&)
-        {
-        }
-        try
-        {
-          pres->getDouble(id);
-          FAIL("getInt shouldn't be available for this type");
-        }
-        catch (sql::SQLException&)
-        {
-        }
-        try
-        {
-          pres->getInt(id);
-          FAIL("getInt shouldn't be available for this type");
-        }
-        catch (sql::SQLException&)
-        {
+          try
+          {
+            res->getInt(id);
+            FAIL("getInt shouldn't be available for this type");
+          }
+          catch (sql::SQLException&)
+          {
+          }
+          try
+          {
+            pres->getUInt(id);
+            FAIL("getUInt shouldn't be available for this type");
+          }
+          catch (sql::SQLException&)
+          {
+          }
         }
         // There is not sense to continue for this type further
         continue;
@@ -440,27 +436,49 @@ void resultset::getTypes()
       }
       res->first();
 
-      int64_t intValue = 0;
-      bool isNumber = true, inIntRange = true, inUintRange = !it->is_negative, inInt64Range = true;
+      int64_t intValue= 0;
+      bool isNumber= true, inIntRange= true, inUintRange= !it->is_negative, inInt64Range= true;
       try
       {
-        if (it->is_negative)
+        if (it->ctype == sql::DataType::BINARY || it->ctype == sql::DataType::VARBINARY ||
+          it->ctype == sql::DataType::LONGVARBINARY)
         {
-          intValue = std::stoll(it->value.c_str());
+          std::size_t len= it->precision;
+          if (it->ctype != sql::DataType::BINARY)
+          {
+            len= it->value.length();
+          }
+
+          if ( len > sizeof(int32_t))
+          {
+            inIntRange= false;
+            inUintRange= false;
+          }
+          if (len > sizeof(int64_t))
+          {
+            inInt64Range= false;
+          }
         }
         else
         {
-          intValue = static_cast<int64_t>(std::stoull(it->value.c_str()));
+          if (it->is_negative)
+          {
+            intValue= std::stoll(it->value.c_str());
+          }
+          else
+          {
+            intValue= static_cast<int64_t>(std::stoull(it->value.c_str()));
+          }
         }
       }
       catch (...)
       {
-        isNumber = false;
+        isNumber= false;
       }
 
       if ((!it->is_negative && intValue < 0) || intValue < INT32_MIN || intValue > INT32_MAX)
       {
-        inIntRange = false;
+        inIntRange= false;
         try
         {
           res->getInt(1);
@@ -479,7 +497,7 @@ void resultset::getTypes()
         }
         else
         {
-          inUintRange = false;
+          inUintRange= false;
           if (!it->is_negative && intValue < 0)// i.e. value is in fact uint64_t
           {
             try
@@ -508,15 +526,15 @@ void resultset::getTypes()
         }
         catch (sql::SQLException & e)
         {
-          if (!isNumber)
+ //         if (!isNumber)
           {
             ASSERT_EQUALS(1264, e.getErrorCode());
             ASSERT_EQUALS("22003", e.getSQLState());
           }
-          else
+         /* else
           {
             throw e;
-          }
+          }*/
         }
       }
 
@@ -624,15 +642,15 @@ void resultset::getTypes()
         }
         catch (sql::SQLException & e)
         {
-          if (!isNumber)
+          //if (!isNumber)
           {
             ASSERT_EQUALS(1264, e.getErrorCode());
             ASSERT_EQUALS("22003", e.getSQLState());
           }
-          else
+          /*else
           {
             throw e;
-          }
+          }*/
         }
       }
       try
@@ -673,7 +691,7 @@ void resultset::getTypes()
       }
       res->first();
 
-      if (it->is_negative || !isNumber)
+      if (it->is_negative || !isNumber || !inInt64Range)
       {
         try
         {
@@ -760,7 +778,7 @@ void resultset::getTypes()
         got_warning=true;
       }
 
-      if (isNumber && !it->is_negative && (pres->getUInt64(id) != res->getUInt64(id)))
+      if (isNumber && !it->is_negative && inInt64Range && (pres->getUInt64(id) != res->getUInt64(id)))
       {
         msg.str("");
         msg << "... \t\tWARNING - getUInt64(), PS: '" << pres->getUInt64(id) << "'";
@@ -774,21 +792,11 @@ void resultset::getTypes()
         ASSERT_EQUALS(pres->getUInt(id), res->getUInt(id));
       }
 
-      if (isNumber && (it->is_negative || intValue >= 0) && pres->getInt64(id) != res->getInt64(id))
+      if (isNumber && inInt64Range && (it->is_negative || intValue >= 0) && pres->getInt64(id) != res->getInt64(id))
       {
         msg.str("");
         msg << "... \t\tWARNING - getInt64(), PS: '" << pres->getInt64(id) << "'";
         msg << ", Statement: '" << res->getInt64(id) << "'";
-        logMsg(msg.str());
-        got_warning=true;
-      }
-      // ASSERT_EQUALS(pres->getInt64(id), res->getInt64(id));
-
-      if (isNumber && !it->is_negative && (pres->getUInt64(id) != res->getUInt64(id)))
-      {
-        msg.str("");
-        msg << "... \t\tWARNING - getUInt64(), PS: '" << pres->getUInt64(id) << "'";
-        msg << ", Statement: '" << res->getUInt64(id) << "'";
         logMsg(msg.str());
         got_warning=true;
       }

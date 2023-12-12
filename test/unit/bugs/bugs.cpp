@@ -1584,34 +1584,39 @@ void bugs::concpp60()
 
 void bugs::change_request_9()
 {
-  char buffer[] = "(values was 0x 0)";
   logMsg("bugs::change_request_9");
 
   // Initialize prepared statement
-  pstmt.reset(con->prepareStatement("SELECT NULL"));
+    pstmt.reset(con->prepareStatement("SELECT ?"));
 
-  // Check for all target locations of the segmentation fault
-  for(int8_t i = 0; i < 16; ++i)
-  {
-    try
+    // Check for all target locations of the segmentation fault
+    for(int8_t i = 0; i < 16; ++i)
     {
-      pstmt->setByte(3, i << 4);
+      int8_t value= i << 4;
+      pstmt->setByte(1, value);
+      res.reset(pstmt->executeQuery());
+      ASSERT(res->next());
+      ASSERT_EQUALS(value, res->getByte(1));
     }
-    catch(sql::SQLException const &e)
-    {
-      buffer[14] = i < 10 ? (char)i + 48 : (char)i + 65 - 10;
 
-      if(!strstr(e.what(), buffer))
-      {
-        fprintf(stderr, "The error message:\n%s\n\n", e.what());
-        fprintf(stderr, "Does not contain: %s\n\n", buffer);
+  res.reset(stmt->executeQuery("SELECT '-128', 0xA1B2C3D4, 0x81, 0x881"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(-128, res->getByte(1));
 
-        fail("Incorrect calculation of hex value", __FILE__, __LINE__);
-      }
-    }
-  }
+  ASSERT_EQUALS(int32_t(0xA1B2C3D4), res->getInt(2));
 
-  pstmt->execute();
+  ASSERT_EQUALS(static_cast<int8_t>(129), res->getByte(3));
+  ASSERT_EQUALS(static_cast<int16_t>(129), res->getShort(3));
+  ASSERT_EQUALS(129, res->getInt(3));
+  ASSERT_EQUALS(129LL, res->getLong(3));
+  ASSERT_EQUALS(129, res->getUInt(3));
+  ASSERT_EQUALS(129ULL, res->getUInt64(3));
+  
+  ASSERT_EQUALS(static_cast<int16_t>(2177), res->getShort(4));//0x881=2177
+  ASSERT_EQUALS(2177, res->getInt(4));
+  ASSERT_EQUALS(2177U, res->getUInt(4));
+  ASSERT_EQUALS(2177ULL, res->getUInt64(4));
+  ASSERT_EQUALS(2177LL, res->getLong(4));
 }
 
 } /* namespace regression */

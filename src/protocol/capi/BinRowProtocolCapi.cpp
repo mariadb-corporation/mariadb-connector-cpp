@@ -275,17 +275,22 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
-      try {
-        std::string str(fieldBuf.arr, length);
-        value = std::stoll(str);
+      if (needsBinaryConversion(columnInfo)) {
+        return parseBinaryAsInteger<int32_t>(columnInfo);
       }
-      // Common parent for std::invalid_argument and std::out_of_range
-      catch (std::logic_error&) {
+      else {
+        try {
+          std::string str(fieldBuf.arr, length);
+          value= std::stoll(str);
+        }
+        // Common parent for std::invalid_argument and std::out_of_range
+        catch (std::logic_error&) {
 
-        throw SQLException(
-          "Out of range value for column '" + columnInfo->getName() + "' : value " + sql::SQLString(static_cast<char*>(fieldBuf.arr), length),
-          "22003",
-          1264);
+          throw SQLException(
+            "Out of range value for column '" + columnInfo->getName() + "' : value " + sql::SQLString(static_cast<char*>(fieldBuf.arr), length),
+            "22003",
+            1264);
+        }
       }
       break;
     default:
@@ -397,10 +402,13 @@ namespace capi
       case MYSQL_TYPE_VAR_STRING:
       case MYSQL_TYPE_VARCHAR:
       case MYSQL_TYPE_STRING:
-      {
-        std::string str(fieldBuf.arr, length);
-        return std::stoll(str);
-      }
+        if (needsBinaryConversion(columnInfo)) {
+          return parseBinaryAsInteger<int64_t>(columnInfo);
+        }
+        else {
+          std::string str(fieldBuf.arr, length);
+          return std::stoll(str);
+        }
       default:
         throw SQLException(
           "getLong not available for data field type "
@@ -494,30 +502,33 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
-    {
-      std::string str(fieldBuf.arr, length);
-      try {
-        return sql::mariadb::stoull(str);
+      if (needsBinaryConversion(columnInfo)) {
+        return parseBinaryAsInteger<uint64_t>(columnInfo);
       }
-      // Common parent for std::invalid_argument and std::out_of_range
-      catch (std::logic_error&) {
-        throw SQLException(
-          "Out of range value for column '"
-          + columnInfo->getName()
-          + "' : value "
-          + str
-          + " is not in int64_t range",
-          "22003",
-          1264);
+      else {
+        std::string str(fieldBuf.arr, length);
+        try {
+          return sql::mariadb::stoull(str);
+        }
+        // Common parent for std::invalid_argument and std::out_of_range
+        catch (std::logic_error&) {
+          throw SQLException(
+            "Out of range value for column '"
+            + columnInfo->getName()
+            + "' : value "
+            + str
+            + " is not in int64_t range",
+            "22003",
+            1264);
+        }
       }
-    }
     default:
       throw SQLException(
         "getLong not available for data field type "
         + columnInfo->getColumnType().getCppTypeName());
     }
 
-    if (columnInfo->isSigned() && value < 0) {
+    if ((columnInfo->isSigned() || needsBinaryConversion(columnInfo)) && value < 0) {
       throw SQLException(
         "Out of range value for column '"
         + columnInfo->getName()
@@ -1021,8 +1032,7 @@ namespace capi
       value= parseBit();
       break;
     case MYSQL_TYPE_TINY:
-      value= getInternalTinyInt(columnInfo);
-      break;
+      return fieldBuf[pos];/* we don't want to be the sign to be considered here */
     case MYSQL_TYPE_SHORT:
     case MYSQL_TYPE_YEAR:
       value= getInternalSmallInt(columnInfo);
@@ -1047,11 +1057,22 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
-    {
-      std::string str(fieldBuf.arr, length);
-      value= std::stoll(str);
+      if (needsBinaryConversion(columnInfo)) {
+        return parseBinaryAsInteger<int8_t>(columnInfo);
+      }
+      else {
+        try {
+          std::string str(fieldBuf.arr, length);
+          value= std::stoll(str);
+        }
+        catch (std::logic_error&) {
+          throw SQLException(
+            "Out of range value for column '" + columnInfo->getName() + "' : value " + sql::SQLString(static_cast<char*>(fieldBuf.arr), length),
+            "22003",
+            1264);
+        }
+      }
       break;
-    }
     default:
       throw SQLException(
         "getByte not available for data field type "
@@ -1105,11 +1126,24 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
-    {
-      std::string str(fieldBuf.arr, length);
-      value= std::stoll(str);
+      if (needsBinaryConversion(columnInfo)) {
+        return parseBinaryAsInteger<int16_t>(columnInfo);
+      }
+      else {
+        try {
+          std::string str(fieldBuf.arr, length);
+          value= std::stoll(str);
+          
+        }
+        catch (std::logic_error&) {
+          throw SQLException(
+            "Out of range value for column '" + columnInfo->getName() + "' : value " + sql::SQLString(static_cast<char*>(fieldBuf.arr), length),
+            "22003",
+            1264);
+        }
+      }
       break;
-    }
+
     default:
       throw SQLException(
         "getShort not available for data field type "

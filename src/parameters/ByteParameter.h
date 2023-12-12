@@ -36,7 +36,7 @@ class ByteParameter  : public ParameterHolder {
   int8_t value;
 
 public:
-  ByteParameter(char value);
+  ByteParameter(int8_t value);
   void writeTo(PacketOutputStream& os);
   void writeTo(SQLString& os);
   int64_t getApproximateTextProtocolLength();

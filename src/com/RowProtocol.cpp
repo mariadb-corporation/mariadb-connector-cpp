@@ -180,6 +180,11 @@ namespace mariadb
     .toFormatter();
 #endif
 
+  bool needsBinaryConversion(ColumnDefinition* columnInfo)
+  {
+    return columnInfo->getColumnType().getType() >= ColumnType::TINYBLOB.getType() && columnInfo->isBinary();
+  }
+
 
   long double RowProtocol::stringToDouble(const char* str, uint32_t len)
   {
@@ -228,6 +233,41 @@ namespace mariadb
     return (lastValueNull & BIT_LAST_FIELD_NULL) != 0;
   }
 
+  template<typename T>
+  T RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo)
+  {
+    uint32_t len= length;
+    char *ptr= fieldBuf.arr + pos;
+    /*uint32_t signDesidingByte= std::min(static_cast<uint32_t>(sizeof(int64_t)), length);
+    if (signDesidingByte != 8 && signDesidingByte != 4 && signDesidingByte != 2 && signDesidingByte != 1) {
+      signDesidingByte= 0;
+    }*/
+
+    for (; len != 0 && *ptr == '\0'; ++ptr, --len);
+    if (len > sizeof(T)) {
+      throw SQLException(
+        "Out of range value for column '" + columnInfo->getName() + "' : too long binary value " + SQLString(fieldBuf.arr, length),
+        "22003",
+        1264);
+    }
+    T result= 0;
+    // If we have 1 byte 0x80, or it is first of 2, 4 or 8 bytes - we should get negative number -128, and if 2 bytes 0x0080 - positive 128
+    /*if (len == signDesidingByte) {
+      result= *ptr++;
+      --len;
+    }*/
+    while (len-- > 0) {
+      result<<= 8;
+      result|= (0xFF & *ptr++);
+    }
+    return result;
+  }
+
+  template int8_t   RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo);
+  template int16_t  RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo);
+  template int32_t  RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo);
+  template int64_t  RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo);
+  template uint64_t RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo);
 
   SQLString RowProtocol::zeroFillingIfNeeded(const SQLString& value, ColumnDefinition* columnInformation)
   {
@@ -249,9 +289,9 @@ namespace mariadb
     if (lastValueWasNull()) {
       return 0;
     }
-    int32_t value = fieldBuf[0];//buf[pos];
+    int32_t value= fieldBuf[0];//buf[pos];
     if (!columnInfo->isSigned()) {
-      value = (fieldBuf[0]/*buf[pos]*/ & 0xff);
+      value= (fieldBuf[0]/*buf[pos]*/ & 0xff);
     }
     return value;
   }
@@ -340,7 +380,7 @@ namespace mariadb
 
   void RowProtocol::rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo)
   {
-    if ((value < 0 && !columnInfo->isSigned()) || value < minValue || value > maxValue) {
+    if ((value < 0 && !columnInfo->isSigned() && !columnInfo->isBinary()) || value < minValue || value > maxValue) {
       throw SQLException(
         "Out of range value for column '"
         + columnInfo->getName()

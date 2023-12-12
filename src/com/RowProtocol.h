@@ -66,6 +66,7 @@ struct memBuf : std::streambuf
 bool isDate(const SQLString& str);
 bool isTime(const SQLString& str);
 bool parseTime(const SQLString& str, std::vector<std::string>& time);
+bool needsBinaryConversion(ColumnDefinition* columnInfo);
 
 class RowProtocol  {
 
@@ -139,6 +140,8 @@ public:
   bool lastValueWasNull();
 
 protected:
+  template<typename T>
+  T parseBinaryAsInteger(ColumnDefinition* columnInfo);
   SQLString zeroFillingIfNeeded(const SQLString& value, ColumnDefinition* columnInformation);
   int32_t getInternalTinyInt(ColumnDefinition* columnInfo);
   int64_t parseBit();

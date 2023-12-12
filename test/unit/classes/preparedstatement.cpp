@@ -2121,5 +2121,41 @@ void preparedstatement::concpp106_batchBulk()
   con.reset();
 }
 
+
+void preparedstatement::concpp116_getByte()
+{
+  pstmt.reset(sspsCon->prepareStatement("SELECT ?"));
+
+  // Check for all target locations of the segmentation fault
+  for (int8_t i = 0; i < 16; ++i)
+  {
+    int8_t value= i << 4;
+    pstmt->setByte(1, value);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT_EQUALS(value, res->getByte(1));
+  }
+
+  pstmt.reset(sspsCon->prepareStatement("SELECT '-128', 0xA1B2C3D4, 0x81, 0x881"));
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS(-128, res->getByte(1));
+
+  ASSERT_EQUALS(int32_t(0xA1B2C3D4), res->getInt(2));
+
+  ASSERT_EQUALS(static_cast<int8_t>(129), res->getByte(3));
+  ASSERT_EQUALS(static_cast<int16_t>(129), res->getShort(3));
+  ASSERT_EQUALS(129, res->getInt(3));
+  ASSERT_EQUALS(129LL, res->getLong(3));
+  ASSERT_EQUALS(129, res->getUInt(3));
+  ASSERT_EQUALS(129ULL, res->getUInt64(3));
+
+  ASSERT_EQUALS(static_cast<int16_t>(2177), res->getShort(4));//0x881=2177
+  ASSERT_EQUALS(2177, res->getInt(4));
+  ASSERT_EQUALS(2177U, res->getUInt(4));
+  ASSERT_EQUALS(2177ULL, res->getUInt64(4));
+  ASSERT_EQUALS(2177LL, res->getLong(4));
+}
+
 } /* namespace preparedstatement */
 } /* namespace testsuite */
