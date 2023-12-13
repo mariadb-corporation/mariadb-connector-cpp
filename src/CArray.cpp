@@ -22,7 +22,7 @@
 
 namespace sql
 {
-// Instantiating template classed that have to be exported
+// Instantiating template classes that have to be exported
 template struct MARIADB_EXPORTED CArray<char>;
 template struct MARIADB_EXPORTED CArray<int32_t>;
 template struct MARIADB_EXPORTED CArray<int64_t>;

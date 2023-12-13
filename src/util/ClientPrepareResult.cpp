@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -34,10 +34,10 @@ namespace mariadb
     bool _rewriteType)
     : sql(_sql)
     , queryParts(_queryParts)
+    , rewriteType(_rewriteType)
+    , paramCount(static_cast<uint32_t>(queryParts.size()) - (_rewriteType ? 3 : 1))
     , isQueryMultiValuesRewritableFlag(isQueryMultiValuesRewritable)
     , isQueryMultipleRewritableFlag(isQueryMultipleRewritable)
-    , paramCount(static_cast<uint32_t>(queryParts.size()) - (_rewriteType ? 3 : 1))
-    , rewriteType(_rewriteType)
   {
   }
 
@@ -60,33 +60,31 @@ namespace mariadb
     LexState state= LexState::Normal;
     char lastChar= '\0';
     bool endingSemicolon= false;
-
     bool singleQuotes= false;
     std::size_t lastParameterPosition= 0;
 
-    const char* query= queryString.c_str();
     std::size_t queryLength= queryString.length();
-    for (std::size_t i= 0; i <queryLength; i++) {
+    for (std::size_t i= 0; i < queryLength; i++) {
 
-      char car= query[i];
+      char car= queryString[i];
       if (state == LexState::Escape
-        &&!((car == '\''&&singleQuotes)||(car == '"'&&!singleQuotes))) {
+        && !((car == '\'' && singleQuotes) || (car == '"' && !singleQuotes))) {
         state= LexState::SqlString;
         lastChar= car;
         continue;
       }
       switch (car) {
       case '*':
-        if (state == LexState::Normal &&lastChar == '/') {
+        if (state == LexState::Normal && lastChar == '/') {
           state= LexState::SlashStarComment;
         }
         break;
 
       case '/':
-        if (state == LexState::SlashStarComment &&lastChar == '*') {
+        if (state == LexState::SlashStarComment && lastChar == '*') {
           state= LexState::Normal;
         }
-        else if (state == LexState::Normal &&lastChar == '/') {
+        else if (state == LexState::Normal && lastChar == '/') {
           state= LexState::EOLComment;
         }
         break;
@@ -98,7 +96,7 @@ namespace mariadb
         break;
 
       case '-':
-        if (state == LexState::Normal &&lastChar == '-') {
+        if (state == LexState::Normal && lastChar == '-') {
           state= LexState::EOLComment;
           multipleQueriesPrepare= false;
         }
@@ -129,10 +127,10 @@ namespace mariadb
           state= LexState::SqlString;
           singleQuotes= true;
         }
-        else if (state == LexState::SqlString &&singleQuotes) {
+        else if (state == LexState::SqlString && singleQuotes) {
           state= LexState::Normal;
         }
-        else if (state == LexState::Escape &&singleQuotes) {
+        else if (state == LexState::Escape && singleQuotes) {
           state= LexState::SqlString;
         }
         break;
@@ -168,7 +166,7 @@ namespace mariadb
         break;
       default:
 
-        if (state == LexState::Normal &&endingSemicolon &&((int8_t)car >=40)) {
+        if (state == LexState::Normal && endingSemicolon && ((int8_t)car >= 40)) {
           endingSemicolon= false;
           multipleQueriesPrepare= true;
         }
@@ -355,9 +353,9 @@ namespace mariadb
 
     SQLString sb("");
 
-    SQLString preValuePart1= NULL;
-    SQLString preValuePart2= NULL;
-    SQLString postValuePart= NULL;
+    SQLString preValuePart1;
+    SQLString preValuePart2;
+    SQLString postValuePart;
 
     bool singleQuotes= false;
 
@@ -500,7 +498,7 @@ namespace mariadb
           && (query[i + 5] == 't' || query[i + 5] == 'T')) {
 
 
-          if (i > 0 && (query[i - 1] > ' ' && SpecChars.find_first_of(query[i -1]) == std::string::npos)) {
+          if (i > 0 && (query[i - 1] > ' ' && SpecChars.find_first_of(query[i - 1]) == std::string::npos)) {
             break;
           }
           if (query[i + 6] >' '&& SpecChars.find_first_of(query[i + 6]) == std::string::npos) {

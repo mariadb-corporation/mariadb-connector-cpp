@@ -63,6 +63,9 @@ struct MariaDbServerCapabilities  {
       1LL << 32; /* Client support progress indicator (since 10.2) */
   static const int64_t MARIADB_CLIENT_COM_MULTI =
       1LL << 33; /* bundle command during connection */
+  static const int64_t _MARIADB_CLIENT_STMT_BULK_OPERATIONS =
+    1LL << 34; /* support of array binding */
+
 };
 }
 }

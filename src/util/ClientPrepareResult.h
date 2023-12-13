@@ -34,16 +34,6 @@ namespace mariadb
 
 class ClientPrepareResult : public PrepareResult
 {
-  enum LexState
-  {
-  Normal= 0,
-  SqlString,
-  SlashStarComment,
-  Escape,
-  EOLComment,
-  Backtick
-  };
-
   const SQLString& sql;
   const std::vector<SQLString> queryParts;
   bool rewriteType;

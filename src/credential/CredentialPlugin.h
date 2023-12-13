@@ -49,7 +49,7 @@ public:
     return "";
   }
 
-  virtual CredentialPlugin* initialize(Shared::Options options, const SQLString& userName, const HostAddress& hostAddress)
+  virtual CredentialPlugin* initialize(Shared::Options& /*options*/, const SQLString& userName, const HostAddress& /*hostAddress*/)
   {
     Name= StringImp::get(userName);
 

@@ -44,6 +44,8 @@
 #define TEST_PASSWD_ENV_KEY "TEST_PASSWORD"
 #define TEST_USETLS         ${TEST_USETLS}
 #define TEST_USETLS_ENV_KEY   "TEST_USETLS"
+#define TEST_VERBOSE        false
+#define TEST_VERBOSE_ENV_KEY   "TEST_VERBOSE"
 
 #define ENV_OR_DEFAULT(_KEY, _DEFAULT_VALUE) (std::getenv(_KEY) != nullptr ? std::getenv(_KEY) : _DEFAULT_VALUE)
 
@@ -52,5 +54,6 @@
 #define UID_ENV_OR_DEFAULT ENV_OR_DEFAULT(TEST_UID_ENV_KEY, TEST_DEFAULT_LOGIN)
 #define PASSWD_ENV_OR_DEFAULT ENV_OR_DEFAULT(TEST_PASSWD_ENV_KEY, TEST_DEFAULT_PASSWD)
 #define USETLS_ENV_OR_DEFAULT (std::getenv(TEST_USETLS_ENV_KEY) != nullptr ? (strcmp(std::getenv(TEST_USETLS_ENV_KEY), "true") == 0 ? true : false) : TEST_USETLS)
+#define VERBOSE_ENV_OR_DEFAULT (std::getenv(TEST_VERBOSE_ENV_KEY) != nullptr ? (strcmp(std::getenv(TEST_VERBOSE_ENV_KEY), "true") == 0 ? true : false) : TEST_VERBOSE)
 
 #endif //_TESTS_CONFIG_IN_

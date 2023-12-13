@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -239,13 +239,16 @@ void bugs::supportIssue_52319()
 
   logMsg("Test for MySQL support issue 52319");
 
-  stmt->execute("DROP TABLE IF EXISTS products");
   createSchemaObject("TABLE",
                      "products",
                      "(uiProductsIdx int(10) unsigned NOT NULL AUTO_INCREMENT, startTime timestamp NULL DEFAULT NULL, stopTime timestamp NULL DEFAULT NULL, uiProductsID int(10) DEFAULT NULL, uiParameterSetID int(10) unsigned DEFAULT NULL, PRIMARY KEY (uiProductsIdx))");
 
-  stmt->execute("DROP PROCEDURE IF EXISTS insertProduct");
-  stmt->execute("CREATE PROCEDURE insertProduct(IN dwStartTimeIN INT UNSIGNED, IN uiProductsIDIN INT UNSIGNED, IN dwParSetIDIN INT UNSIGNED) BEGIN DECLARE stStartTime TIMESTAMP; SET stStartTime = FROM_UNIXTIME(dwStartTimeIN); INSERT INTO `products` (startTime, uiProductsID, uiParameterSetID) VALUES (stStartTime, uiProductsIDIN, dwParSetIDIN); END");
+  createSchemaObject("PROCEDURE", "insertProduct", "(IN dwStartTimeIN INT UNSIGNED, IN uiProductsIDIN INT UNSIGNED, IN dwParSetIDIN INT UNSIGNED) "
+                "BEGIN"
+                " DECLARE stStartTime TIMESTAMP;"
+                " SET stStartTime= FROM_UNIXTIME(dwStartTimeIN);"
+                " INSERT INTO `products` (startTime, uiProductsID, uiParameterSetID) VALUES (stStartTime, uiProductsIDIN, dwParSetIDIN);"
+                "END");
 
   pstmt.reset(con->prepareStatement("CALL insertProduct(?, ?, ?)"));
   pstmt->setInt(1, uiStartTime);
@@ -283,7 +286,7 @@ void bugs::expired_pwd()
   //TODO: Enable it after fixing
   SKIP("Removed until fixed(testcase)");
 
-  if (getServerVersion(con) < 56006)
+  if (getServerVersion(con) < 506006)
   {
     SKIP("The server does not support tested functionality(expired password)");
   }
@@ -499,7 +502,7 @@ void bugs::bug71606()
 {
   logMsg("bugs::bug71606");
 
-  if (getServerVersion(con) < 56000)
+  if (getServerVersion(con) < 506000)
   {
     SKIP("The server does not support tested functionality(utf8mb4 charset)");
   }
@@ -549,7 +552,7 @@ void bugs::bug72700()
     res.reset(stmt->getResultSet());
     checkResultSetScrolling(res);
     ResultSetMetaData meta(res->getMetaData());
-    ASSERT_EQUALS((getServerVersion(con) > 103000) ? sql::Types::LONGVARCHAR : sql::Types::VARCHAR, meta->getColumnType(1));
+    ASSERT_EQUALS((getServerVersion(con) > 1003000) ? sql::Types::LONGVARCHAR : sql::Types::VARCHAR, meta->getColumnType(1));
     ASSERT_EQUALS("LONGTEXT", meta->getColumnTypeName(1));
   }
   catch (::sql::SQLException & /*e*/)
@@ -833,7 +836,7 @@ void bugs::bug21066575()
         std::string out(res->getString(2));
         ASSERT_EQUALS(1024000UL, static_cast<uint64_t>(out.length()));
         ss << "f1 = " << out;
-        logMsg(ss.str().c_str());
+        logMsg(ss.str().substr(0, 32).c_str());
       }
       //Detect if process frees ResultSet resources.
       res.reset();
@@ -1093,13 +1096,12 @@ void bugs::bug21152054()
     --line;
     ASSERT_EQUALS(line, res->getInt(1));
   }  while(res->relative(-1));
-
-
 }
+
 
 void bugs::bug22292073()
 {
-  if ((getServerVersion(con) < 102000))
+  if ((getServerVersion(con) < 1002000))
   {
     SKIP("Server does not support tested functionality(JSON type)")
   }
@@ -1207,7 +1209,7 @@ void bugs::bug28204677()
 {
   logMsg("bugs::bug71606");
 
-  if (getServerVersion(con) < 57000)
+  if (getServerVersion(con) < 507000)
   {
     SKIP("The server does not support tested functionality(default utf8mb4 charset)");
   }
@@ -1558,7 +1560,15 @@ void bugs::concpp60()
       try
       {
         getConnection(&connProps);
-        fail("Connection was supposed to fail", __FILE__, __LINE__);
+        if (getServerVersion(con) > 1100000)
+        {
+          logMsg("... with server version > 11.0 and root/Administrator account running tests, this may happen");
+        }
+        else
+        {
+          FAIL("Connection was supposed to fail");
+        }
+      
       }
       catch (sql::SQLException & e)
       {
@@ -1570,6 +1580,43 @@ void bugs::concpp60()
       logMsg(e.what());
     }
   }
+}
+
+void bugs::change_request_9()
+{
+  logMsg("bugs::change_request_9");
+
+  // Initialize prepared statement
+    pstmt.reset(con->prepareStatement("SELECT ?"));
+
+    // Check for all target locations of the segmentation fault
+    for(int8_t i = 0; i < 16; ++i)
+    {
+      int8_t value= i << 4;
+      pstmt->setByte(1, value);
+      res.reset(pstmt->executeQuery());
+      ASSERT(res->next());
+      ASSERT_EQUALS(value, res->getByte(1));
+    }
+
+  res.reset(stmt->executeQuery("SELECT '-128', 0xA1B2C3D4, 0x81, 0x881"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(-128, res->getByte(1));
+
+  ASSERT_EQUALS(int32_t(0xA1B2C3D4), res->getInt(2));
+
+  ASSERT_EQUALS(static_cast<int8_t>(129), res->getByte(3));
+  ASSERT_EQUALS(static_cast<int16_t>(129), res->getShort(3));
+  ASSERT_EQUALS(129, res->getInt(3));
+  ASSERT_EQUALS(129LL, res->getLong(3));
+  ASSERT_EQUALS(129, res->getUInt(3));
+  ASSERT_EQUALS(129ULL, res->getUInt64(3));
+  
+  ASSERT_EQUALS(static_cast<int16_t>(2177), res->getShort(4));//0x881=2177
+  ASSERT_EQUALS(2177, res->getInt(4));
+  ASSERT_EQUALS(2177U, res->getUInt(4));
+  ASSERT_EQUALS(2177ULL, res->getUInt64(4));
+  ASSERT_EQUALS(2177LL, res->getLong(4));
 }
 
 } /* namespace regression */

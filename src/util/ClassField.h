@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -59,7 +59,9 @@ private:
 public:
   ClassField() : value(), type(VNONE) {}
 
-  ClassField(const ClassField& other) : type(other.type), value(other.value)
+  ClassField(const ClassField& other) :
+    value(other.value),
+    type(other.type)
   {
     /*switch (type)
     {

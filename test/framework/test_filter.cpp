@@ -65,12 +65,12 @@ namespace testsuite
 
     ciString::size_type   searchStartPos= 0;
     ciString::size_type   partPosition=   0;
-    const List::size_type parts=          staticPart.size();
+    const TestList::size_type parts=      staticPart.size();
     bool            meetPrevEndExactly=   true;
 
     bool                  result=         true;
 
-    for ( List::size_type i= 0; i < parts; ++i )
+    for (TestList::size_type i= 0; i < parts; ++i )
     {
       const String & part= staticPart[ i ];
 
@@ -113,11 +113,11 @@ namespace testsuite
                             , const String & ANDsymbol /*= "&&"*/
                             , const String & NOTsymbol /*= "!"*/)
   {
-    List series;
+    TestList series;
 
     StringUtils::split( series, filterString, ANDsymbol );
 
-    for ( List::const_iterator cit= series.begin(); cit != series.end(); ++cit )
+    for (TestList::const_iterator cit= series.begin(); cit != series.end(); ++cit )
     {
       // Skipping empty filters - they are always true
       if ( cit->length() > 0 )
@@ -157,11 +157,11 @@ namespace testsuite
                                             , const String & ANDsymbol/*= "&&" */
                                             , const String & NOTsymbol/* = "!" */ )
   {
-    List series;
+    TestList series;
 
     StringUtils::split( series, filterString, ORsymbol );
 
-    for ( List::const_iterator cit= series.begin(); cit != series.end(); ++cit )
+    for (TestList::const_iterator cit= series.begin(); cit != series.end(); ++cit )
       filter.push_back( new SerialFilter( *cit, ANDsymbol, NOTsymbol ) );
 
   }

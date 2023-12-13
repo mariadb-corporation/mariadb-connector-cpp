@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -28,8 +29,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-
-//#include "../driver/nativeapi/mysql_private_iface.h"
 
 #include "PreparedStatementTest.h"
 #include "mysql.h"

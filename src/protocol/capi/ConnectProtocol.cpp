@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -36,8 +36,9 @@ namespace mariadb
 {
 namespace capi
 {
-  const char OptionSelected= 1, OptionNotSelected= 0;
-  const SQLString localhost("localhost");
+  static const char OptionSelected= 1, OptionNotSelected= 0;
+  static const unsigned int uintOptionSelected= 1, uintOptionNotSelected= 0;
+  const char * attrPairSeparators= ",";
 
   const SQLString ConnectProtocol::SESSION_QUERY("SELECT @@max_allowed_packet,"
     "@@system_time_zone,"
@@ -54,28 +55,25 @@ namespace capi
    * @param globalInfo server global variables information
    * @param lock the lock for thread synchronisation
    */
-  ConnectProtocol::ConnectProtocol(std::shared_ptr<UrlParser>& _urlParser, GlobalStateInfo* globalInfo, Shared::mutex& lock)
-    : lock(lock)
+  ConnectProtocol::ConnectProtocol(std::shared_ptr<UrlParser>& _urlParser, GlobalStateInfo* _globalInfo, Shared::mutex& lock)
+    :
+      connection(nullptr, &mysql_close)
+    , lock(lock)
     , urlParser(_urlParser)
     , options(_urlParser->getOptions())
-    , database(_urlParser->getDatabase())
     , username(_urlParser->getUsername())
-    , globalInfo(globalInfo)
-    , connection(nullptr, &mysql_close)
+    , globalInfo(_globalInfo)
+    , autoIncrementIncrement(_globalInfo ? _globalInfo->getAutoIncrementIncrement() : 1)
+    , database(_urlParser->getDatabase())
+    , serverPrepareStatementCache(nullptr)
     , currentHost(localhost, 3306)
-    , explicitClosed(false)
-    , majorVersion(0)
-    , minorVersion(0)
-    , patchVersion(0)
-    , proxy(nullptr)
-    , connected(false)
   {
     urlParser->auroraPipelineQuirks();
     if (options->cachePrepStmts && options->useServerPrepStmts){
-      serverPrepareStatementCache= NULL;
-        //ServerPrepareStatementCache.newInstance(options->prepStmtCacheSize,this);
+      //ServerPrepareStatementCache::newInstance(options->prepStmtCacheSize, this);
     }
   }
+
 
   void ConnectProtocol::closeSocket()
   {
@@ -118,27 +116,24 @@ namespace capi
 
     // Bind the socket to a particular interface if the connection property
     // localSocketAddress has been defined.
-    if (!options->localSocket.empty()){
+    if (!options->localSocket.empty()) {
       mysql_optionsv(socket, MARIADB_OPT_UNIXSOCKET, (void *)options->localSocket.c_str());
       int protocol= MYSQL_PROTOCOL_SOCKET;
       mysql_optionsv(socket, MYSQL_OPT_PROTOCOL, (void*)&protocol);
     }
-    else if (!options->pipe.empty())
-    {
+    else if (!options->pipe.empty()) {
       mysql_optionsv(socket, MYSQL_OPT_NAMED_PIPE, (void *)options->pipe.c_str());
       int protocol= MYSQL_PROTOCOL_PIPE;
       mysql_optionsv(socket, MYSQL_OPT_PROTOCOL, (void*)&protocol);
     }
-    else
-    {
+    else {
       mysql_optionsv(socket, MARIADB_OPT_HOST, (void *)host.c_str());
       mysql_optionsv(socket, MARIADB_OPT_PORT, (void *)&port);
       int protocol= MYSQL_PROTOCOL_TCP;
       mysql_optionsv(socket, MYSQL_OPT_PROTOCOL, (void*)&protocol);
     }
 
-    if (!options->useCharacterEncoding.empty())
-    {
+    if (!options->useCharacterEncoding.empty()) {
       mysql_optionsv(socket, MYSQL_SET_CHARSET_NAME, options->useCharacterEncoding.c_str());
     }
 
@@ -213,7 +208,7 @@ namespace capi
     if (!options->enabledTlsProtocolSuites.empty()) {
       Tokens protocols= split(options->enabledTlsProtocolSuites, "[,;\\s]+");
       for (const auto& protocol : *protocols){
-        if (possibleProtocols.find_first_of(protocol) == std::string::npos){
+        if (StringImp::get(possibleProtocols).find(protocol) == std::string::npos){
           throw SQLException(
               "Unsupported TLS protocol '"
               +protocol
@@ -237,7 +232,7 @@ namespace capi
       SQLString possibleCiphers;
       Tokens ciphers(split(options->enabledTlsCipherSuites, "[,;\\s]+"));
       for (const auto& cipher : *ciphers){
-        if (!(possibleCiphers.find_first_of(cipher) != std::string::npos)){
+        if (!(possibleCiphers.find(cipher) != std::string::npos)){
           throw SQLException(
               "Unsupported SSL cipher '"
               +cipher
@@ -253,23 +248,17 @@ namespace capi
   /** Closes socket and stream readers/writers Attempts graceful shutdown. */
   void ConnectProtocol::close()
   {
-    bool locked= false;
-    if (lock){
-      locked= lock->try_lock();
-    }
+    std::unique_lock<std::mutex> localScopeLock(*lock);
     this->connected= false;
     try {
-
+      // skip acquires lock
+      localScopeLock.unlock();
       skip();
     }catch (std::runtime_error& ){
-
     }
-
+    localScopeLock.lock();
     closeSocket();
     cleanMemory();
-    if (locked){
-      lock->unlock();
-    }
   }
 
   /** Force closes socket and stream readers/writers. */
@@ -322,10 +311,10 @@ namespace capi
   void ConnectProtocol::abortActiveStream()
   {
     try {
-
-      if (activeStreamingResult){
-        activeStreamingResult->abort();
-        activeStreamingResult= NULL;
+      Shared::Results activeStream= activeStreamingResult.lock();
+      if (activeStream){
+        activeStream->abort();
+        activeStreamingResult.reset();
       }
     }catch (std::runtime_error& ){
 
@@ -341,9 +330,10 @@ namespace capi
    */
   void ConnectProtocol::skip()
   {
-    if (activeStreamingResult){
-      activeStreamingResult->loadFully(true, this);
-      activeStreamingResult= nullptr;
+    Shared::Results activeStream = activeStreamingResult.lock();
+    if (activeStream) {
+      activeStream->loadFully(true, this);
+      activeStreamingResult.reset();
     }
   }
 
@@ -393,7 +383,7 @@ namespace capi
   void ConnectProtocol::createConnection(HostAddress* hostAddress, const SQLString& username)
   {
 
-    SQLString host= hostAddress != nullptr ? hostAddress->host : "";
+    SQLString host(hostAddress != nullptr ? hostAddress->host : "");
     int32_t port= hostAddress != nullptr ? hostAddress->port :3306;
 
     Unique::Credential credential;
@@ -438,12 +428,13 @@ namespace capi
           host);
 
       compressionHandler(options);
-
-    }catch (SQLException& sqlException){
+      setConnectionAttributes(options->connectionAttributes);
+    }
+    catch (SQLException& sqlException) {
       destroySocket();
       throw sqlException;
-
-    }catch (std::exception& ioException){
+    }
+    catch (std::exception& ioException) {
       destroySocket();
       if (!host.empty()){
         ExceptionFactory::INSTANCE.create(
@@ -459,8 +450,8 @@ namespace capi
           "08000",
           &ioException).Throw();
     }
-    unsigned reportDataTruncation= 1;
-    mysql_optionsv(connection.get(), MYSQL_REPORT_DATA_TRUNCATION, &reportDataTruncation);
+    mysql_optionsv(connection.get(), MYSQL_REPORT_DATA_TRUNCATION, &uintOptionSelected);
+    mysql_optionsv(connection.get(), MYSQL_OPT_LOCAL_INFILE, (options->allowLocalInfile ? &uintOptionSelected : &uintOptionNotSelected));
 
     if (mysql_real_connect(connection.get(), NULL, NULL, NULL, NULL, 0, NULL, CLIENT_MULTI_STATEMENTS) == nullptr)
     {
@@ -475,11 +466,11 @@ namespace capi
     parseVersion(serverVersion);
 
     if (serverVersion.startsWith(MARIADB_RPL_HACK_PREFIX)) {
-      serverMariaDb = true;
-      serverVersion = serverVersion.substr(MARIADB_RPL_HACK_PREFIX.length());
+      serverMariaDb= true;
+      serverVersion= serverVersion.substr(MARIADB_RPL_HACK_PREFIX.length());
     }
     else {
-      serverMariaDb = serverVersion.find_first_of("MariaDB") != std::string::npos;
+      serverMariaDb= StringImp::get(serverVersion).find("MariaDB") != std::string::npos;
     }
     unsigned long baseCaps, extCaps;
     mariadb_get_infov(connection.get(), MARIADB_CONNECTION_EXTENDED_SERVER_CAPABILITIES, (void*)&extCaps);
@@ -500,7 +491,7 @@ namespace capi
 
     postConnectionQueries();
 
-    activeStreamingResult= NULL;
+    activeStreamingResult.reset();
     hostFailed= false;
   }
 
@@ -516,11 +507,12 @@ namespace capi
     }
   }
 
+
   void ConnectProtocol::sslWrapper(
-      const SQLString& host,
+      const SQLString& /*host*/,
       const Shared::Options& options,
       int64_t& clientCapabilities,
-      int8_t exchangeCharset)
+      int8_t /*exchangeCharset*/)
   {
     const unsigned int safeCApiTrue= 0x01010101;
 
@@ -574,12 +566,13 @@ namespace capi
     assignStream(options);
   }
 
+
   void ConnectProtocol::authenticationHandler(
-    int8_t exchangeCharset,
-    int64_t clientCapabilities, const SQLString& authenticationPluginType,
-    sql::bytes& seed,
+    int8_t /*exchangeCharset*/,
+    int64_t /*clientCapabilities*/, const SQLString& /*authenticationPluginType*/,
+    sql::bytes& /*seed*/,
     const Shared::Options& options, const SQLString& database,
-    Credential* credential, const SQLString& host)
+    Credential* credential, const SQLString& /*host*/)
   {
     mysql_optionsv(connection.get(), MARIADB_OPT_USER, (void*)credential->getUser().c_str());
     mysql_optionsv(connection.get(), MARIADB_OPT_PASSWORD, (void*)credential->getPassword().c_str());
@@ -593,6 +586,40 @@ namespace capi
   {
     if (options->useCompression){
       mysql_optionsv(connection.get(), MYSQL_OPT_COMPRESS, NULL);
+    }
+  }
+
+  /* Parses connectAttributes option and sets connection atttributes uxing it
+   */
+  void ConnectProtocol::setConnectionAttributes(const SQLString & attributes)
+  {
+    mysql_optionsv(connection.get(), MYSQL_OPT_CONNECT_ATTR_ADD, (void *)"_client_name2", (void *)"maconcpp");
+    mysql_optionsv(connection.get(), MYSQL_OPT_CONNECT_ATTR_ADD, (void *)"_client_version2", (void *)Version::version);
+
+    if (attributes.length() > 0)
+    {
+      std::vector<sql::bytes> token;
+      std::size_t pairs= Utils::tokenize(token, attributes, attrPairSeparators);
+
+      for (std::size_t i= 0; i < pairs; ++i)
+      {
+        const char *value= std::strchr(token[i].arr, ':');
+        if (value == nullptr || static_cast<std::size_t>(value - token[i].arr) > token[i].size())
+        {
+          //result= true;
+          continue;
+          /*SQLString keyCopy(key, token[i].size() - (key - token[i].arr));
+          rtrim(keyCopy);
+          mysql_optionsv(mariadb, MYSQL_OPT_CONNECT_ATTR_ADD, (void *)keyCopy.data());*/
+        }
+        else
+        {
+          SQLString keyCopy(token[i].arr, value - token[i].arr), valueCopy(value + 1, token[i].size() - (value - token[i].arr) - 1);
+          keyCopy.trim();
+          valueCopy.trim();
+          mysql_optionsv(connection.get(), MYSQL_OPT_CONNECT_ATTR_ADD, (void *)keyCopy.c_str(), (void *)valueCopy.c_str());
+        }
+      }
     }
   }
 
@@ -633,8 +660,8 @@ namespace capi
             if (sqle.getSQLState().startsWith("08")){
               throw sqle;
             }
-
-
+            // in case pipeline is not supported
+            // (proxy flush socket after reading first packet)
             additionalData(serverData);
           }
         }else {
@@ -653,7 +680,7 @@ namespace capi
         loadCalendar(globalInfo->getTimeZone(), globalInfo->getSystemTimeZone());
       }
 
-      activeStreamingResult= NULL;
+      activeStreamingResult.reset();
       hostFailed= false;
     }catch (SQLException& sqlException){
       destroySocket();
@@ -683,12 +710,12 @@ namespace capi
   {
 
     SQLString sessionOption("autocommit=");
-    sessionOption.append(options->autocommit ?"1":"0");
+    sessionOption.append(options->autocommit ? "1" : "0");
 
     if ((serverCapabilities & MariaDbServerCapabilities::CLIENT_SESSION_TRACK)!=0){
       sessionOption.append(", session_track_schema=1");
       if (options->rewriteBatchedStatements){
-        sessionOption.append(", session_track_system_variables='auto_increment_increment' ");
+        sessionOption.append(", session_track_system_variables= 'auto_increment_increment' ");
       }
     }
 
@@ -722,7 +749,7 @@ namespace capi
       serverData.emplace("max_allowed_packet",resultSet->getString(1));
       serverData.emplace("system_time_zone",resultSet->getString(2));
       serverData.emplace("time_zone",resultSet->getString(3));
-      serverData.emplace("auto_increment_increment",resultSet->getString(4));
+      serverData.emplace("auto_increment_increment", resultSet->getString(4));
 
     }else {
       throw SQLException(mysql_get_socket(connection.get()) == MARIADB_INVALID_SOCKET ?
@@ -864,7 +891,7 @@ namespace capi
     return !this->connected;
   }
 
-  void ConnectProtocol::loadCalendar(const SQLString& srvTimeZone, const SQLString& srvSystemTimeZone)
+  void ConnectProtocol::loadCalendar(const SQLString& /*srvTimeZone*/, const SQLString& /*srvSystemTimeZone*/)
   {
 
     timeZone= nullptr;// Calendar.getInstance().getTimeZone();
@@ -873,9 +900,9 @@ namespace capi
     else {
 
       SQLString tz= options->serverTimezone;
-      if (!tz){
+      if (!tz) {
         tz= srvTimeZone;
-        if (){
+        if () {
           tz= srvSystemTimeZone;
         }
       }
@@ -1044,7 +1071,6 @@ namespace capi
     std::vector<HostAddress>& addrs= urlParser->getHostAddresses();
     std::vector<HostAddress> hosts(addrs);
 
-
     if (urlParser->getHaMode() == HaMode::LOADBALANCE) {
       static auto rnd= std::default_random_engine{};
       std::shuffle(hosts.begin(), hosts.end(), rnd);
@@ -1052,7 +1078,7 @@ namespace capi
 
     if (hosts.empty() && !options->pipe.empty()){
       try {
-        createConnection(NULL, username);
+        createConnection(nullptr, username);
         return;
       }catch (SQLException& exception){
         ExceptionFactory::INSTANCE.create(
@@ -1190,7 +1216,6 @@ namespace capi
       }
     }
 
-
     if (type == 2){
       patchVersion= val;
     }
@@ -1302,9 +1327,9 @@ namespace capi
     this->hasWarningsFlag= _hasWarnings;
   }
 
-  Shared::Results& ConnectProtocol::getActiveStreamingResult()
+  Shared::Results ConnectProtocol::getActiveStreamingResult()
   {
-    return activeStreamingResult;
+    return activeStreamingResult.lock();
   }
 
   void ConnectProtocol::setActiveStreamingResult(Shared::Results& _activeStreamingResult)
@@ -1315,8 +1340,9 @@ namespace capi
   /** Remove exception result and since totally fetched, set fetch size to 0. */
   void ConnectProtocol::removeActiveStreamingResult()
   {
-    if (this->activeStreamingResult){
-      this->activeStreamingResult->removeFetchSize();
+    Shared::Results activeStream = getActiveStreamingResult();
+    if (activeStream) {
+      activeStream->removeFetchSize();
       this->activeStreamingResult.reset();
     }
   }
@@ -1328,7 +1354,7 @@ namespace capi
 
   bool ConnectProtocol::hasMoreResults()
   {
-    return (serverStatus & ServerStatus::MORE_RESULTS_EXISTS)!=0;
+    return (serverStatus & ServerStatus::MORE_RESULTS_EXISTS) != 0;
   }
 
   ServerPrepareStatementCache* ConnectProtocol::prepareStatementCache()
@@ -1341,12 +1367,12 @@ namespace capi
    *
    * @param setTcpNoDelay value to set.
    */
-  void ConnectProtocol::changeSocketTcpNoDelay(bool setTcpNoDelay)
+  void ConnectProtocol::changeSocketTcpNoDelay(bool /*setTcpNoDelay*/)
   {
     try {
       //TODO is there anything libmariadb for that?
       //socket->setTcpNoDelay(setTcpNoDelay);
-    }catch (std::runtime_error& ){
+    } catch (std::runtime_error& ) {
 
     }
   }

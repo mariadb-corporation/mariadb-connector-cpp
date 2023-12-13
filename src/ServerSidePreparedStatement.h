@@ -46,7 +46,7 @@ protected:
 private:
   SQLString sql;
 
-  Unique::ServerPrepareResult serverPrepareResult; /*NULL*/
+  Unique::ServerPrepareResult serverPrepareResult;
 
   Shared::MariaDbResultSetMetaData metadata;
   Shared::MariaDbParameterMetaData parameterMetaData;
@@ -57,6 +57,7 @@ private:
   bool mustExecuteOnMaster;
 
 public:
+  ~ServerSidePreparedStatement();
   ServerSidePreparedStatement(
     MariaDbConnection* connection, const SQLString& sql,
     int32_t resultSetScrollType,

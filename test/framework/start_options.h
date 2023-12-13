@@ -48,13 +48,13 @@ private:
 
   typedef std::map<String, bool>  BoolParamsType;
 
-  List                            unnamedParams;
+  TestList                    unnamedParams;
 
-  BoolParamsType                  defBoolValues;
-  Properties                      defStringValues;
+  BoolParamsType              defBoolValues;
+  TestProperties              defStringValues;
 
   BoolParamsType		          bOptions;
-  Properties                      sOptions;
+  TestProperties              sOptions;
 
 protected:
 
@@ -66,13 +66,13 @@ public:
 
   StartOptions();
 
-  StartOptions( const List                    & orderedParams
-              , const Properties              * defStrVals  = NULL
+  StartOptions( const TestList                    & orderedParams
+              , const TestProperties              * defStrVals  = NULL
               , const std::map<String, bool>  * defBoolVals = NULL );
 
   /* Last array member must be NULL */
   StartOptions( const String::value_type      * orderedParams[]
-              , const Properties              * defStrVals  = NULL
+              , const TestProperties              * defStrVals  = NULL
               , const std::map<String, bool>  * defBoolVals = NULL );
 
         bool      parseParams(int paramsNumber, char** paramsValues);

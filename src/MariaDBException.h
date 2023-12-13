@@ -70,7 +70,7 @@ public:
     exceptionThrower.reset(new RealThrower<T>(exc));
   }
   
-  MariaDBExceptionThrower(MariaDBExceptionThrower&& moved);
+  MariaDBExceptionThrower(MariaDBExceptionThrower&& moved) noexcept;
   void assign(MariaDBExceptionThrower other);
   template <class T> T* get() { return dynamic_cast<T*>(exceptionThrower->get()); }
   SQLException* getException() { return exceptionThrower->get(); }

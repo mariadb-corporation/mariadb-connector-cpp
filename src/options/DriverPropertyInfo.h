@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2022 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -27,9 +27,9 @@ struct DriverPropertyInfo {
   std::vector<SQLString> choices;
   SQLString              description;
   SQLString              name;
-  bool                   required;
   SQLString              value;
-  DriverPropertyInfo(const SQLString& Name, const SQLString& Value) : name(Name), value(Value) {}
+  bool                   required;
+  DriverPropertyInfo(const SQLString& Name, const SQLString& Value) : name(Name), value(Value), required(false) {}
 };
 }
 }

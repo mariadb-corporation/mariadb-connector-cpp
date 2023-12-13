@@ -21,13 +21,12 @@
 #ifndef _CREDENTIAL_H_
 #define _CREDENTIAL_H_
 
-#include "Consts.h"
+#include "SQLString.hpp"
 
 namespace sql
 {
 namespace mariadb
 {
-
 
 class Credential  {
   SQLString user;

@@ -100,7 +100,7 @@ public:
   virtual ParameterMetaData* getParameterMetaData()=0;
   virtual void setParameter(int32_t parameterIndex, ParameterHolder* holder)=0;
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   void setBlob(int32_t parameterIndex, Blob* blob);
   void setClob(int32_t parameterIndex, Clob* clob);
   void setClob(int32_t parameterIndex, std::istringstream* reader,const int64_t length);

@@ -182,7 +182,7 @@ namespace mariadb
   }
 
 
-  Value::operator const int32_t() const
+  Value::operator int32_t() const
   {
     switch (type)
     {
@@ -211,7 +211,7 @@ namespace mariadb
     throw std::runtime_error("Wrong lvalue type requested - the type is not int32");
   }
 
-  Value::operator const int64_t() const
+  Value::operator int64_t() const
   {
     switch (type)
     {
@@ -241,7 +241,7 @@ namespace mariadb
   }
 
 
-  Value::operator const bool() const
+  Value::operator bool() const
   {
     switch (type)
     {
@@ -407,11 +407,11 @@ namespace mariadb
       /* Using cast to deploy operators that will take care if one or both values are pointers.
          Or should bool and bool* be different? */
       case sql::mariadb::Value::VINT32:
-        return static_cast<const int32_t>(*this) == static_cast<const int32_t>(other);
+        return static_cast<int32_t>(*this) == static_cast<int32_t>(other);
       case sql::mariadb::Value::VINT64:
-        return static_cast<const int64_t>(*this) == static_cast<const int64_t>(other);
+        return static_cast<int64_t>(*this) == static_cast<int64_t>(other);
       case sql::mariadb::Value::VBOOL:
-        return static_cast<const bool>(*this) == static_cast<const bool>(other);
+        return static_cast<bool>(*this) == static_cast<bool>(other);
       case sql::mariadb::Value::VSTRING:
         if (isPtr) {
           if (other.isPtr) {

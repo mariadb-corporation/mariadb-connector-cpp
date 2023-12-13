@@ -67,7 +67,7 @@ public:
   static  int     RegisterTestSuite ( const String::value_type *  name
                                     , TestSuiteCreator            creator);
 
-  List::size_type getTestsList      ( std::vector<const String::value_type *> & list ) const;
+  TestList::size_type getTestsList      ( std::vector<const String::value_type *> & list ) const;
 };
 
 } // namespace testsuite

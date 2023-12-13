@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -49,6 +50,8 @@ class preparedstatement : public unit_fixture
 private:
   typedef unit_fixture super;
   bool createSP(std::string sp_code);
+  Connection sspsCon;
+  PreparedStatement ssps;
 
 public:
 
@@ -63,12 +66,18 @@ public:
     TEST_CASE(getMetaData);
     TEST_CASE(callSP);
     TEST_CASE(callSPInOut);
-    TEST_CASE(callSPWithPS);
+    TEST_CASE(callSPInOutWithPs);
+    TEST_CASE(callSP2);
+    TEST_CASE(callSP2WithPS);
     TEST_CASE(callSPMultiRes);
     TEST_CASE(getWarnings);
     TEST_CASE(blob);
     TEST_CASE(executeQuery);
     TEST_CASE(addBatch);
+    TEST_CASE(bugConcpp96);
+    TEST_CASE(concpp99_batchRewrite);
+    TEST_CASE(concpp106_batchBulk);
+    TEST_CASE(concpp116_getByte);
   }
 
   /**
@@ -110,11 +119,12 @@ public:
    * Calls a stored procedure with IN and OUT parameters
    */
   void callSPInOut();
-
+  void callSPInOutWithPs();
   /**
    * Calls a stored procedure which contains a prepared statement
    */
-  void callSPWithPS();
+  void callSP2();
+  void callSP2WithPS();
 
   /**
    * Calls a stored procedure which returns multiple result sets
@@ -144,6 +154,22 @@ public:
   void executeQuery();
 
   void addBatch();
+
+  void bugConcpp96();
+
+  /**
+   * checks batch execution using rewrite
+   */
+  void concpp99_batchRewrite();
+  /**
+   * checks batch execution using bulk execution with param arrays
+   */
+  void concpp106_batchBulk();
+
+  void concpp116_getByte();
+
+  /* unit_fixture methods overriding */
+  void setUp();
 };
 
 REGISTER_FIXTURE(preparedstatement);

@@ -27,10 +27,11 @@ namespace mariadb
 {
 
   CallParameter::CallParameter()
-    : sqlType(Types::OTHER),
-      outputSqlType(Types::OTHER),
+    :
       isInput_(true),
-      isOutput_(false)
+      isOutput_(false),
+      sqlType(Types::OTHER),
+      outputSqlType(Types::OTHER)
   {
   }
 

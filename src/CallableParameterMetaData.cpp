@@ -67,7 +67,7 @@ namespace mariadb
   {
     setIndex(index);
     SQLString paramDetail(rs->getString("DTD_IDENTIFIER"));
-    return paramDetail.find_first_of(" unsigned") == std::string::npos;
+    return StringImp::get(paramDetail).find(" unsigned") == std::string::npos;
   }
 
   int32_t CallableParameterMetaData::getPrecision(uint32_t index)
@@ -162,7 +162,7 @@ namespace mariadb
   }
 
 
-  SQLString CallableParameterMetaData::getParameterClassName(uint32_t index)
+  SQLString CallableParameterMetaData::getParameterClassName(uint32_t /*index*/)
   {
     return emptyStr;
   }

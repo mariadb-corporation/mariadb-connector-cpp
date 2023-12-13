@@ -1,5 +1,5 @@
 # Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
-#               2020 MariaDB Corporation AB
+#               2020, 2022 MariaDB Corporation AB
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -27,13 +27,7 @@
 # along with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
-#Use Options to configure default test server params
-
-SET_VALUE(TEST_HOST           "tcp://localhost:3306" "Defines Unit Tests default server")
-SET_VALUE(TEST_SCHEMA         "test"                 "Defines Unit Tests default Database")
-SET_VALUE(TEST_UID            "root"                 "Defines Unit Tests default login user")
-SET_VALUE(TEST_PASSWORD       "root"                 "Defines Unit Tests default login user password")
-SET_VALUE(TEST_USETLS         "false"                "Defines useTls option value to use in tests")
+#default test server params configured in options_defaults.cmake 
 
 configure_file(tests_config.h.in
                ${CMAKE_BINARY_DIR}/test/tests_config.h)
@@ -91,6 +85,6 @@ ADD_TEST(unsorted_bugs unsorted_bugs)
 SET_TESTS_PROPERTIES(test_parametermetadata test_resultsetmetadata test_connection PROPERTIES TIMEOUT 120 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 # With remote SkySQL server, compliance tend to timeout
 SET_TESTS_PROPERTIES(static_test driver_test PROPERTIES TIMEOUT 150 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-SET_TESTS_PROPERTIES(compliance test_databasemetadata test_preparedstatement test_resultset unsorted_bugs PROPERTIES TIMEOUT 1000 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+SET_TESTS_PROPERTIES(compliance test_databasemetadata test_preparedstatement test_resultset unsorted_bugs PROPERTIES TIMEOUT 1200 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 MESSAGE(STATUS "Configuring test cases")

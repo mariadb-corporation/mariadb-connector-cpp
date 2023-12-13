@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -29,10 +29,6 @@ namespace sql
 {
 namespace mariadb
 {
-  //\\u0080-\\uFFFF "[\u0000'\"\b\n\r\t\u001A\\\\]"
-  std::regex MariaDbStatement::identifierPattern("[0-9a-zA-Z\\$_]*", std::regex_constants::ECMAScript);
-  //| Pattern.UNICODE_CASE |Pattern.CANON_EQ);
-  std::regex MariaDbStatement::escapePattern("['\"\b\n\r\t\\\\]", std::regex_constants::ECMAScript );
   const std::map<std::string, std::string> MariaDbStatement::mapper= {
     {"\u0000", "\\0"},
     {"'",      "\\\\'"},
@@ -61,23 +57,16 @@ namespace mariadb
     int32_t _resultSetScrollType,
     int32_t _resultSetConcurrency,
     Shared::ExceptionFactory& factory)
-    : connection(_connection),
+    :
+      connection(_connection),
       protocol(_connection->getProtocol()),
       lock(_connection->lock),
       resultSetScrollType(_resultSetScrollType),
       resultSetConcurrency(_resultSetConcurrency),
       options(protocol->getOptions()),
       canUseServerTimeout(_connection->canUseServerTimeout()),
-      fetchSize(options->defaultFetchSize),
-      closed(false),
-      mustCloseOnCompletion(false),
-      warningsCleared(true),
-      maxRows(0),
-      maxFieldSize(0),
       exceptionFactory(factory),
-      isTimedout(false),
-      queryTimeout(0),
-      executing(false),
+      fetchSize(options->defaultFetchSize),
       batchRes(0),
       largeBatchRes(0)
   {
@@ -101,19 +90,20 @@ namespace mariadb
   {
     Shared::ExceptionFactory ef(ExceptionFactory::of(this->exceptionFactory->getThreadId(), this->exceptionFactory->getOptions()));
     MariaDbStatement* clone= new MariaDbStatement(connection, this->resultSetScrollType, this->resultSetConcurrency, ef);
-    clone->fetchSize = this->options->defaultFetchSize;
+    clone->fetchSize= this->options->defaultFetchSize;
 
     return clone;
   }
+
 
   MariaDbStatement::~MariaDbStatement()
   {
   }
 
   // Part of query prolog - setup timeout timer
-  void MariaDbStatement::setTimerTask(bool isBatch)
+  void MariaDbStatement::setTimerTask(bool /*isBatch*/)
   {
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
     assert(!timerTaskFuture);
     if (!timeoutScheduler)
     {
@@ -162,7 +152,7 @@ namespace mariadb
 
   void MariaDbStatement::stopTimeoutTask()
   {
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
     if (timerTaskFuture){
       if (!timerTaskFuture.cancel(true)){
 
@@ -232,7 +222,7 @@ namespace mariadb
 
   MariaDBExceptionThrower MariaDbStatement::handleFailoverAndTimeout(SQLException& sqle)
   {
-    if (sqle.getSQLState().empty() != true &&sqle.getSQLState().startsWith("08")){
+    if (sqle.getSQLState().empty() != true && sqle.getSQLState().startsWith("08")){
       try {
         close();
       }catch (SQLException&){
@@ -253,10 +243,14 @@ namespace mariadb
   {
     MariaDBExceptionThrower sqle(handleFailoverAndTimeout(initialSqle));
 
+    /* It does not make any sense to fill these arrays really - application won't see it since the exception will be thrown */
     if (!results || !results->commandEnd())
     {
-     // TODO would need new CArray method for this, but it's not used anyway
-     // batchRes.assign(size, Statement::EXECUTE_FAILED));
+      batchRes.reserve(size);
+      /* Thechnically it can't be harmful - the worst that can happen, is that next time reserve() called, it might think that
+         current array is not big enough, and delete and allocate the new one */
+      batchRes.length= size;
+      for (int32_t* p = batchRes.begin(); p < batchRes.end(); ++p) *p= static_cast<int32_t>(Statement::EXECUTE_FAILED);
     }
     else
     {
@@ -266,7 +260,7 @@ namespace mariadb
     MariaDBExceptionThrower sqle2= exceptionFactory->raiseStatementError(connection, this)->create(*sqle.getException());
     logger->error("error executing query", sqle2);
 
-    return BatchUpdateException(sqle2.getException()->getMessage(), sqle2.getException()->getSQLState(), sqle2.getException()->getErrorCode());//, ret, &sqle2); //MAYBE_IN_BETA
+    return BatchUpdateException(sqle2.getException()->getMessage(), sqle2.getException()->getSQLState(), sqle2.getException()->getErrorCode());//, ret, &sqle2); //MAYBE_IN_NEXTVERSION
   }
 
   /**
@@ -310,7 +304,7 @@ namespace mariadb
     {
       executeEpilogue();
       localScopeLock.unlock();
-      if (exception.getSQLState().compare("70100") == 0 && 1927 == exception.getErrorCode() || 2013 == exception.getErrorCode()) {
+      if ((exception.getSQLState().compare("70100") == 0 && 1927 == exception.getErrorCode()) || 2013 == exception.getErrorCode()) {
         
         protocol->handleIoException(exception, true);
       }
@@ -328,20 +322,24 @@ namespace mariadb
    */
   SQLString MariaDbStatement::enquoteLiteral(const SQLString& val)
   {
-    std::smatch matcher;
     SQLString escapedVal("'");
     std::string Value(StringImp::get(val));
 
-    while (std::regex_search(Value, matcher, escapePattern))
-    {
-      escapedVal.append(matcher.prefix().str());
-      auto cit= mapper.find(matcher.str());
-      escapedVal.append(cit->second);
-      Value= matcher.suffix().str();
+    // 2 quotes + we don't usually expect to have many chars to be escaped, but do reserve for a few
+    escapedVal.reserve((Value.size() + 10 + 7) / 8 * 8);
+
+    for (auto& cit : mapper) {
+      std::size_t pos= 0, prev= 0;
+      while ((pos= Value.find(cit.first, prev)) != std::string::npos)
+      {
+        escapedVal.append(Value.substr(prev, pos - prev));
+        escapedVal.append(cit.second);
+        prev+= cit.first.length();
+      }
+      /* Appending last suffix where has been nothing left */
+      escapedVal.append(Value.substr(prev));
     }
-    /* Appending last suffix where has been nothing left */
-    escapedVal.append(Value);
-    escapedVal.append("'");
+    escapedVal.append('\'');
     return escapedVal;
   }
 
@@ -367,13 +365,12 @@ namespace mariadb
       }
 
       std::string result(StringImp::get(identifier));
-      std::regex rx("^`.+`$");
 
-      if (std::regex_search(result, rx))
+      if (result.front() == '`' && result.back() == '`')
       {
-        result= result.substr(1, result.size()-1);
+        result= result.substr(1, result.size() - 2);
       }
-      return "`"+replace(result, "`", "``")+"`";
+      return "`" + replace(result, "`", "``") + "`";
     }
   }
 
@@ -389,7 +386,18 @@ namespace mariadb
    */
   bool MariaDbStatement::isSimpleIdentifier(const SQLString& identifier)
   {
-    return !identifier.empty() && std::regex_search(StringImp::get(identifier), identifierPattern);
+    // identifierPattern("[0-9a-zA-Z\\$_\\u0080-\\uFFFF]*"
+    const std::string &str= StringImp::get(identifier);
+    if (!str.empty() && str.front() == '`' && str.back() == '`') {
+      for (size_t i= 1; i < str.size() - 1; ++i) {
+        int c= str.at(i);
+        if (!(std::isalpha(c) || std::isdigit(c) || c == '$' || c == '_')) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -406,7 +414,7 @@ namespace mariadb
 
   SQLString MariaDbStatement::getTimeoutSql(const SQLString& sql)
   {
-    if (queryTimeout > 0 && canUseServerTimeout){
+    if (queryTimeout > 0 && canUseServerTimeout) {
       return "SET STATEMENT max_statement_time="+ std::to_string(queryTimeout) +" FOR "+ sql;
     }
     return sql;
@@ -499,7 +507,7 @@ namespace mariadb
    * @see #getGeneratedKeys
    */
   bool MariaDbStatement::execute(const SQLString& sql, int32_t autoGeneratedKeys) {
-    return executeInternal(sql,fetchSize,autoGeneratedKeys);
+    return executeInternal(sql, fetchSize, autoGeneratedKeys);
   }
 
   /**
@@ -530,7 +538,7 @@ namespace mariadb
    * @see #getUpdateCount
    * @see #getMoreResults
    */
-  bool MariaDbStatement::execute(const SQLString& sql, int32_t* columnIndexes) {
+  bool MariaDbStatement::execute(const SQLString& sql, int32_t* /*columnIndexes*/) {
     return executeInternal(sql, fetchSize, Statement::RETURN_GENERATED_KEYS);
   }
 
@@ -565,7 +573,7 @@ namespace mariadb
    * @see #getMoreResults
    * @see #getGeneratedKeys
    */
-  bool MariaDbStatement::execute(const SQLString& sql,const SQLString* columnNames) {
+  bool MariaDbStatement::execute(const SQLString& sql,const SQLString* /*columnNames*/) {
     return executeInternal(sql, fetchSize, Statement::RETURN_GENERATED_KEYS);
   }
 
@@ -645,7 +653,7 @@ namespace mariadb
    *     second argument supplied to this method is not an <code>int</code> array whose elements are
    *     valid column indexes
    */
-  int32_t MariaDbStatement::executeUpdate(const SQLString& sql, int32_t* columnIndexes)
+  int32_t MariaDbStatement::executeUpdate(const SQLString& sql, int32_t* /*columnIndexes*/)
   {
     return executeUpdate(sql, Statement::RETURN_GENERATED_KEYS);
   }
@@ -670,9 +678,10 @@ namespace mariadb
    *     second argument supplied to this method is not a <code>String</code> array whose elements
    *     are valid column names
    */
-  int32_t MariaDbStatement::executeUpdate(const SQLString& sql,const SQLString* columnNames) {
-    return executeUpdate(sql,Statement::RETURN_GENERATED_KEYS);
+  int32_t MariaDbStatement::executeUpdate(const SQLString& sql,const SQLString* /*columnNames*/) {
+    return executeUpdate(sql, Statement::RETURN_GENERATED_KEYS);
   }
+
 
   int64_t MariaDbStatement::executeLargeUpdate(const SQLString& sql) {
     if (executeInternal(sql,fetchSize,Statement::NO_GENERATED_KEYS)){
@@ -681,19 +690,22 @@ namespace mariadb
     return getLargeUpdateCount();
   }
 
+
   int64_t MariaDbStatement::executeLargeUpdate(const SQLString& sql, int32_t autoGeneratedKeys) {
-    if (executeInternal(sql,fetchSize,autoGeneratedKeys)){
+    if (executeInternal(sql, fetchSize, autoGeneratedKeys)){
       return 0;
     }
     return getLargeUpdateCount();
   }
 
-  int64_t MariaDbStatement::executeLargeUpdate(const SQLString& sql, int32_t* columnIndexes) {
-    return executeLargeUpdate(sql,Statement::RETURN_GENERATED_KEYS);
+
+  int64_t MariaDbStatement::executeLargeUpdate(const SQLString& sql, int32_t* /*columnIndexes*/) {
+    return executeLargeUpdate(sql, Statement::RETURN_GENERATED_KEYS);
   }
 
-  int64_t MariaDbStatement::executeLargeUpdate(const SQLString& sql, const SQLString* columnNames) {
-    return executeLargeUpdate(sql,Statement::RETURN_GENERATED_KEYS);
+
+  int64_t MariaDbStatement::executeLargeUpdate(const SQLString& sql, const SQLString* /*columnNames*/) {
+    return executeLargeUpdate(sql, Statement::RETURN_GENERATED_KEYS);
   }
 
   /**
@@ -820,7 +832,7 @@ namespace mariadb
    *
    * @param enable <code>true</code> to enable escape processing; <code>false</code> to disable it
    */
-  void MariaDbStatement::setEscapeProcessing(bool enable){
+  void MariaDbStatement::setEscapeProcessing(bool /*enable*/){
     // not handled
   }
 
@@ -965,7 +977,7 @@ namespace mariadb
    * @throws SQLException if a database access error occurs or this method is called on a closed
    *     <code>Statement</code>
    */
-  void MariaDbStatement::setCursorName(const SQLString& name) {
+  void MariaDbStatement::setCursorName(const SQLString& /*name*/) {
     throw exceptionFactory->raiseStatementError(connection, this)->notSupported("Cursors are not supported");
   }
 
@@ -1008,7 +1020,7 @@ namespace mariadb
    *     ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
    * @since 1.4
    */
-  int32_t MariaDbStatement::getResultSetHoldability(){
+  int32_t MariaDbStatement::getResultSetHoldability() {
     return ResultSet::HOLD_CURSORS_OVER_COMMIT;
   }
 
@@ -1023,12 +1035,13 @@ namespace mariadb
     return closed;
   }
 
+
   bool MariaDbStatement::isPoolable(){
     return false;
   }
 
-  void MariaDbStatement::setPoolable(bool poolable){
 
+  void MariaDbStatement::setPoolable(bool /*poolable*/) {
 
   }
 
@@ -1160,8 +1173,7 @@ namespace mariadb
    * @see #getFetchDirection
    * @since 1.2
    */
-  void MariaDbStatement::setFetchDirection(int32_t direction){
-
+  void MariaDbStatement::setFetchDirection(int32_t /*direction*/) {
 
   }
 
@@ -1190,7 +1202,10 @@ namespace mariadb
    * @see #getFetchSize
    */
   void MariaDbStatement::setFetchSize(int32_t rows) {
-    if (rows <0 &&rows != INT32_MIN){
+    if (rows != 0) {
+      throw SQLFeatureNotImplementedException("setFetchSize(ResultSet streaming) support is implemented beginning from version 1.1");
+    }
+    if (rows < 0 && rows != INT32_MIN){
       exceptionFactory->raiseStatementError(connection, this)->create("invalid fetch size").Throw();
     }else if (rows == INT32_MIN)
     {
@@ -1285,7 +1300,7 @@ namespace mariadb
       return batchRes;
     }
 
-    std::lock_guard<std::mutex> localScopeLock(*lock);
+    std::unique_lock<std::mutex> localScopeLock(*lock);
     try
     {
       internalBatchExecution(size);
@@ -1295,6 +1310,7 @@ namespace mariadb
     }
     catch (SQLException& initialSqlEx){
       executeBatchEpilogue();
+      localScopeLock.unlock();
       throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }
     //To please compilers etc
@@ -1312,7 +1328,7 @@ namespace mariadb
       return largeBatchRes;
     }
 
-    std::lock_guard<std::mutex> localScopeLock(*lock);
+    std::unique_lock<std::mutex> localScopeLock(*lock);
     try
     {
       internalBatchExecution(size);
@@ -1324,6 +1340,7 @@ namespace mariadb
     catch (SQLException& initialSqlEx)
     {
       executeBatchEpilogue();
+      localScopeLock.unlock();
       throw executeBatchExceptionEpilogue(initialSqlEx, size);
     }/* TODO: something with the finally was once here */
     //To please compilers etc

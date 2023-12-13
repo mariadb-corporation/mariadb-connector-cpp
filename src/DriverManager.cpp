@@ -25,12 +25,12 @@ namespace sql
 {
   static Driver* getDriver(const SQLString& url)
   {
-    if (url.find_first_of("jdbc:") != 0)
+    if (StringImp::get(url).find("jdbc:") != 0)
     {
       throw SQLException("Incorrect URL format - there is no jdbc: prefix");
     }
 
-    std::size_t driverNameEnd = url.find_first_of("://", 5); //5 - length of jdbc: prefix
+    std::size_t driverNameEnd = StringImp::get(url).find("://", 5); //5 - length of jdbc: prefix
 
     if (driverNameEnd == std::string::npos)
     {
@@ -40,7 +40,7 @@ namespace sql
     SQLString driverName(url.substr(5, driverNameEnd - 5));
 
     // Here should be loop thru registered drivers
-    if (driverName.find_first_of("mariadb:") == 0)
+    if (StringImp::get(driverName).find("mariadb") == 0)
     {
       // And here should be call to the registered callback
       return sql::mariadb::get_driver_instance();
