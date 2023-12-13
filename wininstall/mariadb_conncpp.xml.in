@@ -57,6 +57,7 @@
         <File Id="mariadb_conncpp_dll" Name="mariadbcpp.dll" KeyPath="yes" DiskId="1" Source="$(var.binaries_dir)/mariadbcpp.dll">
         </File>
         <File Id="mariadb_conncpp_lib" Name="mariadbcpp.lib" DiskId="1" Source="$(var.binaries_dir)/mariadbcpp.lib" />
+        <File Id="mariadb_conncpp_static_lib" Name="mariadbcpp-static.lib" DiskId="1" Source="$(var.binaries_dir)/mariadbcpp-static.lib" />
       </Component>
     <Component Id="Debug" Guid="@GUID_DEBUG@" Directory="INSTALLFOLDER" DiskId="1" Win64="@IS_WIN64@">
       <File Id="mariadb_conncpp_dll_pdb" Name="mariadbcpp.pdb" KeyPath="yes" DiskId="1" Source="$(var.binaries_dir)/mariadbcpp.pdb" />
