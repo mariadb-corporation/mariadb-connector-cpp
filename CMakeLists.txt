@@ -416,6 +416,8 @@ IF(WIN32)
   MESSAGE(STATUS "Sign MSI package: ${WITH_SIGNCODE}")
 ENDIF()
 
+OPTION(BUILD_SHARED_LIBS "Build as a shared library" ON)
+
 # By now we have everything needed by tests. If we need to build them only - firing config now and exit
 # There is "normal" tests config below
 IF(BUILD_TESTS_ONLY)
@@ -502,7 +504,7 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.def.in
                ${CMAKE_SOURCE_DIR}/src/maconncpp.def)
 
 # Dynamic linking is default on non-Windows
-IF(MARIADB_LINK_DYNAMIC OR NOT WIN32)# OR USE_SYSTEM_INSTALLED_LIB)
+IF(MARIADB_LINK_DYNAMIC)
   IF(USE_SYSTEM_INSTALLED_LIB)
     FIND_LIBRARY(CCLIB libmariadb.so)
     IF (${CCLIB} STREQUAL "CCLIB-NOTFOUND")
@@ -537,11 +539,19 @@ ELSE()
   MESSAGE(STATUS "Linking Connector/C library statically(${MARIADB_CLIENT_TARGET_NAME})")
 ENDIF()
 
-IF(WIN32)
-  ADD_LIBRARY(${LIBRARY_NAME} SHARED ${MACPP_SOURCES} ${CMAKE_SOURCE_DIR}/src/maconncpp.def ${CMAKE_SOURCE_DIR}/src/maconncpp.rc)
+IF(BUILD_SHARED_LIBS)
+  SET(LIBRARY_TYPE SHARED)
+  MESSAGE(STATUS "Building as a shared library")
 ELSE()
-#  MESSAGE(STATUS "Version script: ${CMAKE_SOURCE_DIR}/src/maconncpp.def")
-  ADD_LIBRARY(${LIBRARY_NAME} SHARED ${MACPP_SOURCES})
+  SET(LIBRARY_TYPE STATIC)
+  MESSAGE(STATUS "Building as a static library")
+ENDIF()
+
+IF(WIN32)
+  ADD_LIBRARY(${LIBRARY_NAME} ${LIBRARY_TYPE} ${MACPP_SOURCES} ${CMAKE_SOURCE_DIR}/src/maconncpp.def ${CMAKE_SOURCE_DIR}/src/maconncpp.rc)
+ELSE()
+  #  MESSAGE(STATUS "Version script: ${CMAKE_SOURCE_DIR}/src/maconncpp.def")
+  ADD_LIBRARY(${LIBRARY_NAME} ${LIBRARY_TYPE} ${MACPP_SOURCES})
   IF(APPLE)
     SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl"
                                      INSTALL_RPATH_USE_LINK_PATH 0
