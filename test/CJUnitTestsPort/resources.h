@@ -69,7 +69,7 @@ public:
   }
 };
 
-int LoadProperties(const String & fileName, Properties &props
+int LoadProperties(const String & fileName, TestProperties &props
                    , const char * _possibleLocations[]=NULL);
 }
 }

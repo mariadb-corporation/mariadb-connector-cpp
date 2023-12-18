@@ -32,24 +32,30 @@ namespace sql
 {
 namespace mariadb
 {
+  constexpr int32_t DefaultPort = 3306;
+
   class HostAddress
   {
     static Shared::Logger logger; /* const? */
 
   public:
     SQLString host;
-    int32_t port;
+    int32_t   port;
     SQLString type;
   private:
     HostAddress();
   public:
-    HostAddress(const SQLString& host, int32_t port);
+    HostAddress(const SQLString& host, int32_t port= DefaultPort);
     HostAddress(const SQLString& host, int32_t port, const SQLString& type);
+    HostAddress(const HostAddress&);
+    HostAddress& operator=(const HostAddress&);
+    HostAddress(HostAddress&&);
+    ~HostAddress();
     static std::vector<HostAddress> parse(const SQLString& spec, enum HaMode haMode);
   private:
-    static std::unique_ptr<HostAddress> parseSimpleHostAddress(const SQLString& str);
+    static HostAddress parseSimpleHostAddress(const SQLString& str);
     static int32_t getPort(const SQLString& portString);
-    static std::unique_ptr<HostAddress> parseParameterHostAddress(SQLString& str);
+    static HostAddress parseParameterHostAddress(const SQLString& str);
   public:
     static SQLString toString(std::vector<HostAddress> addrs);
 #ifdef WEVE_FIGURED_OUT_WE_NEED_IT

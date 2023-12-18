@@ -294,11 +294,11 @@ static void test_connection_0(std::unique_ptr<sql::Connection> & conn)
         return void();
     }
     std::unique_ptr<sql::Statement> stmt1(conn->createStatement());
-    ensure("stmt1 is NULL", stmt1.get() != NULL);
+    ensure("stmt1 is NULL", stmt1.get() != nullptr);
     std::unique_ptr<sql::ResultSet> rset1(stmt1->executeQuery("SELECT CONNECTION_ID()"));
-    ensure("res1 is NULL", rset1.get() != NULL);
+    ensure("res1 is NULL", rset1.get() != nullptr);
 
-    ensure("res1 is empty", rset1->next() != false);
+    ensure("res1 is empty", rset1->next());
 
     ensure("connection is closed", !conn->isClosed());
 
@@ -321,7 +321,7 @@ static void test_connection_0(std::unique_ptr<sql::Connection> & conn)
     } catch (sql::SQLException &) {
       ensure("Exception correctly thrown", true);
     }
-    ensure("connection is open", conn->isClosed() == true); // W/out auto-reconnect, it's supposed to be closed at this point?
+    ensure("connection is open", conn->isClosed()); // W/out auto-reconnect, it's supposed to be closed at this point?
   } catch (sql::SQLException &e) {
     printf("\n# ERR: Caught sql::SQLException at %s::%d  [%s] (%d/%s)\n", CPPCONN_FUNC, __LINE__, e.what(), e.getErrorCode(), e.getSQLStateCStr());
     printf("# ");
@@ -612,7 +612,7 @@ static void test_statement_5(std::unique_ptr<sql::Connection> & conn, std::uniqu
     /* Get a result set */
     try {
       std::unique_ptr<sql::ResultSet> rset(stmt->executeQuery("INSERT INTO test_function VALUES(2,200)"));
-      ensure("NULL returned for result set", rset.get() == NULL);
+      ensure("NULL returned for result set", rset.get() != NULL);
       ensure_equal_int("Non-empty result set", false, rset->next());
     } catch (sql::SQLException &) {
     } catch (...) {
@@ -967,7 +967,7 @@ static void test_result_set_1(std::unique_ptr<sql::Connection> & conn)
     std::unique_ptr<sql::ResultSet> rset2(stmt1->executeQuery("SELECT 1"));
     ensure("res2 is NULL", rset2.get() != NULL);
 
-    ensure("res1 is empty", rset1->next() != false);
+    ensure("res1 is empty", rset1->next());
     ensure("res2 is empty", rset2->next() != false);
   } catch (sql::SQLException &e) {
     printf("\n# ERR: Caught sql::SQLException at %s::%d  [%s] (%d/%s)\n", CPPCONN_FUNC, __LINE__, e.what(), e.getErrorCode(), e.getSQLStateCStr());
@@ -1300,6 +1300,9 @@ static void test_result_set_7(std::unique_ptr<sql::Connection> & conn, std::stri
 
     std::unique_ptr<sql::PreparedStatement> stmt2(conn->prepareStatement("DROP TABLE test_function_tx"));
     stmt2->execute();
+    stmt2.reset();
+    rset1.reset();
+    stmt1.reset();
   } catch (sql::SQLException &e) {
     printf("\n# ERR: Caught sql::SQLException at %s::%d  [%s] (%d/%s)\n", CPPCONN_FUNC, __LINE__, e.what(), e.getErrorCode(), e.getSQLStateCStr());
     printf("# ");
@@ -1315,7 +1318,7 @@ static void test_result_set_8(std::unique_ptr<sql::Connection> & conn, std::stri
 {
   ENTER_FUNCTION();
   try {
-    int count_full_before;
+    int count_full_before= 0;
     std::unique_ptr<sql::PreparedStatement> stmt0(conn->prepareStatement("SELECT 1"));
     ensure("stmt0 is NULL", stmt0.get() != NULL);
 
@@ -1385,7 +1388,7 @@ static void test_result_set_8(std::unique_ptr<sql::Connection> & conn, std::stri
     ensure_equal_int("res5 has more rows ", rset5->next(), false);
 
     std::unique_ptr<sql::PreparedStatement> stmt9(conn->prepareStatement("DROP TABLE test_function_tx"));
-    stmt1->execute();
+    stmt9->execute();
 
     conn->setAutoCommit(old_commit_mode);
   } catch (sql::SQLException &e) {

@@ -34,7 +34,11 @@ namespace mariadb
   void ExceptionFactory::Throw(std::unique_ptr<sql::SQLException> e)
   {
     sql::SQLSyntaxErrorException* asSyntaxError= dynamic_cast<sql::SQLSyntaxErrorException*>(e.get());
-
+    if (asSyntaxError != nullptr)
+    {
+      e.release();
+      throw *asSyntaxError;
+    }
   }
 
   ExceptionFactory::ExceptionFactory(int64_t threadId, Shared::Options& options, MariaDbConnection* connection, Statement* statement)
@@ -161,7 +165,7 @@ namespace mariadb
 
   SQLString ExceptionFactory::buildMsgText(const SQLString& initialMessage, int64_t threadId, Shared::Options& options, std::exception* cause)
   {
-    std::stringstream msg("");
+    std::ostringstream msg("");
     SQLString deadLockException;
     SQLString threadName;
 
@@ -287,7 +291,7 @@ namespace mariadb
 
   SQLString ExceptionFactory::toString()
   {
-    std::stringstream asStr("");
+    std::ostringstream asStr("");
     asStr << "ExceptionFactory{" << "threadId=" << threadId  << '}';
     return asStr.str();
   }

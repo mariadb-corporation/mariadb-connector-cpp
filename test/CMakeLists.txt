@@ -1,5 +1,5 @@
 # Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
-#               2020 MariaDB Corporation AB
+#               2020, 2023 MariaDB Corporation AB
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -27,16 +27,10 @@
 # along with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
-#Use Options to configure default test server params
+#default test server params configured in options_defaults.cmake 
 
-SET_VALUE(TEST_HOST           "tcp://localhost:3306" "Defines Unit Tests default server")
-SET_VALUE(TEST_SCHEMA         "test"                 "Defines Unit Tests default Database")
-SET_VALUE(TEST_UID            "root"                 "Defines Unit Tests default login user")
-SET_VALUE(TEST_PASSWORD       "root"                 "Defines Unit Tests default login user password")
-SET_VALUE(TEST_USETLS         "false"                "Defines useTls option value to use in tests")
-
-configure_file(tests_config.h.in
-               ${CMAKE_BINARY_DIR}/test/tests_config.h)
+CONFIGURE_FILE(tests_config.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/tests_config.h)
 
 INCLUDE_DIRECTORIES("${CMAKE_BINARY_DIR}/test")
 
@@ -51,10 +45,14 @@ IF(WIN32)
   ADD_DEFINITIONS("-D_CRT_SECURE_NO_WARNINGS")
   ADD_DEFINITIONS("-DMARIADB_EXPORTED=__declspec(dllimport)")
 
-ELSEIF(NOT WIN32)
-  #ADD_DEFINITIONS("-DMARIADB_EXPORTED")
-
-ENDIF(WIN32)
+ELSE()
+  IF(USE_SYSTEM_INSTALLED_LIB)
+    CMAKE_HOST_SYSTEM_INFORMATION(RESULT DISTR QUERY DISTRIB_INFO)
+    IF(DISTR_ID STREQUAL "centos" OR DISTR_ID STREQUAL "rhel")
+      SET(STATLIB_DEPS dli ssl crypto z)
+    ENDIF()
+  ENDIF()
+ENDIF()
 
 ENABLE_TESTING()
 
@@ -62,8 +60,9 @@ IF(CMAKE_COMPILER_IS_GNUCC AND MYSQLCPPCONN_GCOV_ENABLE)
   SET(MY_GCOV_LINK_LIBRARIES gcov)
 ENDIF(CMAKE_COMPILER_IS_GNUCC AND MYSQLCPPCONN_GCOV_ENABLE)
 
+# static_test is now linked against static driver library
 ADD_EXECUTABLE(static_test static_test.cpp)
-TARGET_LINK_LIBRARIES(static_test ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} ${MY_GCOV_LINK_LIBRARIES})
+TARGET_LINK_LIBRARIES(static_test ${STATIC_LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} ${STATLIB_DEPS} ${MY_GCOV_LINK_LIBRARIES})
 
 ADD_TEST(static_test ${EXECUTABLE_OUTPUT_PATH}/static_test)
 SET_TESTS_PROPERTIES(static_test PROPERTIES TIMEOUT 120)
@@ -91,6 +90,6 @@ ADD_TEST(unsorted_bugs unsorted_bugs)
 SET_TESTS_PROPERTIES(test_parametermetadata test_resultsetmetadata test_connection PROPERTIES TIMEOUT 120 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 # With remote SkySQL server, compliance tend to timeout
 SET_TESTS_PROPERTIES(static_test driver_test PROPERTIES TIMEOUT 150 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-SET_TESTS_PROPERTIES(compliance test_databasemetadata test_preparedstatement test_resultset unsorted_bugs PROPERTIES TIMEOUT 1000 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+SET_TESTS_PROPERTIES(compliance test_databasemetadata test_preparedstatement test_resultset unsorted_bugs PROPERTIES TIMEOUT 1200 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 MESSAGE(STATUS "Configuring test cases")

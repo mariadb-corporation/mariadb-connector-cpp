@@ -22,11 +22,9 @@
 
 namespace sql
 {
-
-#if defined(__MINGW32__) || defined(__MINGW64__)
-
-#else
-// Instantiating template classed that have to be exported
+// Shouldn't it be like MARIADB_EXPORTED defined as empty string under MINGW?
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
+// Instantiating template classes that have to be exported
 template struct MARIADB_EXPORTED CArray<char>;
 template struct MARIADB_EXPORTED CArray<int32_t>;
 template struct MARIADB_EXPORTED CArray<int64_t>;

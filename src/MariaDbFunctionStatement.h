@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -37,7 +37,7 @@ class MariaDbConnection;
 
 class MariaDbFunctionStatement  : public  CloneableCallableStatement
 {
-  SelectResultSet* outputResultSet;
+  SelectResultSet* outputResultSet= nullptr;
   Unique::ClientSidePreparedStatement stmt;
   Shared::CallableParameterMetaData parameterMetadata;
   MariaDbConnection* connection;
@@ -190,7 +190,7 @@ public:
   Statement* setResultSetType(int32_t rsType);
   void clearParameters();
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   std::istringstream* getCharacterStream(int32_t parameterIndex);
   std::istringstream* getCharacterStream(const SQLString& parameterName);
   void setBlob(const SQLString& parameterName, const std::istream* inputStream, int64_t length);

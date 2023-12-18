@@ -36,8 +36,8 @@ namespace mariadb
   CmdInformationMultiple::CmdInformationMultiple(std::size_t _expectedSize, int32_t _autoIncrement)
     : expectedSize(_expectedSize)
     , autoIncrement(_autoIncrement)
-    , moreResultsIdx(0)
     , insertIdNumber(0)
+    , moreResultsIdx(0)
     , hasException(false)
     , rewritten(false)
   {
@@ -99,7 +99,7 @@ namespace mariadb
     batchRes.reserve(std::max(updateCounts.size(), expectedSize));
 
     auto iterator= updateCounts.begin();
-    int32_t pos= 0;
+    uint32_t pos= 0;
     while (iterator!= updateCounts.end()) {
       batchRes[pos]= static_cast<int32_t>(*iterator);
       ++pos;
@@ -126,7 +126,7 @@ namespace mariadb
     largeBatchRes.reserve(std::max(updateCounts.size(), expectedSize));
 
     auto iterator= updateCounts.begin();
-    int32_t pos= 0;
+    uint32_t pos= 0;
     while (iterator != updateCounts.end()) {
       largeBatchRes[pos]= *iterator;
       ++pos;
@@ -187,7 +187,7 @@ namespace mariadb
     * @param sql SQL command
     * @return a resultSet with insert ids.
     */
-  ResultSet* CmdInformationMultiple::getGeneratedKeys(Protocol* protocol, const SQLString& sql)
+  ResultSet* CmdInformationMultiple::getGeneratedKeys(Protocol* protocol, const SQLString& /*sql*/)
   {
     std::vector<int64_t> ret;
     int32_t position= 0;

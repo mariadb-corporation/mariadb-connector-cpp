@@ -227,7 +227,7 @@ void assertEqualsEpsilon(const long double & expected, const long double & resul
   std::stringstream errmsg;
   errmsg.str("");
   errmsg << "assertEquals(double) failed in " << file << ", line #" << line;
-  errmsg << " expecting '" << expected << "' got '" << result << "'";
+  errmsg << " expecting '" << std::setprecision(9) << expected << "' got '" << result << "'";
   TestsListener::testHasFailed(errmsg.str());
 }
 
@@ -246,7 +246,7 @@ void assertEqualsEpsilon(const double & expected, const double & result
   std::stringstream errmsg;
   errmsg.str("");
   errmsg << "assertEquals(double) failed in " << file << ", line #" << line;
-  errmsg << " expecting '" << expected << "' got '" << result << "'";
+  errmsg << " expecting '" << std::setprecision(9) << expected << "' got '" << result << "'";
   TestsListener::testHasFailed(errmsg.str());
 }
 

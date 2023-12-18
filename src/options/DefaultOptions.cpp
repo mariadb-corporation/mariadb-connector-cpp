@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -24,7 +24,6 @@
 #include "DefaultOptions.h"
 #include "Consts.h"
 #include "Exception.hpp"
-
 
 namespace sql
 {
@@ -112,7 +111,7 @@ namespace sql
         false,
         false}},
       {
-        "allowLocalInfile", {"allowLocalInfile", "0.9.1", "Permit loading data from file", false, true}},
+        "allowLocalInfile", {"allowLocalInfile", "1.0.2", "Permits loading data from local file(on the client)", false, false}},
       {
         "sessionVariables", {"sessionVariables",
         "0.9.1",
@@ -163,7 +162,7 @@ namespace sql
         false}},
       {
         "rewriteBatchedStatements", {"rewriteBatchedStatements",
-        "0.9.1",
+        "1.0.2",
         "For insert queries, rewrite "
         "batchedStatement to execute in a single executeQuery.\n"
         "example:\n"
@@ -189,7 +188,7 @@ namespace sql
         "0.9.1",
         "set buffer size for TCP buffer (SO_RCVBUF).",
         false,
-        (int32_t)0/*(int32_t)NULL*/,
+        (int32_t)0,
         int32_t(0) }},
       {
         "tcpSndBuf", {"tcpSndBuf",
@@ -453,13 +452,13 @@ namespace sql
         int32_t(0)}},
       {
         "connectionAttributes", {"connectionAttributes",
-        "0.9.1",
-        "When performance_schema is active, permit to send server "
-        "some client information in a key;value pair format "
+        "1.0.3",
+        "If performance_schema is enabled, permits to send server "
+        "some client information in a key:value pair format "
         "(example: connectionAttributes=key1:value1,key2,value2).\n"
-        "Those informations can be retrieved on server within tables performance_schema.session_connect_attrs "
+        "This information can be retrieved on server within tables performance_schema.session_connect_attrs "
         "and performance_schema.session_account_connect_attrs.\n"
-        "This can permit from server an identification of client/application",
+        "This allowa an identification of client/application on server",
         false}},
       {
         "useBatchMultiSend", {"useBatchMultiSend",
@@ -474,7 +473,7 @@ namespace sql
         "\n"
         "This option is mainly effective when the client is distant from the server.",
         false,
-        false/*(bool*)NULL*/}},
+        false}},
       {
         "useBatchMultiSendNumber", {"useBatchMultiSendNumber",
         "0.9.1",
@@ -511,7 +510,8 @@ namespace sql
         "1.0.1",
         "String data encoding charset. The driver will assume, that all input strings are encoded using this"
         "character set, and will use it for communication with the server",
-        false}
+        false,
+        "utf8mb4"}
       },
       {
         "usePipelineAuth", {"usePipelineAuth",
@@ -521,7 +521,7 @@ namespace sql
         " pipeline (all queries are send, then only all results are reads), permitting faster connection "
         "creation",
         false,
-        false/*(bool*)NULL*/}},
+        false}},
       {
         "enablePacketDebug", {"enablePacketDebug",
         "0.9.1",
@@ -543,10 +543,10 @@ namespace sql
         false}},
       {
         "useBulkStmts", {"useBulkStmts",
-        "0.9.1",
-        "Use dedicated COM_STMT_BULK_EXECUTE protocol for batch "
-        "insert when possible. (batch without Statement.RETURN_GENERATED_KEYS and streams) to have faster batch. "
-        "(significant only if server MariaDB >= 10.2.7)",
+        "1.0.2",
+        "Use dedicated COM_STMT_BULK_EXECUTE protocol for executeBatch if "
+        "possible(batch without Statement::RETURN_GENERATED_KEYS and streams). Can be significanlty faster."
+        "(works only with server MariaDB >= 10.2.7)",
         false,
         false}},
       {
@@ -557,9 +557,8 @@ namespace sql
         true}},
       {
         "pool", {"pool",
-        "0.9.1",
-        "Use pool. This option is useful only if not using a DataSource object, but "
-        "only a connection object.",
+        "1.1.1",
+        "Use pool.",
         false,
         false}},
       {
@@ -570,24 +569,24 @@ namespace sql
         false}},
       {
         "maxPoolSize", {"maxPoolSize",
-        "0.9.1",
+        "1.1.1",
         "The maximum number of physical connections that the pool should contain.",
         false,
         (int32_t)8,
         int32_t(1) }},
       {
         "minPoolSize", {"minPoolSize",
-        "0.9.1",
+        "1.1.1",
         "When connections are removed due to not being used for "
         "longer than than \"maxIdleTime\", connections are closed and removed from the pool. \"minPoolSize\" "
         "indicates the number of physical connections the pool should keep available at all times. Should be less"
         " or equal to maxPoolSize.",
         false,
-        (int32_t)0/*(int32_t)NULL*/,
+        (int32_t)0,
         int32_t(0)}},
       {
         "maxIdleTime", {"maxIdleTime",
-        "0.9.1",
+        "1.1.1",
         "The maximum amount of time in seconds"
         " that a connection can stay in the pool when not used. This value must always be below @wait_timeout"
         " value - 45s \n"
@@ -597,11 +596,11 @@ namespace sql
         Options::MIN_VALUE__MAX_IDLE_TIME}},
       {
         "poolValidMinDelay", {"poolValidMinDelay",
-        "0.9.1",
-        "When asking a connection to pool, the pool will "
-        "validate the connection state. \"poolValidMinDelay\" permits disabling this validation if the connection"
-        " has been borrowed recently avoiding useless verifications in case of frequent reuse of connections. "
-        "0 means validation is done each time the connection is asked.",
+        "1.1.1",
+        "When the pool is requested for a connection, it will validate the connection state. "
+        "\"poolValidMinDelay\" allows to disable this validation if the connection has been "
+        "used recently, avoiding useless verifications in case of frequent reuse of connections. "
+        "0 means validation is done each time the connection is requested.",
         false,
         (int32_t)1000,
         int32_t(0)}},
@@ -615,14 +614,14 @@ namespace sql
         false}},
       {
         "useResetConnection", {"useResetConnection",
-        "0.9.1",
+        "1.1.1",
         "When a connection is closed() "
         "(given back to pool), the pool resets the connection state. Setting this option, the prepare command "
         "will be deleted, session variables changed will be reset, and user variables will be destroyed when the"
         " server permits it (>= MariaDB 10.2.4, >= MySQL 5.7.3), permitting saving memory on the server if the "
         "application make extensive use of variables. Must not be used with the useServerPrepStmts option",
         false,
-        false}},
+        true }},
       {
         "allowMasterDownConnection", {"allowMasterDownConnection",
         "0.9.1",
@@ -709,10 +708,14 @@ namespace sql
 
 //---------------------------------------- Aliases ------------------------------------------------------------------------------------
     bool addAliases(std::map<std::string, DefaultOptions*>& completeOptionsMap) {
+      // Here it has to be reference, otherwise it will create (short living) copy of the mapped DefaultOptions
+      // object. Plus we don't want extra copy-constructing anyway
       for (auto& defaultOption : OptionsMap) {
         completeOptionsMap.emplace(defaultOption.first, &defaultOption.second);
       }
 
+      completeOptionsMap.emplace("userName",                   &OptionsMap["user"]);
+      completeOptionsMap.emplace("socket",                     &OptionsMap["localSocket"]);
       completeOptionsMap.emplace("createDB",                   &OptionsMap["createDatabaseIfNotExist"]);
       completeOptionsMap.emplace("useSSL",                     &OptionsMap["useTls"]);
       completeOptionsMap.emplace("useSsl",                     &OptionsMap["useTls"]);
@@ -748,58 +751,62 @@ namespace sql
     std::map<std::string, DefaultOptions*> DefaultOptions::OPTIONS_MAP;
     static bool aliasesAdded= addAliases(DefaultOptions::OPTIONS_MAP);
 //-------------------------------------------------------------------------------------------------------------------------------------
-    DefaultOptions::DefaultOptions(const char * optionName, const char * implementationVersion, const char* description, bool required)
-      : optionName(optionName),  description(description), required(required), defaultValue(""), minValue (), maxValue()
+    DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char* description, bool required)
+      : optionName(optionName)
+      , description(description), required(required)
+      , minValue()
+      , maxValue()
+      , defaultValue("")
     {
     }
 
-    DefaultOptions::DefaultOptions(const char * optionName, const char * implementationVersion, const char * description,
-        bool required, const char * defaultValue):
+    DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char * description,
+        bool required, const char * defaultValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(),
-      maxValue()
+      maxValue(),
+      defaultValue(defaultValue)
     {
     }
 
-    DefaultOptions::DefaultOptions(const char * optionName, const char * implementationVersion, const char * description,
+    DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char * description,
         bool required, bool defaultValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(),
-      maxValue()
+      maxValue(),
+      defaultValue(defaultValue)
     {
     }
 
-    DefaultOptions::DefaultOptions(const char* optionName, const char* implementationVersion, const char* description,
+    DefaultOptions::DefaultOptions(const char* optionName, const char* /*implementationVersion*/, const char* description,
         bool required, int32_t defaultValue, int32_t minValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(minValue),
-      maxValue(INT32_MAX)
+      maxValue(INT32_MAX),
+      defaultValue(defaultValue)
     {
     }
 
-    DefaultOptions::DefaultOptions(const char* optionName, const char* implementationVersion, const char* description,
+    DefaultOptions::DefaultOptions(const char* optionName, const char* /*implementationVersion*/, const char* description,
         int64_t defaultValue, bool required, int64_t minValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(minValue),
-      maxValue(INT64_MAX)
+      maxValue(INT64_MAX),
+      defaultValue(defaultValue)
     {
     }
 
 #ifdef WE_NEED_INT_ARRAY_DEFAULT_VALUE
     DefaultOptions::DefaultOptions(const SQLString& optionName, int32_t* defaultValue, int32_t minValue,
-      const SQLString& implementationVersion, SQLString& description, bool required) :
+      const SQLString& /*implementationVersion*/, SQLString& description, bool required) :
       optionName(optionName),
       defaultValue(defaultValue),
       minValue(minValue),
@@ -864,14 +871,14 @@ namespace sql
     Shared::Options DefaultOptions::parse(enum HaMode haMode, const SQLString& urlParameters, Properties& properties,
       Shared::Options options)
     {
-      if (/*urlParameters !=NULL &&*/ !urlParameters.empty())
+      if (/*urlParameters != nullptr &&*/ !urlParameters.empty())
       {
         Tokens parameters= split(urlParameters, "&");
 
         for (SQLString& parameter : *parameters)
         {
           size_t pos= parameter.find_first_of('=');
-          if (pos == std::string::npos){
+          if (pos == std::string::npos) {
             if (properties.find(parameter) == properties.end()){
               properties.insert({ parameter, emptyStr });
             }
@@ -897,7 +904,7 @@ namespace sql
           const std::string& key= StringImp::get(it.first);
           SQLString propertyValue(it.second);
 
-          auto cit= OPTIONS_MAP.find(key);
+          const auto& cit= OPTIONS_MAP.find(key);
 
           if (cit != OPTIONS_MAP.end()/* && !propertyValue.empty()*/)
           {
@@ -1036,25 +1043,26 @@ namespace sql
       if (options->rewriteBatchedStatements){
         options->useServerPrepStmts= false;
       }
-      if (options->pipe.empty()){
+      if (!options->pipe.empty()){
         options->useBatchMultiSend= false;
         options->usePipelineAuth= false;
       }
 
       if (options->pool) {
-        options->minPoolSize =
+        options->minPoolSize=
           options->minPoolSize == 0
           ? options->maxPoolSize
           : std::min(options->minPoolSize, options->maxPoolSize);
 
-        throw SQLFeatureNotImplementedException("Pool support is not implemented yet");
+        throw SQLFeatureNotImplementedException("This connector version does not have pool support");
       }
 
       if (options->cacheCallableStmts || options->cachePrepStmts) {
         throw SQLFeatureNotImplementedException("Callable/Prepared statement caches are not supported yet");
       }
-      if (options->defaultFetchSize < 0){
-        options->defaultFetchSize= 0;
+
+      if (options->defaultFetchSize != 0){
+        throw SQLFeatureNotImplementedException("ResultSet streaming is not supported in this version");
       }
 
       if (credentialPlugin && credentialPlugin->mustUseSsl())
@@ -1063,7 +1071,7 @@ namespace sql
       }
 
       if (options->usePipelineAuth) {
-        SQLFeatureNotSupportedException("Pipe identification is not supported yet");
+        throw SQLFeatureNotSupportedException("Pipe identification is not supported yet");
       }
 
       if (options->useCharacterEncoding.compare("utf8") == 0) {
@@ -1078,12 +1086,12 @@ namespace sql
      * @param haMode high availability Mode
      * @param sb String builder
      */
-    void DefaultOptions::propertyString(const Shared::Options options,const enum HaMode haMode, SQLString& sb)
+    void DefaultOptions::propertyString(const Shared::Options options, const enum HaMode /*haMode*/, SQLString& sb)
     {
       try
       {
         bool first= true;
-        for (auto  it : OptionsMap)
+        for (auto& it : OptionsMap)
         {
           DefaultOptions& o= it.second;
           const ClassField<Options> field= Options::getField(o.optionName);

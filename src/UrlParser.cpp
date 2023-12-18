@@ -30,10 +30,6 @@ namespace sql
 {
 namespace mariadb
 {
-  const SQLString UrlParser::DISABLE_MYSQL_URL= "disableMariaDbDriver";
-  std::regex UrlParser::URL_PARAMETER("(\\/([^\\?]*))?(\\?(.+))*", std::regex_constants::ECMAScript);
-  std::regex UrlParser::AWS_PATTERN("(.+)\\.([a-z0-9\\-]+\\.rds\\.amazonaws\\.com)", std::regex_constants::ECMAScript | std::regex_constants::icase);
-
   const SQLString mysqlTcp("tcp://"), mysqlSocket("unix://"), mysqlPipe("pipe://");
 
 
@@ -58,8 +54,8 @@ namespace mariadb
   {}
 
   UrlParser::UrlParser(SQLString& database, std::vector<HostAddress>& addresses, Shared::Options options, enum HaMode haMode) :
-    options(options),
     database(database),
+    options(options),
     addresses(addresses),
     haMode(haMode)
   {
@@ -85,7 +81,7 @@ namespace mariadb
 
 
   bool UrlParser::acceptsUrl(const SQLString& url) {
-    return (url.startsWith("jdbc:mariadb:") || (url.startsWith("jdbc:mysql:") && !(url.find_first_of(DISABLE_MYSQL_URL) != std::string::npos)) || isLegacyUriFormat(url));
+    return (url.startsWith("jdbc:mariadb:") || isLegacyUriFormat(url));
   }
 
 
@@ -97,8 +93,7 @@ namespace mariadb
 
   UrlParser* UrlParser::parse(const SQLString& url, Properties& prop)
   {
-    if ((url.startsWith("jdbc:mariadb:")
-      || (url.startsWith("jdbc:mysql:") && url.find_first_of(DISABLE_MYSQL_URL) == std::string::npos))
+    if (url.startsWith("jdbc:mariadb:")
       || isLegacyUriFormat(url))
     {
       UrlParser *urlParser= new UrlParser();
@@ -116,7 +111,7 @@ namespace mariadb
     try
     {
       urlParser.initialUrl= url;
-      size_t separator= url.find_first_of("//");
+      size_t separator= StringImp::get(url).find("//");
 
       if (separator == std::string::npos)
       {
@@ -130,8 +125,8 @@ namespace mariadb
       }
 
       SQLString urlSecondPart= url.substr(separator + 2);
-      size_t dbIndex= urlSecondPart.find_first_of("/");
-      size_t paramIndex= urlSecondPart.find_first_of("?");
+      size_t dbIndex= urlSecondPart.find_first_of('/');
+      size_t paramIndex= urlSecondPart.find_first_of('?');
       SQLString hostAddressesString;
       SQLString additionalParameters;
 
@@ -167,18 +162,21 @@ namespace mariadb
   {
     if (!additionalParameters.empty())
     {
-      std::string temp(additionalParameters.c_str(), additionalParameters.length());
-      std::smatch matcher;
-
-      if (std::regex_search(temp, matcher, URL_PARAMETER))
-      {
-        urlParser.database= matcher[2].str();
-        urlParser.options= DefaultOptions::parse(urlParser.haMode, matcher[4].str(), properties, urlParser.options);
+      SQLString urlParameters;
+      const std::string &temp= StringImp::get(additionalParameters);
+      // URL_PARAMETER("(\\/([^\\?]*))?(\\?(.+))*")
+      std::size_t qm= temp.find('?'), slash= temp.find('/');
+      if (slash == std::string::npos) {
+        slash= 0;
       }
       else {
-        urlParser.database= "";
-        urlParser.options= DefaultOptions::parse(urlParser.haMode, emptyStr, properties, urlParser.options);
+        slash+= 1;
       }
+      urlParser.database= temp.substr(slash, qm - slash);
+      if (qm != std::string::npos) {
+        urlParameters= temp.substr(qm + 1);
+      }
+      urlParser.options= DefaultOptions::parse(urlParser.haMode, urlParameters, properties, urlParser.options);
     }
     else {
       urlParser.database= "";
@@ -199,18 +197,18 @@ namespace mariadb
   enum HaMode UrlParser::parseHaMode(const SQLString& url, size_t separator)
   {
     size_t firstColonPos= url.find_first_of(':');
-    size_t secondColonPos= url.find_first_of(':', firstColonPos +1);
-    size_t thirdColonPos= url.find_first_of(':', secondColonPos +1);
+    size_t secondColonPos= url.find_first_of(':', firstColonPos + 1);
+    size_t thirdColonPos= url.find_first_of(':', secondColonPos + 1);
 
-    if (thirdColonPos >separator ||thirdColonPos ==-1)
+    if (thirdColonPos > separator || thirdColonPos == std::size_t(-1))
     {
-      if (secondColonPos ==separator -1) {
+      if (secondColonPos == separator - 1) {
         return HaMode::NONE;
       }
       thirdColonPos= separator;
     }
     try {
-      std::string haModeString(StringImp::get(url.substr(secondColonPos +1, thirdColonPos).toUpperCase()));
+      std::string haModeString(StringImp::get(url.substr(secondColonPos + 1, thirdColonPos - secondColonPos - 1).toUpperCase()));
       if (haModeString.compare("FAILOVER") == 0) {
         haModeString= "LOADBALANCE";
       }
@@ -230,7 +228,7 @@ namespace mariadb
       }
     }
     else {
-      for (HostAddress hostAddress : urlParser.addresses) {
+      for (HostAddress& hostAddress : urlParser.addresses) {
         if (hostAddress.type.empty()) {
           hostAddress.type= ParameterConstant::TYPE_MASTER;
         }
@@ -250,7 +248,7 @@ namespace mariadb
     }
     sb.append("//");
     bool notFirst= false;
-    for (auto hostAddress : addresses) {
+    for (auto& hostAddress : addresses) {
       if (notFirst) {
         sb.append(",");
       }
@@ -302,9 +300,11 @@ namespace mariadb
     if (haMode ==HaMode::AURORA) {
       return true;
     }
-    for (auto hostAddress : addresses)
-    {
-      if (std::regex_search(StringImp::get(hostAddress.toString()), AWS_PATTERN)) {
+    for (auto& hostAddress : addresses) {
+      // We don't support this anyway
+      // AWS_PATTERN("(.+)\\.([a-z0-9\\-]+\\.rds\\.amazonaws\\.com)"
+      if (StringImp::get(hostAddress.host).find(".rds.amazonaws.com") != std::string::npos)
+      {
         return true;
       }
     }
@@ -324,7 +324,7 @@ namespace mariadb
     return options->user;
   }
 
-  void UrlParser::setUsername(SQLString& username)
+  void UrlParser::setUsername(const SQLString& username)
   {
     options->user= username;
   }
@@ -333,7 +333,7 @@ namespace mariadb
     return options->password;
   }
 
-  void UrlParser::setPassword(SQLString& password) {
+  void UrlParser::setPassword(const SQLString& password) {
     options->password= password;
   }
 
@@ -341,7 +341,7 @@ namespace mariadb
     return database;
   }
 
-  void UrlParser::setDatabase(SQLString& database) {
+  void UrlParser::setDatabase(const SQLString& database) {
     this->database= database;
   }
 
@@ -355,7 +355,7 @@ namespace mariadb
   }
 
 
-  void UrlParser::setProperties(SQLString& urlParameters) {
+  void UrlParser::setProperties(const SQLString& urlParameters) {
     DefaultOptions::parse(this->haMode, urlParameters, this->options); setInitialUrl();
   }
 

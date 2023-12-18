@@ -141,7 +141,7 @@ bool OpenFile(std::ifstream & fileStream, const String & fileName
   return fileStream.is_open();
 }
 
-int LoadProperties(const String & fileName, Properties & props
+int LoadProperties(const String & fileName, TestProperties & props
                    , const char * _possibleLocations[])
 {
   int counter=0;
@@ -158,7 +158,7 @@ int LoadProperties(const String & fileName, Properties & props
       // Not empty line or a comment
       if (!propsFile.eof() && line.size() > 0 && line.c_str()[0] != '#')
       {
-        String::size_type pos=line.find_first_of("=");
+        String::size_type pos=line.find_first_of('=');
 
         if (pos != String::npos && pos > 0)
         {
@@ -168,7 +168,7 @@ int LoadProperties(const String & fileName, Properties & props
           StringUtils::trim( key );
           StringUtils::trim( val );
 
-          props.insert(Properties::value_type(key, val));
+          props.insert(TestProperties::value_type(key, val));
           ++counter;
         }
 

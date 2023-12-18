@@ -284,12 +284,12 @@ namespace sql
 
   bool operator==(const SQLString& str1, const char* str2)
   {
-    return str1.compare(0, str1.length(), str2, strlen(str2)) == 0;
+    return str2 != nullptr && str1.compare(0, str1.length(), str2, strlen(str2)) == 0;
   }
 
   bool operator==(const char* str1, const SQLString& str2)
   {
-    return str2.compare(0, str2.length(), str1, strlen(str1)) == 0;
+    return str1 != nullptr && str2.compare(0, str2.length(), str1, strlen(str1)) == 0;
   }
 
 
@@ -300,12 +300,12 @@ namespace sql
 
   bool operator!=(const SQLString& str1, const char* str2)
   {
-    return str1.compare(0, str1.length(), str2, strlen(str2)) != 0;
+    return str2 == nullptr || str1.compare(0, str1.length(), str2, strlen(str2)) != 0;
   }
 
   bool operator!=(const char* str1, const SQLString& str2)
   {
-    return str2.compare(0, str2.length(), str1, strlen(str1)) != 0;
+    return str1 == nullptr || str2.compare(0, str2.length(), str1, strlen(str1)) != 0;
   }
 
 

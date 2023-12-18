@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -45,9 +45,6 @@ namespace capi
     , rowData(nullptr)
     , lengthArr(nullptr)
  {
-    if (capiTextResults != nullptr) {
-      fieldBuf= txtFieldBuf;
-    }
  }
 
  /**
@@ -61,16 +58,15 @@ namespace capi
 
    pos= 0;
 
-   if (rowData) {
+   if (buf != nullptr) {
+     fieldBuf.wrap((*buf)[index], (*buf)[index].size());
+     this->lastValueNull= fieldBuf ? BIT_LAST_FIELD_NOT_NULL : BIT_LAST_FIELD_NULL;
+     length= static_cast<uint32_t>(fieldBuf.size());
+   }
+   else if (rowData) {
      this->lastValueNull= (rowData[index] == nullptr ? BIT_LAST_FIELD_NULL : BIT_LAST_FIELD_NOT_NULL);
      length= lengthArr[newIndex];
      fieldBuf.wrap(rowData[index], length);
-   }
-   else if (buf != nullptr)
-   {
-     this->lastValueNull= fieldBuf ? BIT_LAST_FIELD_NOT_NULL : BIT_LAST_FIELD_NULL;
-     fieldBuf= (*buf)[index];
-     length= static_cast<uint32_t>(fieldBuf.size());
    }
    else {
      // TODO: we need some good assert above instead of this
@@ -225,7 +221,7 @@ namespace capi
    default:
    {
      std::string str(fieldBuf.arr + pos, length);
-     if (std::regex_match(str, dateRegex))
+     if (isDate(str))
      {
        return str.substr(0, 10 + (str.at(0) == '-' ? 1 : 0));
      }
@@ -268,23 +264,26 @@ namespace capi
 
    }
    else {
-     std::string raw(fieldBuf.arr + pos, length);
-     std::smatch matcher;
+     SQLString raw(fieldBuf.arr + pos, length);
+     std::vector<std::string> matcher;
 
-     if (!std::regex_search(raw, matcher, timeRegex)) {
-       throw SQLException("Time format \""+raw +"\" incorrect, must be HH:mm:ss");
+     if (!parseTime(raw, matcher)) {
+       throw SQLException("Time format \"" + raw + "\" incorrect, must be [-]HH+:[0-59]:[0-59]");
      }
-     bool negate= !matcher[1].str().empty();
+/* It makes sense to do here, as everything is ready */     
+#ifdef WE_FOUND_USE_FOR_THIS_TRANSITION_AT_THIS_LEVEL
+     bool negate= !matcher[1].empty();
 
      int32_t hour= std::stoi(matcher[2]);
      int32_t minutes= std::stoi(matcher[3]);
      int32_t seconds= std::stoi(matcher[4]);
-     std::string parts(matcher[5].str());
+#endif
+     auto &parts= matcher.back();
      int32_t nanoseconds= 0;
 
      if (parts.length() > 1)
      {
-       size_t digitsCnt= parts.length() - 1;
+       std::size_t digitsCnt= parts.length() - 1;
        nanoseconds= std::stoi(parts.substr(1, std::min(digitsCnt, (size_t)9U)));
 
        while (digitsCnt++ < 9) {
@@ -292,7 +291,7 @@ namespace capi
        }
      }
 
-     return std::unique_ptr<Time>(new Time(matcher[0].str()));
+     return std::unique_ptr<Time>(new Time(matcher[0]));
    }
  }
 
@@ -420,7 +419,7 @@ namespace capi
  sql::Object* TextRowProtocolCapi::getInternalObject(ColumnDefinition* columnInfo, TimeZone* timeZone)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
 
    switch (columnInfo->getColumnType().getType()) {
@@ -456,12 +455,12 @@ namespace capi
        memcpy(dataBit + 0, fieldBuf.arr + pos, length));
        return data;
      }
-     return getInternalString(columnInfo, NULL, timeZone);
+     return getInternalString(columnInfo, nullptr, timeZone);
    case MYSQL_TYPE_TIMESTAMP:
    case MYSQL_TYPE_DATETIME:
-     return getInternalTimestamp(columnInfo, NULL, timeZone);
+     return getInternalTimestamp(columnInfo, nullptr, timeZone);
    case MYSQL_TYPE_DATE:
-     return getInternalDate(columnInfo, NULL, timeZone);
+     return getInternalDate(columnInfo, nullptr, timeZone);
    case MYSQL_TYPE_NEWDECIMAL:
      return getInternalBigDecimal(columnInfo);
    case MYSQL_TYPE_BLOB:
@@ -472,10 +471,10 @@ namespace capi
      memcpy(dataBit + 0, fieldBuf.arr + pos, length));
      return dataBlob;
    case MYSQL_TYPE_NULL:
-     return NULL;
+     return nullptr;
    case MYSQL_TYPE_YEAR:
      if (options->yearIsDateType) {
-       return getInternalDate(columnInfo, NULL, timeZone);
+       return getInternalDate(columnInfo, nullptr, timeZone);
      }
      return getInternalShort(columnInfo);
    case MYSQL_TYPE_SHORT:
@@ -484,10 +483,10 @@ namespace capi
    case MYSQL_TYPE_FLOAT:
      return getInternalFloat(columnInfo);
    case MYSQL_TYPE_TIME:
-     return getInternalTime(columnInfo, NULL, timeZone);
+     return getInternalTime(columnInfo, nullptr, timeZone);
    case MYSQL_TYPE_DECIMAL:
    case JSON:
-     return getInternalString(columnInfo, NULL, timeZone);
+     return getInternalString(columnInfo, nullptr, timeZone);
    case MYSQL_TYPE_GEOMETRY:
      int8_t[] data= new int8_t[length];
      memcpy(dataBit + 0, fieldBuf.arr + pos, length);
@@ -516,11 +515,11 @@ namespace capi
  OffsetTime TextRowProtocolCapi::getInternalOffsetTime(ColumnDefinition* columnInfo, TimeZone* timeZone)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
    if (length == 0) {
      lastValueNull |=BIT_LAST_FIELD_NULL;
-     return NULL;
+     return nullptr;
    }
 
    ZoneId zoneId= timeZone.toZoneId().normalized();
@@ -531,7 +530,7 @@ namespace capi
      switch (columnInfo->getColumnType().getSqlType()) {
      case Types::MYSQL_TYPE_TIMESTAMP:
        if (raw.startsWith("0000-00-00 00:00:00")) {
-         return NULL;
+         return nullptr;
        }
        try {
          return ZonedDateTime::parse(raw, TEXT_LOCAL_DATE_TIME.withZone(zoneOffset))
@@ -608,11 +607,11 @@ namespace capi
  LocalTime TextRowProtocolCapi::getInternalLocalTime(ColumnDefinition* columnInfo, TimeZone* timeZone)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
    if (length == 0) {
      lastValueNull |=BIT_LAST_FIELD_NULL;
-     return NULL;
+     return nullptr;
    }
 
    SQLString raw;
@@ -639,7 +638,7 @@ namespace capi
      ZonedDateTime zonedDateTime =
        getInternalZonedDateTime(columnInfo, typeid(LocalTime), timeZone);
      return zonedDateTime/*.empty() == true*/
-       ? NULL
+       ? nullptr
        : zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalTime();
 
    default:
@@ -661,11 +660,11 @@ namespace capi
  LocalDate TextRowProtocolCapi::getInternalLocalDate(ColumnDefinition* columnInfo, TimeZone* timeZone)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
    if (length == 0) {
      lastValueNull |=BIT_LAST_FIELD_NULL;
-     return NULL;
+     return nullptr;
    }
 
    SQLString raw;
@@ -677,7 +676,7 @@ namespace capi
    case Types::LONGVARCHAR:
    case Types::CHAR:
      if (raw.startsWith("0000-00-00")) {
-       return NULL;
+       return nullptr;
      }
      try {
        return LocalDate::parse(
@@ -695,7 +694,7 @@ namespace capi
      ZonedDateTime zonedDateTime =
        getInternalZonedDateTime(columnInfo, typeid(LocalDate), timeZone);
      return zonedDateTime/*.empty() == true*/
-       ? NULL
+       ? nullptr
        : zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDate();
 
    default:
@@ -719,9 +718,12 @@ namespace capi
    if (lastValueWasNull()) {
      return 0;
    }
+   if (needsBinaryConversion(columnInfo)) {
+     return parseBinaryAsInteger<int32_t>(columnInfo);
+   }
+   // else
    int64_t value= getInternalLong(columnInfo);
    rangeCheck("int32_t", INT32_MIN, INT32_MAX, value, columnInfo);
-
    return static_cast<int32_t>(value);
  }
 
@@ -764,7 +766,7 @@ namespace capi
      case MYSQL_TYPE_LONG:
      case MYSQL_TYPE_INT24:
      case MYSQL_TYPE_LONGLONG:
-       return std::stoll(fieldBuf.arr);
+       return std::stoll(std::string(fieldBuf.arr, length));
      case MYSQL_TYPE_TIMESTAMP:
      case MYSQL_TYPE_DATETIME:
      case MYSQL_TYPE_TIME:
@@ -773,7 +775,12 @@ namespace capi
          "Conversion to integer not available for data field type "
          + columnInfo->getColumnType().getCppTypeName());
      default:
-       return std::stoll(std::string(fieldBuf.arr + pos, length));
+       if (needsBinaryConversion(columnInfo)) {
+         return parseBinaryAsInteger<int64_t>(columnInfo);
+       }
+       else {
+         return std::stoll(std::string(fieldBuf.arr + pos, length));
+       }
      }
 
    }
@@ -832,22 +839,16 @@ namespace capi
          "Conversion to integer not available for data field type "
          + columnInfo->getColumnType().getCppTypeName());
      default:
-       value= sql::mariadb::stoull(fieldBuf.arr + pos, length);
+       if (needsBinaryConversion(columnInfo)) {
+         return parseBinaryAsInteger<uint64_t>(columnInfo);
+       }
+       else {
+         value= sql::mariadb::stoull(fieldBuf.arr + pos, length);
+       }
      }
-
    }
    // Common parent for std::invalid_argument and std::out_of_range
    catch (std::logic_error&) {
-     /*std::stoll and std::stoull take care of */
-     /*std::string value(fieldBuf.arr + pos, length);
-     if (std::regex_match(value, isIntegerRegex)) {
-       try {
-         return std::stoull(value.substr(0, value.find_first_of(".")));
-       }
-       catch (std::exception&) {
-
-       }
-     }*/
      throw SQLException(
        "Out of range value for column '" + columnInfo->getName() + "' : value " + value,
        "22003",
@@ -1003,6 +1004,11 @@ namespace capi
    if (lastValueWasNull()) {
      return 0;
    }
+
+   if (needsBinaryConversion(columnInfo)) {
+     return parseBinaryAsInteger<int8_t>(columnInfo);
+   }
+   // else
    int64_t value= getInternalLong(columnInfo);
    rangeCheck("Byte", INT8_MIN, INT8_MAX, value, columnInfo);
    return static_cast<int8_t>(value);
@@ -1020,6 +1026,10 @@ namespace capi
    if (lastValueWasNull()) {
      return 0;
    }
+   if (needsBinaryConversion(columnInfo)) {
+     return parseBinaryAsInteger<int16_t>(columnInfo);
+   }
+   // else
    int64_t value= getInternalLong(columnInfo);
    rangeCheck("int16_t", INT16_MIN, INT16_MAX, value, columnInfo);
    return static_cast<int16_t>(value);
@@ -1031,7 +1041,7 @@ namespace capi
   * @param columnInfo column information
   * @return String representation of time
   */
- SQLString TextRowProtocolCapi::getInternalTimeString(ColumnDefinition* columnInfo)
+ SQLString TextRowProtocolCapi::getInternalTimeString(ColumnDefinition* /*columnInfo*/)
  {
    if (lastValueWasNull()) {
      return "";
@@ -1043,8 +1053,8 @@ namespace capi
    }
 
    if (options->maximizeMysqlCompatibility
-     && rawValue.find_first_of(".") != std::string::npos) {
-     return rawValue.substr(0, rawValue.find_first_of("."));
+     && rawValue.find_first_of('.') != std::string::npos) {
+     return rawValue.substr(0, rawValue.find_first_of('.'));
    }
    return rawValue;
  }
@@ -1056,7 +1066,7 @@ namespace capi
    rowData= mysql_fetch_row(capiResults.get());
    lengthArr= mysql_fetch_lengths(capiResults.get());
 
-   return (rowData == NULL ? MYSQL_NO_DATA : 0);
+   return (rowData == nullptr ? MYSQL_NO_DATA : 0);
  }
 
 
@@ -1075,7 +1085,7 @@ namespace capi
  BigInteger TextRowProtocolCapi::getInternalBigInteger(ColumnDefinition* columnInfo)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
    return new BigInteger(new SQLString(fieldBuf.arr + pos, length));
  }
@@ -1092,11 +1102,11 @@ namespace capi
  ZonedDateTime TextRowProtocolCapi::getInternalZonedDateTime(ColumnDefinition* columnInfo, Class clazz, TimeZone* timeZone)
  {
    if (lastValueWasNull()) {
-     return NULL;
+     return nullptr;
    }
    if (length == 0) {
      lastValueNull |=BIT_LAST_FIELD_NULL;
-     return NULL;
+     return nullptr;
    }
 
    SQLString raw;
@@ -1105,7 +1115,7 @@ namespace capi
    switch (columnInfo->getColumnType().getSqlType()) {
    case Types::MYSQL_TYPE_TIMESTAMP:
      if (raw.startsWith("0000-00-00 00:00:00")) {
-       return NULL;
+       return nullptr;
      }
      try {
        LocalDateTime localDateTime =
@@ -1122,7 +1132,7 @@ namespace capi
    case Types::LONGVARCHAR:
    case Types::CHAR:
      if (raw.startsWith("0000-00-00 00:00:00")) {
-       return NULL;
+       return nullptr;
      }
      try {
        return ZonedDateTime::parse(raw, TEXT_ZONED_DATE_TIME);

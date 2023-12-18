@@ -103,7 +103,7 @@ public:
   virtual bool executeBatchServer(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Shared::Results& results, const SQLString& sql,
                                   std::vector<std::vector<Shared::ParameterHolder>>& parameterList, bool hasLongData)= 0;
   virtual void moveToNextResult(Results* results, ServerPrepareResult* spr= nullptr)=0;
-  virtual void getResult(Results* results, ServerPrepareResult *pr=nullptr)=0;
+  virtual void getResult(Results* results, ServerPrepareResult *pr=nullptr, bool readAllResults= false)=0;
   virtual void cancelCurrentQuery()=0;
   virtual void interrupt()=0;
   virtual void skip()=0;
@@ -135,7 +135,7 @@ public:
   virtual void prolog(int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement)= 0;
   virtual void prologProxy(ServerPrepareResult* serverPrepareResult, int64_t maxRows, bool hasProxy, MariaDbConnection* connection,
     MariaDbStatement* statement)= 0;
-  virtual Shared::Results& getActiveStreamingResult()=0;
+  virtual Shared::Results getActiveStreamingResult()=0;
   virtual void setActiveStreamingResult(Shared::Results& mariaSelectResultSet)=0;
   virtual Shared::mutex& getLock()=0;
   virtual void setServerStatus(uint32_t serverStatus)=0;

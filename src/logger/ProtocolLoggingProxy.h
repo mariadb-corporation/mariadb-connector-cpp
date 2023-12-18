@@ -47,7 +47,7 @@ class ProtocolLoggingProxy : public Protocol
 public:
   ProtocolLoggingProxy(Shared::Protocol &realProtocol, const Shared::Options& options) : protocol(realProtocol),
     profileSql(options->profileSql), slowQueryThresholdNanos(options->slowQueryThresholdNanos),
-    maxQuerySizeToLog(options->maxQuerySizeToLog), logQuery(NULL)
+    maxQuerySizeToLog(options->maxQuerySizeToLog), logQuery(nullptr)
   {}
 
   ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster);
@@ -95,7 +95,7 @@ public:
   bool executeBatchServer(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Shared::Results& results, const SQLString& sql,
                           std::vector<std::vector<Shared::ParameterHolder>>& parameterList, bool hasLongData);
   void moveToNextResult(Results* results, ServerPrepareResult* spr=nullptr);
-  void getResult(Results* results, ServerPrepareResult *pr=nullptr);
+  void getResult(Results* results, ServerPrepareResult *pr=nullptr, bool readAllResults=false);
   void cancelCurrentQuery();
   void interrupt();
   void skip();
@@ -126,7 +126,7 @@ public:
   TimeZone* getTimeZone();
   void prolog(int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement);
   void prologProxy( ServerPrepareResult* serverPrepareResult, int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement);
-  Shared::Results& getActiveStreamingResult();
+  Shared::Results getActiveStreamingResult();
   void setActiveStreamingResult(Shared::Results& mariaSelectResultSet);
   Shared::mutex& getLock();
   void setServerStatus(uint32_t serverStatus);

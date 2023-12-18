@@ -87,7 +87,7 @@ namespace mariadb
     return 0;
   }
 
-  int32_t MariaDbParameterMetaData::getParameterType(uint32_t param)
+  int32_t MariaDbParameterMetaData::getParameterType(uint32_t /*param*/)
   {
     throw ExceptionFactory::INSTANCE.notSupported(
       "Getting parameter type metadata are not supported");
@@ -103,7 +103,7 @@ namespace mariadb
     return getParameterInformation(param).getColumnType().getClassName();
   }
 
-  int32_t MariaDbParameterMetaData::getParameterMode(uint32_t param)
+  int32_t MariaDbParameterMetaData::getParameterMode(uint32_t /*param*/)
   {
     return parameterModeIn;
   }

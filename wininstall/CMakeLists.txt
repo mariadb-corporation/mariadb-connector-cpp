@@ -89,8 +89,8 @@ ADD_CUSTOM_TARGET(
         COMMAND ${WIX_DIR}candle.exe -ext WixUIExtension -ext WixUtilExtension mariadb_conncpp.xml -o mariadb_conncpp.wixobj)
 
 ADD_DEPENDENCIES(${MSI_PACKAGE} CPP_WIX)
-ADD_DEPENDENCIES(CPP_WIX ${LIBRARY_NAME})
+ADD_DEPENDENCIES(CPP_WIX ${LIBRARY_NAME} ${STATIC_LIBRARY_NAME})
 IF(NOT USE_SYSTEM_INSTALLED_LIB)
-  ADD_DEPENDENCIES(CPP_WIX ${LIBRARY_NAME} dialog caching_sha2_password auth_gssapi_client sha256_password mysql_clear_password)
+  ADD_DEPENDENCIES(CPP_WIX ${LIBRARY_NAME} dialog caching_sha2_password sha256_password mysql_clear_password)
 ENDIF()
 

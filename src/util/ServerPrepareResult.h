@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -46,27 +46,27 @@ class ServerPrepareResult  : public PrepareResult {
   std::vector<Shared::ColumnDefinition> columns;
   std::vector<Shared::ColumnDefinition> parameters;
   const SQLString sql;
-  std::atomic_bool inCache ; /*new std::atomic_bool()*/
+  std::atomic_bool inCache;
   capi::MYSQL_STMT* statementId;
   std::unique_ptr<capi::MYSQL_RES, decltype(&capi::mysql_free_result)> metadata;
   std::vector<capi::MYSQL_BIND> paramBind;
   Protocol* unProxiedProtocol;
-  volatile int32_t shareCounter; /*1*/
-  volatile bool isBeingDeallocate;
+  volatile int32_t shareCounter= 1;
+  volatile bool isBeingDeallocate= false;
   std::mutex lock;
 
 public:
   ~ServerPrepareResult();
 
   ServerPrepareResult(
-    SQLString sql,
+    const SQLString& sql,
     capi::MYSQL_STMT* statementId,
     std::vector<Shared::ColumnDefinition>& columns,
     std::vector<Shared::ColumnDefinition>& parameters,
     Protocol* unProxiedProtocol);
 
   ServerPrepareResult(
-    SQLString sql,
+    const SQLString& sql,
     capi::MYSQL_STMT* statementId,
     Protocol* unProxiedProtocol);
 
@@ -88,7 +88,7 @@ public:
   const SQLString& getSql() const;
   const std::vector<capi::MYSQL_BIND>& getParameterTypeHeader() const;
   void bindParameters(std::vector<Shared::ParameterHolder>& parameters);
-  void bindParameters(std::vector<std::vector<Shared::ParameterHolder>>& parameters);
+  void bindParameters(std::vector<std::vector<Shared::ParameterHolder>>& parameters, const int16_t *type= nullptr);
   };
 }
 }

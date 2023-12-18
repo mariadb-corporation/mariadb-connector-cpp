@@ -93,7 +93,7 @@ public:
   static void  incrementCounter( int incrVal= 1);
   int   recordFailed    ();
 
-  static void setVerbose( bool verbosity    );
+  static bool setVerbose( bool verbosity    );
   static bool doTiming  ( bool timing= true );
 
   inline int failed()

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -39,10 +39,11 @@
 #include "Connection.hpp"
 
 #include "Exception.hpp"
-//#include <cppconn/version_info.h>
 
 #include <memory>
 #include <list>
+#include <thread>
+#include <functional>
 
 namespace testsuite
 {
@@ -59,7 +60,7 @@ void connection::getClientInfo()
 
     //ret= con->getClientInfo();
     if (ret != "cppconn")
-      FAIL("Expecting 'cppconn' got '" + ret + "'.");
+      FAIL(("Expecting 'cppconn' got '" + ret + "'.").c_str());
 
   }
   catch (sql::SQLException &e)
@@ -188,14 +189,14 @@ void connection::getClientOption()
     }
 
     int serverVersion=getServerVersion(con);
-    if ( serverVersion >= 57003)
+    if ( serverVersion >= 507003)
     {
       try
       {
         sql::ConnectOptionsMap opts;
         int input_value=111;
         int output_value=2367;
-        void * output;
+        void *output;
 
         opts["hostName"]=url;
         opts["userName"]=user;
@@ -205,8 +206,8 @@ void connection::getClientOption()
         created_objects.clear();
         con.reset(driver->connect(opts));
 
-        output=(static_cast<int *> (&output_value));
-        //con->getClientOption("OPT_READ_TIMEOUT", output);
+        output= static_cast<void *> (&output_value);
+        con->getClientOption("OPT_READ_TIMEOUT", output);
         ASSERT_EQUALS(input_value, output_value);
       }
       catch (sql::SQLException &e)
@@ -221,7 +222,7 @@ void connection::getClientOption()
         sql::ConnectOptionsMap opts;
         bool input_value=true;
         bool output_value=false;
-        void * output;
+        void *output;
 
         opts["hostName"]=url;
         opts["userName"]=user;
@@ -231,8 +232,8 @@ void connection::getClientOption()
         created_objects.clear();
         con.reset(driver->connect(opts));
 
-        output=(static_cast<bool *> (&output_value));
-        //con->getClientOption("OPT_RECONNECT", output);
+        output= static_cast<void *> (&output_value);
+        con->getClientOption("OPT_RECONNECT", output);
         ASSERT_EQUALS(input_value, output_value);
       }
       catch (sql::SQLException &e)
@@ -247,7 +248,7 @@ void connection::getClientOption()
         sql::ConnectOptionsMap opts;
         sql::SQLString input_value("../lib/plugin/");
         const char *output_value="../lib/plugin/";
-        void * output;
+        void *output;
 
         opts["hostName"]=url;
         opts["userName"]=user;
@@ -257,8 +258,8 @@ void connection::getClientOption()
         created_objects.clear();
         con.reset(driver->connect(opts));
 
-        output=(static_cast<const char **> (&output_value));
-        //con->getClientOption("pluginDir", output);
+        output= static_cast<void*> (&output_value);
+        con->getClientOption("pluginDir", output);
 
         ASSERT_EQUALS(input_value, output_value);
       }
@@ -493,7 +494,14 @@ void connection::invalidCredentials()
       try
       {
         con.reset(driver->connect(url, user, mypasswd));
-        FAIL("... using invalid password should have failed");
+        if (getServerVersion(con) > 1100000)
+        {
+          logMsg("... with server version > 11.0 and root/Administrator account running tests, this may happen");
+        }
+        else
+        {
+          FAIL("... using invalid password should have failed");
+        }
       }
       catch (sql::SQLException &)
       {
@@ -1053,7 +1061,7 @@ void connection::connectUsingMap()
   {
     sql::ConnectOptionsMap connection_properties;
 
-    connection_properties["hostName"]=url;
+    connection_properties["hostName"]=urlWithoutSchema;
     connection_properties["userName"]=user;
     connection_properties["password"]=passwd;
     connection_properties["useTls"]= useTls? "true" : "false";
@@ -1073,7 +1081,7 @@ void connection::connectUsingMap()
     connection_properties.erase("port");
     {
       sql::SQLString port("-1");
-      if (url.compare(0, sizeof ("tcp://") - 1, "tcp://") == 0)
+      if (url.compare(0, sizeof ("tcp://") - 1, "tcp://") == 0 || url.compare(0, sizeof("jdbc:mariadb:") - 1, "jdbc:mariadb://") == 0)
       {
         size_t port_pos;
         port_pos=url.find_last_of(":", std::string::npos);
@@ -1195,13 +1203,13 @@ void connection::connectUsingMap()
       {
         logMsg("... schema not set through the URL");
 
-        connection_properties[std::string("schema")]=schema;
+        connection_properties["schema"]= schema;
 
         try
         {
           created_objects.clear();
           con.reset(driver->connect(connection_properties));
-          schema=con->getSchema();
+          schema= con->getSchema();
           if (!schema.empty())
             FAIL("Empty schama specified but certain schema selected upon connect");
         }
@@ -1214,7 +1222,7 @@ void connection::connectUsingMap()
         logMsg("... trying to connect to mysql schema, may or may not work");
 
         connection_properties.erase("schema");
-        connection_properties["schema"]=(myschema);
+        connection_properties["schema"]= (myschema);
 
         try
         {
@@ -2042,7 +2050,6 @@ void connection::connectOptReconnect()
 
     logMsg("... OPT_RECONNECT disabled and KILL");
 
-
     connection_properties.erase("OPT_RECONNECT");
     connection_properties["OPT_RECONNECT"]= "false";
 
@@ -2119,7 +2126,6 @@ void connection::connectOptReconnect()
     {
       /* KILL has failed - that is OK, we may not have permissions */
     }
-
   }
   catch (sql::SQLException &e)
   {
@@ -2127,8 +2133,8 @@ void connection::connectOptReconnect()
     logErr("SQLState: " + std::string(e.getSQLState()));
     fail(e.what(), __FILE__, __LINE__);
   }
-
 }
+
 
 void connection::setTransactionIsolation()
 {
@@ -2136,6 +2142,9 @@ void connection::setTransactionIsolation()
   bool have_innodb=false;
   int cant_be_changed_error= -1;
   int server_dependent_insert= -1;
+  if (std::getenv("srv") != nullptr && strcmp(std::getenv("srv"), "mysql") == 0) {
+    SKIP("Skipping test for mysql since doesn't use tx_isolation");
+  }
 
   stmt.reset(con->createStatement());
   try
@@ -2206,7 +2215,8 @@ void connection::setTransactionIsolation()
       /* JDBC documentation: If this method is called while
        in the middle of a transaction, any changes up to that point
        will be committed.*/
-      stmt->execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+      // setTransactionIsolation does SET SESSION ...
+      stmt->execute("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
       // con->setTransactionIsolation(sql::TRANSACTION_REPEATABLE_READ);
       /* According to the JDBC docs the INSERT has been comitted
        and this ROLLBACK must have no impat */
@@ -2363,7 +2373,7 @@ void connection::enableClearTextAuth()
 {
   int serverVersion=getServerVersion(con);
 
-  if ( ((serverVersion < 55027) || (serverVersion > 56000)) && (serverVersion < 56007))
+  if ( ((serverVersion < 505027) || (serverVersion > 506000)) && (serverVersion < 506007))
   {
     SKIP("The server does not support tested functionality(cleartext plugin enabling)");
   }
@@ -2747,7 +2757,7 @@ void connection::setAuthDir()
 {
   logMsg("connection::setAuthDir - MYSQL_PLUGIN_DIR");
   int serverVersion=getServerVersion(con);
-  if ( serverVersion >= 50703 )
+  if ( serverVersion >= 507003 )
   {
     SKIP("Server version >= 5.7.3 needed to run this test");
   }
@@ -2779,7 +2789,7 @@ void connection::setDefaultAuth()
 {
   logMsg("connection::setDefaultAuth - MYSQL_DEFAULT_AUTH");
   int serverVersion=getServerVersion(con);
-  if ( serverVersion < 50703 )
+  if ( serverVersion < 507003 )
   {
     SKIP("Server version >= 5.7.3 needed to run this test");
   }
@@ -2804,8 +2814,11 @@ void connection::setDefaultAuth()
     }
     catch (sql::SQLException &e)
     {
-      /* Error expected as trying to load unknown authentication plugin */
-      ASSERT_EQUALS(2059, e.getErrorCode()/*CR_AUTH_PLUGIN_CANNOT_LOAD_ERROR*/);
+      /* With maxscale that happens to be 1105, and does not make sense to test it */
+      if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+        /* Error expected as trying to load unknown authentication plugin */
+        ASSERT_EQUALS(2059, e.getErrorCode()/*CR_AUTH_PLUGIN_CANNOT_LOAD_ERROR*/);
+      }
     }
   }
   catch (sql::SQLException &e)
@@ -3066,7 +3079,7 @@ void connection::tls_version()
 {
   logMsg("connection::tls_version - OPT_TLS_VERSION");
 
-  if (getServerVersion(con) < 104006)
+  if (getServerVersion(con) < 1004006)
   {
     SKIP("Server does not support tls_version variable");
   }
@@ -3154,7 +3167,7 @@ void connection::cached_sha2_auth()
   logMsg("connection::auth - MYSQL_OPT_GET_SERVER_PUBLIC_KEY");
 
   int serverVersion= getServerVersion(con);
-  if (serverVersion < 80000 || serverVersion > 100000)
+  if (serverVersion < 800000 || serverVersion > 1000000)
   {
     SKIP("Server doesn't support caching_sha2_password");
     return;
@@ -3182,8 +3195,8 @@ void connection::cached_sha2_auth()
     //need to close connection, otherwise will use fast auth!
     con->close();
     con.reset(driver->connect(opts));
-    FAIL("caching_sha2_password can't be used on unexcrypted connection");
-    throw "caching_sha2_password can't be used on unexcrypted connection";
+    FAIL("caching_sha2_password can't be used on unencrypted connection");
+    throw "caching_sha2_password can't be used on unencrypted connection";
   }
   catch(std::exception &e)
   {
@@ -3280,5 +3293,182 @@ void connection::useCharacterSet()
     // All is fine
   }
 }
+
+
+void connection::concpp94_loadLocalInfile()
+{
+  sql::Properties p;
+  sql::SQLString onServer(getVariableValue("local_infile", true));
+
+  if (onServer.compare("0") == 0) {
+    try {
+      setVariableValue("local_infile", "ON", true); // can't be session
+    }
+    catch (sql::SQLException&) {
+      SKIP("local_infile is OFF at the server, and test could not change that. Doesn't make sense to continue the test");
+    }
+  }
+
+  p["user"] = user;
+  p["password"] = passwd;
+  p["allowLocalInfile"] = "true";
+  p["useTls"] = useTls ? "true" : "false";
+
+  con.reset(driver->connect(url, p));
+  ASSERT(con.get());
+  stmt.reset(con->createStatement());
+
+  try {
+    stmt->execute("LOAD DATA LOCAL INFILE 'nonexistent.txt' INTO TABLE nonexistent(b)");
+  }
+  catch (sql::SQLException& e) {
+    if (e.getErrorCode() == 1148 || e.getErrorCode() == 4166) {
+      printf("\n# ERR: Caught sql::SQLException at ::%d  [%s] (%d/%s)\n", __LINE__, e.what(), e.getErrorCode(), e.getSQLStateCStr());
+      printf("# ");
+      FAIL("Wrong error code - local infile is still not allowed");
+    }
+    //ASSERT(4166!=e.getErrorCode());
+    ASSERT_EQUALS("42S02", e.getSQLState());
+  }
+}
+
+
+void connection::concpp105_conn_concurrency()
+{
+  sql::Properties p{{"user", user}, {"password", passwd}};
+  std::vector<std::function<void()>> t1cbs;
+  std::vector<std::function<void()>> t2cbs;
+
+  /* There is no sense to test this against SkySQL and diatant servers in general */
+  if (std::getenv("SKYSQL") != nullptr || std::getenv("SKYSQL_HA") != nullptr) {
+    SKIP("It's not necessary to run this test against SkySQL");
+  }
+  for (int i = 0; i < 500; i++) {
+    t1cbs.push_back([&] {
+      std::unique_ptr<sql::Connection> conn(driver->connect(url, p));
+      //std::cout << "# t1:" << conn->getHostname().c_str() << std::endl;
+      });
+
+    t2cbs.push_back([&] {
+      std::unique_ptr<sql::Connection> conn(driver->connect(url, p));
+      //std::cout << "# t2:" << conn->getHostname().c_str() << std::endl;
+      });
+  }
+
+  std::thread t1([&] {
+    for (auto& cb : t1cbs)
+      cb();
+    });
+  std::thread t2([&] {
+    for (auto& cb : t2cbs)
+      cb();
+    });
+
+  t1.join();
+  t2.join();
+}
+
+/* Test of setting of connection attributes */
+void connection::concpp112_connection_attributes()
+{
+  if (!perfschemaEnabled)
+  {
+    SKIP("Test requires performance_schema to be on");
+  }
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_name2");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("maconcpp", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_version2");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS(driverVersion, res->getString(1));
+  res->close();
+
+  sql::Properties p{{"user", user}, {"password", passwd}};
+  sql::SQLString localUrl(url);
+  localUrl.append("?connectionAttributes=_client_attr1: attr1_value , _client_attr2 :attr2_value");
+
+  con.reset(driver->connect(localUrl, p));
+
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr1");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr1_value", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_attr2");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr2_value", res->getString(1));
+  res->close();
+
+  con->close();
+
+  localUrl= url;
+  p.emplace("connectionAttributes", "_client_attr12, _client_attr22: attr2_value2");
+  con.reset(driver->connect(localUrl, p));
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+                                    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr22");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr2_value2", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_attr12");
+  res.reset(pstmt->executeQuery());
+  ASSERT(!res->next());
+  //ASSERT(res->next());
+  ///* Not sure why, but setting attribute with name, but without value results in blank space value of the attribute(with Windows client) */
+  //ASSERT_EQUALS(" ", my_fetch_str(Hstmt, buffer, 1), 2);
+
+  p["connectionAttributes"]= "_client_attr13 :attr1_value3, _client_attr23 ";
+  con.reset(driver->connect(localUrl, p));
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+                                    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr13");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr1_value3", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_attr23");
+  res.reset(pstmt->executeQuery());
+  ASSERT(!res->next());
+  /*ASSERT(res->next());
+  ASSERT_EQUALS(" ", my_fetch_str(Hstmt, buffer, 1), 2);*/
+
+  p["connectionAttributes"]= "_client_attr14";
+  con.reset(driver->connect(localUrl, p));
+
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+                                    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr14");
+  res.reset(pstmt->executeQuery());
+  ASSERT(!res->next());
+  /*ASSERT(res->next());
+  ASSERT_EQUALS(" ", res->getString(1));*/
+
+  pstmt.reset();
+  con.reset();
+}
+
+void connection::setUp()
+{
+  super::setUp();
+
+  std::unique_ptr<sql::DatabaseMetaData> meta(con->getMetaData());
+  driverVersion= meta->getDriverVersion();
+
+  res.reset(stmt->executeQuery("SELECT 1 FROM dual where @@performance_schema=1"));
+  perfschemaEnabled= res->next();
+
+  res.reset();
+  stmt.reset(con->createStatement());
+}
+
 } /* namespace connection */
 } /* namespace testsuite */

@@ -57,6 +57,7 @@
         <File Id="mariadb_conncpp_dll" Name="mariadbcpp.dll" KeyPath="yes" DiskId="1" Source="$(var.binaries_dir)/mariadbcpp.dll">
         </File>
         <File Id="mariadb_conncpp_lib" Name="mariadbcpp.lib" DiskId="1" Source="$(var.binaries_dir)/mariadbcpp.lib" />
+        <File Id="mariadb_conncpp_static_lib" Name="mariadbcpp-static.lib" DiskId="1" Source="$(var.binaries_dir)/mariadbcpp-static.lib" />
       </Component>
     <Component Id="Debug" Guid="@GUID_DEBUG@" Directory="INSTALLFOLDER" DiskId="1" Win64="@IS_WIN64@">
       <File Id="mariadb_conncpp_dll_pdb" Name="mariadbcpp.pdb" KeyPath="yes" DiskId="1" Source="$(var.binaries_dir)/mariadbcpp.pdb" />
@@ -65,7 +66,7 @@
     <Component Id="CcPlugins" Guid="@GUID_PLUGINS@" Directory="PLUGINSFOLDER" DiskId="1" Win64="@IS_WIN64@">
       <File Id="caching_sha2_password.dll" Name="caching_sha2_password.dll" DiskId="1" Source="$(var.plugins_source_dir)/caching_sha2_password.dll" />
       <File Id="dialog_dll" Name="dialog.dll" KeyPath="yes" DiskId="1" Source="$(var.plugins_source_dir)/dialog.dll" />
-      <File Id="auth_gssapi_client_dll" Name="auth_gssapi_client.dll" DiskId="1" Source="$(var.plugins_source_dir)/auth_gssapi_client.dll" />
+      <!--File Id="auth_gssapi_client_dll" Name="auth_gssapi_client.dll" DiskId="1" Source="$(var.plugins_source_dir)/auth_gssapi_client.dll" /-->
       <File Id="mysql_clear_password_dll" Name="mysql_clear_password.dll"  DiskId="1" Source="$(var.plugins_source_dir)/mysql_clear_password.dll" />
       <File Id="sha256_password_dll" Name="sha256_password.dll" DiskId="1" Source="$(var.plugins_source_dir)/sha256_password.dll" />
       <File Id="client_ed25519_dll" Name="client_ed25519.dll" DiskId="1" Source="$(var.plugins_source_dir)/client_ed25519.dll" />
@@ -73,7 +74,7 @@
     <Component Id="PluginsDebug" Guid="@GUID_PLUGINS_DEBUG@" Directory="PLUGINSFOLDER" DiskId="1" Win64="@IS_WIN64@">
       <File Id="caching_sha2_password_pdb" Name="caching_sha2_password.pdb" DiskId="1" Source="$(var.plugins_source_dir)/caching_sha2_password.pdb" />
       <File Id="dialog_pdb" Name="dialog.pdb" DiskId="1" Source="$(var.plugins_source_dir)/dialog.pdb" />
-      <File Id="auth_gssapi_client_pdb" Name="auth_gssapi_client.pdb" DiskId="1" Source="$(var.plugins_source_dir)/auth_gssapi_client.pdb" />
+      <!--File Id="auth_gssapi_client_pdb" Name="auth_gssapi_client.pdb" DiskId="1" Source="$(var.plugins_source_dir)/auth_gssapi_client.pdb" /-->
       <File Id="mysql_clear_password_pdb" Name="mysql_clear_password.pdb" DiskId="1" Source="$(var.plugins_source_dir)/mysql_clear_password.pdb" />
       <File Id="sha256_password_pdb" Name="sha256_password.pdb" DiskId="1" Source="$(var.plugins_source_dir)/sha256_password.pdb" />
       <File Id="client_ed25519_pdb" Name="client_ed25519.pdb" DiskId="1" Source="$(var.plugins_source_dir)/client_ed25519.pdb" />

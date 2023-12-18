@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2021 MariaDB Corporation AB
+   Copyright (C) 2020,2022 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -19,6 +19,7 @@
 
 
 #include "DoubleParameter.h"
+#include <iomanip>
 
 namespace sql
 {
@@ -34,8 +35,8 @@ namespace mariadb
   void DoubleParameter::writeTo(SQLString& str)
   {
     //std::to_string is not precise enough. at least on windows it does just sprintf("%f")
-    std::stringstream doubleAsString("");
-    doubleAsString << value;
+    std::ostringstream doubleAsString("");
+    doubleAsString << std::scientific << std::setprecision(30) << value;
     str.append(doubleAsString.str().c_str());
   }
 

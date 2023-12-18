@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020 MariaDB Corporation AB
+ *               2020, 2022 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -30,7 +30,6 @@
  */
 
 
-
 #include "../unit_fixture.h"
 
 /**
@@ -47,6 +46,9 @@ class connection : public unit_fixture
 {
 private:
   typedef unit_fixture super;
+
+  bool perfschemaEnabled= false;
+  sql::SQLString driverVersion;
 
 protected:
 public:
@@ -73,22 +75,25 @@ public:
 #ifndef MYSQLCLIENT_STATIC_BINDING
     TEST_CASE(loadSameLibraryTwice);
 #endif
-  TEST_CASE(enableClearTextAuth);
-  TEST_CASE(connectAttrAdd);
-  TEST_CASE(connectAttrReset);
-  TEST_CASE(connectCharsetDir);
-  TEST_CASE(connectSSLEnforce);
-  TEST_CASE(setAuthDir);
-  TEST_CASE(setDefaultAuth);
-  TEST_CASE(localInfile);
-  TEST_CASE(isValid);
-  TEST_CASE(reconnect);
-  TEST_CASE(ssl_mode);
-  TEST_CASE(tls_version);
-  TEST_CASE(cached_sha2_auth);
-  TEST_CASE(bugConCpp21);
-  TEST_CASE(unknownPropertyConnect);
-  TEST_CASE(useCharacterSet);
+    TEST_CASE(enableClearTextAuth);
+    TEST_CASE(connectAttrAdd);
+    TEST_CASE(connectAttrReset);
+    TEST_CASE(connectCharsetDir);
+    TEST_CASE(connectSSLEnforce);
+    TEST_CASE(setAuthDir);
+    TEST_CASE(setDefaultAuth);
+    TEST_CASE(localInfile);
+    TEST_CASE(isValid);
+    TEST_CASE(reconnect);
+    TEST_CASE(ssl_mode);
+    TEST_CASE(tls_version);
+    TEST_CASE(cached_sha2_auth);
+    TEST_CASE(bugConCpp21);
+    TEST_CASE(unknownPropertyConnect);
+    TEST_CASE(useCharacterSet);
+    TEST_CASE(concpp94_loadLocalInfile);
+    TEST_CASE(concpp105_conn_concurrency);
+    TEST_CASE(concpp112_connection_attributes);
   }
 
   /**
@@ -274,6 +279,17 @@ public:
 
   /* useCharacterSet property */
   void useCharacterSet();
+
+  /* LOAD DATA LOCAL INFILE should be disabled by default */
+  void concpp94_loadLocalInfile();
+
+  /* Exception in the connector when attempting connections from multiple threads */
+  void concpp105_conn_concurrency();
+
+  /* Setting of connection attributes for perfschema */
+  void concpp112_connection_attributes();
+
+  void setUp();
 };
 
 

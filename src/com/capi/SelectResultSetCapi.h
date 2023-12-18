@@ -56,7 +56,7 @@ namespace capi
 class SelectResultSetCapi : public SelectResultSet
 {
 
-  TimeZone* timeZone;
+  TimeZone* timeZone= nullptr;
   Shared::Options options;
   std::vector<Shared::ColumnDefinition> columnsInformation;
   int32_t columnInformationLength;
@@ -64,7 +64,7 @@ class SelectResultSetCapi : public SelectResultSet
   std::map<int32_t, std::unique_ptr<memBuf>> blobBuffer;
 
   Protocol* protocol;
-  bool isEof;
+  bool isEof= false;
   bool callableResult;
   /* Shared? */
   MariaDbStatement* statement;
@@ -73,7 +73,7 @@ class SelectResultSetCapi : public SelectResultSet
   MYSQL *capiConnHandle;
   MYSQL_STMT *capiStmtHandle;
 
-  int32_t dataFetchTime;
+  int32_t dataFetchTime= 0;
   bool streaming;
 
   /*std::unique_ptr<*/
@@ -82,12 +82,12 @@ class SelectResultSetCapi : public SelectResultSet
 
   int32_t fetchSize;
   int32_t resultSetScrollType;
-  int32_t rowPointer;
+  int32_t rowPointer= -1;
 
   std::unique_ptr<ColumnNameMap> columnNameMap;
 
-  int32_t lastRowPointer; /*-1*/
-  bool isClosedFlag;
+  int32_t lastRowPointer= -1;
+  bool isClosedFlag= false;
   bool eofDeprecated;
   Shared::mutex lock;
   bool forceAlias;
@@ -219,7 +219,7 @@ public:
   Blob* getBlob(int32_t columnIndex);
   Blob* getBlob(const SQLString& columnLabel);
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
 
   /* Still... maybe SQLString is better handler for this */
   sql::bytes* getBytes(const SQLString& columnLabel);

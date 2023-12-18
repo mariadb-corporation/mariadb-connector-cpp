@@ -60,7 +60,6 @@ SET(jdbctests_sources
   compliance/DatabaseMetaDataTest.cpp
   compliance/StatementTest.cpp
   compliance/ResultSetMetadataTest.cpp
-  compliance/PreparedStatementTest.cpp
   simple/BlobTest.cpp
   regression/BlobRegressionTest.cpp
   regression/PreparedStatementRegressionTest.cpp
@@ -68,6 +67,11 @@ SET(jdbctests_sources
   regression/SubqueriesRegressionTest.cpp
   compliance/UnbufferedRsStmtTest.cpp
   )
+IF (NOT BUILD_TESTS_ONLY)
+  SET(jdbctests_sources ${jdbctests_sources} 
+    compliance/PreparedStatementTest.cpp
+    )
+ENDIF()
 
 # It's convinient for VS users to have headers as part of project
 IF(WIN32)

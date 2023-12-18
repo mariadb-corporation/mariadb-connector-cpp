@@ -61,7 +61,7 @@ bool TestsRunner::runTests()
     dummy= *cit;
     dummy+= "::"; // to be caught by filters like "!SuiteName::*"
 
-  if ( 1 ) //TestsWillRunCount( suiteName, testCases )( dummy ) )
+    if ( 1 ) //TestsWillRunCount( suiteName, testCases )( dummy ) )
     {
       Test * ts= TestSuiteFactory::theInstance().createTest( *cit );
       ts->runTest();

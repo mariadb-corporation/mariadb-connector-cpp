@@ -48,18 +48,18 @@ static bool defaultUseTls= TEST_USETLS;
 
 int TestFixtureCommon::instanceCount=1;
 
-Properties TestFixtureCommon::sqlProps;
+TestProperties TestFixtureCommon::sqlProps;
 
 static const char * possiblePropertiesLocations[]={".."
                                                    , "test/CJUnitTestsPort"
-                                                   , NULL //last should be NULL
+                                                   , nullptr //last should be NULL
 };
 
 int TestFixtureCommon::propsLoaded=resources::LoadProperties("sql.properties",
                                                              sqlProps,
                                                              possiblePropertiesLocations);
 
-Driver * TestFixtureCommon::driver= NULL;
+Driver * TestFixtureCommon::driver= nullptr;
 
 TestFixtureCommon::TestFixtureCommon()
 {
@@ -76,14 +76,14 @@ void TestFixtureCommon::init()
 
 String TestFixtureCommon::extractVal(const String & sTableName
                                      , int count
-                                     , Properties & sqlProps
+                                     , TestProperties & sqlProps
                                      , Connection & conn)
 {
   String sKeyName;
   String insertString;
   String retStr;
   String parameters;
-  List sToken;
+  TestList sToken;
 
   try
   {
@@ -92,10 +92,10 @@ String TestFixtureCommon::extractVal(const String & sTableName
 
     insertString=sqlProps[ sKeyName ];
 
-    String::size_type openPar=insertString.find_first_of("(") + 1;
+    String::size_type openPar=insertString.find_first_of('(') + 1;
 
     parameters=insertString.substr(
-                                   openPar, insertString.find_first_of(")", 1) - openPar);
+                                   openPar, insertString.find_first_of(')', 1) - openPar);
 
     StringUtils::split(sToken, parameters, ",");
 
@@ -134,7 +134,7 @@ void TestFixtureCommon::logErr(String message)
 
 String TestFixtureCommon::randomString()
 {
-  srand((unsigned) time(NULL));
+  srand((unsigned) time(nullptr));
 
   int length=(rand() % 32);
   String buf, ch("a");
@@ -226,10 +226,10 @@ BaseTestFixture::BaseTestFixture(const String & name)
   : super             (name),
     TestFixtureCommon (),
     myInstanceNumber  (0),
-    /*conn              (NULL),
-    pstmt(NULL),
-stmt(NULL),
-rs(NULL),
+    /*conn              (nullptr),
+    pstmt(nullptr),
+stmt(nullptr),
+rs(nullptr),
 dbClass           ( "sql::mysql::Driver"),*/
 hasSps(true)
 
@@ -388,12 +388,12 @@ void BaseTestFixture::dropSchemaObject(String objectType, String objectName)
 
 sql::Connection * BaseTestFixture::getAdminConnection()
 {
-  return getAdminConnectionWithProps(Properties());
+  return getAdminConnectionWithProps(TestProperties());
 }
 
 /* throws SQLException & */
 
-sql::Connection * BaseTestFixture::getAdminConnectionWithProps(Properties props)
+sql::Connection * BaseTestFixture::getAdminConnectionWithProps(TestProperties props)
 {
   if (driver)
   {
@@ -419,15 +419,15 @@ sql::Connection * BaseTestFixture::getConnectionWithProps(const String & propsLi
 sql::Connection * BaseTestFixture::getConnectionWithProps(const String & url
                                                           , const String & propsList)
 {
-  Properties props;
+  TestProperties props;
+  TestList keyValuePairs;
 
-  List keyValuePairs;
   StringUtils::split(keyValuePairs, propsList, _T(","), false);
 
   for (Iterator iter=keyValuePairs.begin(); iter != keyValuePairs.end(); ++iter)
   {
     String kvp= *iter;
-    List splitUp;
+    TestList splitUp;
     StringUtils::split(splitUp, kvp, _T("="), false);
     String value;
 
@@ -460,14 +460,14 @@ sql::Connection * BaseTestFixture::getConnectionWithProps(const String & url
 
 /* throws SQLException & */
 
-sql::Connection * BaseTestFixture::getConnectionWithProps(const Properties & props)
+sql::Connection * BaseTestFixture::getConnectionWithProps(const TestProperties & props)
 {
   return driver ? driver->connect(host, /*port,*/ login, passwd) : NULL; //dbUrl, props);
 }
 
 /* throws SQLException & */
 
-sql::Connection * BaseTestFixture::getConnectionWithProps(const String & url, const Properties & props)
+sql::Connection * BaseTestFixture::getConnectionWithProps(const String & url, const TestProperties & props)
 {
   return driver ? driver->connect(host, /*port,*/ login, passwd) : NULL; //dbUrl, props);
 }
@@ -950,7 +950,7 @@ void BaseTestFixture::assertResultSetsEqual(ResultSet & control, ResultSet & tes
 }
 
 void BaseTestFixture::initTable(const String & sTableName
-                                , Properties & _sqlProps
+                                , TestProperties & _sqlProps
                                 , Connection & _conn)
 {
   String execString;

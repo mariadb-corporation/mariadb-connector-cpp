@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -47,12 +47,12 @@ void connectionmetadata::getSchemata()
 {
   logMsg("connectionmetadata::getSchemata() - MySQL_ConnectionMetaData::getSchemata");
   SKIP("Not supported methods");
-  bool schema_found=false;
-  std::stringstream msg;
   try
   {
     DatabaseMetaData  dbmeta(con->getMetaData());
     /*ResultSet resdbm1(dbmeta->getSchemata());
+    bool schema_found=false;
+    std::stringstream msg;
     checkResultSetScrolling(resdbm1);
     ResultSet resdbm2(dbmeta->getSchemaObjects(con->getCatalog(), "", "schema"));
     logMsg("... checking if getSchemata() and getSchemaObjects() report the same schematas");
@@ -245,7 +245,7 @@ void connectionmetadata::getBestRowIdentifier()
       ASSERT_EQUALS(sql::DatabaseMetaData::bestRowNotPseudo, res->getInt(8));
       ASSERT_EQUALS(res->getInt(8), res->getInt("PSEUDO_COLUMN"));
 
-      stmt->execute("DROP TABLE IF EXISTS test");
+      stmt->execute("DROP TABLE test");
     }
     if (got_warning)
     {
@@ -292,8 +292,8 @@ void connectionmetadata::getColumnPrivileges()
   }
   try
   {
-    stmt->execute("GRANT SELECT (col1,col2) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
-    stmt->execute("GRANT INSERT (col1) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+    stmt->executeUpdate("GRANT SELECT (col1,col2) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+    stmt->executeUpdate("GRANT INSERT (col1) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
   }
   catch (sql::SQLException & e)
   {
@@ -303,8 +303,8 @@ void connectionmetadata::getColumnPrivileges()
     {
       userLocation= "@'localhost'";
 
-      stmt->execute("GRANT SELECT (col1,col2) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
-      stmt->execute("GRANT INSERT (col1) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+      stmt->executeUpdate("GRANT SELECT (col1,col2) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
+      stmt->executeUpdate("GRANT INSERT (col1) ON test_getcolpriv TO '" + this->user + "'" + userLocation);
     }
     catch (sql::SQLException & e)
     {
@@ -317,6 +317,7 @@ void connectionmetadata::getColumnPrivileges()
   }
   try
   {
+    stmt->executeUpdate("FLUSH PRIVILEGES");
     res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test_getcolpriv", "id"));
     ASSERT_EQUALS(false, res->next());
   }
@@ -390,9 +391,9 @@ void connectionmetadata::getColumnPrivileges()
   }
   try
   {
-    stmt->execute("DROP TABLE IF EXISTS test_getcolpriv");
     stmt->execute("REVOKE SELECT (col1,col2) ON test_getcolpriv FROM '" + this->user + "'" + userLocation);
     stmt->execute("REVOKE INSERT (col1) ON test_getcolpriv FROM '" + this->user + "'" + userLocation);
+    stmt->execute("DROP TABLE IF EXISTS test_getcolpriv");
 
     res.reset(dbmeta->getColumnPrivileges(con->getCatalog(), con->getSchema(), "test_getcolpriv", "col2"));
     ASSERT(!res->next());
@@ -415,7 +416,7 @@ void connectionmetadata::getColumns()
 {
   logMsg("connectionmetadata::getColumn() - MySQL_ConnectionMetaData::getColumns");
 
-  if (getServerVersion(con) < 80000)
+  if (getServerVersion(con) < 800000)
   {
     SKIP("Due to changes on the VARBINARY, this test is disabled.");
     return;
@@ -433,7 +434,7 @@ void connectionmetadata::getColumns()
     int32_t serverVersion = getServerVersion(con);
 
     logMsg("... looping over all kinds of column types");
-    for (it=columns.begin(); it != columns.end(); it++)
+    for (it = columns.begin(); it != columns.end(); it++)
     {
       stmt->execute("DROP TABLE IF EXISTS test");
       msg.str("");
@@ -446,7 +447,7 @@ void connectionmetadata::getColumns()
         msg << "... testing " << it->sqldef;
         logMsg(msg.str());
       }
-      catch (sql::SQLException &)
+      catch (sql::SQLException&)
       {
         msg.str("");
         msg << "... skipping " << it->sqldef;
@@ -458,7 +459,7 @@ void connectionmetadata::getColumns()
       ASSERT_EQUALS(true, res->next());
       if (con->getCatalog() != "" && res->getString(1) != "" && con->getCatalog() != res->getString("TABLE_CAT"))
       {
-        got_todo_warning=true;
+        got_todo_warning = true;
         msg.str("");
         msg << "...\t\tWARNING - expecting TABLE_CAT = '" << con->getCatalog() << "'";
         msg << " got '" << res->getString("TABLE_CAT") << "'";
@@ -477,7 +478,7 @@ void connectionmetadata::getColumns()
         msg << "... \t\tWARNING - check DATA_TYPE for " << it->sqldef;
         msg << " - expecting type " << it->ctype << " got " << res->getInt("DATA_TYPE");
         logMsg(msg.str());
-        got_warning=true;
+        got_warning = true;
       }
       // ASSERT_EQUALS(it->ctype, res->getInt("DATA_TYPE"));
       ASSERT_EQUALS(res->getInt(5), res->getInt("DATA_TYPE"));
@@ -488,7 +489,7 @@ void connectionmetadata::getColumns()
         msg << "... \t\tWARNING - check TYPE_NAME for " << it->sqldef;
         msg << " - expecting type " << it->name << " got " << res->getString("TYPE_NAME");
         logMsg(msg.str());
-        got_warning=true;
+        got_warning = true;
       }
       // ASSERT_EQUALS(it->name, res->getString("TYPE_NAME"));
       ASSERT_EQUALS(res->getString(6), res->getString("TYPE_NAME"));
@@ -499,7 +500,7 @@ void connectionmetadata::getColumns()
         msg << "... \t\tWARNING - check COLUMN_SIZE for " << it->sqldef;
         msg << " - expecting pecision " << it->precision << " got " << res->getUInt64(7);
         logMsg(msg.str());
-        got_warning=true;
+        got_warning = true;
       }
       ASSERT_EQUALS(res->getUInt(7), res->getUInt("COLUMN_SIZE"));
 
@@ -519,12 +520,18 @@ void connectionmetadata::getColumns()
         msg << " columnNullable = " << sql::DatabaseMetaData::columnNullable << ", ";
         msg << " columnNullableUnknown = " << sql::DatabaseMetaData::columnNullableUnknown;
         logMsg(msg.str());
-        got_warning=true;
+        got_warning = true;
       }
       ASSERT_EQUALS(it->nullable, res->getInt(11));
       ASSERT_EQUALS(res->getInt(11), res->getInt("NULLABLE"));
       ASSERT_EQUALS(it->remarks, res->getString(12));
       ASSERT_EQUALS(res->getString(12), res->getString("REMARKS"));
+
+      if (it->column_def.compare("'0000-00-00 00:00:00'") == 0 && serverVersion > 1010000)
+      {
+        // At least at 10.10.2(maybe in previous, but it's first ga) COLUMN_DEFAULT becomes NULL
+        it->column_def.assign("NULL");
+      }
       if(it->column_def != res->getString(13))
       {
         msg.str("");
@@ -535,7 +542,8 @@ void connectionmetadata::getColumns()
       }
       //res->isNull(13)
       /* Looks like 10.1 returns '' where we expect NULL, and there are also other problems with it. Thus, skipping this check altogether on 10.1*/
-      if (serverVersion < 101000 || serverVersion > 101999)
+      if ((std::getenv("srv") != nullptr && (strcmp(std::getenv("srv"), "mysql") == 0 && serverVersion < 800000))
+         || serverVersion > 1001999)
       {
         ASSERT_EQUALS(it->column_def, res->getString(13));
       }
@@ -682,17 +690,26 @@ void connectionmetadata::getDatabaseVersions()
   std::stringstream prodversion;
   try
   {
+    res.reset(stmt->executeQuery("SELECT @firstDot:=INSTR(@@version, '.'),@secondDot:=LOCATE('.', @@version, @firstDot + 1),"
+      "SUBSTRING(@@version, 1, @firstDot - 1) as major,SUBSTRING(@@version, @firstDot + 1, @secondDot - @firstDot - 1) as minor,"
+      "SUBSTRING(@@version, @secondDot + 1) as rest"));
+    ASSERT(res->next());
     DatabaseMetaData  dbmeta(con->getMetaData());
-    ASSERT_GT(5, dbmeta->getDatabaseMajorVersion());
-    ASSERT_LT(10, dbmeta->getDatabaseMajorVersion());
-    ASSERT_LT(100, dbmeta->getDatabaseMinorVersion());
-    ASSERT_LT(100, dbmeta->getDatabasePatchVersion());
+    uint32_t major= dbmeta->getDatabaseMajorVersion(), minor= dbmeta->getDatabaseMinorVersion(), patch= dbmeta->getDatabasePatchVersion();
+    ASSERT_EQUALS(res->getInt(3), major);
+    ASSERT_EQUALS(res->getInt(4), minor);
+    // At lesat current getInt implementation converts smth like "11-Mariadb" to 11, but that may change
+    ASSERT_EQUALS(res->getInt(5), patch);
 
-    ASSERT_EQUALS("MariaDB", dbmeta->getDatabaseProductName());
+    //ASSERT_EQUALS("MariaDB", dbmeta->getDatabaseProductName());
 
     prodversion.str("");
-    prodversion << dbmeta->getDatabaseMajorVersion() << "." << dbmeta->getDatabaseMinorVersion();
-    prodversion << "." << dbmeta->getDatabasePatchVersion();
+    prodversion << major << ".";
+    if (major >= 23 && minor < 10)
+    {
+      prodversion << "0";
+    }
+    prodversion << minor << "." << dbmeta->getDatabasePatchVersion();
     if (prodversion.str().length() < dbmeta->getDatabaseProductVersion().length())
     {
       // Check only left prefix, database could have "-alpha" or something in its product versin
@@ -880,7 +897,7 @@ void connectionmetadata::getImportedKeys()
     num_res=0;
     while (res->next())
     {
-      num_res++;
+      ++num_res;
       switch (num_res) {
       case 1:
         ASSERT_EQUALS("cpid1", res->getString("FKCOLUMN_NAME"));
@@ -1056,8 +1073,11 @@ void connectionmetadata::checkForeignKey(Connection &mycon, ResultSet &myres)
   ASSERT("" != myres->getString("FK_NAME"));
   ASSERT_EQUALS(myres->getString(12), myres->getString("FK_NAME"));
 
-  // TODO - not sure what value to expect
-  ASSERT_EQUALS("PRIMARY", myres->getString("PK_NAME"));
+  // We would have PK_NAME only if I_S. By default "SHOW CREATE TABLE" result is parsed, and it doesn't have this info, and thus NULL is returned
+  if (!myres->isNull(13))
+  {
+    ASSERT_EQUALS("PRIMARY", myres->getString("PK_NAME"));
+  }
   ASSERT_EQUALS(myres->getString(13), myres->getString("PK_NAME"));
 
   ASSERT_EQUALS((int64_t) sql::DatabaseMetaData::importedKeyNotDeferrable, myres->getInt64(14));
@@ -1190,7 +1210,7 @@ void connectionmetadata::getIndexInfo()
     ASSERT(!res->next());
 
     //Was wrong on previous versions....
-    if (getServerVersion(con) >= 80000)
+    if (getServerVersion(con) >= 800000)
     {
       stmt->execute("DROP TABLE IF EXISTS test");
       stmt->execute("CREATE TABLE test(col1 INT NOT NULL, col2 INT NOT NULL, col3 INT NOT NULL, col4 INT, col5 INT, PRIMARY KEY(col1))");
@@ -1201,7 +1221,7 @@ void connectionmetadata::getIndexInfo()
       ASSERT_EQUALS(false, res->getBoolean("NON_UNIQUE"));
       ASSERT(res->next());
       ASSERT_EQUALS("idx_col4_col5", res->getString("INDEX_NAME"));
-      ASSERT_EQUALS("A", res->getString("ASC_OR_DESC")); // Server does not support desc
+      ASSERT_EQUALS((("MariaDB" != dbmeta->getDatabaseProductName() && getServerVersion(con) > 800000) || getServerVersion(con) > 1008000) ? "D" : "A", res->getString("ASC_OR_DESC"));
       ASSERT_EQUALS("col5", res->getString("COLUMN_NAME"));
       ASSERT_EQUALS(true, res->getBoolean("NON_UNIQUE"));
       ASSERT(res->next());
@@ -1299,7 +1319,7 @@ void connectionmetadata::getLimitsAndStuff()
     stmt.reset(con->createStatement());
     res.reset(stmt->executeQuery("SELECT @@max_connections AS _max"));
     ASSERT(res->next());
-    ASSERT_EQUALS(res->getInt("_max"), dbmeta->getMaxConnections());
+    ASSERT_EQUALS(dbmeta->getMaxConnections(), res->getInt("_max"));
 
     ASSERT_EQUALS(64, dbmeta->getMaxCursorNameLength());
     ASSERT_EQUALS(256, dbmeta->getMaxIndexLength());
@@ -2513,14 +2533,16 @@ void connectionmetadata::bugCpp25()
     verFromServer= verFromServer.substr(0, dash);
   }
   // More to test connector's split
+#ifndef _WIN32
+  // In case of mixing relese/debug versions, split may crash on Windows. Thus leaving it to be tested on other platforms
+  // On Windows doing testing the same without split
   sql::mariadb::Tokens verParts(sql::mariadb::split(verFromServer, "."));
 
   ASSERT_EQUALS(3ULL, static_cast<uint64_t>(verParts->size()));
   ASSERT_EQUALS(major, std::stoul((*verParts)[0].c_str()));
-  ASSERT_EQUALS(minor, std::stoul((*verParts)[1].c_str()));
-
-  std::size_t dashPos = (*verParts)[2].find_first_of("-");
   if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+    ASSERT_EQUALS(minor, std::stoul((*verParts)[1].c_str()));
+    std::size_t dashPos = (*verParts)[2].find_first_of('-');
     ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? (*verParts)[2].c_str() : (*verParts)[2].substr(0, dashPos).c_str()));
   }
 
@@ -2533,6 +2555,20 @@ void connectionmetadata::bugCpp25()
   ASSERT_EQUALS("22", (*csv)[3]);
   ASSERT_EQUALS("", (*csv)[4]);
   ASSERT_EQUALS("", (*csv)[5]);
+#else
+  TestList verParts;
+  StringUtils::split(verParts, verFromServer.c_str(), ".", true, true);
+
+  ASSERT_EQUALS(3ULL, static_cast<uint64_t>(verParts.size()));
+  ASSERT_EQUALS(major, std::stoul(verParts[0].c_str()));
+  ASSERT_EQUALS(minor, std::stoul(verParts[1].c_str()));
+
+  std::size_t dashPos = verParts[2].find_first_of('-');
+  if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+    ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? verParts[2].c_str() : verParts[2].substr(0, dashPos).c_str()));
+  }
+#endif // !_WIN32
+
 }
 
 } /* namespace connectionmetadata */

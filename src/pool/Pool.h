@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -73,7 +73,7 @@ class Pool
   int64_t connectionTime ; /*0*/
 
 public:
-  Pool(std::shared_ptr<UrlParser>& _urlParser, int32_t poolIndex, std::shared_ptr<ScheduledThreadPoolExecutor>& poolExecutor) : urlParser(_urlParser) {}
+  Pool(std::shared_ptr<UrlParser>& _urlParser, int32_t /*poolIndex*/, std::shared_ptr<ScheduledThreadPoolExecutor>& /*poolExecutor*/) : urlParser(_urlParser) {}
 
 private:
   void addConnectionRequest();

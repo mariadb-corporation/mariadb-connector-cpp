@@ -257,7 +257,7 @@ public:
   int32_t getHoldability();
   sql::ResultSetMetaData* getMetaData();
 
-#ifdef MAYBE_IN_BETA
+#ifdef MAYBE_IN_NEXTVERSION
   Timestamp* getTimestamp(const SQLString& columnLabel);
   Timestamp* getTimestamp(int32_t columnIndex);
   Time* getTime(int32_t columnIndex);

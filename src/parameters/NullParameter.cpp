@@ -59,7 +59,7 @@ namespace mariadb
     *
     * @param pos socket output stream
     */
-  void NullParameter::writeBinary(PacketOutputStream& pos)
+  void NullParameter::writeBinary(PacketOutputStream& /*pos*/)
   {
 
   }

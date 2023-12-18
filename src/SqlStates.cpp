@@ -61,7 +61,7 @@ namespace mariadb
     * @return sqlState
     */
    SqlStates SqlStates::fromString(const SQLString& group){
-    for (auto state : sqlStates){
+    for (auto& state : sqlStates){
       if (group.startsWith(state.sqlStateGroup)){
         return state;
       }

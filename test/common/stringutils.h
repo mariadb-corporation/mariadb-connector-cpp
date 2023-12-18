@@ -46,7 +46,7 @@ namespace StringUtils
                      , bool            includeEmpty= false);
 
   // just a shortcut for split<String>()
-  unsigned  split     ( List &          list
+  unsigned  split     (TestList &          list
                       , const String &  str
                       , const String &  delim
                       , bool            trimItems=    true

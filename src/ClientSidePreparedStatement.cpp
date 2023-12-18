@@ -103,7 +103,7 @@ namespace mariadb
   bool ClientSidePreparedStatement::executeInternal(int32_t fetchSize)
   {
     // valid parameters
-    for (int32_t i= 0; i <prepareResult->getParamCount(); i++) {
+    for (uint32_t i= 0; i < prepareResult->getParamCount(); ++i) {
       if (!parameters[i]) {
         logger->error("Parameter at position " + std::to_string(i + 1) + " is not set");
         exceptionFactory->raiseStatementError(connection, this)->create("Parameter at position "
@@ -137,10 +137,10 @@ namespace mariadb
       }
       stmt->getInternalResults()->commandEnd();
       stmt->executeEpilogue();
-      return stmt->getInternalResults()->getResultSet()/*.empty() == true*/;
+      return stmt->getInternalResults()->getResultSet();
     }
     catch (SQLException& exception) {
-      if (stmt->getInternalResults()/*.empty() == true*/) {
+      if (stmt->getInternalResults()) {
         stmt->getInternalResults()->commandEnd();
       }
       stmt->executeEpilogue();
@@ -162,7 +162,7 @@ namespace mariadb
   void ClientSidePreparedStatement::addBatch()
   {
     std::vector<Shared::ParameterHolder> holder(prepareResult->getParamCount());
-    for (int32_t i= 0; i < holder.size(); i++) {
+    for (uint32_t i= 0; i < holder.size(); i++) {
       holder[i]= parameters[i];
       if (!holder[i]) {
         logger->error(
@@ -193,7 +193,7 @@ namespace mariadb
       return stmt->batchRes.wrap(nullptr, 0);
     }
 
-    std::lock_guard<std::mutex> localScopeLock(*protocol->getLock());
+    std::unique_lock<std::mutex> localScopeLock(*protocol->getLock());
     try {
       executeInternalBatch(size);
       stmt->getInternalResults()->commandEnd();
@@ -202,9 +202,12 @@ namespace mariadb
     }
     catch (SQLException& sqle) {
       stmt->executeBatchEpilogue();
+      localScopeLock.unlock();
       throw stmt->executeBatchExceptionEpilogue(sqle, size);
     }
     stmt->executeBatchEpilogue();
+    // Silencing compiler
+    return stmt->batchRes.wrap(nullptr, 0);
   }
 
   /**
@@ -237,7 +240,7 @@ namespace mariadb
       return stmt->largeBatchRes.wrap(nullptr, 0);
     }
 
-    std::lock_guard<std::mutex> localScopeLock(*protocol->getLock());
+    std::unique_lock<std::mutex> localScopeLock(*protocol->getLock());
     try {
       executeInternalBatch(size);
       stmt->getInternalResults()->commandEnd();
@@ -245,9 +248,12 @@ namespace mariadb
     }
     catch (SQLException& sqle) {
       stmt->executeBatchEpilogue();
+      localScopeLock.unlock();
       throw stmt->executeBatchExceptionEpilogue(sqle, size);
     }
     stmt->executeBatchEpilogue();
+    // Silencing compiler
+    return stmt->largeBatchRes.wrap(nullptr, 0);
   }
 
   /**
@@ -365,7 +371,7 @@ namespace mariadb
     */
   void ClientSidePreparedStatement::setParameter(int32_t parameterIndex, ParameterHolder* holder)
   {
-    if (parameterIndex >= 1 && parameterIndex < prepareResult->getParamCount() + 1) {
+    if (parameterIndex >= 1 && static_cast<std::size_t>(parameterIndex) < prepareResult->getParamCount() + 1) {
       parameters[parameterIndex - 1].reset(holder);
     }
     else {
@@ -384,7 +390,7 @@ namespace mariadb
 
       if (stmt->options->maxQuerySizeToLog > 0) {
         error.append(" - \"");
-        if (sqlQuery.size() < stmt->options->maxQuerySizeToLog) {
+        if (sqlQuery.size() < static_cast<std::size_t>(std::max(0, stmt->options->maxQuerySizeToLog))) {
           error.append(sqlQuery);
         }
         else {
@@ -470,7 +476,7 @@ namespace mariadb
   {
     SQLString sb("sql : '"+sqlQuery +"'");
     sb.append(", parameters : [");
-    for (const auto cit:parameters ) {
+    for (const auto& cit:parameters ) {
       if (!cit) {
         sb.append("NULL");
       }

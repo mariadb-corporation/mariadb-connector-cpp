@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -43,18 +43,18 @@ namespace capi
   {
     typedef capi::ConnectProtocol super;
 
-    static const Shared::Logger logger; /*LoggerFactory.getLogger(typeid(AbstractQueryProtocol))*/
+    static const Shared::Logger logger;
     static const SQLString CHECK_GALERA_STATE_QUERY; /*"show status like 'wsrep_local_state'"*/
     std::unique_ptr<LogQueryTool> logQuery;
     Tokens galeraAllowedStates;
     //ThreadPoolExecutor readScheduler; /*NULL*/
-    int32_t transactionIsolationLevel; /*0*/
+    int32_t transactionIsolationLevel= 0;
     std::unique_ptr<std::istream> localInfileInputStream;
-    int64_t maxRows;
+    int64_t maxRows= 0;
     /*volatile*/
-    MYSQL_STMT* statementIdToRelease; /*-1*/
-    FutureTask* activeFutureTask;
-    bool interrupted;
+    MYSQL_STMT* statementIdToRelease= nullptr;
+    FutureTask* activeFutureTask= nullptr;
+    bool interrupted= false;
 
   protected:
     QueryProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo, Shared::mutex& lock);
@@ -110,12 +110,13 @@ namespace capi
 
   private:
     void executeBatch(Shared::Results& results, const std::vector<SQLString>& queries);
-
+    /* Does actual prepare job w/out locking, i.e. is good to use if lock has been already acquired */
+    ServerPrepareResult* prepareInternal(const SQLString& sql, bool executeOnMaster);
   public:
     ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster);
 
   private:
-    void executeBatchAggregateSemiColon(Shared::Results& results, const std::vector<SQLString>& queries);
+    void executeBatchAggregateSemiColon(Shared::Results& results, const std::vector<SQLString>& queries, std::size_t totalLenEstimation= 0);
 
     void executeBatchRewrite(
       Shared::Results& results,
@@ -149,6 +150,7 @@ namespace capi
     bool getAutocommit();
     bool inTransaction();
     void closeExplicit();
+
     void releasePrepareStatement(ServerPrepareResult* serverPrepareResult);
     int64_t getMaxRows();
     void setMaxRows(int64_t max);
@@ -163,7 +165,7 @@ namespace capi
 
   public:
     void moveToNextResult(Results* results, ServerPrepareResult* spr);
-    void getResult(Results* results, ServerPrepareResult *pr=nullptr);
+    void getResult(Results* results, ServerPrepareResult *pr=nullptr, bool readAllResults= false);
 
   private:
     void readPacket(Results* results, ServerPrepareResult *pr);

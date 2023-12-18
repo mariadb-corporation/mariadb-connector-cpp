@@ -27,7 +27,6 @@ namespace sql
 namespace mariadb
 {
   Date nullDate("0000-00-00");
-  sql::bytes dummy;
 
   int32_t RowProtocol::BIT_LAST_FIELD_NOT_NULL= 0b000000;
   int32_t RowProtocol::BIT_LAST_FIELD_NULL= 0b000001;
@@ -35,10 +34,127 @@ namespace mariadb
   int32_t RowProtocol::TINYINT1_IS_BIT= 1;
   int32_t RowProtocol::YEAR_IS_DATE_TYPE= 2;
 
-  std::regex RowProtocol::isIntegerRegex("^-?\\d+\\.[0-9]+$", std::regex_constants::ECMAScript);
-  std::regex RowProtocol::dateRegex("^-?\\d{4}-\\d{2}-\\d{2}", std::regex_constants::ECMAScript);
-  std::regex RowProtocol::timeRegex("^(-?)(\\d{2}):(\\d{2}):(\\d{2})(\\.\\d+)?", std::regex_constants::ECMAScript);
-  std::regex RowProtocol::timestampRegex("^-?\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.?", std::regex_constants::ECMAScript);
+  bool isDate(std::string::const_iterator it)
+  {
+    if (*it == '-') {
+      ++it;
+    }
+
+    if (std::isdigit(*it) && std::isdigit(*++it) && std::isdigit(*++it) && std::isdigit(*++it) &&
+      *++it == '-' &&
+      std::isdigit(*it) && std::isdigit(*++it) && std::isdigit(*++it) && std::isdigit(*++it) &&
+      *++it == '-' &&
+      std::isdigit(*it) && std::isdigit(*++it) && std::isdigit(*++it) && std::isdigit(*it)) {
+      return true;
+    }
+    return false;
+  }
+
+  bool isDate(const SQLString& str)
+  {
+    if (str.length() < 10) {
+      return false;
+    }
+    return isDate(str.cbegin());
+  }
+
+
+  bool isTime(std::string::const_iterator it, bool canBeNegative= true)
+  {
+    if (canBeNegative && *it == '-') {
+      ++it;
+    }
+
+    if (std::isdigit(*it) && std::isdigit(*++it) &&
+      *++it == ':' &&
+      std::isdigit(*it) && std::isdigit(*++it) &&
+      *++it == ':' &&
+      std::isdigit(*it) && std::isdigit(*it)) {
+      return true;
+    }
+    return false;
+  }
+
+
+  bool isTime(const SQLString& str)
+  {
+    if (str.length() < 8) {
+      return false;
+    }
+    return isTime(str.cbegin());
+  }
+
+
+  bool parseTime(const SQLString& str2parse, std::vector<std::string>& time)
+  {
+    auto& str= StringImp::get(str2parse);
+    constexpr std::size_t minTimeLength= 5; /*N:N:N*/
+    std::string::const_iterator it = str.cbegin(), colon = it + str.find(':'), colon2 = str.cbegin();
+
+    if (str.length() < minTimeLength || colon >= str.cend()) {
+      return false;
+    }
+    colon2+= str.find(':', colon - str.cbegin() + 1);
+    if (colon2 >= str.cend() || colon2 - colon > 3) {
+      return false;
+    }
+
+    // Reserving first element for complete time string
+    time.emplace_back("");
+
+    std::size_t offset = 0;
+    if (*it == '-') {
+      time.emplace_back("-");
+      offset= 1;
+      ++it;
+}
+    else {
+      time.emplace_back("");
+    }
+
+    while (it < colon && std::isdigit(*it)) {
+      ++it;
+    }
+    if (it < colon) {
+      return false;
+    }
+
+    if (std::isdigit(*++it) && (std::isdigit(*++it) || it == colon2))
+    {
+      time.emplace_back(str.cbegin() + offset, colon);
+      time.emplace_back(colon + 1, colon2);
+      it= colon2;
+      while (++it < str.cend() && std::isdigit(*it));
+
+      if (it - colon2 > 3) {
+        return false;
+      }
+      if (it - colon2 == 1) {
+        time.emplace_back("");
+      }
+      else {
+        time.emplace_back(colon2 + 1, it);
+      }
+      if (it < str.cend() && *it == '.') {
+        auto secondPartsBegin= ++it;
+        while (it < str.cend() && std::isdigit(*it)) {
+          ++it;
+        }
+        if (it > secondPartsBegin) {
+          time.emplace_back(secondPartsBegin, it);
+        }
+        else {
+          time.emplace_back("");
+        }
+      }
+      else {
+        time.emplace_back("");
+      }
+      time[0].assign(str.begin(), it);
+      return true;
+    }
+    return false;
+  }
 
   int32_t RowProtocol::NULL_LENGTH_= -1;
 
@@ -64,6 +180,11 @@ namespace mariadb
     .toFormatter();
 #endif
 
+  bool needsBinaryConversion(ColumnDefinition* columnInfo)
+  {
+    return columnInfo->getColumnType().getType() >= ColumnType::TINYBLOB.getType() && columnInfo->isBinary();
+  }
+
 
   long double RowProtocol::stringToDouble(const char* str, uint32_t len)
   {
@@ -80,12 +201,12 @@ namespace mariadb
   RowProtocol::RowProtocol(uint32_t _maxFieldSize, Shared::Options options)
     : maxFieldSize(_maxFieldSize)
     , options(options)
-    , buf(nullptr)
-    , fieldBuf(dummy)
-    , length(0)
     , lastValueNull(0)
-    , index(0)
+    , buf(nullptr)
+    , fieldBuf()
     , pos(0)
+    , length(0)
+    , index(0)
   {
   }
 
@@ -112,6 +233,41 @@ namespace mariadb
     return (lastValueNull & BIT_LAST_FIELD_NULL) != 0;
   }
 
+  template<typename T>
+  T RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo)
+  {
+    uint32_t len= length;
+    char *ptr= fieldBuf.arr + pos;
+    /*uint32_t signDesidingByte= std::min(static_cast<uint32_t>(sizeof(int64_t)), length);
+    if (signDesidingByte != 8 && signDesidingByte != 4 && signDesidingByte != 2 && signDesidingByte != 1) {
+      signDesidingByte= 0;
+    }*/
+
+    for (; len != 0 && *ptr == '\0'; ++ptr, --len);
+    if (len > sizeof(T)) {
+      throw SQLException(
+        "Out of range value for column '" + columnInfo->getName() + "' : too long binary value " + SQLString(fieldBuf.arr, length),
+        "22003",
+        1264);
+    }
+    T result= 0;
+    // If we have 1 byte 0x80, or it is first of 2, 4 or 8 bytes - we should get negative number -128, and if 2 bytes 0x0080 - positive 128
+    /*if (len == signDesidingByte) {
+      result= *ptr++;
+      --len;
+    }*/
+    while (len-- > 0) {
+      result<<= 8;
+      result|= (0xFF & *ptr++);
+    }
+    return result;
+  }
+
+  template int8_t   RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo);
+  template int16_t  RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo);
+  template int32_t  RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo);
+  template int64_t  RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo);
+  template uint64_t RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo);
 
   SQLString RowProtocol::zeroFillingIfNeeded(const SQLString& value, ColumnDefinition* columnInformation)
   {
@@ -133,9 +289,9 @@ namespace mariadb
     if (lastValueWasNull()) {
       return 0;
     }
-    int32_t value = fieldBuf[0];//buf[pos];
+    int32_t value= fieldBuf[0];//buf[pos];
     if (!columnInfo->isSigned()) {
-      value = (fieldBuf[0]/*buf[pos]*/ & 0xff);
+      value= (fieldBuf[0]/*buf[pos]*/ & 0xff);
     }
     return value;
   }
@@ -224,7 +380,7 @@ namespace mariadb
 
   void RowProtocol::rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo)
   {
-    if ((value < 0 && !columnInfo->isSigned()) || value < minValue || value > maxValue) {
+    if ((value < 0 && !columnInfo->isSigned() && !columnInfo->isBinary()) || value < minValue || value > maxValue) {
       throw SQLException(
         "Out of range value for column '"
         + columnInfo->getName()

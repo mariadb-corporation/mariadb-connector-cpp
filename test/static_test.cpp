@@ -47,15 +47,14 @@ get_connection(const std::string& host, const std::string& user, const std::stri
   if (loops % 2 && !useTls) {
     return driver->connect(host, /*port,*/ user, pass);
   } else {
-    sql::ConnectOptionsMap connection_properties;
-    connection_properties["hostName"]= host;
-    connection_properties["userName"]= user;
-    connection_properties["password"]= pass;
-    connection_properties["useTls"]=   useTls ? "true" : "false";
-    /* We need to run tests for client- and server-side prepared statements. That also gives
-       much more sense for these tests to be run twice */
-    connection_properties["useServerPrepStmts"]= "true";
-
+    sql::ConnectOptionsMap connection_properties= {{"hostName", host},
+                                                   {"userName", user},
+                                                   {"password", pass},
+                                                   {"useTls", (useTls ? "true" : "false")},
+                                                   {"useServerPrepStmts", "true"} /* We need to run tests for client- and
+                                                                                   server-side prepared statements. That also gives
+                                                                                   much more sense for these tests to be run twice */
+                                                  };
     return driver->connect(connection_properties);
   }
 }
@@ -67,7 +66,7 @@ get_connection(const std::string& host, const std::string& user, const std::stri
 static void driver_test_new_driver_exception()
 {
   try {
-//		new sql::mariadb::MySQL_Driver();
+//		new sql::mariadb::MariaDbDriver();
 //		ensure("Exception not thrown", false);
   } catch (sql::InvalidArgumentException&) { }
 }
@@ -75,7 +74,7 @@ static void driver_test_new_driver_exception()
 
 int main(int argc, const char **argv)
 {
-  driver_test_new_driver_exception();
-
+  // We are not exposing driver implementation
+  //driver_test_new_driver_exception();
   return run_tests(argc, argv);
 }
