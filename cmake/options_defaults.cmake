@@ -11,7 +11,7 @@ OPTION(WITH_ASAN "Compile with ASAN" OFF)
 OPTION(WITH_UBSAN "Enable undefined behavior sanitizer" OFF)
 OPTION(WITH_MSAN "Enable memory sanitizer" OFF)
 
-IF(WIN32)
+IF(WIN32 AND NOT MINGW)
   OPTION(WITH_MSI "Build MSI installation package" ON)
   OPTION(CONC_WITH_MSI "Build C/C MSI installation package" OFF)
   OPTION(WITH_SIGNCODE "Digitally sign files" OFF)
@@ -39,7 +39,13 @@ ENDIF()
 
 OPTION(WITH_SSL "Enables use of TLS/SSL library" ON)
 OPTION(WITH_UNIT_TESTS "Build test suite" ON)
-OPTION(USE_SYSTEM_INSTALLED_LIB "Use installed in the syctem C/C library and do not build one" OFF)
+
+IF(MINGW)
+  OPTION(USE_SYSTEM_INSTALLED_LIB "Use installed in the syctem C/C library and do not build one" ON)
+ELSE()
+  OPTION(USE_SYSTEM_INSTALLED_LIB "Use installed in the syctem C/C library and do not build one" OFF)
+ENDIF()
+
 # This is to be used for some testing scenarious, obviously. e.g. testing of the connector installation. 
 OPTION(BUILD_TESTS_ONLY "Build only tests and nothing else" OFF)
 

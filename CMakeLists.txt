@@ -339,7 +339,7 @@ IF(WIN32)
   SOURCE_GROUP(Protocol REGULAR_EXPRESSION "src/protocol/")
   SOURCE_GROUP(C_API REGULAR_EXPRESSION "/capi/")
 
-  SET(PLATFORM_DEPENDENCIES ws2_32)# Shlwapi)
+  SET(PLATFORM_DEPENDENCIES ws2_32)
 ELSE()
   SEARCH_LIBRARY(LIB_MATH floor m)
   MESSAGE(STATUS "Found math lib: ${LIB_MATH}")
@@ -411,7 +411,7 @@ INCLUDE("options_defaults")
 ### Setting installation paths - should go before C/C subproject sets its own. We need to have control over those
 INCLUDE("install")
 
-IF(WIN32)
+IF(NOT MINGW AND WIN32)
   MESSAGE(STATUS "Generate MSI package: ${WITH_MSI}")
   MESSAGE(STATUS "Sign MSI package: ${WITH_SIGNCODE}")
 ENDIF()
@@ -439,48 +439,50 @@ IF(NOT WITH_SSL)
   MESSAGE(STATUS "Setting default value for WITH_SSL for libmariadb build to ON")
   SET(CONC_WITH_SSL ON)
 ENDIF()
-### Including C/C subproject
-IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
-  IF(GIT_BUILD_SRCPKG)
-    # We don't want conn/c (wrong) src pkg to be built.
-    SET(GIT_BUILD_SRCPKG FALSE)
-    SET(CONNCPP_GIT_BUILD_SRCPKG TRUE)
-  ENDIF()
-  MESSAGE(STATUS "Running C/C cmake scripts")
-  INCLUDE(connector_c)
-  INSTALL(FILES
-          $<TARGET_FILE:libmariadb>
-          DESTINATION ${INSTALL_LIBDIR}
- 	        COMPONENT ConCLib)
-  MESSAGE(STATUS "Configuring to install libmariadb to ${INSTALL_LIBDIR}")
 
-  SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password)
-  IF (PLUGINS_DYNAMIC)
-    # The list from CC is visible for us
-    SET(PLUGINS_LIST ${PLUGINS_DYNAMIC})
-  ELSE()
-    SET(PLUGINS_LIST ${OWN_PLUGINS_LIST})
-  ENDIF()
-  FOREACH(CC_PLUGIN ${PLUGINS_LIST})
-    IF(NOT PLUGINS_DYNAMIC OR "${PLUGIN_${CC_PLUGIN}_TYPE}" STREQUAL "MARIADB_CLIENT_PLUGIN_AUTH")
-      MESSAGE(STATUS "Configuring to install ${CC_PLUGIN} to ${INSTALL_PLUGINDIR}")
-      ADD_DEPENDENCIES(DEPENDENCIES_FOR_PACKAGE ${CC_PLUGIN})
-      INSTALL(FILES
-              $<TARGET_FILE:${CC_PLUGIN}>
-              DESTINATION ${INSTALL_PLUGINDIR}
- 	            COMPONENT ConCPlugins)
+### Including C/C subproject
+IF(NOT USE_SYSTEM_INSTALLED_LIB)
+  IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
+    IF(GIT_BUILD_SRCPKG)
+      # We don't want conn/c (wrong) src pkg to be built.
+      SET(GIT_BUILD_SRCPKG FALSE)
+      SET(CONNCPP_GIT_BUILD_SRCPKG TRUE)
     ENDIF()
-  ENDFOREACH()
-  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/libmariadb/include)
-  INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/libmariadb/include)
-#  ADD_DEPENDENCIES(libmariadb DEPENDENCIES_FOR_PACKAGE)
-ELSE()
-  SET(USE_SYSTEM_INSTALLED_LIB TRUE)
-  IF (NOT WIN32)
-    INCLUDE_DIRECTORIES(/usr/include/mariadb)
-    # /usr/${INSTALL_LIBDIR}
+    MESSAGE(STATUS "Running C/C cmake scripts")
+    INCLUDE(connector_c)
+    INSTALL(FILES
+            $<TARGET_FILE:libmariadb>
+            DESTINATION ${INSTALL_LIBDIR}
+            COMPONENT ConCLib)
+    MESSAGE(STATUS "Configuring to install libmariadb to ${INSTALL_LIBDIR}")
+
+    SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password)
+    IF (PLUGINS_DYNAMIC)
+      # The list from CC is visible for us
+      SET(PLUGINS_LIST ${PLUGINS_DYNAMIC})
+    ELSE()
+      SET(PLUGINS_LIST ${OWN_PLUGINS_LIST})
+    ENDIF()
+    FOREACH(CC_PLUGIN ${PLUGINS_LIST})
+      IF(NOT PLUGINS_DYNAMIC OR "${PLUGIN_${CC_PLUGIN}_TYPE}" STREQUAL "MARIADB_CLIENT_PLUGIN_AUTH")
+        MESSAGE(STATUS "Configuring to install ${CC_PLUGIN} to ${INSTALL_PLUGINDIR}")
+        ADD_DEPENDENCIES(DEPENDENCIES_FOR_PACKAGE ${CC_PLUGIN})
+        INSTALL(FILES
+                $<TARGET_FILE:${CC_PLUGIN}>
+                DESTINATION ${INSTALL_PLUGINDIR}
+                COMPONENT ConCPlugins)
+      ENDIF()
+    ENDFOREACH()
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/libmariadb/include)
+    INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/libmariadb/include)
+  ELSE()
+    SET(USE_SYSTEM_INSTALLED_LIB TRUE)
+    IF (NOT WIN32)
+      INCLUDE_DIRECTORIES(/usr/include/mariadb)
+      # /usr/${INSTALL_LIBDIR}
+    ENDIF()
+    MESSAGE(STATUS "There is no Connector/C sub-project folder, linking against libmariadb installed on the system")
   ENDIF()
-  MESSAGE(STATUS "There is no Connector/C sub-project folder, linking against libmariadb installed on the system")
 ENDIF()
 
 IF(WITH_MSI AND WITH_SIGNCODE)
@@ -504,29 +506,48 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.def.in
 # Dynamic linking is default on non-Windows
 IF(MARIADB_LINK_DYNAMIC)
   IF(USE_SYSTEM_INSTALLED_LIB)
-    FIND_LIBRARY(CCLIB libmariadb.so)
-    IF (${CCLIB} STREQUAL "CCLIB-NOTFOUND")
-      # It won't be found by linker either unless user does some magic before build, so we actually could stop here with error
-      MESSAGE(STATUS "C/C library has not been found")
-      SET(MARIADB_CLIENT_TARGET_NAME mariadb)
+    IF(MINGW)
+      # I guess -l can be removed here. Also, for build with c/c as submodule this will have to me moved on top level out of this IF's 
+      SET(PLATFORM_DEPENDENCIES "${PLATFORM_DEPENDENCIES}" "-lsecur32 -lcrypt32")
+      # Not sure if mingw really needs this separate mysql.h search, but let it be
+      FIND_PATH(MARIADB_CONNECTORC_INCLUDE NAMES "mysql.h"
+                DOC "Path to MariaDB Connector/C Include Directory")
+
+      FIND_PATH(MARIADB_CONNECTORC_LIB NAMES libmariadbclient.a
+                                             liblibmariadb.dll.a 
+                                             libmariadb.dll 
+                                             mariadbclient
+                                             mariadb
+                DOC "Path to MariaDB Connector/C Lib Directory")
+      # Not sure why is shlwapi is needed
+      FIND_LIBRARY(MARIADB_SHLWAPI_LIB NAMES ShLwApi.Lib 
+                                             ShLwApi
+                DOC "Path to ShLwApi.Lib. Usually found in $ENV{programfiles\(x86\)}\\Windows Kits\\10\\Lib")
     ELSE()
-      MESSAGE(STATUS "C/C library found here ${CCLIB}")
-      SET(MARIADB_CLIENT_TARGET_NAME ${CCLIB})
-    ENDIF()
-    FIND_FILE(CCHEADER NAMES "mysql.h"
-              PATHS /usr/include/mariadb
-                    /usr/include/mysql
-                    /usr/local/include/mariadb
-                    /usr/local/include/mysql)
-              #PATH_SUFFIXES mariadb mysql)
-    IF (${CCHEADER} STREQUAL "CCHEADER-NOTFOUND")
-      # Again should probably stop
-      MESSAGE(STATUS "C/C headers have not been found")
-      INCLUDE_DIRECTORIES(/usr/include/mariadb /usr/include/mysql)
-    ELSE()
-      GET_FILENAME_COMPONENT(CCHEADERDIR ${CCHEADER} DIRECTORY)
-      MESSAGE(STATUS "C/C headers have been found here ${CCHEADERDIR}")
-      INCLUDE_DIRECTORIES(${CCHEADERDIR})
+      FIND_LIBRARY(CCLIB libmariadb.so)
+      IF (${CCLIB} STREQUAL "CCLIB-NOTFOUND")
+        # It won't be found by linker either unless user does some magic before build, so we actually could stop here with error
+        MESSAGE(STATUS "C/C library has not been found")
+        SET(MARIADB_CLIENT_TARGET_NAME mariadb)
+      ELSE()
+        MESSAGE(STATUS "C/C library found here ${CCLIB}")
+        SET(MARIADB_CLIENT_TARGET_NAME ${CCLIB})
+      ENDIF()
+      FIND_FILE(CCHEADER NAMES "mysql.h"
+                PATHS /usr/include/mariadb
+                      /usr/include/mysql
+                      /usr/local/include/mariadb
+                      /usr/local/include/mysql)
+                #PATH_SUFFIXES mariadb mysql)
+      IF (${CCHEADER} STREQUAL "CCHEADER-NOTFOUND")
+        # Again should probably stop
+        MESSAGE(STATUS "C/C headers have not been found")
+        INCLUDE_DIRECTORIES(/usr/include/mariadb /usr/include/mysql)
+      ELSE()
+        GET_FILENAME_COMPONENT(CCHEADERDIR ${CCHEADER} DIRECTORY)
+        MESSAGE(STATUS "C/C headers have been found here ${CCHEADERDIR}")
+        INCLUDE_DIRECTORIES(${CCHEADERDIR})
+      ENDIF()
     ENDIF()
   ELSE()
     SET(MARIADB_CLIENT_TARGET_NAME libmariadb)
@@ -544,7 +565,7 @@ IF(UNIX)
 ENDIF()
 SET(${LIBRARY_NAME}_OBJECTS $<TARGET_OBJECTS:${LIBRARY_NAME}_obj>)
 
-IF(WIN32)
+IF(WIN32 AND NOT MINGW)
   ADD_LIBRARY(${LIBRARY_NAME} SHARED ${CMAKE_SOURCE_DIR}/src/maconncpp.rc ${${LIBRARY_NAME}_OBJECTS} ${CMAKE_SOURCE_DIR}/src/maconncpp.def)
   ADD_LIBRARY(${STATIC_LIBRARY_NAME} STATIC ${${LIBRARY_NAME}_OBJECTS} ${CMAKE_SOURCE_DIR}/src/maconncpp.rc)
 
@@ -592,6 +613,35 @@ ENDIF()
 
 TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${MARIADB_CLIENT_TARGET_NAME} ${PLATFORM_DEPENDENCIES})
 TARGET_LINK_LIBRARIES(${STATIC_LIBRARY_NAME} mariadbclient)
+
+# MINGW Specific includes and linking
+IF(MINGW)
+  
+  IF(MARIADB_SHLWAPI_LIB)
+    TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${MARIADB_SHLWAPI_LIB})
+    MESSAGE(STATUS "Found shlwapi lib - ${MARIADB_SHLWAPI_LIB}")
+  ELSE()
+    # Should here and below be just warnings?
+    MESSAGE(WARNING "Did not find shlwapi lib")
+  ENDIF()
+
+  IF(MARIADB_CONNECTORC_INCLUDE)
+    # Probably has to be private, and not PUBLIC here
+    TARGET_INCLUDE_DIRECTORIES(${LIBRARY_NAME}_obj PUBLIC  ${MARIADB_CONNECTORC_INCLUDE})
+    MESSAGE(STATUS "Found MariaDB Connector/C includes - ${MARIADB_CONNECTORC_INCLUDE}")
+  ELSE()
+    MESSAGE(WARNING "Did not find MariaDB Connector/C includes")
+  ENDIF()
+  
+  IF(MARIADB_CONNECTORC_LIB)
+    TARGET_LINK_DIRECTORIES(${LIBRARY_NAME} PUBLIC ${MARIADB_CONNECTORC_LIB})
+    TARGET_LINK_DIRECTORIES(${STATIC_LIBRARY_NAME} PUBLIC ${MARIADB_CONNECTORC_LIB})
+    MESSAGE(STATUS "Found MariaDB Connector/C libraries - ${MARIADB_CONNECTORC_LIB}")
+  ELSE()
+    MESSAGE(WARNING "Did not find MariaDB Connector/C libraries")
+  ENDIF()
+  
+ENDIF()
 
 INCLUDE(symlink)
 CREATE_SYMLINK(lib${LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX} ${STATIC_LIBRARY_NAME} ${INSTALL_LIBDIR})
@@ -646,10 +696,10 @@ ENDIF()
 IF(WITH_UNIT_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
   ADD_SUBDIRECTORY(test)
   ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} ARGS -E copy $<TARGET_FILE:${LIBRARY_NAME}> test)
-  IF(NOT USE_SYSTEM_INSTALLED_LIB)
+	  COMMAND ${CMAKE_COMMAND} ARGS -E copy $<TARGET_FILE:${LIBRARY_NAME}> test)
+  IF(NOT MINGW AND NOT USE_SYSTEM_INSTALLED_LIB)
     ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
-	    COMMAND ${CMAKE_COMMAND} ARGS -E copy $<TARGET_FILE:libmariadb> test)
+	  COMMAND ${CMAKE_COMMAND} ARGS -E copy $<TARGET_FILE:libmariadb> test)
   ENDIF()
 ENDIF()
 

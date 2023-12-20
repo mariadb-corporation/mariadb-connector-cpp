@@ -1,4 +1,5 @@
 # Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+#               2023 MariaDB Corportation AB
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -42,6 +43,6 @@ SET_TARGET_PROPERTIES(perf_statement PROPERTIES
           OUTPUT_NAME "perf_statement"
           LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
-TARGET_LINK_LIBRARIES(perf_statement ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} ${MY_GCOV_LINK_LIBRARIES} test_framework)
+TARGET_LINK_LIBRARIES(perf_statement ${PLATFORM_DEPENDENCIES} ${MY_GCOV_LINK_LIBRARIES} test_framework ${LIBRARY_NAME})
 
 MESSAGE(STATUS "Configuring performance test - statement")

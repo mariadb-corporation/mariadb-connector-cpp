@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -35,11 +35,7 @@
 #include <cstdio>
 
 #ifndef L64
-#ifdef _WIN32
-#define L64(x) x##i64
-#else
 #define L64(x) x##LL
-#endif
 #endif
 
 namespace testsuite

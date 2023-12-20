@@ -20,7 +20,7 @@
 #ifndef _BUILDCONF_H_
 #define _BUILDCONF_H_
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__) && !defined(__MINGW64__)
 # ifdef MARIADB_STATIC_LINK
 #  ifdef MARIADB_EXTERN
 #   undef MARIADB_EXTERN
