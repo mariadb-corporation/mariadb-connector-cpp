@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -21,11 +21,24 @@
 #define _BUILDCONF_H_
 
 #ifdef _WIN32
-# ifndef MARIADB_EXPORTED
-#  define MARIADB_EXPORTED __declspec(dllimport)
+# ifdef MARIADB_STATIC_LINK
+#  ifdef MARIADB_EXTERN
+#   undef MARIADB_EXTERN
+#  endif
 #  define MARIADB_EXTERN extern
+#  ifdef MARIADB_EXPORTED
+#   undef MARIADB_EXPORTED
+#  endif
+#  define MARIADB_EXPORTED 
 # else
-#  define MARIADB_EXTERN  
+#  ifndef MARIADB_EXPORTED
+#   define MARIADB_EXPORTED __declspec(dllimport)
+#   define MARIADB_EXTERN extern
+#  else
+#   ifndef MARIADB_EXTERN
+#     define MARIADB_EXTERN  
+#   endif
+#  endif
 # endif
 #else
 # ifndef MARIADB_EXPORTED
