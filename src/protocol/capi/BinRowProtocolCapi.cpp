@@ -46,9 +46,9 @@ namespace capi
     Shared::Options options,
     MYSQL_STMT* capiStmtHandle)
      : RowProtocol(_maxFieldSize, options)
-     , stmt(capiStmtHandle)
      , columnInformation(_columnInformation)
      , columnInformationLength(_columnInformationLength)
+     , stmt(capiStmtHandle)
   {
      bind.reserve(mysql_stmt_field_count(stmt));
 
@@ -211,7 +211,7 @@ namespace capi
     * @return String value of raw bytes
     * @throws SQLException if conversion failed
     */
-  SQLString BinRowProtocolCapi::getInternalString(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
+  SQLString BinRowProtocolCapi::getInternalString(ColumnDefinition* columnInfo, Calendar* /*cal*/, TimeZone* /*timeZone*/)
   {
     return std::move(convertToString(fieldBuf.arr, columnInfo));
   }
@@ -267,17 +267,22 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
-      try {
-        std::string str(fieldBuf.arr, length);
-        value = std::stoll(str);
+      if (needsBinaryConversion(columnInfo)) {
+        return parseBinaryAsInteger<int32_t>(columnInfo);
       }
-      // Common parent for std::invalid_argument and std::out_of_range
-      catch (std::logic_error&) {
+      else {
+        try {
+          std::string str(fieldBuf.arr, length);
+          value= std::stoll(str);
+        }
+        // Common parent for std::invalid_argument and std::out_of_range
+        catch (std::logic_error&) {
 
-        throw SQLException(
-          "Out of range value for column '" + columnInfo->getName() + "' : value " + sql::SQLString(static_cast<char*>(fieldBuf.arr), length),
-          "22003",
-          1264);
+          throw SQLException(
+            "Out of range value for column '" + columnInfo->getName() + "' : value " + sql::SQLString(static_cast<char*>(fieldBuf.arr), length),
+            "22003",
+            1264);
+        }
       }
       break;
     default:
@@ -303,7 +308,7 @@ namespace capi
       return 0;
     }
 
-    int64_t value;
+    int64_t value= 0;
 
     try {
       switch (columnInfo->getColumnType().getType()) {
@@ -387,10 +392,13 @@ namespace capi
       case MYSQL_TYPE_VAR_STRING:
       case MYSQL_TYPE_VARCHAR:
       case MYSQL_TYPE_STRING:
-      {
-        std::string str(fieldBuf.arr, length);
-        return std::stoll(str);
-      }
+        if (needsBinaryConversion(columnInfo)) {
+          return parseBinaryAsInteger<int64_t>(columnInfo);
+        }
+        else {
+          std::string str(fieldBuf.arr, length);
+          return std::stoll(str);
+        }
       default:
         throw SQLException(
           "getLong not available for data field type "
@@ -482,30 +490,33 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
-    {
-      std::string str(fieldBuf.arr, length);
-      try {
-        return sql::mariadb::stoull(str);
+      if (needsBinaryConversion(columnInfo)) {
+        return parseBinaryAsInteger<uint64_t>(columnInfo);
       }
-      // Common parent for std::invalid_argument and std::out_of_range
-      catch (std::logic_error&) {
-        throw SQLException(
-          "Out of range value for column '"
-          + columnInfo->getName()
-          + "' : value "
-          + str
-          + " is not in int64_t range",
-          "22003",
-          1264);
+      else {
+        std::string str(fieldBuf.arr, length);
+        try {
+          return sql::mariadb::stoull(str);
+        }
+        // Common parent for std::invalid_argument and std::out_of_range
+        catch (std::logic_error&) {
+          throw SQLException(
+            "Out of range value for column '"
+            + columnInfo->getName()
+            + "' : value "
+            + str
+            + " is not in int64_t range",
+            "22003",
+            1264);
+        }
       }
-    }
     default:
       throw SQLException(
         "getLong not available for data field type "
         + columnInfo->getColumnType().getCppTypeName());
     }
 
-    if (columnInfo->isSigned() && value < 0) {
+    if ((columnInfo->isSigned() || needsBinaryConversion(columnInfo)) && value < 0) {
       throw SQLException(
         "Out of range value for column '"
         + columnInfo->getName()
@@ -627,7 +638,8 @@ namespace capi
     case MYSQL_TYPE_STRING:
     case MYSQL_TYPE_DECIMAL:
       try {
-        return std::stold(static_cast<char*>(fieldBuf.arr));
+        std::string raw(fieldBuf.arr, fieldBuf.size());
+        return std::stold(raw);
       }
       // Common parent for std::invalid_argument and std::out_of_range
       catch (std::logic_error& nfe) {
@@ -686,6 +698,7 @@ namespace capi
         return SQLString(asChar, ptr - asChar);
       }
     }
+    // fall through
     default:
       throw SQLException(
         "getBigDecimal not available for data field type "
@@ -730,6 +743,7 @@ namespace capi
         break;
       }
       out << " ";
+      // fall through
     case MYSQL_TYPE_TIME:
       out << (mt->hour < 10 ? "0" : "") << mt->hour << ":" << (mt->minute < 10 ? "0" : "") << mt->minute << ":" << (mt->second < 10 ? "0" : "") << mt->second;
 
@@ -765,7 +779,7 @@ namespace capi
   }
 
 
-  Date BinRowProtocolCapi::getInternalDate(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
+  Date BinRowProtocolCapi::getInternalDate(ColumnDefinition* columnInfo, Calendar* /*cal*/, TimeZone* /*timeZone*/)
   {
     if (lastValueWasNull()) {
       return nullDate;
@@ -839,7 +853,7 @@ namespace capi
     * @return Time value
     * @throws SQLException if column cannot be converted to Time
     */
-  Time BinRowProtocolCapi::getInternalTime(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
+  Time BinRowProtocolCapi::getInternalTime(ColumnDefinition* columnInfo, Calendar* /*cal*/, TimeZone* /*timeZone*/)
   {
     std::reference_wrapper<Time> nullTime= std::ref(RowProtocol::nullTime);
     Time nullTimeWithMicros;
@@ -890,7 +904,7 @@ namespace capi
     * @return timestamp value
     * @throws SQLException if column type is not compatible
     */
-  Timestamp BinRowProtocolCapi::getInternalTimestamp(ColumnDefinition* columnInfo, Calendar* userCalendar, TimeZone* timeZone)
+  Timestamp BinRowProtocolCapi::getInternalTimestamp(ColumnDefinition* columnInfo, Calendar* /*userCalendar*/, TimeZone* /*timeZone*/)
   {
     std::reference_wrapper<Timestamp> nullTs= std::ref(RowProtocol::nullTs);
     Timestamp nullTsWithMicros;
@@ -1014,8 +1028,7 @@ namespace capi
       value= parseBit();
       break;
     case MYSQL_TYPE_TINY:
-      value= getInternalTinyInt(columnInfo);
-      break;
+      return fieldBuf[pos];/* we don't want to be the sign to be considered here */
     case MYSQL_TYPE_SHORT:
     case MYSQL_TYPE_YEAR:
       value= getInternalSmallInt(columnInfo);
@@ -1040,11 +1053,22 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
-    {
-      std::string str(fieldBuf.arr, length);
-      value= std::stoll(str);
+      if (needsBinaryConversion(columnInfo)) {
+        return parseBinaryAsInteger<int8_t>(columnInfo);
+      }
+      else {
+        try {
+          std::string str(fieldBuf.arr, length);
+          value= std::stoll(str);
+        }
+        catch (std::logic_error&) {
+          throw SQLException(
+            "Out of range value for column '" + columnInfo->getName() + "' : value " + sql::SQLString(static_cast<char*>(fieldBuf.arr), length),
+            "22003",
+            1264);
+        }
+      }
       break;
-    }
     default:
       throw SQLException(
         "getByte not available for data field type "
@@ -1098,11 +1122,24 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
-    {
-      std::string str(fieldBuf.arr, length);
-      value= std::stoll(str);
+      if (needsBinaryConversion(columnInfo)) {
+        return parseBinaryAsInteger<int16_t>(columnInfo);
+      }
+      else {
+        try {
+          std::string str(fieldBuf.arr, length);
+          value= std::stoll(str);
+          
+        }
+        catch (std::logic_error&) {
+          throw SQLException(
+            "Out of range value for column '" + columnInfo->getName() + "' : value " + sql::SQLString(static_cast<char*>(fieldBuf.arr), length),
+            "22003",
+            1264);
+        }
+      }
       break;
-    }
+
     default:
       throw SQLException(
         "getShort not available for data field type "

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -61,18 +61,6 @@ class MariaDbConnection  : public Connection
 {
     static std::shared_ptr<sql::mariadb::Logger> logger ; /*LoggerFactory.getLogger(MariaDbConnection.class)*/
 
-    static std::regex CALLABLE_STATEMENT_PATTERN ; /*Pattern.compile(
-"^(\\s*\\{)?\\s*((\\?\\s*=)?(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*"
-+"call(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*((((`[^`]+`)|([^`\\}]+))\\.)?"
-+"((`[^`]+`)|([^`\\}\\(]+)))\\s*(\\(.*\\))?(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*"
-+"\\s*(#.*)?)\\s*(\\}\\s*)?$",
-Pattern.CASE_INSENSITIVE |Pattern.DOTALL)*/
-
-    static std::regex PREPARABLE_STATEMENT_PATTERN ; /*Pattern.compile(
-"^(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*(SELECT|UPDATE|INSERT|DELETE|REPLACE|DO|CALL)",
-Pattern.CASE_INSENSITIVE)*/
-
-
     Shared::Protocol protocol;
     Shared::Options options;
 
@@ -82,19 +70,19 @@ Pattern.CASE_INSENSITIVE)*/
 
 public:
   Shared::mutex lock; /* TODO: Public? Really? */
-  MariaDbPoolConnection* poolConnection;
+  MariaDbPoolConnection* poolConnection= nullptr;
 //protected:
   bool nullCatalogMeansCurrent;
 private:
   std::unique_ptr<CallableStatementCache> callableStatementCache;
-  volatile int32_t lowercaseTableNames ; /*-1*/
+  volatile int32_t lowercaseTableNames= -1;
   bool _canUseServerTimeout;
   bool sessionStateAware;
-  int32_t stateFlag ; /*0*/
-  int32_t defaultTransactionIsolation ; /*0*/
-  int32_t savepointCount; /*0*/
-  bool warningsCleared;
-  bool returnedToPool;
+  int32_t stateFlag= 0 ;
+  int32_t defaultTransactionIsolation= 0;
+  int32_t savepointCount= 0;
+  bool warningsCleared= true;
+  bool returnedToPool= false;
 
 public:
   MariaDbConnection(Shared::Protocol& protocol);

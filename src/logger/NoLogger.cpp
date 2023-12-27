@@ -29,17 +29,17 @@ namespace mariadb
     return false;
   }
 
-  void NoLogger::trace(const SQLString& msg){
+  void NoLogger::trace(const SQLString& /*msg*/){
   }
 
   bool NoLogger::isDebugEnabled(){
     return false;
   }
 
-  void NoLogger::debug(const SQLString& msg){
+  void NoLogger::debug(const SQLString& /*msg*/){
   }
 
-  void NoLogger::debug(const SQLString& msg, std::exception& e)
+  void NoLogger::debug(const SQLString& /*msg*/, std::exception& /*e*/)
   {}
 
   void NoLogger::debug(const SQLString& msg, const SQLString& tag, int32_t total, int64_t active, int32_t pending)
@@ -49,26 +49,26 @@ namespace mariadb
     return false;
   }
 
-  void NoLogger::info(const SQLString& msg){
+  void NoLogger::info(const SQLString& /*msg*/){
   }
 
   bool NoLogger::isWarnEnabled(){
     return false;
   }
 
-  void NoLogger::warn(const SQLString& msg){
+  void NoLogger::warn(const SQLString& /*msg*/){
   }
 
   bool NoLogger::isErrorEnabled(){
     return false;
   }
 
-  void NoLogger::error(const SQLString& msg){
+  void NoLogger::error(const SQLString& /*msg*/){
   }
 
-  void NoLogger::error(const SQLString& msg, SQLException& e) {
+  void NoLogger::error(const SQLString& /*msg*/, SQLException& /*e*/) {
   }
-  void NoLogger::error(const SQLString& msg, MariaDBExceptionThrower& e){
+  void NoLogger::error(const SQLString& /*msg*/, MariaDBExceptionThrower& /*e*/){
   }
 }
 }

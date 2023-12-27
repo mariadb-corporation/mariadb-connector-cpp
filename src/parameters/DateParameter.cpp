@@ -32,7 +32,7 @@ namespace mariadb
     * @param timeZone timezone to use
     * @param options jdbc options
     */
-  DateParameter::DateParameter(const Date& _date, TimeZone* _timeZone, Shared::Options& _options)
+  DateParameter::DateParameter(const Date& _date, TimeZone* /*_timeZone*/, Shared::Options& _options)
     : date(_date)
     //, timeZone(timeZone)
     , options(_options)

@@ -69,7 +69,7 @@ namespace mariadb
    * @param searchFilter search parameter
    * @throws SQLException if not found
    */
-  void MasterProtocol::loop( Listener* listener, GlobalStateInfo& globalInfo, const std::vector<HostAddress>& addresses, SearchFilter* searchFilter)
+  void MasterProtocol::loop(Listener* listener, GlobalStateInfo& globalInfo, const std::vector<HostAddress>& addresses, SearchFilter* /*searchFilter*/)
   {
     std::shared_ptr<Protocol> protocol;
     std::list<HostAddress> loopAddresses;

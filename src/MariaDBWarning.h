@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -35,7 +35,7 @@ namespace sql
       int32_t errorCode;
       std::unique_ptr<SQLWarning> next;
 
-      void setNextWarning(const SQLWarning* nextWarning) {}
+      void setNextWarning(const SQLWarning* /*nextWarning*/) {}//new MariaDBWarning(nextWarning->getMessage(), nextWarning->getSQLState(), nextWarning->getErrorCode());}
     public:
       MariaDBWarning() : errorCode(0) {}
       virtual ~MariaDBWarning();

@@ -452,13 +452,13 @@ namespace sql
         int32_t(0)}},
       {
         "connectionAttributes", {"connectionAttributes",
-        "0.9.1",
-        "When performance_schema is active, permit to send server "
-        "some client information in a key;value pair format "
+        "1.0.3",
+        "If performance_schema is enabled, permits to send server "
+        "some client information in a key:value pair format "
         "(example: connectionAttributes=key1:value1,key2,value2).\n"
-        "Those informations can be retrieved on server within tables performance_schema.session_connect_attrs "
+        "This information can be retrieved on server within tables performance_schema.session_connect_attrs "
         "and performance_schema.session_account_connect_attrs.\n"
-        "This can permit from server an identification of client/application",
+        "This allowa an identification of client/application on server",
         false}},
       {
         "useBatchMultiSend", {"useBatchMultiSend",
@@ -708,6 +708,8 @@ namespace sql
 
 //---------------------------------------- Aliases ------------------------------------------------------------------------------------
     bool addAliases(std::map<std::string, DefaultOptions*>& completeOptionsMap) {
+      // Here it has to be reference, otherwise it will create (short living) copy of the mapped DefaultOptions
+      // object. Plus we don't want extra copy-constructing anyway
       for (auto& defaultOption : OptionsMap) {
         completeOptionsMap.emplace(defaultOption.first, &defaultOption.second);
       }
@@ -749,58 +751,62 @@ namespace sql
     std::map<std::string, DefaultOptions*> DefaultOptions::OPTIONS_MAP;
     static bool aliasesAdded= addAliases(DefaultOptions::OPTIONS_MAP);
 //-------------------------------------------------------------------------------------------------------------------------------------
-    DefaultOptions::DefaultOptions(const char * optionName, const char * implementationVersion, const char* description, bool required)
-      : optionName(optionName),  description(description), required(required), defaultValue(""), minValue (), maxValue()
+    DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char* description, bool required)
+      : optionName(optionName)
+      , description(description), required(required)
+      , minValue()
+      , maxValue()
+      , defaultValue("")
     {
     }
 
-    DefaultOptions::DefaultOptions(const char * optionName, const char * implementationVersion, const char * description,
-        bool required, const char * defaultValue):
+    DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char * description,
+        bool required, const char * defaultValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(),
-      maxValue()
+      maxValue(),
+      defaultValue(defaultValue)
     {
     }
 
-    DefaultOptions::DefaultOptions(const char * optionName, const char * implementationVersion, const char * description,
+    DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char * description,
         bool required, bool defaultValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(),
-      maxValue()
+      maxValue(),
+      defaultValue(defaultValue)
     {
     }
 
-    DefaultOptions::DefaultOptions(const char* optionName, const char* implementationVersion, const char* description,
+    DefaultOptions::DefaultOptions(const char* optionName, const char* /*implementationVersion*/, const char* description,
         bool required, int32_t defaultValue, int32_t minValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(minValue),
-      maxValue(INT32_MAX)
+      maxValue(INT32_MAX),
+      defaultValue(defaultValue)
     {
     }
 
-    DefaultOptions::DefaultOptions(const char* optionName, const char* implementationVersion, const char* description,
+    DefaultOptions::DefaultOptions(const char* optionName, const char* /*implementationVersion*/, const char* description,
         int64_t defaultValue, bool required, int64_t minValue) :
       optionName(optionName),
       description(description),
       required(required),
-      defaultValue(defaultValue),
       minValue(minValue),
-      maxValue(INT64_MAX)
+      maxValue(INT64_MAX),
+      defaultValue(defaultValue)
     {
     }
 
 #ifdef WE_NEED_INT_ARRAY_DEFAULT_VALUE
     DefaultOptions::DefaultOptions(const SQLString& optionName, int32_t* defaultValue, int32_t minValue,
-      const SQLString& implementationVersion, SQLString& description, bool required) :
+      const SQLString& /*implementationVersion*/, SQLString& description, bool required) :
       optionName(optionName),
       defaultValue(defaultValue),
       minValue(minValue),
@@ -872,7 +878,7 @@ namespace sql
         for (SQLString& parameter : *parameters)
         {
           size_t pos= parameter.find_first_of('=');
-          if (pos == std::string::npos){
+          if (pos == std::string::npos) {
             if (properties.find(parameter) == properties.end()){
               properties.insert({ parameter, emptyStr });
             }
@@ -898,7 +904,7 @@ namespace sql
           const std::string& key= StringImp::get(it.first);
           SQLString propertyValue(it.second);
 
-          auto cit= OPTIONS_MAP.find(key);
+          const auto& cit= OPTIONS_MAP.find(key);
 
           if (cit != OPTIONS_MAP.end()/* && !propertyValue.empty()*/)
           {
@@ -1078,12 +1084,12 @@ namespace sql
      * @param haMode high availability Mode
      * @param sb String builder
      */
-    void DefaultOptions::propertyString(const Shared::Options options,const enum HaMode haMode, SQLString& sb)
+    void DefaultOptions::propertyString(const Shared::Options options, const enum HaMode /*haMode*/, SQLString& sb)
     {
       try
       {
         bool first= true;
-        for (auto  it : OptionsMap)
+        for (auto& it : OptionsMap)
         {
           DefaultOptions& o= it.second;
           const ClassField<Options> field= Options::getField(o.optionName);

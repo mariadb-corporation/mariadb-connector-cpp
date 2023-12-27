@@ -43,18 +43,6 @@ namespace mariadb
 {
   Shared::Logger MariaDbConnection::logger= LoggerFactory::getLogger(typeid(MariaDbConnection));
   /**
-    * Pattern to check the correctness of callable statement query string Legal queries, as
-    * documented in JDK have the form: {[?=]call[(arg1,..,,argn)]}
-    */
-  std::regex MariaDbConnection::CALLABLE_STATEMENT_PATTERN(
-    "^(\\s*\\{)?\\s*((\\?\\s*=)?(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*"
-    "call(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*((((`[^`]+`)|([^`\\}]+))\\.)?"
-    "((`[^`]+`)|([^`\\}\\(]+)))\\s*(\\(.*\\))?(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*"
-    "\\s*(#.*)?)\\s*(\\}\\s*)?$", std::regex_constants::ECMAScript | std::regex_constants::icase);
-  /** Check that query can be executed with PREPARE. */
-  std::regex MariaDbConnection::PREPARABLE_STATEMENT_PATTERN(
-    "^(\\s*\\/\\*([^\\*]|\\*[^\\/])*\\*\\/)*\\s*(SELECT|UPDATE|INSERT|DELETE|REPLACE|DO|CALL|SHOW)", std::regex_constants::ECMAScript | std::regex_constants::icase);
-  /**
     * Creates a new connection with a given protocol and query factory.
     *
     * @param protocol the protocol to use.
@@ -66,14 +54,7 @@ namespace mariadb
     _canUseServerTimeout(protocol->versionGreaterOrEqual(10, 1, 2)),
     sessionStateAware(protocol->sessionStateAware()),
     nullCatalogMeansCurrent(options->nullCatalogMeansCurrent),
-    exceptionFactory(ExceptionFactory::of(this->getServerThreadId(), options)),
-    lowercaseTableNames(-1),
-    poolConnection(nullptr),
-    stateFlag(0),
-    defaultTransactionIsolation(0),
-    savepointCount(0),
-    warningsCleared(true),
-    returnedToPool(false)
+    exceptionFactory(ExceptionFactory::of(this->getServerThreadId(), options))
   {
     if (options->cacheCallableStmts)
     {
@@ -102,14 +83,14 @@ namespace mariadb
 
 
   SQLString MariaDbConnection::quoteIdentifier(const SQLString& string) {
-    return "`"+replaceAll(string, "`", "``")+"`";
+    return "`" + replace(string, "`", "``") + "`";
   }
 
 
   SQLString MariaDbConnection::unquoteIdentifier(SQLString& string)
   {
     if (string.startsWith("`") && string.endsWith("`") && string.length() >= 2) {
-      return replace(string.substr(1, string.length()-1), "``", "`");
+      return replace(string.substr(1, string.length() - 2), "``", "`");
     }
     return string;
   }
@@ -183,7 +164,7 @@ namespace mariadb
     *     with the given type, concurrency, and holdability
     * @see ResultSet
     */
-  Statement* MariaDbConnection::createStatement(int32_t resultSetType, int32_t resultSetConcurrency, int32_t resultSetHoldability) {
+  Statement* MariaDbConnection::createStatement(int32_t resultSetType, int32_t resultSetConcurrency, int32_t /*resultSetHoldability*/) {
     return new MariaDbStatement(this, resultSetType, resultSetConcurrency, exceptionFactory);
   }
 
@@ -303,7 +284,7 @@ namespace mariadb
     const SQLString& sql,
     int32_t resultSetType,
     int32_t resultSetConcurrency,
-    int32_t resultSetHoldability)
+    int32_t /*resultSetHoldability*/)
   {
     return internalPrepareStatement(
       sql, resultSetType, resultSetConcurrency, Statement::NO_GENERATED_KEYS);
@@ -372,7 +353,7 @@ namespace mariadb
     * @throws SQLException if a database access error occurs or this method is called on a closed
     *     connection
     */
-  PreparedStatement* MariaDbConnection::prepareStatement(const SQLString& sql, int32_t* columnIndexes) {
+  PreparedStatement* MariaDbConnection::prepareStatement(const SQLString& sql, int32_t* /*columnIndexes*/) {
     return prepareStatement(sql, Statement::RETURN_GENERATED_KEYS);
   }
   /**
@@ -407,9 +388,54 @@ namespace mariadb
     * @throws SQLException if a database access error occurs or this method is called on a closed
     *     connection
     */
-  PreparedStatement* MariaDbConnection::prepareStatement(const SQLString& sql, const SQLString* columnNames) {
+  PreparedStatement* MariaDbConnection::prepareStatement(const SQLString& sql, const SQLString* /*columnNames*/) {
     return prepareStatement(sql, Statement::RETURN_GENERATED_KEYS);
   }
+
+  /* Checking the type of the query to decide on whether it prepareable on server and it makes sense to prepare on server */
+  bool shouldPrepareOnServer(const SQLString& sql) {
+    auto it= sql.cbegin();
+    Utils::skipCommentsAndBlanks(StringImp::get(sql), it);
+
+    switch (*it)
+    {
+    case 's':
+    case 'S':
+    {
+      switch (*++it) {
+      case 'e':
+      case 'E':
+        return std::tolower(*++it) == 'l' && std::tolower(*++it) == 'e' && std::tolower(*++it) == 'c' && std::tolower(*++it) == 't';
+      case 'h':
+      case 'H':
+        return std::tolower(*++it) == 'o' && std::tolower(*++it) == 'w';
+      default:
+        return false;
+      }
+    }
+    case 'u':
+    case 'U':
+      return std::tolower(*++it) == 'p' && std::tolower(*++it) == 'd' && std::tolower(*++it) == 'a' && std::tolower(*++it) == 't' && std::tolower(*++it) == 'e';
+    case 'i':
+    case 'I':
+      return std::tolower(*++it) == 'n' && std::tolower(*++it) == 's' && std::tolower(*++it) == 'e' && std::tolower(*++it) == 'r' && std::tolower(*++it) == 't';
+    case 'd':
+    case 'D':
+      return std::tolower(*++it) == 'o'/*DO*/ || /*or delete*/(std::tolower(*it) == 'e' && std::tolower(*++it) == 'l' && std::tolower(*++it) == 'e' &&
+                                                               std::tolower(*++it) == 't' && std::tolower(*++it) == 'e');
+    case 'r':
+    case 'R':
+      return std::tolower(*++it) == 'e' && std::tolower(*++it) == 'p' && std::tolower(*++it) == 'l' && std::tolower(*++it) == 'a' && std::tolower(*++it) == 'c' &&
+        std::tolower(*++it) == 'e';
+    case 'c':
+    case 'C':
+      return std::tolower(*++it) == 'a' && std::tolower(*++it) == 'l' && std::tolower(*++it) == 'l';
+    default:
+      break;
+    }
+    return false;
+  }
+
   /**
     * Send ServerPrepareStatement or ClientPrepareStatement depending on SQL query and options If
     * server side and PREPARE can be delayed, a facade will be return, to have a fallback on client
@@ -436,11 +462,12 @@ namespace mariadb
     {
       SQLString sqlQuery(Utils::nativeSql(sql, protocol.get()));
 
-      if (options->useServerPrepStmts && std::regex_search(StringImp::get(sqlQuery), PREPARABLE_STATEMENT_PATTERN))
+      if (options->useServerPrepStmts && shouldPrepareOnServer(sql))
       {
         checkConnection();
+
         //try {
-          return new ServerSidePreparedStatement(this, sqlQuery, resultSetScrollType, resultSetConcurrency,
+        return new ServerSidePreparedStatement(this, sqlQuery, resultSetScrollType, resultSetConcurrency,
             autoGeneratedKeys, exceptionFactory);
         /*}
         catch (SQLNonTransientConnectionException& e) {
@@ -499,31 +526,78 @@ namespace mariadb
   CallableStatement* MariaDbConnection::prepareCall(const SQLString& sql, int32_t resultSetType, int32_t resultSetConcurrency)
   {
     checkConnection();
-    std::smatch matcher;
 
-    if (!std::regex_search(StringImp::get(sql), matcher, CALLABLE_STATEMENT_PATTERN))
+    const SQLString *query= &sql;
+    SQLString native("");
+    const std::string &real= StringImp::get(sql);
+    bool isFunction= false, wrongFormat= false;;
+
+    std::size_t firstUsefulChar= Utils::skipCommentsAndBlanks(real);
+
+    if (sql[firstUsefulChar] == '{')
     {
-      throw SQLSyntaxErrorException(
-        "invalid callable syntax. must be like {[?=]call <procedure/function name>[(?,?, ...)]}\n but was : "
-        +sql);
+      firstUsefulChar= Utils::skipCommentsAndBlanks(real, firstUsefulChar + 1);
+
+      if (sql[firstUsefulChar] == '?') {
+        firstUsefulChar= Utils::skipCommentsAndBlanks(real, firstUsefulChar + 1);
+        if (sql[firstUsefulChar] == '=') {
+          isFunction= true;
+          firstUsefulChar= Utils::skipCommentsAndBlanks(real, firstUsefulChar + 1);
+        }
+        else {
+          wrongFormat= true;
+        }
+        
+      }
+      if (!wrongFormat) {
+        native= Utils::nativeSql(sql, protocol.get());
+        query= &native;
+        firstUsefulChar= Utils::skipCommentsAndBlanks(StringImp::get(native));
+      }
     }
 
-    SQLString query= Utils::nativeSql(matcher[2].str(), protocol.get());
+    auto it= query->cbegin() + firstUsefulChar;
+    if (wrongFormat || query->length() - firstUsefulChar < 6 || Utils::strnicmp(it, "call", 4)) {
+      throw SQLSyntaxErrorException(
+        "invalid callable syntax. must be like [{][?=]call <procedure/function name>[(?,?, ...)][}]\n but was : "
+        + sql);
+    }
 
-    bool isFunction= !matcher[3].str().empty();
+    firstUsefulChar= Utils::skipCommentsAndBlanks(StringImp::get(*query), firstUsefulChar + 5/* "CALL " */);
+    SQLString databaseAndProcedure, database, procedureName, arguments;
 
-    SQLString databaseAndProcedure(matcher[8].str());
-    SQLString database(matcher[10].str());
-    SQLString procedureName(matcher[13].str());
-    SQLString arguments(matcher[16].str());
+    size_t charOfInterest= query->find_first_of('(', firstUsefulChar);
 
+    if (charOfInterest != std::string::npos) {
+      databaseAndProcedure= query->substr(firstUsefulChar, charOfInterest - firstUsefulChar);
+      firstUsefulChar= charOfInterest + 1;
+      charOfInterest= query->find_first_of(')', firstUsefulChar);
+      if (charOfInterest == std::string::npos) {
+        throw SQLSyntaxErrorException(
+        "invalid callable syntax. must be like [{][?=]call <procedure/function name>[(?,?, ...)][}]\n but was : "
+        + sql);
+      }
+      arguments= query->substr(firstUsefulChar, charOfInterest - firstUsefulChar);
+    }
+    else {
+      databaseAndProcedure= query->substr(firstUsefulChar);
+    }
+
+    charOfInterest= databaseAndProcedure.find_first_of('.');
+    if (charOfInterest != std::string::npos) {
+      database= databaseAndProcedure.substr(0, charOfInterest);
+      procedureName= databaseAndProcedure.substr(charOfInterest);
+    }
+    else {
+      procedureName= databaseAndProcedure;
+    }
     if (database.empty() && sessionStateAware)
     {
       database= protocol->getDatabase();
     }
     if (!database.empty() && options->cacheCallableStmts)
     {
-      CallableStatementCacheKey key(database, query);
+      CallableStatementCacheKey key(database, *query);
       CallableStatementCache::iterator it= callableStatementCache->find(key);
 
       if (it != callableStatementCache->end())
@@ -535,7 +609,7 @@ namespace mariadb
           /* Do we need a clone? */
           CloneableCallableStatement* cloneable= dynamic_cast<CloneableCallableStatement*>(callableStatement.get());
 
-          if (cloneable == NULL)
+          if (cloneable == nullptr)
           {
             throw std::runtime_error("Cached statement is not cloneable");
           }
@@ -544,7 +618,7 @@ namespace mariadb
       }
       CallableStatement* callableStatement =
         createNewCallableStatement(
-          query,
+          *query,
           procedureName,
           isFunction,
           databaseAndProcedure,
@@ -559,7 +633,7 @@ namespace mariadb
     }
 
     return createNewCallableStatement(
-      query,
+      *query,
       procedureName,
       isFunction,
       databaseAndProcedure,
@@ -594,9 +668,9 @@ namespace mariadb
     */
   CallableStatement* MariaDbConnection::prepareCall(
     const SQLString& sql,
-    int32_t resultSetType,
-    int32_t resultSetConcurrency,
-    int32_t resultSetHoldability)
+    int32_t /*resultSetType*/,
+    int32_t /*resultSetConcurrency*/,
+    int32_t /*resultSetHoldability*/)
   {
     return prepareCall(sql);
   }
@@ -604,7 +678,7 @@ namespace mariadb
 
   CallableStatement* MariaDbConnection::createNewCallableStatement(
     SQLString query, SQLString& procedureName,
-    bool isFunction, SQLString& databaseAndProcedure, SQLString& database, SQLString& arguments,
+    bool /*isFunction*/, SQLString& /*databaseAndProcedure*/, SQLString& database, SQLString& /*arguments*/,
     int32_t resultSetType,
     int32_t resultSetConcurrency,
     Shared::ExceptionFactory& expFactory)
@@ -826,7 +900,7 @@ namespace mariadb
     *     connection
     * @see #getCatalog
     */
-  void MariaDbConnection::setCatalog(const SQLString& catalog) {
+  void MariaDbConnection::setCatalog(const SQLString& /*catalog*/) {
   }
 
 
@@ -1010,7 +1084,7 @@ namespace mariadb
     return ResultSet::HOLD_CURSORS_OVER_COMMIT;
   }
 
-  void MariaDbConnection::setHoldability(int32_t holdability) {
+  void MariaDbConnection::setHoldability(int32_t /*holdability*/) {
   }
 
   /**
@@ -1071,22 +1145,22 @@ namespace mariadb
   }
 
 
-  sql::Connection* MariaDbConnection::setClientOption(const SQLString& name, void* value) {
+  sql::Connection* MariaDbConnection::setClientOption(const SQLString& /*name*/, void* /*value*/) {
     throw SQLFeatureNotImplementedException("setClientOption support is not implemented yet");
   }
 
 
-  sql::Connection* MariaDbConnection::setClientOption(const SQLString& name, const SQLString& value) {
+  sql::Connection* MariaDbConnection::setClientOption(const SQLString& /*name*/, const SQLString& /*value*/) {
     throw SQLFeatureNotImplementedException("setClientOption support is not implemented yet");
   }
 
 
-  void MariaDbConnection::getClientOption(const SQLString& n, void* v) {
+  void MariaDbConnection::getClientOption(const SQLString& /*n*/, void* /*v*/) {
     throw SQLFeatureNotSupportedException("getClientOption is not supported");
   }
   
 
-  SQLString MariaDbConnection::getClientOption(const SQLString& n) {
+  SQLString MariaDbConnection::getClientOption(const SQLString& /*n*/) {
     throw SQLFeatureNotSupportedException("getClientOption is not supported");
   }
   /**

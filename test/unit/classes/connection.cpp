@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -196,7 +196,7 @@ void connection::getClientOption()
         sql::ConnectOptionsMap opts;
         int input_value=111;
         int output_value=2367;
-        void * output;
+        void *output;
 
         opts["hostName"]=url;
         opts["userName"]=user;
@@ -206,8 +206,8 @@ void connection::getClientOption()
         created_objects.clear();
         con.reset(driver->connect(opts));
 
-        output=(static_cast<int *> (&output_value));
-        //con->getClientOption("OPT_READ_TIMEOUT", output);
+        output= static_cast<void *> (&output_value);
+        con->getClientOption("OPT_READ_TIMEOUT", output);
         ASSERT_EQUALS(input_value, output_value);
       }
       catch (sql::SQLException &e)
@@ -222,7 +222,7 @@ void connection::getClientOption()
         sql::ConnectOptionsMap opts;
         bool input_value=true;
         bool output_value=false;
-        void * output;
+        void *output;
 
         opts["hostName"]=url;
         opts["userName"]=user;
@@ -232,8 +232,8 @@ void connection::getClientOption()
         created_objects.clear();
         con.reset(driver->connect(opts));
 
-        output=(static_cast<bool *> (&output_value));
-        //con->getClientOption("OPT_RECONNECT", output);
+        output= static_cast<void *> (&output_value);
+        con->getClientOption("OPT_RECONNECT", output);
         ASSERT_EQUALS(input_value, output_value);
       }
       catch (sql::SQLException &e)
@@ -248,7 +248,7 @@ void connection::getClientOption()
         sql::ConnectOptionsMap opts;
         sql::SQLString input_value("../lib/plugin/");
         const char *output_value="../lib/plugin/";
-        void * output;
+        void *output;
 
         opts["hostName"]=url;
         opts["userName"]=user;
@@ -258,8 +258,8 @@ void connection::getClientOption()
         created_objects.clear();
         con.reset(driver->connect(opts));
 
-        output=(static_cast<const char **> (&output_value));
-        //con->getClientOption("pluginDir", output);
+        output= static_cast<void*> (&output_value);
+        con->getClientOption("pluginDir", output);
 
         ASSERT_EQUALS(input_value, output_value);
       }
@@ -494,7 +494,14 @@ void connection::invalidCredentials()
       try
       {
         con.reset(driver->connect(url, user, mypasswd));
-        FAIL("... using invalid password should have failed");
+        if (getServerVersion(con) > 1100000)
+        {
+          logMsg("... with server version > 11.0 and root/Administrator account running tests, this may happen");
+        }
+        else
+        {
+          FAIL("... using invalid password should have failed");
+        }
       }
       catch (sql::SQLException &)
       {
@@ -3346,6 +3353,7 @@ void connection::concpp94_loadLocalInfile()
   p["user"] = user;
   p["password"] = passwd;
   p["allowLocalInfile"] = "true";
+  p["useTls"] = useTls ? "true" : "false";
 
   con.reset(driver->connect(url, p));
   ASSERT(con.get());
@@ -3434,6 +3442,108 @@ void connection::concpp105_conn_concurrency()
 
   t1.join();
   t2.join();
+}
+
+/* Test of setting of connection attributes */
+void connection::concpp112_connection_attributes()
+{
+  if (!perfschemaEnabled)
+  {
+    SKIP("Test requires performance_schema to be on");
+  }
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_name2");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("maconcpp", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_version2");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS(driverVersion, res->getString(1));
+  res->close();
+
+  sql::Properties p{{"user", user}, {"password", passwd}};
+  sql::SQLString localUrl(url);
+  localUrl.append("?connectionAttributes=_client_attr1: attr1_value , _client_attr2 :attr2_value");
+
+  con.reset(driver->connect(localUrl, p));
+
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr1");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr1_value", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_attr2");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr2_value", res->getString(1));
+  res->close();
+
+  con->close();
+
+  localUrl= url;
+  p.emplace("connectionAttributes", "_client_attr12, _client_attr22: attr2_value2");
+  con.reset(driver->connect(localUrl, p));
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+                                    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr22");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr2_value2", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_attr12");
+  res.reset(pstmt->executeQuery());
+  ASSERT(!res->next());
+  //ASSERT(res->next());
+  ///* Not sure why, but setting attribute with name, but without value results in blank space value of the attribute(with Windows client) */
+  //ASSERT_EQUALS(" ", my_fetch_str(Hstmt, buffer, 1), 2);
+
+  p["connectionAttributes"]= "_client_attr13 :attr1_value3, _client_attr23 ";
+  con.reset(driver->connect(localUrl, p));
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+                                    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr13");
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS("attr1_value3", res->getString(1));
+  res->close();
+  pstmt->setString(1, "_client_attr23");
+  res.reset(pstmt->executeQuery());
+  ASSERT(!res->next());
+  /*ASSERT(res->next());
+  ASSERT_EQUALS(" ", my_fetch_str(Hstmt, buffer, 1), 2);*/
+
+  p["connectionAttributes"]= "_client_attr14";
+  con.reset(driver->connect(localUrl, p));
+
+  pstmt.reset(con->prepareStatement("SELECT ATTR_VALUE FROM performance_schema.session_connect_attrs "
+                                    "WHERE processlist_id=CONNECTION_ID() AND ATTR_NAME=?"));
+  pstmt->setString(1, "_client_attr14");
+  res.reset(pstmt->executeQuery());
+  ASSERT(!res->next());
+  /*ASSERT(res->next());
+  ASSERT_EQUALS(" ", res->getString(1));*/
+
+  pstmt.reset();
+  con.reset();
+}
+
+void connection::setUp()
+{
+  super::setUp();
+
+  std::unique_ptr<sql::DatabaseMetaData> meta(con->getMetaData());
+  driverVersion= meta->getDriverVersion();
+
+  res.reset(stmt->executeQuery("SELECT 1 FROM dual where @@performance_schema=1"));
+  perfschemaEnabled= res->next();
+
+  res.reset();
+  stmt.reset(con->createStatement());
 }
 
 } /* namespace connection */

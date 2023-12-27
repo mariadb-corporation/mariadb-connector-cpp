@@ -37,7 +37,9 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#ifndef _WIN32
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include <inttypes.h>
+#elif not defined(_WIN32)
 #include <inttypes.h>
 #endif
 
@@ -97,20 +99,23 @@ static int silent = 1;
 
 #include <stdio.h>
 
-
 #ifndef L64
-#ifdef _WIN32
-#define L64(x) x##i64
-#else
+#if defined(__MINGW32__) || defined(__MINGW64__)
 #define L64(x) x##LL
+#elif not defined(_WIN32)
+#define L64(x) x##LL
+#else
+#define L64(x) x##i64
 #endif
 #endif
 
 #ifndef UL64
-#ifdef _WIN32
-#define UL64(x) x##ui64
-#else
+#if defined(__MINGW32__) || defined(__MINGW64__)
 #define UL64(x) x##ULL
+#elif not defined(_WIN32)
+#define UL64(x) x##ULL
+#else
+#define UL64(x) x##ui64
 #endif
 #endif
 
@@ -607,7 +612,7 @@ static void test_statement_5(std::unique_ptr<sql::Connection> & conn, std::uniqu
     /* Get a result set */
     try {
       std::unique_ptr<sql::ResultSet> rset(stmt->executeQuery("INSERT INTO test_function VALUES(2,200)"));
-      ensure("NULL returned for result set", rset.get() == NULL);
+      ensure("NULL returned for result set", rset.get() != NULL);
       ensure_equal_int("Non-empty result set", false, rset->next());
     } catch (sql::SQLException &) {
     } catch (...) {

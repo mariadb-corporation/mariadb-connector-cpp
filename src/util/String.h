@@ -19,8 +19,8 @@
 
 
 #include <cctype>
-#include <regex>
 #include <string>
+#include <vector>
 
 #include "SQLString.hpp"
 
@@ -39,9 +39,9 @@ namespace mariadb
 
   sql::SQLString replace(const SQLString& str, const SQLString& substr, const SQLString& substa);
 
-  sql::SQLString& replaceAll(SQLString& str, const SQLString& substr, const SQLString &subst);
+  sql::SQLString& replaceAny(SQLString& str, const SQLString& substr, const SQLString &subst);
 
-  sql::SQLString replaceAll(const SQLString& str, const SQLString& substr, const SQLString &subst);
+  sql::SQLString replaceAny(const SQLString& str, const SQLString& substr, const SQLString &subst);
 
   bool equalsIgnoreCase(const SQLString& str1, const SQLString& str2);
 

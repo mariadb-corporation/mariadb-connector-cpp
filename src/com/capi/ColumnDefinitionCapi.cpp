@@ -69,9 +69,9 @@ namespace capi
     */
   ColumnDefinitionCapi::ColumnDefinitionCapi(const ColumnDefinitionCapi& other) :
     metadata(other.metadata),
+    owned(other.owned),
     type(other.type),
-    length(other.length),
-    owned(other.owned)
+    length(other.length)
   {
   }
 

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2023 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -55,17 +55,19 @@ class ServerPrepareResult  : public PrepareResult {
   std::mutex lock;
 
 public:
+  typedef std::vector<Unique::ParameterHolder> ParamsetType;
+  typedef std::vector<ParamsetType> ParamsetArrType;
   ~ServerPrepareResult();
 
   /*ServerPrepareResult(
-    SQLString sql,
+    const SQLString& sql,
     capi::MYSQL_STMT* statementId,
     std::vector<Shared::ColumnDefinition>& columns,
     std::vector<Shared::ColumnDefinition>& parameters,
     Protocol* unProxiedProtocol);*/
 
   ServerPrepareResult(
-    const SQLString sql,
+    const SQLString& sql,
     capi::MYSQL_STMT* statementId,
     Protocol* unProxiedProtocol);
 
@@ -85,8 +87,8 @@ public:
   Protocol* getUnProxiedProtocol();
   const SQLString& getSql() const;
   const std::vector<capi::MYSQL_BIND>& getParameterTypeHeader() const;
-  void bindParameters(std::vector<Unique::ParameterHolder>& parameters);
-  void bindParameters(std::vector<std::vector<Unique::ParameterHolder>>& parameters, const int16_t *type= nullptr);
+  void bindParameters(ParamsetType& parameters);
+  void bindParameters(ParamsetArrType& parameters, const int16_t *type= nullptr);
   };
 }
 }

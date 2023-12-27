@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -38,7 +38,7 @@ public:
   void  writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
-  uint32_t writeBinary(sql::bytes& buffer) { return getValueBinLen(); }
+  uint32_t writeBinary(sql::bytes& /*buffer*/) { return getValueBinLen(); }
   const ColumnType& getColumnType() const;
   SQLString toString();
   bool isNullData() const;

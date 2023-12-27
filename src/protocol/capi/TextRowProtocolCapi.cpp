@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2023 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -212,7 +212,7 @@ namespace capi
    default:
    {
      std::string str(fieldBuf.arr + pos, length);
-     if (std::regex_match(str, dateRegex))
+     if (isDate(str))
      {
        return str.substr(0, 10 + (str.at(0) == '-' ? 1 : 0));
      }
@@ -249,23 +249,26 @@ namespace capi
 
    }
    else {
-     std::string raw(fieldBuf.arr + pos, length);
-     std::smatch matcher;
+     SQLString raw(fieldBuf.arr + pos, length);
+     std::vector<std::string> matcher;
 
-     if (!std::regex_search(raw, matcher, timeRegex)) {
-       throw SQLException("Time format \""+raw +"\" incorrect, must be HH:mm:ss");
+     if (!parseTime(raw, matcher)) {
+       throw SQLException("Time format \"" + raw + "\" incorrect, must be [-]HH+:[0-59]:[0-59]");
      }
-     bool negate= !matcher[1].str().empty();
+/* It makes sense to do here, as everything is ready */     
+#ifdef WE_FOUND_USE_FOR_THIS_TRANSITION_AT_THIS_LEVEL
+     bool negate= !matcher[1].empty();
 
      int32_t hour= std::stoi(matcher[2]);
      int32_t minutes= std::stoi(matcher[3]);
      int32_t seconds= std::stoi(matcher[4]);
-     std::string parts(matcher[5].str());
+#endif
+     auto &parts= matcher.back();
      int32_t nanoseconds= 0;
 
      if (parts.length() > 1)
      {
-       size_t digitsCnt= parts.length() - 1;
+       std::size_t digitsCnt= parts.length() - 1;
        nanoseconds= std::stoi(parts.substr(1, std::min(digitsCnt, (size_t)9U)));
 
        while (digitsCnt++ < 9) {
@@ -273,7 +276,7 @@ namespace capi
        }
      }
 
-     return matcher[0].str();
+     return matcher[0];
    }
  }
 
@@ -698,9 +701,12 @@ namespace capi
    if (lastValueWasNull()) {
      return 0;
    }
+   if (needsBinaryConversion(columnInfo)) {
+     return parseBinaryAsInteger<int32_t>(columnInfo);
+   }
+   // else
    int64_t value= getInternalLong(columnInfo);
    rangeCheck("int32_t", INT32_MIN, INT32_MAX, value, columnInfo);
-
    return static_cast<int32_t>(value);
  }
 
@@ -752,7 +758,12 @@ namespace capi
          "Conversion to integer not available for data field type "
          + columnInfo->getColumnType().getCppTypeName());
      default:
-       return std::stoll(std::string(fieldBuf.arr + pos, length));
+       if (needsBinaryConversion(columnInfo)) {
+         return parseBinaryAsInteger<int64_t>(columnInfo);
+       }
+       else {
+         return std::stoll(std::string(fieldBuf.arr + pos, length));
+       }
      }
 
    }
@@ -811,22 +822,16 @@ namespace capi
          "Conversion to integer not available for data field type "
          + columnInfo->getColumnType().getCppTypeName());
      default:
-       value= sql::mariadb::stoull(fieldBuf.arr + pos, length);
+       if (needsBinaryConversion(columnInfo)) {
+         return parseBinaryAsInteger<uint64_t>(columnInfo);
+       }
+       else {
+         value= sql::mariadb::stoull(fieldBuf.arr + pos, length);
+       }
      }
-
    }
    // Common parent for std::invalid_argument and std::out_of_range
    catch (std::logic_error&) {
-     /*std::stoll and std::stoull take care of */
-     /*std::string value(fieldBuf.arr + pos, length);
-     if (std::regex_match(value, isIntegerRegex)) {
-       try {
-         return std::stoull(value.substr(0, value.find_first_of('.')));
-       }
-       catch (std::exception&) {
-
-       }
-     }*/
      throw SQLException(
        "Out of range value for column '" + columnInfo->getName() + "' : value " + value,
        "22003",
@@ -982,6 +987,11 @@ namespace capi
    if (lastValueWasNull()) {
      return 0;
    }
+
+   if (needsBinaryConversion(columnInfo)) {
+     return parseBinaryAsInteger<int8_t>(columnInfo);
+   }
+   // else
    int64_t value= getInternalLong(columnInfo);
    rangeCheck("Byte", INT8_MIN, INT8_MAX, value, columnInfo);
    return static_cast<int8_t>(value);
@@ -999,6 +1009,10 @@ namespace capi
    if (lastValueWasNull()) {
      return 0;
    }
+   if (needsBinaryConversion(columnInfo)) {
+     return parseBinaryAsInteger<int16_t>(columnInfo);
+   }
+   // else
    int64_t value= getInternalLong(columnInfo);
    rangeCheck("int16_t", INT16_MIN, INT16_MAX, value, columnInfo);
    return static_cast<int16_t>(value);
@@ -1010,7 +1024,7 @@ namespace capi
   * @param columnInfo column information
   * @return String representation of time
   */
- SQLString TextRowProtocolCapi::getInternalTimeString(ColumnDefinition* columnInfo)
+ SQLString TextRowProtocolCapi::getInternalTimeString(ColumnDefinition* /*columnInfo*/)
  {
    if (lastValueWasNull()) {
      return "";

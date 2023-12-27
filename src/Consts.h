@@ -87,6 +87,16 @@ namespace mariadb
     SET = 2048
   };
 
+  enum LexState
+  {
+    Normal= 0,
+    SqlString,
+    SlashStarComment,
+    Escape,
+    EOLComment,
+    Backtick
+  };
+
   /* Also probably temporary location. Using it as it's generally included by everybody */
   /* typedefs for shared_ptr types, so the code looks nicer and cleaner */
   class Pool;
@@ -101,7 +111,6 @@ namespace mariadb
   class ClientSidePreparedStatement;
   class ServerSidePreparedStatement;
   class SelectResultSet;
-  //typedef ServerSidePreparedStatement ClientSidePreparedStatement;
   typedef SelectResultSet UpdatableResultSet;
   class ServerPrepareResult;
   class MariaDbParameterMetaData;
@@ -214,7 +223,6 @@ namespace mariadb
     typedef std::weak_ptr<Results> Results;
   }
 } //---- namespace mariadb
-
 } //---- namespave sql
 
 #include "UrlParser.h"

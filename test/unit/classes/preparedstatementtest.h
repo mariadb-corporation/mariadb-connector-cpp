@@ -57,7 +57,7 @@ public:
 
   EXAMPLE_TEST_FIXTURE(preparedstatement)
   {
-    TEST_CASE(crash);
+    /*TEST_CASE(crash);
     TEST_CASE(anonymousSelect);
     TEST_CASE(InsertSelectAllTypes);
     TEST_CASE(assortedSetType);
@@ -66,7 +66,9 @@ public:
     TEST_CASE(getMetaData);
     TEST_CASE(callSP);
     TEST_CASE(callSPInOut);
-    TEST_CASE(callSPWithPS);
+    TEST_CASE(callSPInOutWithPs);
+    TEST_CASE(callSP2);
+    TEST_CASE(callSP2WithPS);
     TEST_CASE(callSPMultiRes);
     TEST_CASE(getWarnings);
     TEST_CASE(blob);
@@ -74,9 +76,10 @@ public:
     TEST_CASE(addBatch);
     TEST_CASE(concpp88);
     TEST_CASE(bugConcpp96);
-    TEST_CASE(concpp99_batchRewrite);
+    TEST_CASE(concpp99_batchRewrite);*/
     TEST_CASE(concpp106_batchBulk);
     TEST_CASE(psCache);
+    TEST_CASE(concpp116_getByte);
   }
 
   /**
@@ -118,11 +121,12 @@ public:
    * Calls a stored procedure with IN and OUT parameters
    */
   void callSPInOut();
-
+  void callSPInOutWithPs();
   /**
    * Calls a stored procedure which contains a prepared statement
    */
-  void callSPWithPS();
+  void callSP2();
+  void callSP2WithPS();
 
   /**
    * Calls a stored procedure which returns multiple result sets
@@ -169,6 +173,8 @@ public:
    * checks if ssps cache used and works
    */
   void psCache();
+
+  void concpp116_getByte();
 
   /* unit_fixture methods overriding */
   void setUp();

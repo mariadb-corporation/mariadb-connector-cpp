@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2023 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -58,17 +58,19 @@ namespace mariadb
     * @param unProxiedProtocol indicate the protocol on which the prepare has been done
     */
   /*ServerPrepareResult::ServerPrepareResult(
-    SQLString _sql,
+    const SQLString& _sql,
     capi::MYSQL_STMT* _statementId,
     std::vector<Shared::ColumnDefinition>& _columns,
     std::vector<Shared::ColumnDefinition>& _parameters,
     Protocol* _unProxiedProtocol)
-    : sql(_sql)
-    , statementId(_statementId)
-    , columns(_columns)
+    :
+      columns(_columns)
     , parameters(_parameters)
-    , unProxiedProtocol(_unProxiedProtocol)
+    , sql(_sql)
+    , inCache(false)
+    , statementId(_statementId)
     , metadata(mysql_stmt_result_metadata(statementId), &capi::mysql_free_result)
+    , unProxiedProtocol(_unProxiedProtocol)
   {
   }*/
 
@@ -82,13 +84,13 @@ namespace mariadb
   * @param unProxiedProtocol indicate the protocol on which the prepare has been done
   */
   ServerPrepareResult::ServerPrepareResult(
-    const SQLString _sql,
+    const SQLString& _sql,
     capi::MYSQL_STMT* _statementId,
     Protocol* _unProxiedProtocol)
     : sql(_sql)
     , statementId(_statementId)
-    , unProxiedProtocol(_unProxiedProtocol)
     , metadata(mysql_stmt_result_metadata(statementId), &capi::mysql_free_result)
+    , unProxiedProtocol(_unProxiedProtocol)
   {
     columns.reserve(mysql_stmt_field_count(statementId));
     for (uint32_t i= 0; i < mysql_stmt_field_count(statementId); ++i) {
@@ -273,7 +275,7 @@ namespace mariadb
   }
 
 
-  void ServerPrepareResult::bindParameters(std::vector<Unique::ParameterHolder>& paramValue)
+  void ServerPrepareResult::bindParameters(ServerPrepareResult::ParamsetType& paramValue)
   {
     for (size_t i= 0; i < parameters.size(); ++i)
     {
@@ -285,12 +287,13 @@ namespace mariadb
     capi::mysql_stmt_bind_param(statementId, paramBind.data());
   }
 
-  uint8_t paramRowUpdateCallback(void* data, capi::MYSQL_BIND* bind, uint32_t row_nr)
+
+  void paramRowUpdate(void *data, capi::MYSQL_BIND* bind, uint32_t row_nr)
   {
     static char indicator[]{'\0', capi::STMT_INDICATOR_NULL};
+    ServerPrepareResult::ParamsetType& paramSet= (*static_cast<ServerPrepareResult::ParamsetArrType*>(data))[row_nr];
     std::size_t i= 0;
-    std::vector<Unique::ParameterHolder>& paramSet= (*static_cast<std::vector<std::vector<Unique::ParameterHolder>>*>(data))[row_nr];
-
+    
     for (auto& param : paramSet) {
       if (param->isNullData()) {
         bind[i].u.indicator= &indicator[1];
@@ -306,10 +309,19 @@ namespace mariadb
       bind[i].buffer_length = param->getValueBinLen();
       ++i;
     }
-    return '\0';
   }
-  
-  void ServerPrepareResult::bindParameters(std::vector<std::vector<Unique::ParameterHolder>>& paramValue, const int16_t *type)
+
+extern "C"
+{
+  char* paramRowUpdateCallback(void* data, capi::MYSQL_BIND* bind, uint32_t row_nr)
+  {
+    paramRowUpdate(data, bind, row_nr);
+    return NULL;
+  }
+}
+
+
+  void ServerPrepareResult::bindParameters(ServerPrepareResult::ParamsetArrType& paramValue, const int16_t *type)
   {
     uint32_t i= 0;
     resetParameterTypeHeader();

@@ -14,11 +14,11 @@ SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
 SET(CPACK_PACKAGE_API_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 
 IF(INSTALL_LAYOUT STREQUAL "DEFAULT")
-  SET(CPACK_COMPONENTS_ALL ConnectorCpp ConnectorC Plugins Documentation PublicApiHeaders)
+  SET(CPACK_COMPONENTS_ALL Plugins SharedLibraries ConnectorC Documentation Development)
 ELSEIF(INSTALL_LAYOUT STREQUAL "PKG")
-  SET(CPACK_COMPONENTS_ALL ConnectorCpp Plugins Documentation PublicApiHeaders)
+  SET(CPACK_COMPONENTS_ALL Plugins SharedLibraries Documentation Development)
 ELSE()
-  SET(CPACK_COMPONENTS_ALL ConnectorCpp Documentation PublicApiHeaders)
+  SET(CPACK_COMPONENTS_ALL SharedLibraries Documentation Development)
 ENDIF()
 
 IF(NOT SYSTEM_NAME)
@@ -123,6 +123,14 @@ IF(PKG)
   #CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/distribution.plist.in
   #               ${CMAKE_CURRENT_BINARY_DIR}/distribution.plist @ONLY)
 ENDIF()
+
+# "set/append array" - append a set of strings, separated by a space
+MACRO(SETA var)
+  FOREACH(v ${ARGN})
+    SET(${var} "${${var}} ${v}")
+  ENDFOREACH()
+ENDMACRO(SETA)
+
 #########################
 # DEB and RPM packaging #
 #########################
@@ -161,6 +169,30 @@ IF(RPM)
     SET(CPACK_RPM_PACKAGE_RELEASE_DIST ON)
     OPTION(CPACK_RPM_DEBUGINFO_PACKAGE "" ON)
     SET(CPACK_RPM_BUILD_SOURCE_DIRS_PREFIX "/usr/src/debug/${CPACK_RPM_PACKAGE_NAME}-${CPACK_RPM_PACKAGE_VERSION}")
+  ENDIF()
+  IF(CMAKE_VERSION VERSION_GREATER "3.9.99")
+
+    SET(CPACK_SOURCE_GENERATOR "RPM")
+    #SET(CPACK_RPM_BUILDREQUIRES "cmake;mariadb-connector-c")
+    SETA(CPACK_RPM_SOURCE_PKG_BUILD_PARAMS "-DRPM=${RPM}")
+
+    MACRO(ADDIF var)
+      IF(DEFINED ${var})
+        SETA(CPACK_RPM_SOURCE_PKG_BUILD_PARAMS "-D${var}=${${var}}")
+      ENDIF()
+    ENDMACRO()
+
+    ADDIF(CMAKE_BUILD_TYPE)
+    ADDIF(BUILD_CONFIG)
+    ADDIF(MARIADB_LINK_DYNAMIC)
+    #ADDIF(CMAKE_C_FLAGS_RELWITHDEBINFO)
+    #ADDIF(DCMAKE_CXX_FLAGS_RELWITHDEBINFO)
+    #ADDIF(WITH_SSL)
+
+    INCLUDE(build_depends)
+    MESSAGE(STATUS "Build dependencies of the source RPM are: ${CPACK_RPM_BUILDREQUIRES}")
+    MESSAGE(STATUS "Cmake params for build from source RPM: ${CPACK_RPM_SOURCE_PKG_BUILD_PARAMS}")
+
   ENDIF()
 ENDIF()
 IF("${CPACK_GENERATOR}" STREQUAL "TGZ" OR "${CPACK_GENERATOR}" STREQUAL "ZIP")

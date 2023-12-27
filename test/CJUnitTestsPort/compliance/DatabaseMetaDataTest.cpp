@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -30,7 +30,7 @@
  */
 
 
-
+#include <cstring>
 #include "DatabaseMetaDataTest.h"
 
 namespace testsuite
@@ -845,7 +845,9 @@ void DatabaseMetaDataTest::testGetCatalogs()
 /* throws Exception */
 void DatabaseMetaDataTest::testGetColumnPrivileges()
 {
-
+  if (std::getenv("srv") && std::strcmp(std::getenv("srv"), "Xpand") == 0) {
+    SKIP("Xpand does not support column priveleges");
+  }
   TestList sColumnNames;
   sColumnNames.push_back("TABLE_CAT");
   sColumnNames.push_back("TABLE_SCHEM");

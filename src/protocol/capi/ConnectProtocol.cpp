@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -40,6 +40,7 @@ namespace capi
 {
   static const char OptionSelected= 1, OptionNotSelected= 0;
   static const unsigned int uintOptionSelected= 1, uintOptionNotSelected= 0;
+  const char * attrPairSeparators= ",";
 
   const SQLString ConnectProtocol::SESSION_QUERY("SELECT @@max_allowed_packet,"
     "@@system_time_zone,"
@@ -57,32 +58,17 @@ namespace capi
    * @param lock the lock for thread synchronisation
    */
   ConnectProtocol::ConnectProtocol(std::shared_ptr<UrlParser>& _urlParser, GlobalStateInfo* _globalInfo, Shared::mutex& lock)
-    : lock(lock)
+    :
+      connection(nullptr, &mysql_close)
+    , lock(lock)
     , urlParser(_urlParser)
     , options(_urlParser->getOptions())
-    , database(_urlParser->getDatabase())
     , username(_urlParser->getUsername())
     , globalInfo(_globalInfo)
-    , connection(nullptr, &mysql_close)
-    , currentHost(localhost, 3306)
-    , explicitClosed(false)
-    , majorVersion(0)
-    , minorVersion(0)
-    , patchVersion(0)
-    , proxy(nullptr)
-    , connected(false)
-    , serverPrepareStatementCache(nullptr)
     , autoIncrementIncrement(_globalInfo ? _globalInfo->getAutoIncrementIncrement() : 1)
-    , eofDeprecated(false)
-    , hasWarningsFlag(false)
-    , hostFailed(false)
-    , readOnly(false)
-    , serverCapabilities(0)
-    , serverMariaDb(true)
-    , serverStatus(0)
-    , serverThreadId(0)
-    , socketTimeout(0)
-    , timeZone(nullptr)
+    , database(_urlParser->getDatabase())
+    , serverPrepareStatementCache(nullptr)
+    , currentHost(localhost, 3306)
   {
     urlParser->auroraPipelineQuirks();
     if (options->cachePrepStmts && options->useServerPrepStmts) {
@@ -445,12 +431,13 @@ namespace capi
           host);
 
       compressionHandler(options);
-
-    }catch (SQLException& sqlException){
+      setConnectionAttributes(options->connectionAttributes);
+    }
+    catch (SQLException& sqlException) {
       destroySocket();
       throw sqlException;
-
-    }catch (std::exception& ioException){
+    }
+    catch (std::exception& ioException) {
       destroySocket();
       if (!host.empty()){
         ExceptionFactory::INSTANCE.create(
@@ -523,11 +510,12 @@ namespace capi
     }
   }
 
+
   void ConnectProtocol::sslWrapper(
-      const SQLString& host,
+      const SQLString& /*host*/,
       const Shared::Options& options,
       int64_t& clientCapabilities,
-      int8_t exchangeCharset)
+      int8_t /*exchangeCharset*/)
   {
     const unsigned int safeCApiTrue= 0x01010101;
 
@@ -581,12 +569,13 @@ namespace capi
     assignStream(options);
   }
 
+
   void ConnectProtocol::authenticationHandler(
-    int8_t exchangeCharset,
-    int64_t clientCapabilities, const SQLString& authenticationPluginType,
-    sql::bytes& seed,
+    int8_t /*exchangeCharset*/,
+    int64_t /*clientCapabilities*/, const SQLString& /*authenticationPluginType*/,
+    sql::bytes& /*seed*/,
     const Shared::Options& options, const SQLString& database,
-    Credential* credential, const SQLString& host)
+    Credential* credential, const SQLString& /*host*/)
   {
     mysql_optionsv(connection.get(), MARIADB_OPT_USER, (void*)credential->getUser().c_str());
     mysql_optionsv(connection.get(), MARIADB_OPT_PASSWORD, (void*)credential->getPassword().c_str());
@@ -600,6 +589,40 @@ namespace capi
   {
     if (options->useCompression){
       mysql_optionsv(connection.get(), MYSQL_OPT_COMPRESS, NULL);
+    }
+  }
+
+  /* Parses connectAttributes option and sets connection atttributes uxing it
+   */
+  void ConnectProtocol::setConnectionAttributes(const SQLString & attributes)
+  {
+    mysql_optionsv(connection.get(), MYSQL_OPT_CONNECT_ATTR_ADD, (void *)"_client_name2", (void *)"maconcpp");
+    mysql_optionsv(connection.get(), MYSQL_OPT_CONNECT_ATTR_ADD, (void *)"_client_version2", (void *)Version::version);
+
+    if (attributes.length() > 0)
+    {
+      std::vector<sql::bytes> token;
+      std::size_t pairs= Utils::tokenize(token, attributes, attrPairSeparators);
+
+      for (std::size_t i= 0; i < pairs; ++i)
+      {
+        const char *value= std::strchr(token[i].arr, ':');
+        if (value == nullptr || static_cast<std::size_t>(value - token[i].arr) > token[i].size())
+        {
+          //result= true;
+          continue;
+          /*SQLString keyCopy(key, token[i].size() - (key - token[i].arr));
+          rtrim(keyCopy);
+          mysql_optionsv(mariadb, MYSQL_OPT_CONNECT_ATTR_ADD, (void *)keyCopy.data());*/
+        }
+        else
+        {
+          SQLString keyCopy(token[i].arr, value - token[i].arr), valueCopy(value + 1, token[i].size() - (value - token[i].arr) - 1);
+          keyCopy.trim();
+          valueCopy.trim();
+          mysql_optionsv(connection.get(), MYSQL_OPT_CONNECT_ATTR_ADD, (void *)keyCopy.c_str(), (void *)valueCopy.c_str());
+        }
+      }
     }
   }
 
@@ -871,7 +894,7 @@ namespace capi
     return !this->connected;
   }
 
-  void ConnectProtocol::loadCalendar(const SQLString& srvTimeZone, const SQLString& srvSystemTimeZone)
+  void ConnectProtocol::loadCalendar(const SQLString& /*srvTimeZone*/, const SQLString& /*srvSystemTimeZone*/)
   {
 
     timeZone= nullptr;// Calendar.getInstance().getTimeZone();
@@ -880,9 +903,9 @@ namespace capi
     else {
 
       SQLString tz= options->serverTimezone;
-      if (!tz){
+      if (!tz) {
         tz= srvTimeZone;
-        if (){
+        if () {
           tz= srvSystemTimeZone;
         }
       }
@@ -1051,7 +1074,6 @@ namespace capi
     std::vector<HostAddress>& addrs= urlParser->getHostAddresses();
     std::vector<HostAddress> hosts(addrs);
 
-
     if (urlParser->getHaMode() == HaMode::LOADBALANCE) {
       static auto rnd= std::default_random_engine{};
       std::shuffle(hosts.begin(), hosts.end(), rnd);
@@ -1196,7 +1218,6 @@ namespace capi
         val= val *10 +car -48;
       }
     }
-
 
     if (type == 2){
       patchVersion= val;
@@ -1349,12 +1370,12 @@ namespace capi
    *
    * @param setTcpNoDelay value to set.
    */
-  void ConnectProtocol::changeSocketTcpNoDelay(bool setTcpNoDelay)
+  void ConnectProtocol::changeSocketTcpNoDelay(bool /*setTcpNoDelay*/)
   {
     try {
       //TODO is there anything libmariadb for that?
       //socket->setTcpNoDelay(setTcpNoDelay);
-    }catch (std::runtime_error& ){
+    } catch (std::runtime_error& ) {
 
     }
   }

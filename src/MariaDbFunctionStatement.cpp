@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -53,13 +53,14 @@ namespace mariadb
     int32_t resultSetType,
     int32_t resultSetConcurrency,
     Shared::ExceptionFactory& exptnFactory)
-    : connection(_connection),
+    : 
       stmt(new ClientSidePreparedStatement(
       _connection,
       "SELECT "+ _functionName +(arguments.empty() ? "()" : arguments),
       resultSetType,
       resultSetConcurrency, Statement::NO_GENERATED_KEYS, exptnFactory)),
       parameterMetadata(nullptr),
+      connection(_connection),
       databaseName(_databaseName),
       functionName(_functionName)
   {
@@ -92,10 +93,10 @@ namespace mariadb
   }
 
   MariaDbFunctionStatement::MariaDbFunctionStatement(const MariaDbFunctionStatement &other, MariaDbConnection* _connection)
-    : connection(_connection)
-    , stmt(other.stmt->clone(_connection))
+    :
+      stmt(other.stmt->clone(_connection))
     , parameterMetadata(other.parameterMetadata)
-    , outputResultSet(nullptr)
+    , connection(_connection)
     , params(other.params)
   {
   }

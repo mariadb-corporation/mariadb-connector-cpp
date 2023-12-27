@@ -64,8 +64,8 @@ namespace mariadb
    * @throws SQLException if connection error occur
    */
   FailoverProxy::FailoverProxy(Listener* _listener, std::mutex* _lock)
-    : lock(_lock)
-    , listener(_listener)
+    : listener(_listener)
+    , lock(_lock)
   {
     listener->setProxy(this);
     listener->initializeConnection();

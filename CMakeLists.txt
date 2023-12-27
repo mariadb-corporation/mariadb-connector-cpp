@@ -1,5 +1,5 @@
 # ************************************************************************************
-#   Copyright (C) 2013,2022 MariaDB Corporation AB
+#   Copyright (C) 2013,2023 MariaDB Corporation AB
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Library General Public
@@ -19,9 +19,9 @@
 
 IF(APPLE)
   # productbuild packaging stuff 
-  cmake_minimum_required(VERSION 3.23)
+  CMAKE_MINIMUM_REQUIRED(VERSION 3.23)
 ELSE()
-  cmake_minimum_required(VERSION 3.1)
+  CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 ENDIF()
 CMAKE_POLICY(SET CMP0048 NEW)
 
@@ -30,13 +30,22 @@ PROJECT(mariadb_connector_cpp
 #        DESCRIPTION "MariaDB Connector/C++"
         LANGUAGES CXX C)
 
-IF(CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
-  MESSAGE(FATAL_ERROR "GCC version >=4.9 is required")
+IF(CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
+  MESSAGE(FATAL_ERROR "GCC version >=4.8 is required")
 ENDIF()
 
 SET(MACPP_VERSION_QUALITY "rc") #Empty also means GA
 SET(MACPP_VERSION "1.01.0003")
 SET(MARIADB_DEFAULT_PLUGINS_SUBDIR "plugin")
+
+# For C/C
+IF(CMAKE_VERSION VERSION_LESS "3.1")
+  IF(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    SET (CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-std=gnu99 ${CMAKE_C_FLAGS}")
+  ENDIF()
+ELSE()
+  SET(CMAKE_C_STANDARD 99)
+ENDIF()
 
 SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -46,14 +55,21 @@ SET(PRODUCT_MANUFACTURER "MariaDB")
 SET(PRODUCT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 SET(PRODUCT_SERIES "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
 
+GET_PROPERTY(MAODBC_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+# We don't need RC for what we need MAODBC_LANGUAGES for
+LIST(REMOVE_ITEM MAODBC_LANGUAGES "RC")
+
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+
 SET(LIBRARY_NAME "mariadbcpp")
+SET(STATIC_LIBRARY_NAME "${LIBRARY_NAME}-static")
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/Version.h.in
                ${CMAKE_SOURCE_DIR}/src/Version.h)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.rc.in
                ${CMAKE_SOURCE_DIR}/src/maconncpp.rc)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/SearchLibrary.cmake)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/SetValueMacro.cmake)
+INCLUDE(SearchLibrary)
+INCLUDE(SetValueMacro)
 
 
 SET (MACPP_SOURCES src/MariaDbDriver.cpp
@@ -347,11 +363,46 @@ IF(WIN32)
   SOURCE_GROUP(Protocol REGULAR_EXPRESSION "src/protocol/")
   SOURCE_GROUP(C_API REGULAR_EXPRESSION "/capi/")
 
-  SET(PLATFORM_DEPENDENCIES ws2_32)# Shlwapi)
+  SET(PLATFORM_DEPENDENCIES ws2_32)
 ELSE()
   SEARCH_LIBRARY(LIB_MATH floor m)
   MESSAGE(STATUS "Found math lib: ${LIB_MATH}")
   SET(PLATFORM_DEPENDENCIES ${LIB_MATH})
+ENDIF()
+
+INCLUDE(check_compiler_flag)
+IF(WITH_ASAN)
+  IF(MSVC)
+    MA_SET_COMPILER_FLAG("-fsanitize=address" DEBUG RELWITHDEBINFO)
+    SET(MAODBC_LINKER_FLAGS ${MAODBC_LINKER_FLAGS} /INCREMENTAL:NO)
+    MA_SET_LINKER_FLAG("${MAODBC_LINKER_FLAGS}" DEBUG RELWITHDEBINFO)
+  ELSE()
+    MY_CHECK_AND_SET_COMPILER_FLAG("-U_FORTIFY_SOURCE" DEBUG RELWITHDEBINFO)
+    MY_CHECK_AND_SET_COMPILER_FLAG("-fsanitize=address -fPIC" DEBUG RELWITHDEBINFO)
+
+    SET(WITH_ASAN_OK 1)
+    FOREACH(lang ${MAODBC_LANGUAGES})
+      IF(NOT ${have_${lang}__fsanitize_address__fPIC})
+        SET(WITH_ASAN_OK 0)
+      ENDIF()
+    ENDFOREACH()
+    IF(WITH_ASAN_OK)
+      OPTION(WITH_ASAN_SCOPE "Enable -fsanitize-address-use-after-scope" OFF)
+      IF(WITH_ASAN_SCOPE)
+        MY_CHECK_AND_SET_COMPILER_FLAG("-fsanitize=address -fsanitize-address-use-after-scope" DEBUG RELWITHDEBINFO)
+      ENDIF()
+    ELSE()
+      MESSAGE(FATAL_ERROR "Do not know how to enable address sanitizer")
+    ENDIF()
+  ENDIF()
+ENDIF()
+
+IF (WITH_UBSAN)
+  MY_CHECK_AND_SET_COMPILER_FLAG("-fsanitize=undefined -fno-sanitize=alignment -U_FORTIFY_SOURCE -DWITH_UBSAN" DEBUG RELWITHDEBINFO)
+ENDIF()
+
+IF (WITH_MSAN)
+  MY_CHECK_AND_SET_COMPILER_FLAG("-fsanitize=memory -fsanitize-memory-track-origins -U_FORTIFY_SOURCE" DEBUG RELWITHDEBINFO)
 ENDIF()
 
 # This has to be before C/C's cmake run, or it will build with /MD
@@ -359,38 +410,54 @@ IF(WIN32)
   IF (MSVC)
     SET(CONFIG_TYPES "DEBUG" "RELEASE" "RELWITHDEBINFO" "MINSIZEREL")
     FOREACH(BUILD_TYPE ${CONFIG_TYPES})
-      FOREACH(COMPILER CXX C)
+      FOREACH(COMPILER ${MAODBC_LANGUAGES})
         SET(COMPILER_FLAGS "${CMAKE_${COMPILER}_FLAGS_${BUILD_TYPE}}")
         IF (NOT COMPILER_FLAGS STREQUAL "")
-          STRING(REPLACE "/MD" "/MT" COMPILER_FLAGS ${COMPILER_FLAGS})
-          IF (BUILD_TYPE STREQUAL "Debug")
-            SET(COMPILER_FLAGS "${COMPILER_FLAGS} /RTC1 /RTCc")
+          IF(NOT WITH_ASAN)
+            STRING(REPLACE "/MD" "/MT" COMPILER_FLAGS ${COMPILER_FLAGS})
             STRING(REPLACE "/Zi" "/ZI" COMPILER_FLAGS ${COMPILER_FLAGS})
-          ENDIF()
+          ENDIF(NOT WITH_ASAN)
           MESSAGE (STATUS "CMAKE_${COMPILER}_FLAGS_${BUILD_TYPE}= ${COMPILER_FLAGS}")
           SET(CMAKE_${COMPILER}_FLAGS_${BUILD_TYPE} ${COMPILER_FLAGS} CACHE
-               STRING "overwritten by mariadb-cpp" FORCE)
+               STRING "Overwritten by mariadb-cpp" FORCE)
         ENDIF()
       ENDFOREACH()
     ENDFOREACH()
   ENDIF()
   ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS -DWIN32_LEAN_AND_MEAN)
-  ADD_DEFINITIONS("-DMARIADB_EXPORTED=__declspec(dllexport)")
   SET(INSTALL_PLUGINDIR "${MARIADB_DEFAULT_PLUGINS_SUBDIR}")
   SET(PLATFORM_DEPENDENCIES ${PLATFORM_DEPENDENCIES} version.lib)
 ENDIF()
 
 ### Build options, initial settings and platform defaults
-INCLUDE("${CMAKE_SOURCE_DIR}/cmake/options_defaults.cmake")
+INCLUDE("options_defaults")
 
 ### Setting installation paths - should go before C/C subproject sets its own. We need to have control over those
-INCLUDE("${CMAKE_SOURCE_DIR}/cmake/install.cmake")
+INCLUDE("install")
 MESSAGE(STATUS "Libraries installation dir: ${INSTALL_LIBDIR}")
 MESSAGE(STATUS "Authentication Plugins installation dir: ${INSTALL_PLUGINDIR}")
 
-IF(WIN32)
+IF(NOT MINGW AND WIN32)
   MESSAGE(STATUS "Generate MSI package: ${WITH_MSI}")
   MESSAGE(STATUS "Sign MSI package: ${WITH_SIGNCODE}")
+ENDIF()
+
+# By now we have everything needed by tests. If we need to build them only - firing config now and exit
+# There is "normal" tests config below
+IF(BUILD_TESTS_ONLY)
+  IF(WIN32)
+    LINK_DIRECTORIES("$ENV{ProgramFiles}/MariaDB/MariaDB C++ Connector 64-bit")
+  ELSE()
+    MESSAGE(STATUS "Configurig Tests: tcp://${TEST_UID}@${TEST_SERVER}:${TEST_PORT}/${TEST_SCHEMA} socket: ${TEST_SOCKET}")
+    SET(DRIVER_LIB_LOCATION "${libmariadb_prefix}/${INSTALL_LIBDIR}")
+  ENDIF()
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include/conncpp)
+  # At some point use of String.cpp from the driver was added to tests. Need to verify if it's still needed/a good idea.
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
+  ADD_SUBDIRECTORY(test)
+  # Only means only
+  RETURN()
 ENDIF()
 
 ADD_CUSTOM_TARGET(DEPENDENCIES_FOR_PACKAGE)
@@ -398,52 +465,62 @@ IF(NOT WITH_SSL)
   MESSAGE(STATUS "Setting default value for WITH_SSL for libmariadb build to ON")
   SET(CONC_WITH_SSL ON)
 ENDIF()
-### Including C/C subproject
-IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
-  IF(GIT_BUILD_SRCPKG)
-    # We don't want conn/c (wrong) src pkg to be built.
-    SET(GIT_BUILD_SRCPKG FALSE)
-    SET(CONNCPP_GIT_BUILD_SRCPKG TRUE)
-  ENDIF()
-  MESSAGE(STATUS "Running C/C cmake scripts")
-  INCLUDE(${CMAKE_SOURCE_DIR}/cmake/connector_c.cmake)
-  INSTALL(FILES $<TARGET_FILE:libmariadb>
-          DESTINATION "${INSTALL_LIBDIR}"
- 	  COMPONENT ConnectorC)
-  MESSAGE(STATUS "Configuring to install libmariadb to ${INSTALL_LIBDIR}")
 
-  SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password)
-  IF (PLUGINS_DYNAMIC)
-    # The list from CC is visible for us
-    SET(PLUGINS_LIST ${PLUGINS_DYNAMIC})
-  ELSE()
-    SET(PLUGINS_LIST ${OWN_PLUGINS_LIST})
-  ENDIF()
-  IF(APPLE)
-    SET(PRODUCT_IDENTIFIER "com.mariadb.connector.cpp")
-    SET_TARGET_PROPERTIES(${PLUGINS_LIST}
-                          PROPERTIES XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES
-                                     XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--timestamp -f"
-                         )
-    IF(WITH_SIGNCODE)
-      SET_TARGET_PROPERTIES(${PLUGINS_LIST} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Developer ID Application: ${DEVELOPER_ID}")
+### Including C/C subproject
+IF(NOT USE_SYSTEM_INSTALLED_LIB)
+  IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
+    IF(GIT_BUILD_SRCPKG)
+      # We don't want conn/c (wrong) src pkg to be built.
+      SET(GIT_BUILD_SRCPKG FALSE)
+      SET(CONNCPP_GIT_BUILD_SRCPKG TRUE)
+    ENDIF()
+    MESSAGE(STATUS "Running C/C cmake scripts")
+    INCLUDE(connector_c)
+    INSTALL(FILES $<TARGET_FILE:libmariadb>
+            DESTINATION ${INSTALL_LIBDIR}
+ 	          COMPONENT ConnectorC)
+    MESSAGE(STATUS "Configuring to install libmariadb to ${INSTALL_LIBDIR}")
+
+    SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password)
+    IF (PLUGINS_DYNAMIC)
+      # The list from CC is visible for us
+      SET(PLUGINS_LIST ${PLUGINS_DYNAMIC})
     ELSE()
-      SET_TARGET_PROPERTIES(${PLUGINS_LIST} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
+      SET(PLUGINS_LIST ${OWN_PLUGINS_LIST})
     ENDIF()
+    # Why is it here?
+    IF(APPLE)
+      SET(PRODUCT_IDENTIFIER "com.mariadb.connector.cpp")
+      SET_TARGET_PROPERTIES(${PLUGINS_LIST}
+                            PROPERTIES XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES
+                                       XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--timestamp -f"
+                           )
+      IF(WITH_SIGNCODE)
+        SET_TARGET_PROPERTIES(${PLUGINS_LIST} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Developer ID Application: ${DEVELOPER_ID}")
+      ELSE()
+        SET_TARGET_PROPERTIES(${PLUGINS_LIST} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
+      ENDIF()
+    ENDIF()
+
+    FOREACH(CC_PLUGIN ${PLUGINS_LIST})
+      IF(NOT PLUGINS_DYNAMIC OR "${PLUGIN_${CC_PLUGIN}_TYPE}" STREQUAL "MARIADB_CLIENT_PLUGIN_AUTH")
+        MESSAGE(STATUS "Configuring to install ${CC_PLUGIN} to ${INSTALL_PLUGINDIR}")
+        ADD_DEPENDENCIES(DEPENDENCIES_FOR_PACKAGE ${CC_PLUGIN})
+        INSTALL(FILES $<TARGET_FILE:${CC_PLUGIN}>
+                DESTINATION ${INSTALL_PLUGINDIR}
+                COMPONENT Plugins)
+      ENDIF()
+    ENDFOREACH()
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/libmariadb/include)
+    INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/libmariadb/include)
+  ELSE()
+    SET(USE_SYSTEM_INSTALLED_LIB TRUE)
+    IF (NOT WIN32)
+      INCLUDE_DIRECTORIES(/usr/include/mariadb)
+      # /usr/${INSTALL_LIBDIR}
+    ENDIF()
+    MESSAGE(STATUS "There is no Connector/C sub-project folder, linking against libmariadb installed on the system")
   ENDIF()
-  FOREACH(CC_PLUGIN ${PLUGINS_LIST})
-    IF(NOT PLUGINS_DYNAMIC OR "${PLUGIN_${CC_PLUGIN}_TYPE}" STREQUAL "MARIADB_CLIENT_PLUGIN_AUTH")
-      MESSAGE(STATUS "Configuring to install ${CC_PLUGIN} to ${INSTALL_PLUGINDIR}")
-      ADD_DEPENDENCIES(DEPENDENCIES_FOR_PACKAGE ${CC_PLUGIN})
-      INSTALL(FILES $<TARGET_FILE:${CC_PLUGIN}>
-              DESTINATION ${INSTALL_PLUGINDIR}
-              COMPONENT Plugins)
-    ENDIF()
-  ENDFOREACH()
-#  ADD_DEPENDENCIES(libmariadb DEPENDENCIES_FOR_PACKAGE)
-ELSE()
-  SET(USE_SYSTEM_INSTALLED_LIB TRUE)
-  MESSAGE(STATUS "There is no Connector/C sub-project folder, linking against libmariadb installed on the system")
 ENDIF()
 
 IF(WITH_MSI AND WITH_SIGNCODE)
@@ -455,8 +532,6 @@ IF(WITH_MSI AND WITH_SIGNCODE)
   MARK_AS_ADVANCED(SIGN_OPTIONS)
 ENDIF()
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/libmariadb/include)
-INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/libmariadb/include)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include/conncpp)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
@@ -468,9 +543,51 @@ CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.def.in
                ${CMAKE_SOURCE_DIR}/src/maconncpp.def)
 
 # Dynamic linking is default on non-Windows
-IF(MARIADB_LINK_DYNAMIC OR NOT WIN32)# OR USE_SYSTEM_INSTALLED_LIB)
+IF(MARIADB_LINK_DYNAMIC)
   IF(USE_SYSTEM_INSTALLED_LIB)
-    SET(MARIADB_CLIENT_TARGET_NAME mariadb)
+    IF(MINGW)
+      # I guess -l can be removed here. Also, for build with c/c as submodule this will have to me moved on top level out of this IF's 
+      SET(PLATFORM_DEPENDENCIES "${PLATFORM_DEPENDENCIES}" "-lsecur32 -lcrypt32")
+      # Not sure if mingw really needs this separate mysql.h search, but let it be
+      FIND_PATH(MARIADB_CONNECTORC_INCLUDE NAMES "mysql.h"
+                DOC "Path to MariaDB Connector/C Include Directory")
+
+      FIND_PATH(MARIADB_CONNECTORC_LIB NAMES libmariadbclient.a
+                                             liblibmariadb.dll.a 
+                                             libmariadb.dll 
+                                             mariadbclient
+                                             mariadb
+                DOC "Path to MariaDB Connector/C Lib Directory")
+      # Not sure why is shlwapi is needed
+      FIND_LIBRARY(MARIADB_SHLWAPI_LIB NAMES ShLwApi.Lib 
+                                             ShLwApi
+                DOC "Path to ShLwApi.Lib. Usually found in $ENV{programfiles\(x86\)}\\Windows Kits\\10\\Lib")
+    ELSE()
+      FIND_LIBRARY(CCLIB libmariadb.so)
+      IF (${CCLIB} STREQUAL "CCLIB-NOTFOUND")
+        # It won't be found by linker either unless user does some magic before build, so we actually could stop here with error
+        MESSAGE(STATUS "C/C library has not been found")
+        SET(MARIADB_CLIENT_TARGET_NAME mariadb)
+      ELSE()
+        MESSAGE(STATUS "C/C library found here ${CCLIB}")
+        SET(MARIADB_CLIENT_TARGET_NAME ${CCLIB})
+      ENDIF()
+      FIND_FILE(CCHEADER NAMES "mysql.h"
+                PATHS /usr/include/mariadb
+                      /usr/include/mysql
+                      /usr/local/include/mariadb
+                      /usr/local/include/mysql)
+                #PATH_SUFFIXES mariadb mysql)
+      IF (${CCHEADER} STREQUAL "CCHEADER-NOTFOUND")
+        # Again should probably stop
+        MESSAGE(STATUS "C/C headers have not been found")
+        INCLUDE_DIRECTORIES(/usr/include/mariadb /usr/include/mysql)
+      ELSE()
+        GET_FILENAME_COMPONENT(CCHEADERDIR ${CCHEADER} DIRECTORY)
+        MESSAGE(STATUS "C/C headers have been found here ${CCHEADERDIR}")
+        INCLUDE_DIRECTORIES(${CCHEADERDIR})
+      ENDIF()
+    ENDIF()
   ELSE()
     SET(MARIADB_CLIENT_TARGET_NAME libmariadb)
   ENDIF()
@@ -480,11 +597,34 @@ ELSE()
   MESSAGE(STATUS "Linking Connector/C library statically(${MARIADB_CLIENT_TARGET_NAME})")
 ENDIF()
 
-IF(WIN32)
-  ADD_LIBRARY(${LIBRARY_NAME} SHARED ${MACPP_SOURCES} ${CMAKE_SOURCE_DIR}/src/maconncpp.def ${CMAKE_SOURCE_DIR}/src/maconncpp.rc)
+
+ADD_LIBRARY(${LIBRARY_NAME}_obj OBJECT ${MACPP_SOURCES})
+IF(UNIX)
+  SET_TARGET_PROPERTIES(${LIBRARY_NAME}_obj PROPERTIES COMPILE_FLAGS "${CMAKE_SHARED_LIBRARY_C_FLAGS}")
+ENDIF()
+SET(${LIBRARY_NAME}_OBJECTS $<TARGET_OBJECTS:${LIBRARY_NAME}_obj>)
+
+IF(WIN32 AND NOT MINGW)
+  ADD_LIBRARY(${LIBRARY_NAME} SHARED ${CMAKE_SOURCE_DIR}/src/maconncpp.rc ${${LIBRARY_NAME}_OBJECTS} ${CMAKE_SOURCE_DIR}/src/maconncpp.def)
+  ADD_LIBRARY(${STATIC_LIBRARY_NAME} STATIC ${${LIBRARY_NAME}_OBJECTS} ${CMAKE_SOURCE_DIR}/src/maconncpp.rc)
+
+  TARGET_COMPILE_DEFINITIONS(${LIBRARY_NAME}_obj PRIVATE "MARIADB_EXPORTED=__declspec(dllexport)")
+
+  TARGET_COMPILE_DEFINITIONS(${LIBRARY_NAME} PRIVATE "MARIADB_EXPORTED=__declspec(dllexport)")
+  TARGET_COMPILE_DEFINITIONS(${LIBRARY_NAME} INTERFACE "MARIADB_EXPORTED=__declspec(dllimport)")
+
+  TARGET_COMPILE_DEFINITIONS(${STATIC_LIBRARY_NAME} PUBLIC MARIADB_STATIC_LINK)
 ELSE()
-#  MESSAGE(STATUS "Version script: ${CMAKE_SOURCE_DIR}/src/maconncpp.def")
-  ADD_LIBRARY(${LIBRARY_NAME} SHARED ${MACPP_SOURCES})
+  # Xcode doesn't support targets that have only object files,
+  # so let's add an empty file to keep Xcode happy
+  IF(CMAKE_GENERATOR MATCHES Xcode)
+    FILE(WRITE ${CMAKE_BINARY_DIR}/empty.cpp "")
+    SET(EMPTY_FILE ${CMAKE_BINARY_DIR}/empty.cpp)
+  ENDIF()
+  #  MESSAGE(STATUS "Version script: ${CMAKE_SOURCE_DIR}/src/maconncpp.def")
+  ADD_LIBRARY(${LIBRARY_NAME} SHARED ${${LIBRARY_NAME}_OBJECTS} ${EMPTY_FILE})
+  ADD_LIBRARY(${STATIC_LIBRARY_NAME} STATIC ${${LIBRARY_NAME}_OBJECTS} ${EMPTY_FILE})
+
   IF(APPLE)
     SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl"
                                      INSTALL_RPATH_USE_LINK_PATH 0
@@ -492,10 +632,18 @@ ELSE()
                                      XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES
                                      XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--timestamp -f"
                                      INSTALL_RPATH "${MAODBC_INSTALL_RPATH}")
+    SET_TARGET_PROPERTIES(${STATIC_LIBRARY_NAME} PROPERTIES 
+                                     INSTALL_RPATH_USE_LINK_PATH 0
+                                     BUILD_WITH_INSTALL_RPATH 1
+                                     XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES
+                                     XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--timestamp -f"
+                                     INSTALL_RPATH "${MAODBC_INSTALL_RPATH}")
     IF(WITH_SIGNCODE)
       SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Developer ID Application: ${DEVELOPER_ID}")
+      SET_TARGET_PROPERTIES(${STATIC_LIBRARY_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Developer ID Application: ${DEVELOPER_ID}")
     ELSE()
       SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
+      SET_TARGET_PROPERTIES(${STATIC_LIBRARY_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
     ENDIF()
   ELSE()
 #    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_SOURCE_DIR}/src/maconncpp.def")
@@ -503,6 +651,40 @@ ELSE()
 ENDIF()
 
 TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${MARIADB_CLIENT_TARGET_NAME} ${PLATFORM_DEPENDENCIES})
+TARGET_LINK_LIBRARIES(${STATIC_LIBRARY_NAME} mariadbclient)
+
+# MINGW Specific includes and linking
+IF(MINGW)
+  
+  IF(MARIADB_SHLWAPI_LIB)
+    TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${MARIADB_SHLWAPI_LIB})
+    MESSAGE(STATUS "Found shlwapi lib - ${MARIADB_SHLWAPI_LIB}")
+  ELSE()
+    # Should here and below be just warnings?
+    MESSAGE(WARNING "Did not find shlwapi lib")
+  ENDIF()
+
+  IF(MARIADB_CONNECTORC_INCLUDE)
+    # Probably has to be private, and not PUBLIC here
+    TARGET_INCLUDE_DIRECTORIES(${LIBRARY_NAME}_obj PUBLIC  ${MARIADB_CONNECTORC_INCLUDE})
+    MESSAGE(STATUS "Found MariaDB Connector/C includes - ${MARIADB_CONNECTORC_INCLUDE}")
+  ELSE()
+    MESSAGE(WARNING "Did not find MariaDB Connector/C includes")
+  ENDIF()
+  
+  IF(MARIADB_CONNECTORC_LIB)
+    TARGET_LINK_DIRECTORIES(${LIBRARY_NAME} PUBLIC ${MARIADB_CONNECTORC_LIB})
+    TARGET_LINK_DIRECTORIES(${STATIC_LIBRARY_NAME} PUBLIC ${MARIADB_CONNECTORC_LIB})
+    MESSAGE(STATUS "Found MariaDB Connector/C libraries - ${MARIADB_CONNECTORC_LIB}")
+  ELSE()
+    MESSAGE(WARNING "Did not find MariaDB Connector/C libraries")
+  ENDIF()
+  
+ENDIF()
+
+INCLUDE(symlink)
+CREATE_SYMLINK(lib${LIBRARY_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX} ${STATIC_LIBRARY_NAME} ${INSTALL_LIBDIR})
+
 ADD_DEPENDENCIES(${LIBRARY_NAME} DEPENDENCIES_FOR_PACKAGE)
 
 ########## Packaging ##########
@@ -526,8 +708,12 @@ ELSE()
     #ADD_SUBDIRECTORY(osxinstall)
   ENDIF()
   INSTALL(TARGETS ${LIBRARY_NAME}
-          DESTINATION ${INSTALL_LIBDIR}
-          COMPONENT ConnectorCpp)
+          LIBRARY DESTINATION ${INSTALL_LIBDIR}
+          COMPONENT SharedLibraries)
+  INSTALL(TARGETS
+          ${STATIC_LIBRARY_NAME}
+          ARCHIVE DESTINATION ${INSTALL_LIBDIR}
+          COMPONENT Development)
 
   MESSAGE(STATUS "Documentation installed to ${INSTALL_DOCDIR}")
   MESSAGE(STATUS "License file installed to ${INSTALL_LICENSEDIR}")
@@ -545,19 +731,21 @@ ELSE()
   ADD_SUBDIRECTORY(include)
 ENDIF()
 # Tests. Checking if we have them. May be not the case if we are building from source package
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
+IF(WITH_UNIT_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
   ADD_SUBDIRECTORY(test)
   ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
 	  COMMAND ${CMAKE_COMMAND} ARGS -E copy $<TARGET_FILE:${LIBRARY_NAME}> test)
-  ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
+  IF(NOT MINGW AND NOT USE_SYSTEM_INSTALLED_LIB)
+    ADD_CUSTOM_COMMAND(TARGET ${LIBRARY_NAME} POST_BUILD
 	  COMMAND ${CMAKE_COMMAND} ARGS -E copy $<TARGET_FILE:libmariadb> test)
+  ENDIF()
 ENDIF()
 
 # Packaging
-INCLUDE(cmake/packaging.cmake)
+INCLUDE(packaging)
 MESSAGE(STATUS "License File: ${CPACK_RESOURCE_FILE_LICENSE}")
 MESSAGE(STATUS "ReadMe File: ${CPACK_PACKAGE_DESCRIPTION_FILE}")
 MESSAGE(STATUS "Source Package Filename: ${CPACK_SOURCE_PACKAGE_FILE_NAME}.${CPACK_SOURCE_GENERATOR}")
 
-# install_test/CMakeLists.txt fuke configuration should go after packaging.cmake but before include(CPack). Since CPack included in packaging cmake,
+# install_test/CMakeLists.txt configuration should go after packaging.cmake but before include(CPack). Since CPack included in packaging cmake,
 # that configuration has been moved there. For the same reason there also moved the message with package name

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -38,7 +38,9 @@
 #define __C_CPP_TYPES_H_
 
 #include <cstdlib>
-#if defined(_WIN32) || defined(_WIN64)
+
+
+#if defined(_WIN32) && !defined(__MINGW32__) && !defined(__MINGW64__)
 /* MySQL 5.1 might have defined it before in include/config-win.h */
 #  ifdef strncasecmp
 #    undef strncasecmp
@@ -71,19 +73,11 @@
 #endif
 
 #ifndef L64
-#ifdef _WIN32
-#define L64(x) x##i64
-#else
 #define L64(x) x##LL
-#endif
 #endif
 
 #ifndef UL64
-#ifdef _WIN32
-#define UL64(x) x##ui64
-#else
 #define UL64(x) x##ULL
-#endif
 #endif
 
 

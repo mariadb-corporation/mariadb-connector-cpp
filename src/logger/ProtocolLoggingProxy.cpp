@@ -661,7 +661,7 @@ namespace mariadb
 	MariaDBExceptionThrower ProtocolLoggingProxy::handleIoException(std::runtime_error& initialException, bool throwRightAway)
 	{
 		/* Add here logging if needed */
-	  return protocol->handleIoException(initialException);
+	  return protocol->handleIoException(initialException, throwRightAway);
 	}
 
 

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -48,8 +48,8 @@ namespace mariadb
     */
   SQLString LogQueryTool::subQuery(const SQLString& sql)
   {
-    if (options->maxQuerySizeToLog  >0 && sql.size() > static_cast<size_t>(options->maxQuerySizeToLog -3)) {
-      return sql.substr(0, options->maxQuerySizeToLog -3)+"...";
+    if (options->maxQuerySizeToLog  > 3 && sql.size() > static_cast<std::size_t>(options->maxQuerySizeToLog - 3)) {
+      return sql.substr(0, options->maxQuerySizeToLog -3) + "...";
     }
     return sql;
   }
@@ -161,7 +161,7 @@ namespace mariadb
     if (options->dumpQueriesOnException ||sqlEx.getErrorCode()==1064) {
       SQLString querySql(prepareResult->getSql());
       SQLString message(sqlEx.getMessage());
-      if (options->maxQuerySizeToLog != 0 && querySql.size()>options->maxQuerySizeToLog -3) {
+      if (options->maxQuerySizeToLog > 3 && querySql.size() > static_cast<std::size_t>(options->maxQuerySizeToLog - 3)) {
         message.append("\nQuery is: "+querySql.substr(0, options->maxQuerySizeToLog -3)+"...");
       }
       else {
@@ -190,7 +190,7 @@ namespace mariadb
   {
     if (options->dumpQueriesOnException) {
       SQLString sql(serverPrepareResult->getSql());
-      if (serverPrepareResult->getParamCount()>0) {
+      if (serverPrepareResult->getParamCount() > 0) {
         sql.append(", parameters [");
         if (parameters.size() > 0) {
           for (size_t i= 0;
@@ -206,7 +206,7 @@ namespace mariadb
       std::stringstream str;
       str << std::this_thread::get_id();
 
-      if (options->maxQuerySizeToLog != 0 &&sql.size()>options->maxQuerySizeToLog -3) {
+      if (options->maxQuerySizeToLog > 3 && sql.size() > static_cast<std::size_t>(options->maxQuerySizeToLog - 3)) {
         return message
           +"\nQuery is: "
           +sql.substr(0, options->maxQuerySizeToLog -3)

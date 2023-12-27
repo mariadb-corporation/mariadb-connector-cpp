@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -1571,7 +1571,15 @@ void bugs::concpp60()
       try
       {
         getConnection(&connProps);
-        fail("Connection was supposed to fail", __FILE__, __LINE__);
+        if (getServerVersion(con) > 1100000)
+        {
+          logMsg("... with server version > 11.0 and root/Administrator account running tests, this may happen");
+        }
+        else
+        {
+          FAIL("Connection was supposed to fail");
+        }
+      
       }
       catch (sql::SQLException & e)
       {
@@ -1583,6 +1591,43 @@ void bugs::concpp60()
       logMsg(e.what());
     }
   }
+}
+
+void bugs::change_request_9()
+{
+  logMsg("bugs::change_request_9");
+
+  // Initialize prepared statement
+    pstmt.reset(con->prepareStatement("SELECT ?"));
+
+    // Check for all target locations of the segmentation fault
+    for(int8_t i = 0; i < 16; ++i)
+    {
+      int8_t value= i << 4;
+      pstmt->setByte(1, value);
+      res.reset(pstmt->executeQuery());
+      ASSERT(res->next());
+      ASSERT_EQUALS(value, res->getByte(1));
+    }
+
+  res.reset(stmt->executeQuery("SELECT '-128', 0xA1B2C3D4, 0x81, 0x881"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(-128, res->getByte(1));
+
+  ASSERT_EQUALS(int32_t(0xA1B2C3D4), res->getInt(2));
+
+  ASSERT_EQUALS(static_cast<int8_t>(129), res->getByte(3));
+  ASSERT_EQUALS(static_cast<int16_t>(129), res->getShort(3));
+  ASSERT_EQUALS(129, res->getInt(3));
+  ASSERT_EQUALS(129LL, res->getLong(3));
+  ASSERT_EQUALS(129, res->getUInt(3));
+  ASSERT_EQUALS(129ULL, res->getUInt64(3));
+  
+  ASSERT_EQUALS(static_cast<int16_t>(2177), res->getShort(4));//0x881=2177
+  ASSERT_EQUALS(2177, res->getInt(4));
+  ASSERT_EQUALS(2177U, res->getUInt(4));
+  ASSERT_EQUALS(2177ULL, res->getUInt64(4));
+  ASSERT_EQUALS(2177LL, res->getLong(4));
 }
 
 } /* namespace regression */

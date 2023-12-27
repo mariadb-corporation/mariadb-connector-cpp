@@ -48,8 +48,7 @@ clock_t Timer::startTest(const String & test)
   if (cit == theInstance().timeRecorder.end())
   {
     theInstance().currentTest=test;
-    test_timer t=test_timer();
-    theInstance().timeRecorder[test]=t;
+    theInstance().timeRecorder[test]= test_timer();
     return theInstance().timeRecorder[test].cpu;
   }
 
@@ -88,8 +87,8 @@ clock_t Timer::startTimer(const String & test, const String & name, const String
   clock_t now=clock();
   if (it == theInstance().timeRecorder[test].timers.end())
   {
-    timer t=timer(now, file, line);
-    theInstance().timeRecorder[test].timers[name]=t;
+    timer t(now, file, line);
+    theInstance().timeRecorder[test].timers[name]= t;
   }
   else
   {

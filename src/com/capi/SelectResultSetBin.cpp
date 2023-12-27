@@ -57,25 +57,20 @@ namespace capi
                                          bool callableResult,
                                          bool eofDeprecated)
     : SelectResultSet(results->getFetchSize()),
-      statement(results->getStatement()),
-      isClosedFlag(false),
-      protocol(protocol),
       options(protocol->getOptions()),
-      noBackslashEscapes(protocol->noBackslashEscapes()),
       columnsInformation(spr->getColumns()),
-      columnNameMap(new ColumnNameMap(columnsInformation)),
       columnInformationLength(static_cast<int32_t>(columnsInformation.size())),
+      noBackslashEscapes(protocol->noBackslashEscapes()),
+      protocol(protocol),
+      callableResult(callableResult),
+      statement(results->getStatement()),
+      capiStmtHandle(spr->getStatementId()),
       dataSize(0),
       resultSetScrollType(results->getResultSetScrollType()),
-      rowPointer(-1),
-      callableResult(callableResult),
+      columnNameMap(new ColumnNameMap(columnsInformation)),
+      isClosedFlag(false),
       eofDeprecated(eofDeprecated),
-      isEof(false),
-      capiStmtHandle(spr->getStatementId()),
-      timeZone(nullptr),
-      forceAlias(false),
-      lastRowPointer(-1)
-    //      timeZone(protocol->getTimeZone(),
+      forceAlias(false)
   {
     if (fetchSize == 0 || callableResult) {
       data.reserve(10);//= new char[10]; // This has to be array of arrays. Need to decide what to use for its representation

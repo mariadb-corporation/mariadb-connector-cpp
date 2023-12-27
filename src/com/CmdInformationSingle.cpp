@@ -18,8 +18,6 @@
 *************************************************************************************/
 
 
-#include <regex>
-
 #include "CmdInformationSingle.h"
 
 #include "SelectResultSet.h"
@@ -28,7 +26,6 @@ namespace sql
 {
 namespace mariadb
 {
-
   /**
     * Object containing update / insert ids, optimized for only one result.
     *
@@ -38,8 +35,8 @@ namespace mariadb
     */
   CmdInformationSingle::CmdInformationSingle(int64_t _insertId, int64_t _updateCount, int32_t _autoIncrement)
     : insertId(_insertId)
-    , updateCount(_updateCount)
     , autoIncrement(_autoIncrement)
+    , updateCount(_updateCount)
   {
   }
 
@@ -113,14 +110,65 @@ namespace mariadb
 
   bool CmdInformationSingle::isDuplicateKeyUpdate(const SQLString& sql)
   {
-    std::regex dupKeyUpdate("(?i).*ON\\s+DUPLICATE\\s+KEY\\s+UPDATE.*");
-    return std::regex_match(StringImp::get(sql), dupKeyUpdate);
+    //dupKeyUpdate("(?i).*ON\\s+DUPLICATE\\s+KEY\\s+UPDATE.*");
+    const std::string &str= StringImp::get(sql);
+    std::size_t On= 0, prev= 17/* minimal position of ON DUPLICATE clause in INSERT x VALUES() */;
+
+    while ((On= str.find_first_of("Oo", prev)) != std::string::npos && On < str.size() - 22) {
+      if ((str[On + 1] == 'N' || str[On + 1] == 'n') && std::isspace(str[On + 2])) {
+
+        for (prev= On + 3; prev < str.size() && std::isspace(str[prev]); ++prev);
+        // We don't have enough space for the rest of clause
+        if (prev > str.size() - 20) {
+          return false;
+        }
+        if ((str[prev] == 'D' || str[prev] == 'd') &&
+          (str[++prev] == 'U' || str[prev] == 'u') &&
+          (str[++prev] == 'P' || str[prev] == 'p') &&
+          (str[++prev] == 'L' || str[prev] == 'l') &&
+          (str[++prev] == 'I' || str[prev] == 'a') &&
+          (str[++prev] == 'C' || str[prev] == 'c') &&
+          (str[++prev] == 'A' || str[prev] == 'a') &&
+          (str[++prev] == 'T' || str[prev] == 't') &&
+          (str[++prev] == 'E' || str[prev] == 'e')) {
+
+          for (++prev; prev < str.size() && std::isspace(str[prev]); ++prev);
+
+          if (prev > str.size() - 10) {
+            return false;
+          }
+
+          if ((str[prev] == 'K' || str[prev] == 'k') &&
+            (str[++prev] == 'E' || str[prev] == 'e') &&
+            (str[++prev] == 'Y' || str[prev] == 'y')) {
+
+            for (++prev; prev < str.size() && std::isspace(str[prev]); ++prev);
+
+            if (prev > str.size() - 6) {
+              return false;
+            }
+
+            if ((str[prev] == 'U' || str[prev] == 'u') &&
+              (str[++prev] == 'P' || str[prev] == 'p') &&
+              (str[++prev] == 'D' || str[prev] == 'd') &&
+              (str[++prev] == 'A' || str[prev] == 'a') &&
+              (str[++prev] == 'T' || str[prev] == 't') &&
+              (str[++prev] == 'E' || str[prev] == 'e')) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
   }
+
 
   ResultSet* CmdInformationSingle::getBatchGeneratedKeys(Protocol* protocol)
   {
     return getGeneratedKeys(protocol, nullptr);
   }
+
 
   int32_t CmdInformationSingle::getCurrentStatNumber()
   {
@@ -138,12 +186,14 @@ namespace mariadb
     return updateCount != RESULT_SET_VALUE;
   }
 
-  void CmdInformationSingle::addSuccessStat(int64_t updateCount, int64_t insertId)
+  /* Have nothing to do, but must implement */
+  void CmdInformationSingle::addSuccessStat(int64_t /*updateCount*/, int64_t /*insertId*/)
   {
 
   }
 
-  void CmdInformationSingle::setRewrite(bool rewritten)
+  /* Have nothing to do, but must implement */
+  void CmdInformationSingle::setRewrite(bool /*rewritten*/)
   {
 
   }

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -21,7 +21,6 @@
 #ifndef _MARIADBSTATEMENT_H_
 #define _MARIADBSTATEMENT_H_
 
-#include <regex>
 #include <map>
 #include <mutex>
 
@@ -40,8 +39,6 @@ class MariaDbConnection;
 
 class MariaDbStatement : public Statement
 {
-  static std::regex identifierPattern ; /*Pattern.compile("[0-9a-zA-Z\\$_\\u0080-\\uFFFF]*",Pattern.UNICODE_CASE |Pattern.CANON_EQ)*/
-  static std::regex escapePattern ; /*Pattern.compile("[\u0000'\"\b\n\r\t\u001A\\\\]")*/
   static const std::map<std::string,std::string> mapper;
   static Shared::Logger logger ; /*LoggerFactory.getLogger(MariaDbStatement)*/
 
@@ -60,12 +57,12 @@ protected:
   bool canUseServerTimeout;
   Shared::ExceptionFactory exceptionFactory;
 
-  volatile bool closed ; /*false*/
-  int32_t queryTimeout;
-  int64_t maxRows;
+  volatile bool closed= false;
+  int32_t queryTimeout= 0;
+  int64_t maxRows= 0;
   Shared::Results results;
   int32_t fetchSize;
-  volatile bool executing;
+  volatile bool executing= false;
   sql::Ints batchRes;
   sql::Longs largeBatchRes;
 
@@ -73,14 +70,14 @@ private:
 #ifdef MAYBE_IN_NEXTVERSION
   ScheduledExecutorService timeoutScheduler;
 #endif
-  bool warningsCleared;
-  bool mustCloseOnCompletion ; /*false*/
+  bool warningsCleared= true;
+  bool mustCloseOnCompletion= false;
   std::vector<SQLString> batchQueries;
 #ifdef MAYBE_IN_NEXTVERSION
   Future<?>timerTaskFuture;
 #endif
-  bool isTimedout;
-  uint32_t maxFieldSize;
+  bool isTimedout= false;
+  uint32_t maxFieldSize= 0;
 
 public:
   MariaDbStatement(MariaDbConnection* connection, int32_t resultSetScrollType, int32_t resultSetConcurrency, Shared::ExceptionFactory& factory);

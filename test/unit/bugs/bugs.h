@@ -80,6 +80,7 @@ public:
     TEST_CASE(concpp48);
     TEST_CASE(concpp62);
     TEST_CASE(concpp60);
+    TEST_CASE(change_request_9);
   }
 
   /**
@@ -147,6 +148,8 @@ public:
   void concpp48();
   void concpp62();
   void concpp60();
+
+  void change_request_9();
 };
 
 REGISTER_FIXTURE(bugs);

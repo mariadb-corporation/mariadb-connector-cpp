@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -54,20 +54,20 @@ struct Options
   SQLString enabledTlsProtocolSuites;
   SQLString tlsPeerFPList;
   /** TLS options - end **/
-  bool      useFractionalSeconds;
+  bool      useFractionalSeconds= true;
   bool      pinGlobalTxToPhysicalConnection;
   SQLString socketFactory;
-  int32_t   connectTimeout;
+  int32_t   connectTimeout= 30000;
   SQLString pipe;
   SQLString localSocket;
   SQLString sharedMemory;
-  bool      tcpNoDelay;
-  bool      tcpKeepAlive;
+  bool      tcpNoDelay= true;
+  bool      tcpKeepAlive= true;
   int32_t   tcpRcvBuf;
   int32_t   tcpSndBuf;
   bool      tcpAbortiveClose;
   SQLString localSocketAddress;
-  int32_t   socketTimeout;
+  int32_t   socketTimeout= 0;
   bool      allowMultiQueries;
   bool      rewriteBatchedStatements;
   bool      useCompression;
@@ -76,36 +76,36 @@ struct Options
   SQLString useCharacterEncoding;
   bool      blankTableNameMeta;
   SQLString credentialType;
-  bool      useTls;
+  bool      useTls= false;
   SQLString enabledTlsCipherSuites;
   SQLString sessionVariables;
-  bool      tinyInt1isBit;
-  bool      yearIsDateType;
+  bool      tinyInt1isBit= true;
+  bool      yearIsDateType= true;
   bool      createDatabaseIfNotExist;
   SQLString serverTimezone;
-  bool      nullCatalogMeansCurrent;
+  bool      nullCatalogMeansCurrent= true;
   bool      dumpQueriesOnException;
   bool      useOldAliasMetadataBehavior;
   bool      useMysqlMetadata;
-  bool      allowLocalInfile;
-  bool      cachePrepStmts;
-  int32_t   prepStmtCacheSize;
-  int32_t   prepStmtCacheSqlLimit;
+  bool      allowLocalInfile= true;
+  bool      cachePrepStmts= true;
+  int32_t   prepStmtCacheSize= 250;
+  int32_t   prepStmtCacheSqlLimit= 2048;
   bool      useAffectedRows;
   bool      maximizeMysqlCompatibility;
   bool      useServerPrepStmts;
-  bool      continueBatchOnError;
-  bool      jdbcCompliantTruncation;
-  bool      cacheCallableStmts;
-  int32_t   callableStmtCacheSize;
+  bool      continueBatchOnError= true;
+  bool      jdbcCompliantTruncation= true;
+  bool      cacheCallableStmts= false;
+  int32_t   callableStmtCacheSize= 150;
   SQLString connectionAttributes;
   bool      useBatchMultiSend;
-  int32_t   useBatchMultiSendNumber;
+  int32_t   useBatchMultiSendNumber= 100;
   bool      usePipelineAuth;
   bool      enablePacketDebug;
   bool      useBulkStmts;
   bool      disableSslHostnameVerification;
-  bool      autocommit;
+  bool      autocommit= true;
   bool      includeInnodbStatusInDeadlockExceptions;
   bool      includeThreadDumpInDeadlockExceptions;
   SQLString servicePrincipalName;
@@ -115,26 +115,26 @@ struct Options
 
   bool      log;
   bool      profileSql;
-  int32_t   maxQuerySizeToLog;
+  int32_t   maxQuerySizeToLog= 1024;
   int64_t   slowQueryThresholdNanos;
   bool      assureReadOnly;
   bool      autoReconnect;
   bool      failOnReadOnly;
-  int32_t   retriesAllDown;
+  int32_t   retriesAllDown= 120;
   int32_t   validConnectionTimeout;
-  int32_t   loadBalanceBlacklistTimeout;
-  int32_t   failoverLoopRetries;
+  int32_t   loadBalanceBlacklistTimeout= 50;
+  int32_t   failoverLoopRetries= 120;
   bool      allowMasterDownConnection;
   SQLString galeraAllowedState;
-  bool      pool;
+  bool      pool= false;
   SQLString poolName;
-  int32_t   maxPoolSize;
+  int32_t   maxPoolSize= 8;
   int32_t   minPoolSize;
-  int32_t   maxIdleTime;
+  int32_t   maxIdleTime= 600;
   bool      staticGlobal;
-  int32_t   poolValidMinDelay;
+  int32_t   poolValidMinDelay= 1000;
   bool      useResetConnection;
-  bool      useReadAheadInput;
+  bool      useReadAheadInput= true;
   SQLString serverRsaPublicKeyFile;
   SQLString tlsPeerFP;
 

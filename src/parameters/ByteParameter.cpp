@@ -27,8 +27,8 @@ namespace mariadb
 
   const std::string ByteParameter::hexArray("0123456789ABCDEF");
 
-  ByteParameter::ByteParameter(char value)
-    : value(value & 0xFF)
+  ByteParameter::ByteParameter(int8_t value)
+    : value(value)
   {
   }
 
@@ -41,15 +41,15 @@ namespace mariadb
   void ByteParameter::writeTo(PacketOutputStream& os)
   {
     os.write("0x");
-    os.write(hexArray[value >> 4]);
-    os.write(hexArray[value &0x0F]);
+    os.write(hexArray[(value & 0xF0) >> 4]);
+    os.write(hexArray[value & 0x0F]);
   }
 
   void ByteParameter::writeTo(SQLString& os)
   {
     os.append("0x");
-    os.append(hexArray[value >> 4]);
-    os.append(hexArray[value &0x0F]);
+    os.append(hexArray[(value & 0xF0) >> 4]);
+    os.append(hexArray[value & 0x0F]);
   }
 
   int64_t ByteParameter::getApproximateTextProtocolLength() const

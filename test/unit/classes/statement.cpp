@@ -432,7 +432,7 @@ void statement::unbufferedFetch()
     {
       fail(e.what(), __FILE__, __LINE__);
     }
-    int option=sql::ResultSet::TYPE_FORWARD_ONLY;
+    //int option=sql::ResultSet::TYPE_FORWARD_ONLY;
     con->setSchema(db);
     //con->setClientOption("defaultStatementResultType", (static_cast<void *> (&option)));
     stmt.reset(con->createStatement());

@@ -1181,7 +1181,7 @@ void preparedstatement::callSPInOut()
 
     try
     {
-      cstmt.reset(con->prepareCall("CALL p('myver', @version)"));
+      cstmt.reset(con->prepareCall(" {CALL p('myver', @version) }"));
       ASSERT(!cstmt->execute());
     }
     catch (sql::SQLException &e)
@@ -1228,7 +1228,80 @@ void preparedstatement::callSPInOut()
   }
 }
 
-void preparedstatement::callSPWithPS()
+void preparedstatement::callSPInOutWithPs()
+{
+  logMsg("preparedstatement::callSPInOut() - MySQL_PreparedStatement::*()");
+  std::string sp_code("CREATE PROCEDURE p(IN ver_in VARCHAR(25), OUT ver_out VARCHAR(25)) BEGIN SELECT ver_in INTO ver_out; END;");
+  bool autoCommit = con->getAutoCommit();
+
+  /* Version on the server can be different from the one reported by MaxScale. And we are testing here SP, not the connection metadata */
+  if (isSkySqlHA() || isMaxScale())
+  {
+    con->setAutoCommit(false);
+  }
+  try
+  {
+    if (!createSP(sp_code))
+    {
+      logMsg("... skipping: cannot create SP");
+      if (isSkySqlHA() || isMaxScale())
+      {
+        con->setAutoCommit(autoCommit);
+      }
+      return;
+    }
+
+    try
+    {
+      pstmt.reset(con->prepareStatement("CALL p('myver', @version)"));
+      ASSERT(!pstmt->execute());
+    }
+    catch (sql::SQLException &e)
+    {
+      if (isSkySqlHA() || isMaxScale())
+      {
+        con->setAutoCommit(autoCommit);
+      }
+      if (e.getErrorCode() != 1295)
+      {
+        logErr(e.what());
+        std::stringstream msg1;
+        msg1.str("");
+        msg1 << "SQLState: " << e.getSQLState() << ", MySQL error code: " << e.getErrorCode();
+        logErr(msg1.str());
+        fail(e.what(), __FILE__, __LINE__);
+      }
+      // PS protocol does not support CALL
+      logMsg("... skipping: PS protocol does not support CALL");
+      return;
+    }
+    pstmt.reset(con->prepareStatement("SELECT @version AS _version"));
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT_EQUALS("myver", res->getString("_version"));
+
+    if (isSkySqlHA() || isMaxScale())
+    {
+      con->setAutoCommit(autoCommit);
+    }
+  }
+  catch (sql::SQLException &e)
+  {
+    if (isSkySqlHA() || isMaxScale())
+    {
+      con->setAutoCommit(autoCommit);
+    }
+    logErr(e.what());
+    std::stringstream msg2;
+    msg2.str("");
+    msg2 << "SQLState: " << e.getSQLState() << ", MySQL error code: " << e.getErrorCode();
+    logErr(msg2.str());
+    fail(e.what(), __FILE__, __LINE__);
+  }
+}
+
+
+void preparedstatement::callSP2()
 {
   logMsg("preparedstatement::callSPWithPS() - MySQL_PreparedStatement::*()");
 
@@ -1267,8 +1340,9 @@ void preparedstatement::callSPWithPS()
     msg2 << "... val = '" << res->getString(1) << "'";
     logMsg(msg2.str());
 
-    while(cstmt->getMoreResults())
-    {}
+    while (cstmt->getMoreResults())
+    {
+    }
 
     try
     {
@@ -1311,6 +1385,89 @@ void preparedstatement::callSPWithPS()
     }
   }
 }
+
+
+void preparedstatement::callSP2WithPS()
+{
+  logMsg("preparedstatement::callSPWithPS() - MySQL_PreparedStatement::*()");
+
+  try
+  {
+    std::string sp_code("CREATE PROCEDURE p(IN val VARCHAR(25)) BEGIN SET @sql = CONCAT('SELECT \"', val, '\"'); PREPARE stmt FROM @sql; EXECUTE stmt; DROP PREPARE stmt; END;");
+    if (!createSP(sp_code))
+    {
+      logMsg("... skipping:");
+      return;
+    }
+
+    try
+    {
+      pstmt.reset(con->prepareStatement("CALL p('abc')"));
+      res.reset(pstmt->executeQuery());
+    }
+    catch (sql::SQLException &e)
+    {
+      if (e.getErrorCode() != 1295)
+      {
+        logErr(e.what());
+        std::stringstream msg1;
+        msg1.str("");
+        msg1 << "SQLState: " << e.getSQLState() << ", MySQL error code: " << e.getErrorCode();
+        logErr(msg1.str());
+        fail(e.what(), __FILE__, __LINE__);
+      }
+      // PS interface cannot call this kind of statement
+      return;
+    }
+    ASSERT(res->next());
+    ASSERT_EQUALS("abc", res->getString(1));
+    std::stringstream msg2;
+    msg2.str("");
+    msg2 << "... val = '" << res->getString(1) << "'";
+    logMsg(msg2.str());
+
+    while(pstmt->getMoreResults())
+    {}
+
+    try
+    {
+      pstmt.reset(con->prepareCall("CALL p(?)"));
+      pstmt->setString(1, "123");
+      res.reset(pstmt->executeQuery());
+      ASSERT(res->next());
+      ASSERT_EQUALS("123", res->getString(1));
+      ASSERT(!res->next());
+    }
+    catch (sql::SQLException &e)
+    {
+      if (e.getErrorCode() != 1295)
+      {
+        logErr(e.what());
+        std::stringstream msg3;
+        msg3.str("");
+        msg3 << "SQLState: " << e.getSQLState() << ", MySQL error code: " << e.getErrorCode();
+        logErr(msg3.str());
+        fail(e.what(), __FILE__, __LINE__);
+      }
+      // PS interface cannot call this kind of statement
+      return;
+    }
+    res->close();
+  }
+  catch (sql::SQLException &e)
+  {
+    if (e.getErrorCode() != 1295)
+    {
+      logErr(e.what());
+      std::stringstream msg4;
+      msg4.str("");
+      msg4 << "SQLState: " << e.getSQLState() << ", MySQL error code: " << e.getErrorCode();
+      logErr(msg4.str());
+      fail(e.what(), __FILE__, __LINE__);
+    }
+  }
+}
+
 
 void preparedstatement::callSPMultiRes()
 {
@@ -1856,7 +2013,7 @@ void preparedstatement::concpp99_batchRewrite()
     pstmt.reset(con->prepareStatement(insertQuery[i]));
     //ssps.reset(sspsCon->prepareStatement(insertQuery[i]));
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (size_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row]);
       pstmt->setString(2, val[i][row]);
       pstmt->addBatch();
@@ -1870,7 +2027,7 @@ void preparedstatement::concpp99_batchRewrite()
 
     res.reset(stmt->executeQuery(selectQuery));
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (size_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       ASSERT(res->next());
       ASSERT_EQUALS(id[row], res->getInt(1));
       ASSERT_EQUALS(val[i][row], res->getString(2));
@@ -1885,7 +2042,7 @@ void preparedstatement::concpp99_batchRewrite()
     pstmt->clearBatch();
     pstmt->clearParameters();
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (size_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row] + 3);
       pstmt->setString(2, val[0][row]);
       pstmt->addBatch();
@@ -1894,7 +2051,7 @@ void preparedstatement::concpp99_batchRewrite()
     ASSERT_EQUALS(3ULL, static_cast<uint64_t>(batchLRes.size()));
 
     res.reset(stmt->executeQuery(selectQuery));
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (size_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       ASSERT(res->next());
       ASSERT_EQUALS(id[row] + 3, res->getInt(1));
       ASSERT_EQUALS(val[i][row], res->getString(2));
@@ -1930,7 +2087,7 @@ void preparedstatement::concpp106_batchBulk()
   for (std::size_t i = 0; i < sizeof(insertQuery) / sizeof(insertQuery[0]); ++i) {
     pstmt.reset(con->prepareStatement(insertQuery[i]));
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row]);
       if (val[i][row] != nullptr) {
         pstmt->setString(2, val[0][row]);
@@ -1948,7 +2105,7 @@ void preparedstatement::concpp106_batchBulk()
 
     res.reset(stmt->executeQuery(selectQuery));
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       ASSERT(res->next());
       ASSERT_EQUALS(id_expected[row], res->getInt(1));
       if (val_expected[i][row] == nullptr) {
@@ -1969,7 +2126,7 @@ void preparedstatement::concpp106_batchBulk()
     pstmt->clearBatch();
     pstmt->clearParameters();
 
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row] + 3);
       if (val[i][row] != nullptr) {
         pstmt->setString(2, val[0][row]);
@@ -1985,7 +2142,7 @@ void preparedstatement::concpp106_batchBulk()
     ASSERT_EQUALS(static_cast<uint64_t>(sizeof(id) / sizeof(id[0])), static_cast<uint64_t>(batchLRes.size()));
 
     res.reset(stmt->executeQuery(selectQuery));
-    for (int32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       ASSERT(res->next());
       ASSERT_EQUALS(id_expected[row] + 3, res->getInt(1));
       if (val_expected[i][row] == nullptr) {
@@ -2074,6 +2231,42 @@ void preparedstatement::psCache()
 
   // To make sure cache is cleared cleanly, and the framework provides next test with "standard" connection
   con.reset();
+}
+
+
+void preparedstatement::concpp116_getByte()
+{
+  pstmt.reset(sspsCon->prepareStatement("SELECT ?"));
+
+  // Check for all target locations of the segmentation fault
+  for (int8_t i = 0; i < 16; ++i)
+  {
+    int8_t value= i << 4;
+    pstmt->setByte(1, value);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT_EQUALS(value, res->getByte(1));
+  }
+
+  pstmt.reset(sspsCon->prepareStatement("SELECT '-128', 0xA1B2C3D4, 0x81, 0x881"));
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS(-128, res->getByte(1));
+
+  ASSERT_EQUALS(int32_t(0xA1B2C3D4), res->getInt(2));
+
+  ASSERT_EQUALS(static_cast<int8_t>(129), res->getByte(3));
+  ASSERT_EQUALS(static_cast<int16_t>(129), res->getShort(3));
+  ASSERT_EQUALS(129, res->getInt(3));
+  ASSERT_EQUALS(129LL, res->getLong(3));
+  ASSERT_EQUALS(129, res->getUInt(3));
+  ASSERT_EQUALS(129ULL, res->getUInt64(3));
+
+  ASSERT_EQUALS(static_cast<int16_t>(2177), res->getShort(4));//0x881=2177
+  ASSERT_EQUALS(2177, res->getInt(4));
+  ASSERT_EQUALS(2177U, res->getUInt(4));
+  ASSERT_EQUALS(2177ULL, res->getUInt64(4));
+  ASSERT_EQUALS(2177LL, res->getLong(4));
 }
 
 } /* namespace preparedstatement */

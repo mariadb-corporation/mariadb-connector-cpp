@@ -21,7 +21,6 @@
 #ifndef _MADBCPPUTILS_H_
 #define _MADBCPPUTILS_H_
 
-#include <regex>
 #include <mutex>
 #include <vector>
 
@@ -41,24 +40,13 @@ class Socket;
 class Utils
 {
   static const char hexArray[]; /*"0123456789ABCDEF".toCharArray()*/
-  static std::regex IP_V4; /*Pattern.compile(
-"^(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.);1}"
-+"(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.);2}"
-+"([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")*/
-
-  static std::regex IP_V6; /*Pattern.compile("^[0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4});7}$")*/
-  static std::regex IP_V6_COMPRESSED ; /*Pattern.compile(
-"^(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4});0,5})?)"
-+"::(([0-9A-Fa-f]{1,4}(:[0-9A-Fa-f]{1,4});0,5})?)$")*/
-
   static SocketHandlerFunction* socketHandler;
 
 public:
-  static Socket* standardSocket(Shared::Options options, SQLString& host);
+  static Socket* standardSocket(Shared::Options& options, SQLString& host);
 
   static SQLString escapeString(const SQLString& value, bool noBackslashEscapes);
   static void escapeData(const char* in, size_t len, bool noBackslashEscapes, SQLString& out);
-  static const char* encryptPassword(const SQLString&& password, const char* seed, SQLString& passwordCharacterEncoding);
 #ifdef THIS_FUNCTION_MAKES_SENSE
   static char* copyWithLength(char* orig,int32_t length);
   static char* copyRange(char* orig,int32_t from,int32_t to);
@@ -89,7 +77,12 @@ public:
   static bool isIPv4(const SQLString& ip);
   static bool isIPv6(const SQLString& ip);
   static int32_t transactionFromString(const SQLString& txIsolation);
+  static bool strnicmp(std::string::const_iterator &it, const char *str, std::size_t len);
+  static std::size_t findstrni(const std::string &str, const char* substr, std::size_t len);
   static bool validateFileName(const SQLString& sql, std::vector<ParameterHolder*>& parameters, const SQLString& fileName);
+  static std::size_t tokenize(std::vector<sql::bytes>& tokens, const char* cstring, const char *separator);
+  static std::string::const_iterator& skipCommentsAndBlanks(const std::string &sql, std::string::const_iterator& start);
+  static std::size_t skipCommentsAndBlanks(const std::string &sql, std::size_t start= 0);
 
   enum Parse {
     Normal,

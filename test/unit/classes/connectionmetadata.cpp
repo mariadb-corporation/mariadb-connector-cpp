@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -47,12 +47,12 @@ void connectionmetadata::getSchemata()
 {
   logMsg("connectionmetadata::getSchemata() - MySQL_ConnectionMetaData::getSchemata");
   SKIP("Not supported methods");
-  bool schema_found=false;
-  std::stringstream msg;
   try
   {
     DatabaseMetaData  dbmeta(con->getMetaData());
     /*ResultSet resdbm1(dbmeta->getSchemata());
+    bool schema_found=false;
+    std::stringstream msg;
     checkResultSetScrolling(resdbm1);
     ResultSet resdbm2(dbmeta->getSchemaObjects(con->getCatalog(), "", "schema"));
     logMsg("... checking if getSchemata() and getSchemaObjects() report the same schematas");
@@ -690,17 +690,26 @@ void connectionmetadata::getDatabaseVersions()
   std::stringstream prodversion;
   try
   {
+    res.reset(stmt->executeQuery("SELECT @firstDot:=INSTR(@@version, '.'),@secondDot:=LOCATE('.', @@version, @firstDot + 1),"
+      "SUBSTRING(@@version, 1, @firstDot - 1) as major,SUBSTRING(@@version, @firstDot + 1, @secondDot - @firstDot - 1) as minor,"
+      "SUBSTRING(@@version, @secondDot + 1) as rest"));
+    ASSERT(res->next());
     DatabaseMetaData  dbmeta(con->getMetaData());
-    ASSERT_GT(5, dbmeta->getDatabaseMajorVersion());
-    ASSERT_LT(10, dbmeta->getDatabaseMajorVersion());
-    ASSERT_LT(100, dbmeta->getDatabaseMinorVersion());
-    ASSERT_LT(100, dbmeta->getDatabasePatchVersion());
+    uint32_t major= dbmeta->getDatabaseMajorVersion(), minor= dbmeta->getDatabaseMinorVersion(), patch= dbmeta->getDatabasePatchVersion();
+    ASSERT_EQUALS(res->getInt(3), major);
+    ASSERT_EQUALS(res->getInt(4), minor);
+    // At lesat current getInt implementation converts smth like "11-Mariadb" to 11, but that may change
+    ASSERT_EQUALS(res->getInt(5), patch);
 
     //ASSERT_EQUALS("MariaDB", dbmeta->getDatabaseProductName());
 
     prodversion.str("");
-    prodversion << dbmeta->getDatabaseMajorVersion() << "." << dbmeta->getDatabaseMinorVersion();
-    prodversion << "." << dbmeta->getDatabasePatchVersion();
+    prodversion << major << ".";
+    if (major >= 23 && minor < 10)
+    {
+      prodversion << "0";
+    }
+    prodversion << minor << "." << dbmeta->getDatabasePatchVersion();
     if (prodversion.str().length() < dbmeta->getDatabaseProductVersion().length())
     {
       // Check only left prefix, database could have "-alpha" or something in its product versin

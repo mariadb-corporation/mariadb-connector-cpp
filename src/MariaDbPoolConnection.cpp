@@ -118,7 +118,7 @@ namespace mariadb
     *     PooledConnection</code> object as a failover
     * @see #addConnectionEventListener
     */
-  void MariaDbPoolConnection::removeConnectionEventListener(ConnectionEventListener* listener)
+  void MariaDbPoolConnection::removeConnectionEventListener(ConnectionEventListener* /*listener*/)
   {
     //connectionEventListeners.erase(listener);
   }
@@ -148,7 +148,7 @@ namespace mariadb
     *     interface that was previously registered with this <code>PooledConnection</code> object
     *     <br>
     */
-  void MariaDbPoolConnection::removeStatementEventListener(StatementEventListener* listener)
+  void MariaDbPoolConnection::removeStatementEventListener(StatementEventListener* /*listener*/)
   {
     //statementEventListeners.erase(listener);
   }
@@ -174,7 +174,7 @@ namespace mariadb
     * @param st statement
     * @param ex exception
     */
-  void MariaDbPoolConnection::fireStatementErrorOccured(Statement* st, MariaDBExceptionThrower& ex)
+  void MariaDbPoolConnection::fireStatementErrorOccured(Statement* st, MariaDBExceptionThrower& /*ex*/)
   {
     if (INSTANCEOF(st, PreparedStatement*)) {
       /*StatementEvent* event= new StatementEvent(this, st, ex);
@@ -198,7 +198,7 @@ namespace mariadb
     *
     * @param ex exception
     */
-  void MariaDbPoolConnection::fireConnectionErrorOccured(SQLException& ex)
+  void MariaDbPoolConnection::fireConnectionErrorOccured(SQLException& /*ex*/)
   {
     /*ConnectionEvent* event= new ConnectionEvent(this, ex);
     for (ConnectionEventListener* listener : connectionEventListeners) {

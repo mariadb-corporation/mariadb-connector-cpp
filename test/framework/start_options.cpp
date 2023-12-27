@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2023 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -133,7 +134,7 @@ namespace testsuite
         {
           paramPair.clear();
 
-          StringUtils::split( paramPair, param.substr(2).c_str(), "=" );
+          StringUtils::split( paramPair, param.substr(2).c_str(), "=", true, true );
 
            // Latter shouldn't really ever happen
           if ( paramPair.size() > 2 || paramPair.size() == 0 )

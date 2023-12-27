@@ -101,7 +101,6 @@ namespace mariadb
         it.second->close();
       }
       catch (std::exception&) {
-
       }
     }
     shutdownExecutor();

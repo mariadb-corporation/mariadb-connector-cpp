@@ -29,14 +29,8 @@
 
 IF(WIN32)
   LINK_DIRECTORIES(../framework/$(ConfigurationName))
-  SET(MY_TARGET_LINK_LIBRARIES ${LIBRARY_NAME} test_framework)
-#	ADD_DEFINITIONS("-D_SECURE_SCL")
-  ADD_DEFINITIONS("-D_SCL_SECURE_NO_WARNINGS")
-  ADD_DEFINITIONS("-D_CRT_SECURE_NO_WARNINGS")
-
-ELSEIF(NOT WIN32)
-  SET(MY_TARGET_LINK_LIBRARIES ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework)
-ENDIF(WIN32)
+ENDIF()
+SET(MY_TARGET_LINK_LIBRARIES test_framework ${LIBRARY_NAME})
 
 IF(CMAKE_COMPILER_IS_GNUCC AND MYSQLCPPCONN_GCOV_ENABLE)
   SET(MY_GCOV_LINK_LIBRARIES gcov)
@@ -58,7 +52,6 @@ SET(jdbctests_sources
   compliance/DatabaseMetaDataTest.cpp
   compliance/StatementTest.cpp
   compliance/ResultSetMetadataTest.cpp
-  compliance/PreparedStatementTest.cpp
   simple/BlobTest.cpp
   regression/BlobRegressionTest.cpp
   regression/PreparedStatementRegressionTest.cpp
@@ -66,6 +59,11 @@ SET(jdbctests_sources
   regression/SubqueriesRegressionTest.cpp
   compliance/UnbufferedRsStmtTest.cpp
   )
+IF (NOT BUILD_TESTS_ONLY)
+  SET(jdbctests_sources ${jdbctests_sources} 
+    compliance/PreparedStatementTest.cpp
+    )
+ENDIF()
 
 # It's convinient for VS users to have headers as part of project
 IF(WIN32)

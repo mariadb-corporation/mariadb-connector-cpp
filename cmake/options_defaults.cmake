@@ -1,24 +1,34 @@
 #
-#  Copyright (C) 2021-2022 MariaDB Corporation AB
+#  Copyright (C) 2021,2023 MariaDB Corporation AB
 #
 #  Redistribution and use is allowed according to the terms of the New
 #  BSD license.
 #  For details see the COPYING-CMAKE-SCRIPTS file.
 #
 
+OPTION(CONC_WITH_UNIT_TESTS "Build C/C unit tests" OFF)
+OPTION(WITH_ASAN "Compile with ASAN" OFF)
+OPTION(WITH_UBSAN "Enable undefined behavior sanitizer" OFF)
+OPTION(WITH_MSAN "Enable memory sanitizer" OFF)
 
-IF(WIN32)
+IF(WIN32 AND NOT MINGW)
   OPTION(WITH_MSI "Build MSI installation package" ON)
+  OPTION(CONC_WITH_MSI "Build C/C MSI installation package" OFF)
   OPTION(WITH_SIGNCODE "Digitally sign files" OFF)
 
   OPTION(MARIADB_LINK_DYNAMIC "Link Connector/C library dynamically" OFF)
   OPTION(ALL_PLUGINS_STATIC "Compile all plugins in, i.e. make them static" OFF)
+  SET(CLIENT_PLUGIN_PVIO_NPIPE "STATIC")
+  # We don't provide its support in ODBC yet, thus there is no need to bloat the library size
+  #SET(CLIENT_PLUGIN_PVIO_SHMEM "STATIC")
+  SET(WITH_UBSAN OFF)
+  SET(WITH_MSAN OFF)
 ELSE()
   OPTION(WITH_MSI "Build MSI installation package" OFF)
   IF(APPLE)
     OPTION(MARIADB_LINK_DYNAMIC "Link Connector/C library dynamically" OFF)
     OPTION(WITH_SIGNCODE "Digitally sign files" OFF)
-    IF (NOT "${DEVELOPER_ID}" STREQUAL "")
+    IF(NOT "${DEVELOPER_ID}" STREQUAL "")
       SET(WITH_SIGNCODE ON)
     ENDIF()
     OPTION(PKG "Build pkg installation package" OFF)
@@ -33,7 +43,13 @@ ENDIF()
 
 OPTION(WITH_SSL "Enables use of TLS/SSL library" ON)
 OPTION(WITH_UNIT_TESTS "Build test suite" ON)
-OPTION(USE_SYSTEM_INSTALLED_LIB "Use installed in the syctem C/C library and do not build one" OFF)
+
+IF(MINGW)
+  OPTION(USE_SYSTEM_INSTALLED_LIB "Use installed in the syctem C/C library and do not build one" ON)
+ELSE()
+  OPTION(USE_SYSTEM_INSTALLED_LIB "Use installed in the syctem C/C library and do not build one" OFF)
+ENDIF()
+
 # This is to be used for some testing scenarious, obviously. e.g. testing of the connector installation. 
 OPTION(BUILD_TESTS_ONLY "Build only tests and nothing else" OFF)
 
@@ -54,6 +70,8 @@ IF(WITH_UNIT_TESTS)
   IF("${TEST_USETLS}" STREQUAL "")
     SET(TEST_USETLS "false")
   ENDIF()
+ELSE()
+  SET(CONC_WITH_UNIT_TESTS OFF)
 ENDIF()
 
 IF(NOT EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
@@ -83,4 +101,6 @@ IF(WIN32)
     SET(CLIENT_PLUGIN_MYSQL_OLD_PASSWORD "STATIC")
     SET(MARIADB_LINK_DYNAMIC OFF)
   ENDIF()
+ELSE()
+  SET(WITH_MSI OFF)
 ENDIF()

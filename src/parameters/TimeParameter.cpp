@@ -87,7 +87,7 @@ namespace mariadb
     * @param pos socket output stream
     * @throws IOException if socket error occur
     */
-  void TimeParameter::writeBinary(PacketOutputStream& pos)
+  void TimeParameter::writeBinary(PacketOutputStream& /*pos*/)
   {
     // TODO
     /*Calendar* calendar= Calendar*.getInstance(timeZone);

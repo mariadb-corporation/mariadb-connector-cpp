@@ -21,7 +21,6 @@
 #ifndef _ROWPROTOCOL_H_
 #define _ROWPROTOCOL_H_
 
-#include <regex>
 #include <iostream>
 
 #include "Consts.h"
@@ -44,7 +43,7 @@ struct memBuf : std::streambuf
     this->setg(begin, begin, end);
   }
 
-  pos_type seekoff(off_type offset, std::ios_base::seekdir direction, std::ios_base::openmode which = std::ios_base::in) override
+  pos_type seekoff(off_type offset, std::ios_base::seekdir direction, std::ios_base::openmode /*which = std::ios_base::in*/) override
   {
     if (direction == std::ios_base::cur) {
       gbump(static_cast<int32_t>(offset));
@@ -64,6 +63,10 @@ struct memBuf : std::streambuf
   }
 };
 
+bool isDate(const SQLString& str);
+bool isTime(const SQLString& str);
+bool parseTime(const SQLString& str, std::vector<std::string>& time);
+bool needsBinaryConversion(ColumnDefinition* columnInfo);
 
 class RowProtocol  {
 
@@ -76,10 +79,7 @@ public:
   static const DateTimeFormatter* TEXT_LOCAL_DATE_TIME;
   static const DateTimeFormatter* TEXT_OFFSET_DATE_TIME;
   static const DateTimeFormatter* TEXT_ZONED_DATE_TIME;
-  static std::regex isIntegerRegex ; /*Pattern.compile("^-?\\d+\\.[0-9]+$")*/
-  static std::regex dateRegex;
-  static std::regex timeRegex;
-  static std::regex timestampRegex;
+
   static long double stringToDouble(const char* str, uint32_t len);
 
 protected:
@@ -144,6 +144,8 @@ public:
   bool lastValueWasNull();
 
 protected:
+  template<typename T>
+  T parseBinaryAsInteger(ColumnDefinition* columnInfo);
   SQLString zeroFillingIfNeeded(const SQLString& value, ColumnDefinition* columnInformation);
   int32_t getInternalTinyInt(ColumnDefinition* columnInfo);
   int64_t parseBit();

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2021 MariaDB Corporation AB
+   Copyright (C) 2020, 2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -164,6 +164,8 @@ namespace mariadb
       throw stmt->executeBatchExceptionEpilogue(sqle, size);
     }
     stmt->executeBatchEpilogue();
+    // Silencing compiler
+    return stmt->batchRes.wrap(nullptr, 0);
   }
 
   /**
@@ -208,6 +210,8 @@ namespace mariadb
       throw stmt->executeBatchExceptionEpilogue(sqle, size);
     }
     stmt->executeBatchEpilogue();
+    // Silencing compiler
+    return stmt->largeBatchRes.wrap(nullptr, 0);
   }
 
   /**
@@ -325,7 +329,7 @@ namespace mariadb
     */
   void ClientSidePreparedStatement::setParameter(int32_t parameterIndex, ParameterHolder* holder)
   {
-    if (parameterIndex >= 1 && parameterIndex < prepareResult->getParamCount() + 1) {
+    if (parameterIndex >= 1 && static_cast<std::size_t>(parameterIndex) < prepareResult->getParamCount() + 1) {
       parameters[parameterIndex - 1].reset(holder);
     }
     else {
@@ -344,7 +348,7 @@ namespace mariadb
 
       if (stmt->options->maxQuerySizeToLog > 0) {
         error.append(" - \"");
-        if (sqlQuery.size() < stmt->options->maxQuerySizeToLog) {
+        if (sqlQuery.size() < static_cast<std::size_t>(std::max(0, stmt->options->maxQuerySizeToLog))) {
           error.append(sqlQuery);
         }
         else {

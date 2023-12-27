@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2023 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -34,10 +34,10 @@ namespace mariadb
     bool _rewriteType)
     : sql(_sql)
     , queryParts(_queryParts)
+    , rewriteType(_rewriteType)
+    , paramCount(static_cast<uint32_t>(queryParts.size()) - (_rewriteType ? 3 : 1))
     , isQueryMultiValuesRewritableFlag(isQueryMultiValuesRewritable)
     , isQueryMultipleRewritableFlag(isQueryMultipleRewritable)
-    , paramCount(static_cast<uint32_t>(queryParts.size()) - (_rewriteType ? 3 : 1))
-    , rewriteType(_rewriteType)
   {
   }
 
@@ -59,15 +59,13 @@ namespace mariadb
     LexState state= LexState::Normal;
     char lastChar= '\0';
     bool endingSemicolon= false;
-
     bool singleQuotes= false;
     std::size_t lastParameterPosition= 0;
 
-    const char* query= queryString.c_str();
     std::size_t queryLength= queryString.length();
     for (std::size_t i= 0; i < queryLength; i++) {
 
-      char car= query[i];
+      char car= queryString[i];
       if (state == LexState::Escape
         && !((car == '\'' && singleQuotes) || (car == '"' && !singleQuotes))) {
         state= LexState::SqlString;
@@ -76,16 +74,16 @@ namespace mariadb
       }
       switch (car) {
       case '*':
-        if (state == LexState::Normal &&lastChar == '/') {
+        if (state == LexState::Normal && lastChar == '/') {
           state= LexState::SlashStarComment;
         }
         break;
 
       case '/':
-        if (state == LexState::SlashStarComment &&lastChar == '*') {
+        if (state == LexState::SlashStarComment && lastChar == '*') {
           state= LexState::Normal;
         }
-        else if (state == LexState::Normal &&lastChar == '/') {
+        else if (state == LexState::Normal && lastChar == '/') {
           state= LexState::EOLComment;
         }
         break;
@@ -97,7 +95,7 @@ namespace mariadb
         break;
 
       case '-':
-        if (state == LexState::Normal &&lastChar == '-') {
+        if (state == LexState::Normal && lastChar == '-') {
           state= LexState::EOLComment;
           multipleQueriesPrepare= false;
         }
@@ -128,10 +126,10 @@ namespace mariadb
           state= LexState::SqlString;
           singleQuotes= true;
         }
-        else if (state == LexState::SqlString &&singleQuotes) {
+        else if (state == LexState::SqlString && singleQuotes) {
           state= LexState::Normal;
         }
-        else if (state == LexState::Escape &&singleQuotes) {
+        else if (state == LexState::Escape && singleQuotes) {
           state= LexState::SqlString;
         }
         break;

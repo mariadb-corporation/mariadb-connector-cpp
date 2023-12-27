@@ -34,7 +34,7 @@ namespace mariadb
   {
     int64_t result= 0;
 
-    for (auto it : props)
+    for (auto& it : props)
     {
       result+= (it.first.hashCode() ^ (it.second.hashCode() << 1));
     }
@@ -158,35 +158,7 @@ namespace mariadb
   }
 
 
-  Options::Options():
-        connectTimeout      (30000),
-        useFractionalSeconds(true),
-        useTls              (false),
-        tcpNoDelay          (true),
-        tcpKeepAlive        (true),
-        tinyInt1isBit       (true),
-        yearIsDateType      (true),
-        nullCatalogMeansCurrent(true),
-        allowLocalInfile    (true),
-        cachePrepStmts      (true),
-        prepStmtCacheSize   (250),
-        prepStmtCacheSqlLimit(2048),
-        continueBatchOnError(true),
-        jdbcCompliantTruncation(true),
-        cacheCallableStmts  (false),
-        callableStmtCacheSize(150),
-        useBatchMultiSendNumber(100),
-        autocommit          (true),
-        maxQuerySizeToLog   (1024),
-        retriesAllDown      (120),
-        loadBalanceBlacklistTimeout(50),
-        failoverLoopRetries (120),
-        maxPoolSize         (8),
-        maxIdleTime         (600),
-        poolValidMinDelay   (1000),
-        useReadAheadInput   (true),
-        pool                (false),
-        socketTimeout       (0)
+  Options::Options()
   {
     for (auto& it : Field) {
       const auto& cit= OptionsMap.find(it.first);

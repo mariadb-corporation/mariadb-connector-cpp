@@ -55,8 +55,7 @@ namespace capi
 
 class SelectResultSetBin : public SelectResultSet
 {
-
-  TimeZone* timeZone;
+  TimeZone* timeZone= nullptr;
   Shared::Options options;
   std::vector<Shared::ColumnDefinition> columnsInformation;
   int32_t columnInformationLength;
@@ -65,7 +64,7 @@ class SelectResultSetBin : public SelectResultSet
   mutable std::map<int32_t, std::unique_ptr<memBuf>> blobBuffer;
 
   Protocol* protocol;
-  bool isEof;
+  bool isEof= false;
   bool callableResult;
   MariaDbStatement* statement;
   mutable Unique::RowProtocol row;
@@ -77,12 +76,12 @@ class SelectResultSetBin : public SelectResultSet
   std::size_t dataSize; //Should go after data
 
   int32_t resultSetScrollType;
-  int32_t rowPointer;
+  int32_t rowPointer= -1;
 
   std::unique_ptr<ColumnNameMap> columnNameMap;
 
-  mutable int32_t lastRowPointer; /*-1*/
-  bool isClosedFlag;
+  mutable int32_t lastRowPointer= -1;
+  bool isClosedFlag= false;
   bool eofDeprecated;
   Shared::mutex lock;
   bool forceAlias;
