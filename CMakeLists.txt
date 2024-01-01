@@ -54,15 +54,15 @@ GET_PROPERTY(MAODBC_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
 # We don't need RC for what we need MAODBC_LANGUAGES for
 LIST(REMOVE_ITEM MAODBC_LANGUAGES "RC")
 
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 SET(LIBRARY_NAME "mariadbcpp")
 SET(STATIC_LIBRARY_NAME "${LIBRARY_NAME}-static")
 
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/Version.h.in
-               ${CMAKE_SOURCE_DIR}/src/Version.h)
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.rc.in
-               ${CMAKE_SOURCE_DIR}/src/maconncpp.rc)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/src/Version.h.in
+               ${CMAKE_CURRENT_SOURCE_DIR}/src/Version.h)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/src/maconncpp.rc.in
+               ${CMAKE_CURRENT_SOURCE_DIR}/src/maconncpp.rc)
 INCLUDE(SearchLibrary)
 INCLUDE(SetValueMacro)
 
@@ -425,10 +425,10 @@ IF(BUILD_TESTS_ONLY)
     MESSAGE(STATUS "Configurig Tests: tcp://${TEST_UID}@${TEST_SERVER}:${TEST_PORT}/${TEST_SCHEMA} socket: ${TEST_SOCKET}")
     SET(DRIVER_LIB_LOCATION "${libmariadb_prefix}/${INSTALL_LIBDIR}")
   ENDIF()
-  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
-  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include/conncpp)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include/conncpp)
   # At some point use of String.cpp from the driver was added to tests. Need to verify if it's still needed/a good idea.
-  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src)
   ADD_SUBDIRECTORY(test)
   # Only means only
   RETURN()
@@ -442,7 +442,7 @@ ENDIF()
 
 ### Including C/C subproject
 IF(NOT USE_SYSTEM_INSTALLED_LIB)
-  IF(EXISTS ${CMAKE_SOURCE_DIR}/libmariadb)
+  IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libmariadb)
     IF(GIT_BUILD_SRCPKG)
       # We don't want conn/c (wrong) src pkg to be built.
       SET(GIT_BUILD_SRCPKG FALSE)
@@ -473,7 +473,7 @@ IF(NOT USE_SYSTEM_INSTALLED_LIB)
                 COMPONENT ConCPlugins)
       ENDIF()
     ENDFOREACH()
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/libmariadb/include)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/libmariadb/include)
     INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/libmariadb/include)
   ELSE()
     SET(USE_SYSTEM_INSTALLED_LIB TRUE)
@@ -494,14 +494,14 @@ IF(WITH_MSI AND WITH_SIGNCODE)
   MARK_AS_ADVANCED(SIGN_OPTIONS)
 ENDIF()
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include/conncpp)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include/conncpp)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src)
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
 ENDIF()
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/src/maconncpp.def.in
-               ${CMAKE_SOURCE_DIR}/src/maconncpp.def)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/src/maconncpp.def.in
+               ${CMAKE_CURRENT_SOURCE_DIR}/src/maconncpp.def)
 
 # Dynamic linking is default on non-Windows
 IF(MARIADB_LINK_DYNAMIC)
@@ -566,8 +566,8 @@ ENDIF()
 SET(${LIBRARY_NAME}_OBJECTS $<TARGET_OBJECTS:${LIBRARY_NAME}_obj>)
 
 IF(WIN32 AND NOT MINGW)
-  ADD_LIBRARY(${LIBRARY_NAME} SHARED ${CMAKE_SOURCE_DIR}/src/maconncpp.rc ${${LIBRARY_NAME}_OBJECTS} ${CMAKE_SOURCE_DIR}/src/maconncpp.def)
-  ADD_LIBRARY(${STATIC_LIBRARY_NAME} STATIC ${${LIBRARY_NAME}_OBJECTS} ${CMAKE_SOURCE_DIR}/src/maconncpp.rc)
+  ADD_LIBRARY(${LIBRARY_NAME} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/maconncpp.rc ${${LIBRARY_NAME}_OBJECTS} ${CMAKE_CURRENT_SOURCE_DIR}/src/maconncpp.def)
+  ADD_LIBRARY(${STATIC_LIBRARY_NAME} STATIC ${${LIBRARY_NAME}_OBJECTS} ${CMAKE_CURRENT_SOURCE_DIR}/src/maconncpp.rc)
 
   TARGET_COMPILE_DEFINITIONS(${LIBRARY_NAME}_obj PRIVATE "MARIADB_EXPORTED=__declspec(dllexport)")
 
@@ -582,7 +582,7 @@ ELSE()
     FILE(WRITE ${CMAKE_BINARY_DIR}/empty.cpp "")
     SET(EMPTY_FILE ${CMAKE_BINARY_DIR}/empty.cpp)
   ENDIF()
-  #  MESSAGE(STATUS "Version script: ${CMAKE_SOURCE_DIR}/src/maconncpp.def")
+  #  MESSAGE(STATUS "Version script: ${CMAKE_CURRENT_SOURCE_DIR}/src/maconncpp.def")
   ADD_LIBRARY(${LIBRARY_NAME} SHARED ${${LIBRARY_NAME}_OBJECTS} ${EMPTY_FILE})
   ADD_LIBRARY(${STATIC_LIBRARY_NAME} STATIC ${${LIBRARY_NAME}_OBJECTS} ${EMPTY_FILE})
 
@@ -607,7 +607,7 @@ ELSE()
       SET_TARGET_PROPERTIES(${STATIC_LIBRARY_NAME} PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
     ENDIF()
   ELSE()
-#    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_SOURCE_DIR}/src/maconncpp.def")
+#    SET_TARGET_PROPERTIES(${LIBRARY_NAME} PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/src/maconncpp.def")
   ENDIF()
 ENDIF()
 
@@ -657,9 +657,9 @@ IF(WIN32)
       COMMAND ${CMAKE_COMMAND} ARGS -DDRIVER_LIB_DIR=$<TARGET_FILE_DIR:${LIBRARY_NAME}>
                                     -DPLUGINS_LIB_DIR=$<TARGET_FILE_DIR:dialog>
                                     -DPLUGINS_SUBDIR_NAME=${MARIADB_DEFAULT_PLUGINS_SUBDIR}
-                                    -DFILE_IN=${CMAKE_SOURCE_DIR}/wininstall/binaries_dir.xml.in
-                                    -DFILE_OUT=${CMAKE_SOURCE_DIR}/wininstall/binaries_dir.xml
-                                    -P ${CMAKE_SOURCE_DIR}/cmake/ConfigureFile.cmake
+                                    -DFILE_IN=${CMAKE_CURRENT_SOURCE_DIR}/wininstall/binaries_dir.xml.in
+                                    -DFILE_OUT=${CMAKE_CURRENT_SOURCE_DIR}/wininstall/binaries_dir.xml
+                                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ConfigureFile.cmake
                        )
     ADD_SUBDIRECTORY(wininstall)
   ENDIF()
@@ -681,12 +681,12 @@ ELSE()
   MESSAGE(STATUS "License file installed to ${INSTALL_LICENSEDIR}")
   MESSAGE(STATUS "Public API header files installed to ${INSTALL_INCLUDEDIR}")
   INSTALL(FILES
-          ${CMAKE_SOURCE_DIR}/README
+          ${CMAKE_CURRENT_SOURCE_DIR}/README
           DESTINATION
           ${INSTALL_DOCDIR}
           COMPONENT Documentation)
   INSTALL(FILES
-          ${CMAKE_SOURCE_DIR}/COPYING
+          ${CMAKE_CURRENT_SOURCE_DIR}/COPYING
           DESTINATION
           ${INSTALL_LICENSEDIR}
           COMPONENT Documentation)
