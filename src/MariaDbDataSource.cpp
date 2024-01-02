@@ -135,8 +135,10 @@ namespace mariadb
       return MariaDbConnection::newConnection(internal->urlParser, nullptr);
     }
     catch (SQLException& e) {
-      throw ExceptionFactory::INSTANCE.create(e);
+      ExceptionFactory::INSTANCE.create(e, true);
     }
+    /* calming down some nervous compiilers */
+    return nullptr;
   }
 
   /**
@@ -164,11 +166,13 @@ namespace mariadb
 
     }
     catch (SQLException& e){
-      throw ExceptionFactory::INSTANCE.create(e);
+      ExceptionFactory::INSTANCE.create(e, true);
     }
     /*catch (CloneNotSupportedException& e){
       throw ExceptionFactory::INSTANCE.create("Error in configuration");
     }*/
+    /* calming down some nervous compiilers */
+    return nullptr;
   }
 
   /**

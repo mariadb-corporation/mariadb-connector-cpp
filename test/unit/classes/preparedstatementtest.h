@@ -57,7 +57,7 @@ public:
 
   EXAMPLE_TEST_FIXTURE(preparedstatement)
   {
-    /*TEST_CASE(crash);
+    TEST_CASE(crash);
     TEST_CASE(anonymousSelect);
     TEST_CASE(InsertSelectAllTypes);
     TEST_CASE(assortedSetType);
@@ -76,7 +76,7 @@ public:
     TEST_CASE(addBatch);
     TEST_CASE(concpp88);
     TEST_CASE(bugConcpp96);
-    TEST_CASE(concpp99_batchRewrite);*/
+    TEST_CASE(concpp99_batchRewrite);
     TEST_CASE(concpp106_batchBulk);
     TEST_CASE(psCache);
     TEST_CASE(concpp116_getByte);

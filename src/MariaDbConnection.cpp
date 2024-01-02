@@ -1686,7 +1686,7 @@ namespace mariadb
     }
 #endif
     if (executor == nullptr) {
-      throw ExceptionFactory::INSTANCE.create("Cannot abort the connection: NULL executor passed");
+      ExceptionFactory::INSTANCE.create("Cannot abort the connection: NULL executor passed"); // this will throw
     }
     /* There is no sense to abort it in the separate thread, since Pool destructs connection after this call, and this has to be syncronized anyway */
     //executor->execute(std::bind(&Protocol::abort, &*protocol));
