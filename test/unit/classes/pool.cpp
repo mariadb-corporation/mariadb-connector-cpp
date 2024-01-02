@@ -56,10 +56,10 @@ void pool::pool_simple()
   std::vector<int32_t> connection_id(maxPoolSize);
   bool verbosity= TestsListener::setVerbose(true);
 
-  p["user"] = user;
-  p["password"] = passwd;
-  p["useTls"] = useTls ? "true" : "false";
-  p["pool"] = "true";
+  p["user"]= user;
+  p["password"]= passwd;
+  p["useTls"]= useTls ? "true" : "false";
+  p["pool"]= "true";
   p["minPoolSize"]= std::to_string(minPoolSize);
   p["maxPoolSize"]= std::to_string(maxPoolSize);
   p["testMinRemovalDelay"]= "10";

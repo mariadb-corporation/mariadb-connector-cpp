@@ -181,7 +181,7 @@ namespace mariadb
       if (shouldBeReleased) {
         --totalConnection;
         silentCloseConnection(*con);
-
+        delete item;
         iterator= idleConnections.erase(iterator);
         
         addConnectionRequest();
@@ -229,7 +229,7 @@ namespace mariadb
 
     if (poolState.load() == POOL_STATE_OK
       && (++totalConnection) <= options->maxPoolSize) {
-      idleConnections.push(std::move(item));
+      idleConnections.push(item);
 
       if (logger->isDebugEnabled()) {
         logger->debug(
