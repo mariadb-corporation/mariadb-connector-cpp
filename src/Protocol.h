@@ -141,7 +141,7 @@ public:
     MariaDbStatement* statement)= 0;
   virtual Shared::Results getActiveStreamingResult()=0;
   virtual void setActiveStreamingResult(Shared::Results& mariaSelectResultSet)=0;
-  virtual Shared::mutex& getLock()=0;
+  virtual std::mutex *const getLock()=0;
   virtual void setServerStatus(uint32_t serverStatus)=0;
   virtual uint32_t getServerStatus()=0;
   virtual void removeHasMoreResults()=0;

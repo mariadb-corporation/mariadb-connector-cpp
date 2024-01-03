@@ -75,7 +75,7 @@ class FailoverProxy {
 #endif
 
 public:
-  Shared::mutex lock; /* Weak? */
+  std::mutex *const lock;
 
   FailoverProxy(Listener* listener, std::mutex* lock);
 

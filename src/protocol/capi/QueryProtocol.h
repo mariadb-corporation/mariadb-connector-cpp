@@ -59,7 +59,7 @@ namespace capi
     bool interrupted= false;
 
   protected:
-    QueryProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo, Shared::mutex& lock);
+    QueryProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo);
     virtual ~QueryProtocol() {}
 
   public:

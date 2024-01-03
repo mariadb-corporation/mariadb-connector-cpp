@@ -49,12 +49,18 @@ ELSE()
                 COMMAND grep "^ID="
                 COMMAND sed -e "s/ID=//g"
                 COMMAND sed -e "s/\"//g"
-                COMMAND xargs echo
-                OUTPUT_VARIABLE DISTR_ID)
-      STRING(STRIP "${DISTR_ID}" DISTR_ID)
+                OUTPUT_VARIABLE DISTR_ID
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
     ENDIF()
     IF(DISTR_ID STREQUAL "centos" OR DISTR_ID STREQUAL "rhel")
       SET(STATLIB_DEPS dl ssl crypto z pthread)
+    ELSEIF(DISTR_ID STREQUAL "ubuntu")
+      EXECUTE_PROCESS(COMMAND lsb_release -cs
+                      OUTPUT_VARIABLE UCODENAME
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
+      IF(UCODENAME STREQUAL "focal")
+        SET(STATLIB_DEPS pthread)
+      ENDIF()
     ENDIF()
   ENDIF()
 ENDIF()

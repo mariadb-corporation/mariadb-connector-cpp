@@ -341,7 +341,7 @@ namespace mariadb
           firstResult.reset(it->release());
           if (skip) {
             firstResult->close();
-          }else {
+          } else {
             firstResult->fetchRemaining();
           }
         }

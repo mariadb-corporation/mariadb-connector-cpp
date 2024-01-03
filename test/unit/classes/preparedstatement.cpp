@@ -2084,10 +2084,10 @@ void preparedstatement::concpp106_batchBulk()
   const sql::SQLString selectQuery("SELECT id, val FROM concpp106_batchBulk ORDER BY id"),
     deleteQuery("DELETE FROM concpp106_batchBulk");
 
-  for (std::size_t i = 0; i < sizeof(insertQuery) / sizeof(insertQuery[0]); ++i) {
+  for (std::size_t i= 0; i < sizeof(insertQuery) / sizeof(insertQuery[0]); ++i) {
     pstmt.reset(con->prepareStatement(insertQuery[i]));
 
-    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row= 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row]);
       if (val[i][row] != nullptr) {
         pstmt->setString(2, val[0][row]);
@@ -2105,7 +2105,7 @@ void preparedstatement::concpp106_batchBulk()
 
     res.reset(stmt->executeQuery(selectQuery));
 
-    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row= 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       ASSERT(res->next());
       ASSERT_EQUALS(id_expected[row], res->getInt(1));
       if (val_expected[i][row] == nullptr) {
@@ -2126,7 +2126,7 @@ void preparedstatement::concpp106_batchBulk()
     pstmt->clearBatch();
     pstmt->clearParameters();
 
-    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row= 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row] + 3);
       if (val[i][row] != nullptr) {
         pstmt->setString(2, val[0][row]);
@@ -2142,7 +2142,7 @@ void preparedstatement::concpp106_batchBulk()
     ASSERT_EQUALS(static_cast<uint64_t>(sizeof(id) / sizeof(id[0])), static_cast<uint64_t>(batchLRes.size()));
 
     res.reset(stmt->executeQuery(selectQuery));
-    for (uint32_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    for (uint32_t row= 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       ASSERT(res->next());
       ASSERT_EQUALS(id_expected[row] + 3, res->getInt(1));
       if (val_expected[i][row] == nullptr) {

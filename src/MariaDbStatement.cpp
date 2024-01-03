@@ -734,7 +734,7 @@ namespace mariadb
   {
     try {
       // skipMoreResults acquires mutex, thux no need to do that here
-      closed = true;
+      closed= true;
       if (results) {
         if (results->getFetchSize() != 0) {
           skipMoreResults();

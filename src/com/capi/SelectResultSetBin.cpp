@@ -70,6 +70,7 @@ namespace capi
       columnNameMap(new ColumnNameMap(columnsInformation)),
       isClosedFlag(false),
       eofDeprecated(eofDeprecated),
+      lock(protocol->getLock()),
       forceAlias(false)
   {
     if (fetchSize == 0 || callableResult) {
@@ -83,8 +84,7 @@ namespace capi
       row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
     }
     else {
-      lock= protocol->getLock();
-
+      
       protocol->setActiveStreamingResult(statement->getInternalResults());
 
       protocol->removeHasMoreResults();
@@ -1883,7 +1883,7 @@ namespace capi
       }
       try {
         while (!isEof) {
-          dataSize = 0; // to avoid storing data
+          dataSize= 0; // to avoid storing data
           readNextValue();
         }
       }

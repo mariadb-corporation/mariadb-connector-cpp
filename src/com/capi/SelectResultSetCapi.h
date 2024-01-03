@@ -84,7 +84,7 @@ class SelectResultSetCapi : public SelectResultSet
   mutable int32_t lastRowPointer= -1;
   bool isClosedFlag= false;
   bool eofDeprecated;
-  Shared::mutex lock;
+  std::mutex *const lock;
   bool forceAlias;
 
 public:

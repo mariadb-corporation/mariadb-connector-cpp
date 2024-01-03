@@ -130,7 +130,7 @@ public:
   void prologProxy( ServerPrepareResult* serverPrepareResult, int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement);
   Shared::Results getActiveStreamingResult();
   void setActiveStreamingResult(Shared::Results& mariaSelectResultSet);
-  Shared::mutex& getLock();
+  std::mutex *const getLock();
   void setServerStatus(uint32_t serverStatus);
   uint32_t getServerStatus();
   void removeHasMoreResults();

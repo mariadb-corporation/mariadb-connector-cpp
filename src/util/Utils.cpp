@@ -500,8 +500,6 @@ namespace mariadb
     */
   Shared::Protocol Utils::retrieveProxy(Shared::UrlParser& urlParser, GlobalStateInfo* globalInfo)
   {
-    Shared::mutex lock(new std::mutex());
-
     switch (urlParser->getHaMode())
     {
       case AURORA:
@@ -512,7 +510,7 @@ namespace mariadb
             newProxyInstance(
               AuroraProtocol,
               Protocol,
-              new FailoverProxy(new AuroraListener(urlParser,globalInfo), lock)));
+              new FailoverProxy(new AuroraListener(urlParser,globalInfo))));
 #endif
       case REPLICATION:
 #ifdef REPLICATION_SUPPORT_IMPLEMENTED
@@ -522,7 +520,7 @@ namespace mariadb
             Proxy.newProxyInstance(
               MastersSlavesProtocol.class.getClassLoader(),
               new Class[] {Protocol&.class},
-              new FailoverProxy(new MastersSlavesListener(urlParser,globalInfo), lock)));
+              new FailoverProxy(new MastersSlavesListener(urlParser,globalInfo))));
 #endif
       case LOADBALANCE:
 #ifdef LOADBALANCE_SUPPORT_IMPLEMENTED
@@ -532,14 +530,14 @@ namespace mariadb
             Proxy.newProxyInstance(
               MasterProtocol.class.getClassLoader(),
               new Class[] {Protocol&.class},
-              new FailoverProxy(new MastersFailoverListener(urlParser,globalInfo), lock)));
+              new FailoverProxy(new MastersFailoverListener(urlParser,globalInfo))));
 #else
         /* This exception supposed to be already thrown*/
         throw SQLFeatureNotImplementedException(SQLString("Support of the HA mode") + HaModeStrMap[urlParser->getHaMode()] + "is not yet implemented");
 #endif
       case SEQUENTIAL:
       default:
-        Shared::Protocol protocol(getProxyLoggingIfNeeded(urlParser, new MasterProtocol(urlParser, globalInfo, lock)));
+        Shared::Protocol protocol(getProxyLoggingIfNeeded(urlParser, new MasterProtocol(urlParser, globalInfo)));
         protocol->connectWithoutProxy();
 
         return protocol;

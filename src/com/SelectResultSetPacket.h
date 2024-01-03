@@ -90,7 +90,7 @@ private:
   int32_t lastRowPointer; /*-1*/
   bool isClosedFlag;
   bool eofDeprecated;
-  Shared::mutex lock;
+  std::mutex *const lock;
   bool forceAlias;
 
 public:

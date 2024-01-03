@@ -40,8 +40,8 @@ namespace mariadb
    * @param globalInfo server global variables information
    * @param lock the lock for thread synchronisation
    */
-  MasterProtocol::MasterProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo, Shared::mutex& lock)
-    :super(urlParser, globalInfo, lock)
+  MasterProtocol::MasterProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo)
+    :super(urlParser, globalInfo)
   {
   }
 
@@ -54,7 +54,7 @@ namespace mariadb
    */
   MasterProtocol* MasterProtocol::getNewProtocol(FailoverProxy* proxy, GlobalStateInfo* globalInfo, std::shared_ptr<UrlParser>& urlParser)
   {
-    MasterProtocol* newProtocol= new MasterProtocol(urlParser, globalInfo, proxy->lock);
+    MasterProtocol* newProtocol= new MasterProtocol(urlParser, globalInfo/*, proxy->lock*/);
     newProtocol->setProxy(proxy);
 
     return newProtocol;

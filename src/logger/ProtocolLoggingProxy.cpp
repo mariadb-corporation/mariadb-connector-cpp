@@ -562,7 +562,7 @@ namespace mariadb
 	}
 
 
-  Shared::mutex& ProtocolLoggingProxy::getLock()
+  std::mutex *const ProtocolLoggingProxy::getLock()
 	{
 		/* Add here logging if needed */
 	  return protocol->getLock();

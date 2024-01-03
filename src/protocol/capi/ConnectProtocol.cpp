@@ -57,10 +57,10 @@ namespace capi
    * @param globalInfo server global variables information
    * @param lock the lock for thread synchronisation
    */
-  ConnectProtocol::ConnectProtocol(std::shared_ptr<UrlParser>& _urlParser, GlobalStateInfo* _globalInfo, Shared::mutex& lock)
+  ConnectProtocol::ConnectProtocol(std::shared_ptr<UrlParser>& _urlParser, GlobalStateInfo* _globalInfo)
     :
       connection(nullptr, &mysql_close)
-    , lock(lock)
+    , lock()
     , urlParser(_urlParser)
     , options(_urlParser->getOptions())
     , username(_urlParser->getUsername())
@@ -253,7 +253,7 @@ namespace capi
   /** Closes socket and stream readers/writers Attempts graceful shutdown. */
   void ConnectProtocol::close()
   {
-    std::unique_lock<std::mutex> localScopeLock(*lock);
+    std::unique_lock<std::mutex> localScopeLock(lock);
     this->connected= false;
     try {
       // skip acquires lock
@@ -272,9 +272,9 @@ namespace capi
     this->explicitClosed= true;
     bool lockStatus= false;
 
-    if (lock){
-      lockStatus= lock->try_lock();
-    }
+    //if (lock) {
+    lockStatus= lock.try_lock();
+    //}
     this->connected= false;
 
     abortActiveStream();
@@ -295,15 +295,14 @@ namespace capi
     cleanMemory();
 
     if (lockStatus){
-      lock->unlock();
+      lock.unlock();
     }
   }
 
   void ConnectProtocol::forceAbort()
   {
     try {
-      Shared::mutex forCopied(new std::mutex());
-      std::unique_ptr<MasterProtocol> copiedProtocol(new MasterProtocol(urlParser, new GlobalStateInfo(), forCopied));
+      std::unique_ptr<MasterProtocol> copiedProtocol(new MasterProtocol(urlParser, new GlobalStateInfo()));
       copiedProtocol->setHostAddress(getHostAddress());
       copiedProtocol->connect();
 
@@ -1285,7 +1284,7 @@ namespace capi
    */
   bool ConnectProtocol::hasWarnings()
   {
-    std::lock_guard<std::mutex> localScopeLock(*lock);
+    std::lock_guard<std::mutex> localScopeLock(lock);
     return hasWarningsFlag;
   }
 
@@ -1296,7 +1295,7 @@ namespace capi
    */
   bool ConnectProtocol::isConnected()
   {
-    std::lock_guard<std::mutex> localScopeLock(*lock);
+    std::lock_guard<std::mutex> localScopeLock(lock);
     return connected;
   }
 
@@ -1350,9 +1349,9 @@ namespace capi
     }
   }
 
-  Shared::mutex& ConnectProtocol::getLock()
+  std::mutex *const ConnectProtocol::getLock()
   {
-    return lock;
+    return &lock;
   }
 
   bool ConnectProtocol::hasMoreResults()
@@ -1437,7 +1436,7 @@ namespace capi
 
   void ConnectProtocol::reconnect()
   {
-    std::lock_guard<std::mutex> localScopeLock(*lock);
+    std::lock_guard<std::mutex> localScopeLock(lock);
 
     if (!options->autoReconnect)
     {

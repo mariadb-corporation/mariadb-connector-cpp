@@ -45,7 +45,7 @@ class MasterProtocol  : public capi::QueryProtocol
   static MasterProtocol* getNewProtocol(FailoverProxy* proxy, GlobalStateInfo* globalInfo, std::shared_ptr<UrlParser>& urlParser);
 
 public:
-  MasterProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo, Shared::mutex& lock);
+  MasterProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo);
   static void loop(Listener* listener, GlobalStateInfo& globalInfo, const std::vector<HostAddress>& addresses, SearchFilter* searchFilter);
   ~MasterProtocol() {}
 };

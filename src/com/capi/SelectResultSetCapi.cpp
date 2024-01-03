@@ -56,6 +56,7 @@ namespace capi
       dataSize(0),
       resultSetScrollType(results->getResultSetScrollType()),
       eofDeprecated(eofDeprecated),
+      lock(protocol->getLock()),
       forceAlias(false)
   {
     MYSQL_RES* textNativeResults= nullptr;
@@ -72,7 +73,6 @@ namespace capi
     }
     else {
 
-      lock= protocol->getLock();
       protocol->setActiveStreamingResult(statement->getInternalResults());
 
       protocol->removeHasMoreResults();
@@ -128,6 +128,7 @@ namespace capi
       resultSetScrollType(resultSetScrollType),
       columnNameMap(new ColumnNameMap(columnsInformation)),
       eofDeprecated(false),
+      lock(nullptr),
       forceAlias(false)
   {
     if (protocol != nullptr) {
@@ -609,7 +610,7 @@ namespace capi
       // has read all data and pointer is after last result
       // so result would have to always to be true,
       // but when result contain no row at all jdbc say that must return false
-      return dataSize >0 ||dataFetchTime >1;
+      return dataSize > 0 || dataFetchTime > 1;
     }
   }
 

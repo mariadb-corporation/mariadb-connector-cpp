@@ -50,7 +50,7 @@ protected:
   MariaDbConnection* connection;
   //TODO: possibly it is better to make it weak ptr, and check if it's still available, and gracefully throw exception otherwise
   Shared::Protocol protocol;
-  const Shared::mutex lock;
+  std::mutex *const lock;
   int32_t resultSetScrollType;
   int32_t resultSetConcurrency;
   const Shared::Options options;

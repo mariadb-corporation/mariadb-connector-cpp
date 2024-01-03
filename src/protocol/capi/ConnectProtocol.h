@@ -52,12 +52,12 @@ namespace capi
     +"@@system_time_zone,"
     +"@@time_zone,"
     +"@@auto_increment_increment")*/
-    static const SQLString IS_MASTER_QUERY; /*"select @@innodb_read_only"*/
+    static const SQLString IS_MASTER_QUERY; /*"SELECT @@innodb_read_only"*/
     static Shared::Logger logger;
 
   protected:
     std::unique_ptr<MYSQL, decltype(&mysql_close)> connection;
-    Shared::mutex lock;
+    std::mutex lock;
     std::shared_ptr<UrlParser> urlParser;
     Shared::Options options;
     Shared::ExceptionFactory exceptionFactory;
@@ -70,7 +70,7 @@ namespace capi
   public:
     bool hasWarningsFlag= false;
     /* This cannot be Shared as long as C/C stmt handle is owned by  statement(SSPS class in this case) object */
-    Weak::Results activeStreamingResult; /*NULL*/
+    Weak::Results activeStreamingResult;
     uint32_t serverStatus= 0;
 
   protected:
@@ -98,7 +98,7 @@ namespace capi
     TimeZone* timeZone= nullptr;
 
   public:
-    ConnectProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo, Shared::mutex& lock);
+    ConnectProtocol(std::shared_ptr<UrlParser>& urlParser, GlobalStateInfo* globalInfo);
 
   private:
     void closeSocket();
@@ -227,7 +227,7 @@ namespace capi
     Shared::Results getActiveStreamingResult();
     void setActiveStreamingResult(Shared::Results& activeStreamingResult);
     void removeActiveStreamingResult();
-    Shared::mutex& getLock();
+    std::mutex *const getLock();
     bool hasMoreResults();
     Cache* prepareStatementCache();
     void changeSocketTcpNoDelay(bool setTcpNoDelay);

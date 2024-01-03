@@ -69,7 +69,7 @@ class MariaDbConnection  : public Connection
     Shared::ExceptionFactory exceptionFactory;
 
 public:
-  Shared::mutex lock; /* TODO: Public? Really? */
+  std::mutex *const lock;
   MariaDbPoolConnection* poolConnection= nullptr;
 //protected:
   bool nullCatalogMeansCurrent;
