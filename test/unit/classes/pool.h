@@ -49,6 +49,7 @@ public:
     TEST_CASE(pool_simple);
     TEST_CASE(pool_datasource);
     TEST_CASE(pool_idle);
+    TEST_CASE(pool_pscache);
   }
 
   /* Simple test of the connection pool */
@@ -57,6 +58,8 @@ public:
   void pool_datasource();
   /* Test of idle connection removal function */
   void pool_idle();
+  /* Test of pool with ps cache enabled */
+  void pool_pscache();
 };
 
 

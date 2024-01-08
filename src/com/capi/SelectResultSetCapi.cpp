@@ -519,7 +519,6 @@ namespace capi
         }
       }
 
-
       rowPointer= static_cast<int32_t>(dataSize);
       return false;
     }

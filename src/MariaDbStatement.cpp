@@ -1045,7 +1045,7 @@ namespace mariadb
    * @since 1.6
    */
   bool MariaDbStatement::isClosed(){
-    return closed;
+    return closed || protocol->isExplicitClosed();
   }
 
 
