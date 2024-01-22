@@ -71,7 +71,7 @@ struct ScheduledTask
   std::shared_ptr<std::atomic_bool> canceled;
   Runnable task;
 
-  ScheduledTask(Runnable taskCode, uint32_t seconds = 0) : 
+  ScheduledTask(Runnable taskCode, uint32_t seconds= 0) : 
     task(taskCode), schedulePeriod(seconds),
     nextRunTime(std::chrono::steady_clock::now() + schedulePeriod),
     canceled(new std::atomic_bool(false)) {}
@@ -101,10 +101,10 @@ protected:
 public:
   virtual ~ThreadPoolExecutor();
 
-  ThreadPoolExecutor(int32_t corePoolSize, int32_t maximumPoolSize, int64_t keepAliveTime, TimeUnit unit,
+  ThreadPoolExecutor(int32_t corePoolSize, int32_t maximumPoolSize, ::mariadb::Timer::Clock::duration keepAliveTime,
     blocking_deque<Runnable>& workQueue, ThreadFactory* _threadFactory);
   ThreadPoolExecutor(int32_t corePoolSize, int32_t maximumPoolSize, ThreadFactory* _threadFactory)
-    : ThreadPoolExecutor(corePoolSize, maximumPoolSize, 0, TimeUnit::SECONDS, localQueue, _threadFactory)
+    : ThreadPoolExecutor(corePoolSize, maximumPoolSize, ::mariadb::Timer::Duration(0), localQueue, _threadFactory)
   {}
   void allowCoreThreadTimeOut(bool value);
   virtual bool prestartCoreThread();
@@ -138,8 +138,8 @@ public:
   virtual ~ScheduledThreadPoolExecutor();
   ScheduledThreadPoolExecutor(int32_t corePoolSize, int32_t maximumPoolSize, ThreadFactory* _threadFactory);
   ScheduledThreadPoolExecutor(int32_t coreSize, ThreadFactory* thf) : ScheduledThreadPoolExecutor(coreSize, coreSize, thf) {}
-  ScheduledFuture* scheduleAtFixedRate(std::function<void(void)> methodToRun, int32_t scheduleDelay, int32_t delay2,
-    enum TimeUnit unit);
+  ScheduledFuture* scheduleAtFixedRate(std::function<void(void)> methodToRun, ::mariadb::Timer::Clock::duration scheduleDelay,
+    ::mariadb::Timer::Clock::duration delay2);
 
   bool prestartCoreThread();
   virtual void shutdown();

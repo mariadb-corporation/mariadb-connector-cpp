@@ -43,7 +43,7 @@ namespace mariadb
   }
 
 
-  Connection* MariaDbDriver::connect(const SQLString& url, const Properties& props)
+  Connection* MariaDbDriver::connect(const SQLString& url, const Properties& props) const
   {
     PropertiesImp::ImpType propsCopy(PropertiesImp::get(props));
     Shared::UrlParser urlParser(UrlParser::parse(url, propsCopy));
@@ -113,7 +113,7 @@ namespace mariadb
   }
 
 
-  Connection * MariaDbDriver::connect(const SQLString& host, const SQLString& user, const SQLString& pwd)
+  Connection * MariaDbDriver::connect(const SQLString& host, const SQLString& user, const SQLString& pwd) const
   {
     Properties props{ {"user", user}, {"password", pwd} };
     SQLString localCopy(host);
@@ -124,7 +124,7 @@ namespace mariadb
   }
 
 
-  Connection * MariaDbDriver::connect(const Properties &initProps)
+  Connection * MariaDbDriver::connect(const Properties &initProps) const
   {
     SQLString uri;
     auto localCopy(initProps);
@@ -166,7 +166,7 @@ namespace mariadb
     return connect(uri, localCopy);
   }
 
-  bool MariaDbDriver::acceptsURL(const SQLString& url) {
+  bool MariaDbDriver::acceptsURL(const SQLString& url) const {
     return UrlParser::acceptsUrl(url);
   }
 
@@ -209,23 +209,22 @@ namespace mariadb
   }
 
 
-  uint32_t MariaDbDriver::getMajorVersion() {
+  uint32_t MariaDbDriver::getMajorVersion() const {
     return Version::majorVersion;
   }
 
 
-  uint32_t MariaDbDriver::getMinorVersion() {
+  uint32_t MariaDbDriver::getMinorVersion() const {
     return Version::minorVersion;
   }
 
 
-  bool MariaDbDriver::jdbcCompliant() {
+  bool MariaDbDriver::jdbcCompliant() const {
     return true;
   }
 
 
-  const SQLString& MariaDbDriver::getName()
-  {
+  const SQLString& MariaDbDriver::getName() const {
     return MariaDbDatabaseMetaData::DRIVER_NAME;
   }
 

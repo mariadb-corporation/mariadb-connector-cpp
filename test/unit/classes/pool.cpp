@@ -218,7 +218,7 @@ void pool::pool_idle()
   std::size_t i;
   std::array<Connection, maxPoolSize> c;
   std::vector<int32_t> connection_id(maxPoolSize);
-  bool verbosity = TestsListener::setVerbose(true);
+  bool verbosity= TestsListener::setVerbose(true);
   sql::Properties propsFromDs;
 
   ds.getProperties(propsFromDs);
@@ -236,7 +236,7 @@ void pool::pool_idle()
   }
 
   c[1].reset(nullptr);
-  std::this_thread::sleep_for(std::chrono::seconds(maxIdleTime + 10));
+  std::this_thread::sleep_for(std::chrono::seconds(maxIdleTime + 11));
 
   c[1].reset(ds.getConnection());
   ASSERT(c[1].get());
@@ -251,6 +251,7 @@ void pool::pool_idle()
 
   for (auto& cnx : c) cnx.reset(nullptr);
   ds.close();
+  TestsListener::setVerbose(verbosity);
 }
 
 

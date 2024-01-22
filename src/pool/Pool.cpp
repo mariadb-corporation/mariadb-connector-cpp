@@ -56,8 +56,7 @@ namespace mariadb
     connectionAppender(
         1,
         1,
-        10,
-        TimeUnit::SECONDS,
+        std::chrono::seconds(10),
         connectionAppenderQueue,
         new MariaDbThreadFactory(poolTag +"-appender")),
     poolExecutor(_poolExecutor),
@@ -77,7 +76,8 @@ namespace mariadb
     int32_t scheduleDelay= std::min(minDelay, options->maxIdleTime / 2);
     scheduledFuture.reset(
       poolExecutor.scheduleAtFixedRate(
-        std::bind(&Pool::removeIdleTimeoutConnection, this), scheduleDelay, scheduleDelay, TimeUnit::SECONDS));
+        std::bind(&Pool::removeIdleTimeoutConnection, this), std::chrono::seconds(scheduleDelay),
+        std::chrono::seconds(scheduleDelay)));
 
     try
     {
@@ -145,7 +145,7 @@ namespace mariadb
   void Pool::removeIdleTimeoutConnection()
   {
     //LoggerFactory::getLogger().trace("Pool","Checking idles");
-    std::lock_guard<std::mutex> synchronized(listsLock);
+    std::lock_guard<std::mutex> synchronized(idleConnections.getLock());
 
     Idles::iterator iterator= idleConnections.begin();
     MariaDbInnerPoolConnection* item;
@@ -249,7 +249,7 @@ namespace mariadb
   }
 
   MariaDbInnerPoolConnection* Pool::getIdleConnection() {
-    return getIdleConnection(0, TimeUnit::NANOSECONDS);
+    return getIdleConnection(::mariadb::Timer::Duration(0));
   }
 
   /**
@@ -257,27 +257,30 @@ namespace mariadb
     *
     * @return an IDLE connection.
     */
-  MariaDbInnerPoolConnection* Pool::getIdleConnection(int64_t timeout, TimeUnit timeUnit) {
+  MariaDbInnerPoolConnection* Pool::getIdleConnection(::mariadb::Timer::Clock::duration& timeout) {
 
     while (true) {
       auto item= 
-        (timeout == 0)
+        (timeout == ::mariadb::Timer::Duration(0))
         ? idleConnections.pollFirst()
-        : idleConnections.pollFirst(timeout, timeUnit);
+        : idleConnections.pollFirst(timeout);
 
       if (item) {
         MariaDbConnection* connection= dynamic_cast<MariaDbConnection*>(item->getConnection());
         try {
-          if (duration_cast<milliseconds>(nanoseconds(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count() - item->getLastUsed())).count()
-> urlParser->getOptions()->poolValidMinDelay) {
+          if (duration_cast<milliseconds>(nanoseconds(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count() -
+            item->getLastUsed())).count() > urlParser->getOptions()->poolValidMinDelay) {
             // validate connection
             if (connection->isValid(10)) { // 10 seconds timeout
+              // It's probably not quite right to operate here with MariaDbConnection
+              dynamic_cast<MariaDbConnection*>(item->getConnection())->markClosed(false);
               item->lastUsedToNow();
               return item;
             }
           }
           else {
             // connection has been retrieved recently -> skip connection validation
+            dynamic_cast<MariaDbConnection*>(item->getConnection())->markClosed(false);
             item->lastUsedToNow();
             //LoggerFactory::getLogger().trace("Pool",connection->isClosed(),"getting idle 2, ",std::hex, item->getConnection());
             return item;
@@ -397,7 +400,7 @@ namespace mariadb
     /*try*/ {
       // try to get Idle connection if any (with a very small timeout)
       if ((pooledConnection=
-        getIdleConnection(totalConnection.load() > 4 ? 0 : 50, TimeUnit::MICROSECONDS))) {
+        getIdleConnection(::mariadb::Timer::Clock::duration(std::chrono::microseconds(totalConnection.load() > 4 ? 0 : 50))))) {
         return pooledConnection;
       }
 
@@ -406,8 +409,7 @@ namespace mariadb
 
       // try to create new connection
       if ((pooledConnection=
-        getIdleConnection(
-          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(urlParser->getOptions()->connectTimeout)).count(), TimeUnit::NANOSECONDS))) {
+        getIdleConnection(::mariadb::Timer::Clock::duration(std::chrono::milliseconds(urlParser->getOptions()->connectTimeout))))) {
         return pooledConnection;
       }
 
@@ -528,7 +530,7 @@ namespace mariadb
 
   void Pool::closeAll(Idles &collection)
   {
-    std::lock_guard<std::mutex> synchronized(listsLock);
+    std::lock_guard<std::mutex> synchronized(collection.getLock());
 
     for (auto item= collection.begin(); item != collection.end();) {
       --totalConnection;
@@ -622,6 +624,7 @@ namespace mariadb
     }
 
     int64_t Pool::getIdleConnections() {
+      //Lock? 
       return idleConnections.size();
     }
 
@@ -652,18 +655,22 @@ namespace mariadb
       if (poolState.load() == POOL_STATE_OK) {
         try {
           bool contains= false;
-          for (auto const& it : idleConnections) {
-            if (it == &item) {
-              contains = true;
-              break;
+          {
+            std::lock_guard<std::mutex> synchronized(idleConnections.getLock());
+            
+            for (Idles::iterator it= idleConnections.begin(); it != idleConnections.end(); ++it) {
+              if (*it == &item) {
+                contains= true;
+                break;
+              }
             }
-          }
+          } // need to release the lock as push_back will obtain it, and it is not re-entrant
           if (!contains) {
             MariaDbConnection& newConn= *item.makeFreshConnectionObj();
             newConn.setPoolConnection(nullptr);
             newConn.reset();
             newConn.setPoolConnection(&item);
-            idleConnections.emplace(&item);
+            idleConnections.push_back(&item);
           }
         }
         catch (SQLException & /*sqle*/) {
@@ -696,16 +703,19 @@ namespace mariadb
       MariaDbConnection& conn= *dynamic_cast<MariaDbConnection*>(item.getConnection());
 
       --totalConnection;
-      for (auto it= idleConnections.begin(); it != idleConnections.end(); std::advance(it,1)) {
-        if (*it == &item) {
-          idleConnections.erase(it);
-          break;
+      {
+        std::lock_guard<std::mutex> synchronized(idleConnections.getLock());
+        for (auto it= idleConnections.begin(); it != idleConnections.end(); std::advance(it, 1)) {
+          if (*it == &item) {
+            idleConnections.erase(it);
+            break;
+          }
         }
-      }
-
-      for (auto const& it : idleConnections) {
-       it->ensureValidation();
-      }
+        // Erase (in the middle) invalidates all iterators, thus need new
+        for (auto const& it : idleConnections) {
+          it->ensureValidation();
+        }
+      } // lock can be freed by now
       silentCloseConnection(conn);
       addConnectionRequest();
       std::ostringstream msg("connection ", std::ios_base::ate);

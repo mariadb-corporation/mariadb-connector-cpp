@@ -49,7 +49,7 @@ void ThreadPoolExecutor::workerFunction()
     //LoggerFactory::getLogger().trace("Pool", "Task received, running");
     task.run();
     //LoggerFactory::getLogger().trace("Pool", "Making break");
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     //LoggerFactory::getLogger().trace("Pool", "Checking if should  quit:" ,quit.load() ,"<<<");
   }
   //LoggerFactory::getLogger().trace("Pool", "quit flag set, decrementing workersCount");
@@ -67,9 +67,9 @@ ThreadPoolExecutor::~ThreadPoolExecutor()
   }
 }
 
-ThreadPoolExecutor::ThreadPoolExecutor(int32_t _corePoolSize, int32_t maxPoolSize, int64_t keepAliveTime, TimeUnit unit, blocking_deque<Runnable>& workQueue,
-                                       ThreadFactory* _threadFactory) :
-  tasksQueue(workQueue),
+ThreadPoolExecutor::ThreadPoolExecutor(int32_t _corePoolSize, int32_t maxPoolSize,
+  ::mariadb::Timer::Clock::duration keepAliveTime, blocking_deque<Runnable>& workQueue, ThreadFactory* _threadFactory)
+  : tasksQueue(workQueue),
   corePoolSize(_corePoolSize),
   maximumPoolSize(maxPoolSize),
   allowTimeout(false),
@@ -148,9 +148,11 @@ void ScheduledFuture::cancel(bool cancelType)
 
 //-------------------- ScheduledThreadPoolExecutor ---------------------
 
-ScheduledFuture* ScheduledThreadPoolExecutor::scheduleAtFixedRate(std::function<void(void)> methodToRun, int32_t scheduleDelay, int32_t delay2, TimeUnit unit)
+ScheduledFuture* ScheduledThreadPoolExecutor::scheduleAtFixedRate(std::function<void(void)> methodToRun,
+  ::mariadb::Timer::Clock::duration scheduleDelay, ::mariadb::Timer::Clock::duration delay2)
 {
-  ScheduledTask task(methodToRun, scheduleDelay);
+  ScheduledTask task(methodToRun,
+    static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::seconds>(scheduleDelay).count()));
   // TODO: can do better and insert it based on execution time
   tasksQueue.push_back(task);
 

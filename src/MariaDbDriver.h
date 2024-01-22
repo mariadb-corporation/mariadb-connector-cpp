@@ -33,16 +33,16 @@ namespace mariadb
 {
   class MariaDbDriver final : public sql::Driver {
     public:
-      Connection* connect(const SQLString& url, const Properties& props);
-      Connection* connect(const SQLString& host, const SQLString& user, const SQLString& pwd);
-      Connection* connect(const Properties& props);
+      Connection* connect(const SQLString& url, const Properties& props) const;
+      Connection* connect(const SQLString& host, const SQLString& user, const SQLString& pwd) const;
+      Connection* connect(const Properties& props) const;
 
-      bool acceptsURL(const SQLString& url);
+      bool acceptsURL(const SQLString& url) const;
       std::unique_ptr<std::vector<DriverPropertyInfo>> getPropertyInfo(SQLString& url, Properties& info);
-      uint32_t getMajorVersion();
-      uint32_t getMinorVersion();
-      bool jdbcCompliant();
-      const SQLString& getName();
+      uint32_t getMajorVersion() const;
+      uint32_t getMinorVersion() const;
+      bool jdbcCompliant() const;
+      const SQLString& getName() const;
       Logger* getParentLogger();
   };
 }

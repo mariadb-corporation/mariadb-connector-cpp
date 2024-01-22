@@ -8,15 +8,10 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include "timer.h"
 
 namespace sql
 {
-  enum TimeUnit {
-    NANOSECONDS,
-    MICROSECONDS,
-    SECONDS
-  };
-
   class InterruptedException : public ::std::runtime_error
   {
 
@@ -53,6 +48,13 @@ namespace sql
     blocking_deque(std::size_t capacity) : maxCapacity(capacity),realQueue()
     {}
 
+    /* If the program wants to traverse queue members, there is no way it can guarantee iterators validity without
+     * either implementing complete queue synchronysation, or using queue's lock
+     */
+    std::mutex& getLock()
+    {
+      return queueSync;
+    }
     void close()
     {
       bool notify= false;
@@ -184,25 +186,27 @@ namespace sql
       //for (;;)
       if (!closed && !realQueue.empty())
       {
-        T result = std::move(realQueue.front());
+        T& result= realQueue.front();
         realQueue.pop_front();
 
         return std::move(result);
       }
       T null(nullptr);
-      return std::move(null);
+      return null;
     }
 
-    template<class Rep, class Period>
-    T pollFirst(const std::chrono::duration<Rep, Period>& timeout_duration)
+ 
+    T pollFirst(const ::mariadb::Timer::Clock::duration& timeout_duration)
     {
       std::unique_lock<std::mutex> lock(queueSync);
 
+      ::mariadb::Timer t(timeout_duration);
       // If the queue is not closed yet, and is empty, let's wait for timeout duration
-      if (!closed && realQueue.empty()) {
-        notEmpty.wait_for(lock, timeout_duration);
+      while (!closed && realQueue.empty() && !t.over()) {
+        notEmpty.wait_for(lock, t.left());
       }
-
+      // The specs for wait_for say "It may also be unblocked spuriously", and that is seemingly's happenning. Also, there
+      // is moment between releasing lock and notifying, there another thread can acquire the lock and take the connection, I guess
       T result(nullptr);
       // If still empty - then return "null", if not - return what we have
       if (!realQueue.empty()) {
@@ -212,14 +216,6 @@ namespace sql
       return std::move(result);
     }
 
-    T pollFirst(int64_t timeout, enum TimeUnit unit)
-    {
-      switch (unit) {
-      case SECONDS: return pollFirst(std::chrono::seconds(timeout));
-      case MICROSECONDS: return pollFirst(std::chrono::microseconds(timeout));
-      default/*case NANOSECONDS*/: return pollFirst(std::chrono::nanoseconds(timeout));
-      }
-    }
 
     /* that is application's responsibility to make sure it's not empty */
     T& front()
@@ -237,6 +233,7 @@ namespace sql
     iterator begin() { return realQueue.begin(); }
     iterator end() { return realQueue.end(); }
 
+    // To erase iterator one need to get iterator, and to be sure it's valid, one needs lock to be obtained. Thus not locking here.
     iterator erase(iterator it) {
       return realQueue.erase(it);
     }

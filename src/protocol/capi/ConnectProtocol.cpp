@@ -1379,6 +1379,7 @@ namespace capi
     }
   }
 
+
   void ConnectProtocol::changeSocketSoTimeout(int32_t millis)
   {
     this->socketTimeout = millis;
@@ -1387,6 +1388,7 @@ namespace capi
     //socket->setSoTimeout(this->socketTimeout);
     mysql_optionsv(connection.get(), MYSQL_OPT_READ_TIMEOUT, (void*)&millis);
   }
+
 
   bool ConnectProtocol::isServerMariaDb()
   {

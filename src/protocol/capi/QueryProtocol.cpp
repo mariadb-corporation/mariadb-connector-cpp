@@ -1101,8 +1101,8 @@ namespace capi
 
   bool QueryProtocol::isValid(int32_t timeout)
   {
-
     int32_t initialTimeout= -1;
+
     try {
       initialTimeout= this->socketTimeout;
       if (initialTimeout == 0) {
@@ -1133,8 +1133,8 @@ namespace capi
       }
 
       return ping();
-
-    }catch (/*SocketException*/std::runtime_error& socketException){
+    }
+    catch (/*SocketException*/std::runtime_error& socketException){
       logger->trace(SQLString("Connection* is not valid").append(socketException.what()));
       connected= false;
       return false;

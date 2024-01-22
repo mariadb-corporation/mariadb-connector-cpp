@@ -1231,7 +1231,7 @@ namespace mariadb
       return false;
     }
     try {
-      return protocol->isValid(timeout *1000);
+      return protocol->isValid(timeout*1000);
     }
     catch (SQLException&) {
       // eat

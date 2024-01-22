@@ -37,15 +37,15 @@ public:
   Driver() {}
   virtual ~Driver(){}
 
-  virtual Connection* connect(const SQLString& url, const Properties& props)=0;
-  virtual Connection* connect(const SQLString& host, const SQLString& user, const SQLString& pwd)=0;
-  virtual Connection* connect(const Properties& props)=0;
-  virtual bool acceptsURL(const SQLString& url)=0;
-  virtual uint32_t getMajorVersion()=0;
-  virtual uint32_t getMinorVersion()=0;
-  virtual bool jdbcCompliant()=0;
+  virtual Connection* connect(const SQLString& url, const Properties& props) const=0;
+  virtual Connection* connect(const SQLString& host, const SQLString& user, const SQLString& pwd) const=0;
+  virtual Connection* connect(const Properties& props) const=0;
+  virtual bool acceptsURL(const SQLString& url) const=0;
+  virtual uint32_t getMajorVersion() const=0;
+  virtual uint32_t getMinorVersion() const=0;
+  virtual bool jdbcCompliant() const=0;
   //Not in the classic API
-  virtual const SQLString& getName()=0;
+  virtual const SQLString& getName() const=0;
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   virtual Logger* getParentLogger()= 0;
 #endif

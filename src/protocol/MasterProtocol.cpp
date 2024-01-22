@@ -130,7 +130,7 @@ namespace mariadb
         }else {
           try {
             // wait 250ms before looping through all connection another time
-            std::this_thread::sleep_for(std::chrono::duration<int, std::milli>(250));
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
           }catch (SQLException&){
 
           }

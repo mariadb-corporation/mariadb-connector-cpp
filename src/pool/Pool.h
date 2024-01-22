@@ -80,7 +80,7 @@ private:
   void removeIdleTimeoutConnection();
   void addConnection();
   MariaDbInnerPoolConnection* getIdleConnection();
-  MariaDbInnerPoolConnection* getIdleConnection(int64_t timeout, TimeUnit timeUnit);
+  MariaDbInnerPoolConnection* getIdleConnection(::mariadb::Timer::Clock::duration& timeout);
   void silentCloseConnection(MariaDbConnection& item);
   void silentAbortConnection(MariaDbInnerPoolConnection& item);
 
