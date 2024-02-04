@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2023 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -113,7 +113,7 @@ struct Options
 
   Properties nonMappedOptions;
 
-  bool      log;
+  uint32_t  log;
   bool      profileSql;
   int32_t   maxQuerySizeToLog= 1024;
   int64_t   slowQueryThresholdNanos;

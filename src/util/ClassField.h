@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2023 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -39,6 +39,7 @@ public:
   {
     VNONE=0,
     VINT32,
+    VUINT32,
     VINT64,
     VBOOL,
     VSTRING,
@@ -47,6 +48,7 @@ private:
   union Variant
   {
     int32_t T::*iv;
+    uint32_t T::*uv;
     int64_t T::*lv;
     bool    T::*bv;
 
@@ -87,6 +89,11 @@ public:
     value.iv= v;
   }
 
+  ClassField(uint32_t T::*v) : type(VUINT32)
+  {
+    value.uv= v;
+  }
+
   ClassField(int64_t T::*v) : type(VINT64)
   {
     value.lv= v;
@@ -102,17 +109,27 @@ public:
     value.sv= v;
   }
 
+
   void operator=(SQLString T::*fp)
   {
     type= valueType::TSTRING;
     value.sv= fp;
   }
 
+
   void operator=(int32_t T::*fp)
   {
     type= valueType::TINT32;
     value.iv= fp;
   }
+
+
+  void operator=(uint32_t T::*fp)
+  {
+    type= valueType::TUINT32;
+    value.uv= fp;
+  }
+
 
   void operator=(int64_t T::* fp)
   {
@@ -150,6 +167,18 @@ public:
     throw std::runtime_error("Wrong lvalue type requested - the field type is not int32");
   }
 
+
+  operator uint32_t T::*()
+  {
+    if (type == valueType::VUINT32)
+    {
+      return value.uv;
+    }
+
+    throw std::runtime_error("Wrong lvalue type requested - the field type is not int32");
+  }
+
+
   operator int64_t T::*()
   {
     if (type == valueType::VINT64)
@@ -160,6 +189,7 @@ public:
     throw std::runtime_error("Wrong lvalue type requested - the field type is not int64");
   }
 
+
   operator bool T::*()
   {
     if (type == valueType::VBOOL)
@@ -169,6 +199,7 @@ public:
 
     throw std::runtime_error("Wrong lvalue type requested - the field type is not bool");
   }
+
 
   operator SQLString T::*()
   {
@@ -190,15 +221,18 @@ public:
     return !empty();
   }
 
+
   void reset()
   {
     type= valueType::VNONE;
   }
 
+
   enum valueType objType()
   {
     return type;
   }
+
 
   void set(T& obj, const SQLString& val2set) const
   {
@@ -210,6 +244,7 @@ public:
     obj.*(value.sv)= val2set;
   }
 
+
   void set(T& obj, int32_t val2set) const
   {
     if (type != valueType::VINT32)
@@ -220,6 +255,18 @@ public:
     obj.*(value.iv)= val2set;
   }
 
+
+  void set(T& obj, uint32_t val2set) const
+  {
+    if (type != valueType::VUINT32)
+    {
+      throw std::invalid_argument("Cannot set the value - the field is not int32");
+    }
+
+    obj.*(value.uv)= val2set;
+  }
+
+
   void set(T& obj, int64_t val2set) const
   {
     if (type != valueType::VINT64)
@@ -229,6 +276,7 @@ public:
 
     obj.*(value.lv)= val2set;
   }
+
 
   void set(T& obj, bool val2set) const
   {

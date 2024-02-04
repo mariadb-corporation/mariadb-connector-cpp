@@ -38,7 +38,7 @@ class MariaDbResultSetMetaData;
  */
 class ServerSidePreparedStatement : public BasePrepareStatement {
 
-  static const Shared::Logger logger ; /*LoggerFactory.getLogger(typeid(ServerSidePreparedStatement))*/
+  static Logger* logger;
 
 protected:
   int32_t parameterCount; /*-1*/
@@ -85,7 +85,7 @@ public:
 private:
   void executeBatchInternal(int32_t queryParameterSize);
   void executeQueryPrologue(ServerPrepareResult* serverPrepareResult);
-  Logger* getLogger() const { return logger.get(); }
+  Logger* getLogger() const { return logger; }
 
 public:
   PrepareResult* getPrepareResult() { return dynamic_cast<PrepareResult*>(serverPrepareResult); }

@@ -47,7 +47,7 @@ namespace capi
 
   static const int64_t MAX_PACKET_LENGTH= 0x00ffffff + 4;
 
-  const Shared::Logger QueryProtocol::logger= LoggerFactory::getLogger(typeid(QueryProtocol));
+  Logger* QueryProtocol::logger= LoggerFactory::getLogger(typeid(QueryProtocol));
   const SQLString QueryProtocol::CHECK_GALERA_STATE_QUERY("show status like 'wsrep_local_state'");
 
   void throwStmtError(MYSQL_STMT* stmt) {
@@ -1234,12 +1234,14 @@ namespace capi
 
   void QueryProtocol::closeExplicit()
   {
+    GET_LOGGER()->trace("Protocol::closeExplicit:", std::hex, this);
     this->explicitClosed= true;
     close();
   }
 
   void QueryProtocol::markClosed(bool closed)
   {
+    GET_LOGGER()->trace("Protocol::markClosed:", std::hex, this, closed);
     this->explicitClosed = closed;
     //close();
   }

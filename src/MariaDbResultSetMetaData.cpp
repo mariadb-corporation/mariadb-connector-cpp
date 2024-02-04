@@ -406,7 +406,7 @@ namespace mariadb
     */
   /*bool MariaDbResultSetMetaData::isWrapperFor(ResultSetMetaData *iface)
   {
-    return INSTANCEOF(this, decltype(this));
+    return INSTANCEOF(this, decltype(iface));
   }*/
 }
 }

@@ -63,7 +63,7 @@ class FailoverProxy {
   static const SQLString METHOD_GET_MAJOR_VERSION ; /*"getMajorServerVersion"*/
   static const SQLString METHOD_IN_TRANSACTION ; /*"inTransaction"*/
   static const SQLString METHOD_IS_MARIADB ; /*"isServerMariaDb"*/
-  static const Shared::Logger logger ; /*LoggerFactory.getLogger(FailoverProxy.class)*/
+  static const Logger* logger ; /*LoggerFactory.getLogger(FailoverProxy.class)*/
 
   Shared::Listener listener;
   static SQLException addHostInformationToException( SQLException& exception, Shared::Protocol& protocol);

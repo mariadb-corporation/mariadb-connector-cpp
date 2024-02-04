@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2023 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -38,6 +38,7 @@ public:
   {
     VNONE=0,
     VINT32,
+    VUINT32,
     VINT64,
     VBOOL,
     VSTRING,
@@ -46,6 +47,7 @@ private:
   union Variant
   {
     int32_t iv;
+    uint32_t uv;
     int64_t lv;
     bool    bv;
     SQLString sv;
@@ -64,17 +66,20 @@ public:
   Value(const Value& other);
 
   Value(int32_t v);
+  Value(uint32_t v);
   Value(int64_t v);
   Value(bool v);
   Value(const SQLString &v);
   Value(const char* v);
   Value(int32_t* v);
+  Value(uint32_t* v);
   Value(int64_t* v);
   Value(bool* v);
   Value(SQLString *v);
 
   SQLString& operator=(const SQLString&);
   int32_t&   operator=(int32_t);
+  uint32_t& Value::operator=(uint32_t num);
   int64_t&   operator=(int64_t);
   bool&      operator=(bool);
   SQLString* operator=(SQLString*);
@@ -85,6 +90,9 @@ public:
   operator int32_t() const;
   operator int32_t&();
 
+  operator uint32_t() const;
+  operator uint32_t&();
+ 
   operator int64_t() const;
   operator int64_t&();
 

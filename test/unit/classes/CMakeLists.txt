@@ -1,5 +1,5 @@
 # Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
-#               2020 MariaDB Corporation AB
+#               2020, 2023 MariaDB Corporation plc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -71,6 +71,26 @@ SET_TARGET_PROPERTIES(test_pool PROPERTIES
 TARGET_LINK_LIBRARIES(test_pool ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
 
 MESSAGE(STATUS "Configuring unit tests - pool")
+
+SET(test_pool2_sources
+  ${test_common_sources}
+  pool2.cpp)
+
+IF(WIN32)
+  SET(test_pool2_sources
+      ${test_pool2_sources}
+      pool2.h)
+ENDIF(WIN32)
+
+ADD_EXECUTABLE(test_pool2 ${test_pool2_sources})
+SET_TARGET_PROPERTIES(test_pool2 PROPERTIES
+          OUTPUT_NAME "pool2"
+	        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+          LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
+          COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
+TARGET_LINK_LIBRARIES(test_pool2 ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
+
+MESSAGE(STATUS "Configuring unit tests - pool2")
 
 SET(test_databasemetadata_sources
   ${test_common_sources}

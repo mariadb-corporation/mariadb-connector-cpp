@@ -36,7 +36,7 @@ namespace mariadb
 
   class HostAddress
   {
-    static Shared::Logger logger; /* const? */
+    static Logger* logger;
 
   public:
     SQLString host;

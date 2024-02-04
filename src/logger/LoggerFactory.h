@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -21,23 +21,25 @@
 #ifndef _LOGGERFACTORY_H_
 #define _LOGGERFACTORY_H_
 
+#include <unordered_map>
+#include <typeindex>
 #include <memory>
 
-#include "Logger.h"
-#include "Consts.h"
+#include "SimpleLogger.h"
 
+#define GET_LOGGER() LoggerFactory::getLogger(typeid(*this))
 namespace sql
 {
 namespace mariadb
 {
 class LoggerFactory
 {
-  static std::shared_ptr<Logger> NO_LOGGER;
+  static std::unique_ptr<std::unordered_map<std::type_index, SimpleLogger>> logger;
   static bool hasToLog;
   static bool initLoggersIfNeeded();
 public:
-  static void init(bool mustLog);
-  static Shared::Logger getLogger(const std::type_info &typeId);
+  static void init(uint32_t logLevel);
+  static SimpleLogger* getLogger(const std::type_info &typeId);
 };
 }
 }

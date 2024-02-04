@@ -32,7 +32,7 @@ namespace sql
   namespace mariadb
 {
 
-  const Shared::Logger ServerSidePreparedStatement::logger= LoggerFactory::getLogger(typeid(ServerSidePreparedStatement));
+  Logger* ServerSidePreparedStatement::logger= LoggerFactory::getLogger(typeid(ServerSidePreparedStatement));
   ServerSidePreparedStatement::~ServerSidePreparedStatement()
   {
     // Statement has to be deleted before prepare result, because prepare result owns(and closes) C API stmt handle, and Results deleted in

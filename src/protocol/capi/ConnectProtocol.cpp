@@ -47,7 +47,7 @@ namespace capi
     "@@time_zone,"
     "@@auto_increment_increment");
   const SQLString ConnectProtocol::IS_MASTER_QUERY("select @@innodb_read_only");
-  Shared::Logger ConnectProtocol::logger(LoggerFactory::getLogger(typeid(ConnectProtocol)));
+  Logger* ConnectProtocol::logger= LoggerFactory::getLogger(typeid(ConnectProtocol));
   static const SQLString MARIADB_RPL_HACK_PREFIX("5.5.5-");
 
   /**
@@ -269,6 +269,7 @@ namespace capi
   /** Force closes socket and stream readers/writers. */
   void ConnectProtocol::abort()
   {
+    GET_LOGGER()->trace("Protocol::abort:", std::hex, this);
     this->explicitClosed= true;
     bool lockStatus= false;
 

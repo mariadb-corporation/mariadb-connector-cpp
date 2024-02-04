@@ -47,7 +47,7 @@ class MariaDbConnection;
 class Pool
 {
   typedef sql::blocking_deque<MariaDbInnerPoolConnection*> Idles;
-  static Shared::Logger logger;
+  static Logger* logger;
   static const int32_t POOL_STATE_OK= 0;
   static const int32_t POOL_STATE_CLOSING= 1;
   std::atomic<int32_t> poolState;
@@ -60,7 +60,7 @@ class Pool
   /* Queue must go before appender */
   sql::blocking_deque<Runnable> connectionAppenderQueue;
   // poolTag must be before connectionAppender
-  SQLString poolTag;
+  std::string poolTag;
   ThreadPoolExecutor connectionAppender;
   ScheduledThreadPoolExecutor& poolExecutor;
   std::unique_ptr<ScheduledFuture> scheduledFuture;
@@ -91,7 +91,7 @@ public:
   MariaDbInnerPoolConnection* getPoolConnection(const SQLString& username, const SQLString& password);
 
 private:
-  SQLString generatePoolTag(int32_t poolIndex);
+  std::string generatePoolTag(int32_t poolIndex);
 
 public:
   const UrlParser& getUrlParser();
@@ -102,7 +102,7 @@ private:
   //void initializePoolGlobalState(MariaDbConnection& connection);
 
 public:
-  SQLString getPoolTag();
+  std::string getPoolTag();
   //bool equals(sql::Object* obj);
   //int64_t hashCode();
   //GlobalStateInfo getGlobalInfo();

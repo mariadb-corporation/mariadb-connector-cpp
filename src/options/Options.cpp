@@ -178,6 +178,11 @@ namespace mariadb
             this->*fieldPtr= cit->second.defaultValue;
             break;
           }
+          case ClassField<Options>::VUINT32: {
+            uint32_t Options::*fieldPtr= it.second;
+            this->*fieldPtr= static_cast<uint32_t>(cit->second.defaultValue);
+            break;
+          }
           case ClassField<Options>::VINT64: {
             int64_t Options::*fieldPtr= it.second;
             this->*fieldPtr= cit->second.defaultValue;

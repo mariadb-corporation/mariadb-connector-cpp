@@ -54,7 +54,7 @@ namespace mariadb
   const SQLString FailoverProxy::METHOD_IN_TRANSACTION= "inTransaction";
   const SQLString FailoverProxy::METHOD_IS_MARIADB= "isServerMariaDb";
 
-  const Shared::Logger logger= LoggerFactory::getLogger(typeid(FailoverProxy));
+  Logger* logger= LoggerFactory::getLogger(typeid(FailoverProxy));
 
   /**
    * Proxy constructor.

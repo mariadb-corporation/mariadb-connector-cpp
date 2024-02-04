@@ -110,7 +110,7 @@ namespace mariadb
 
   bool MariaDbParameterMetaData::isWrapperFor(ParameterMetaData* iface)
   {
-    return INSTANCEOF(iface, decltype(this));
+    return INSTANCEOF(this, decltype(iface));
   }
 }
 }

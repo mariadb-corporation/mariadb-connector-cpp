@@ -35,7 +35,7 @@ namespace mariadb
 
 class ClientSidePreparedStatement : public BasePrepareStatement
 {
-  static const Shared::Logger logger ; /*LoggerFactory.getLogger(typeid(ClientSidePreparedStatement))*/
+  static Logger* logger;
   Shared::ClientPrepareResult prepareResult;
   SQLString sqlQuery;
   Shared::ResultSetMetaData resultSetMetaData; /*NULL*/
@@ -60,7 +60,7 @@ public:
 protected:
   bool executeInternal(int32_t fetchSize);
   PrepareResult* getPrepareResult() { return dynamic_cast<PrepareResult*>(prepareResult.get()); }
-  Logger* getLogger() const { return logger.get(); }
+  Logger* getLogger() const { return logger; }
 
 public:
   sql::Ints& executeBatch();

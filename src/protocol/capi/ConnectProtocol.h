@@ -53,7 +53,7 @@ namespace capi
     +"@@time_zone,"
     +"@@auto_increment_increment")*/
     static const SQLString IS_MASTER_QUERY; /*"SELECT @@innodb_read_only"*/
-    static Shared::Logger logger;
+    static Logger* logger;
 
   protected:
     std::unique_ptr<MYSQL, decltype(&mysql_close)> connection;

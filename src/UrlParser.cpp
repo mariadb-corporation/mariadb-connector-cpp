@@ -186,9 +186,9 @@ namespace mariadb
     DefaultOptions::postOptionProcess(urlParser.options, urlParser.credentialPlugin.get());
 
     LoggerFactory::init(
-      urlParser.options->log
-      || urlParser.options->profileSql
-      || urlParser.options->slowQueryThresholdNanos  > 0);
+      urlParser.options->log > 0 ? urlParser.options->log : (
+      urlParser.options->profileSql
+      || urlParser.options->slowQueryThresholdNanos  > 0) ? 3/*INFO*/ : 0);
 
     urlParser.addresses= HostAddress::parse(hostAddressesString, urlParser.haMode);
   }

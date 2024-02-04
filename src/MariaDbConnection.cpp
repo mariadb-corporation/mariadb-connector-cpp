@@ -41,7 +41,7 @@ namespace sql
 {
 namespace mariadb
 {
-  Shared::Logger MariaDbConnection::logger= LoggerFactory::getLogger(typeid(MariaDbConnection));
+  Logger* MariaDbConnection::logger= LoggerFactory::getLogger(typeid(MariaDbConnection));
   /**
     * Creates a new connection with a given protocol and query factory.
     *
@@ -126,6 +126,7 @@ namespace mariadb
   */
   Statement* MariaDbConnection::createStatement()
   {
+    logger->trace("Creating Stmt on connection:", std::hex, this->poolConnection, "Protocol:", protocol.get(), "expClosed:", protocol->isExplicitClosed());
     checkConnection();
     return new MariaDbStatement(this, ResultSet::TYPE_FORWARD_ONLY, ResultSet::CONCUR_READ_ONLY, exceptionFactory);
   }
@@ -807,10 +808,19 @@ namespace mariadb
     if (poolConnection)
     {
       rollback(); //TODO: should it be here?
-      this->poolConnection->returnToPool();
+      logger->trace("Closing:", std::hex, this->poolConnection, "Protocol:", protocol.get(), "expClosed:", protocol->isExplicitClosed());
+      // Should do this before returning to the pool, or we can do this when other connection object has already seized this physical connection
       this->markClosed(true);
-      returnedToPool= true;
+      // We returning connectin to the pool where it can be re-used by other connection, which will make it appear as "not closed" again.
+
+      this->poolConnection->returnToPool();
+      // if we don't reset protocol here, and current object still exist, connection may become used by more than one conneciton object
+      // But have to do it after returning to the pool, as it is used for creation of the new object
+      protocol= nullptr;
       poolConnection= nullptr;
+      returnedToPool= true;
+      
+      
       return;
     }
     else if (!returnedToPool){
@@ -825,7 +835,7 @@ namespace mariadb
     */
   bool MariaDbConnection::isClosed()
   {
-    return (protocol->isClosed() || returnedToPool);
+    return (!protocol || protocol->isClosed() || returnedToPool);
   }
 
   /**
@@ -1685,11 +1695,14 @@ namespace mariadb
       securityManager.checkPermission(sqlPermission);
     }
 #endif
+#ifdef WE_STILL_WANT_TO_ABORT_IN_SEPARATE_THREAD
+    // There is no need to throw here as we do not use it anyway
     if (executor == nullptr) {
       ExceptionFactory::INSTANCE.create("Cannot abort the connection: NULL executor passed"); // this will throw
     }
     /* There is no sense to abort it in the separate thread, since Pool destructs connection after this call, and this has to be syncronized anyway */
-    //executor->execute(std::bind(&Protocol::abort, &*protocol));
+    executor->execute(std::bind(&Protocol::abort, &*protocol));
+#endif
     protocol->abort();
   }
 

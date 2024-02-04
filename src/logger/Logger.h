@@ -21,38 +21,13 @@
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
 
-#include "StringImp.h"
-#include "MariaDBException.h"
+#include "SimpleLogger.h"
 
 namespace sql
 {
 namespace mariadb
 {
-struct Logger
-{
-  Logger() {}
-  virtual ~Logger() {}
-  virtual bool isTraceEnabled()= 0;
-  virtual void trace(const SQLString& msg)= 0;
-  virtual bool isDebugEnabled()= 0;
-  virtual void debug(const SQLString& msg)= 0;
-  virtual void debug(const SQLString& msg, std::exception& e)= 0;
-  // This is for pool. But should be a variadic function really
-  virtual void debug(const SQLString& msg, const SQLString& tag, int32_t total, int64_t active, int32_t pending) = 0;
-  virtual bool isInfoEnabled()= 0;
-  virtual void info(const SQLString& msg)= 0;
-  virtual bool isWarnEnabled()= 0;
-  virtual void warn(const SQLString& msg)= 0;
-  virtual bool isErrorEnabled()= 0;
-  virtual void error(const SQLString& msg)= 0;
-  virtual void error(const SQLString& msg, SQLException& e)= 0;
-  virtual void error(const SQLString& msg, sql::MariaDBExceptionThrower& e)= 0;
-
-private:
-  Logger(const Logger &) {}
-  void operator=(Logger &) {}
-};
-
+  using Logger= sql::mariadb::SimpleLogger;
 }
 }
 #endif

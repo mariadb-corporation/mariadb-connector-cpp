@@ -26,7 +26,7 @@ namespace sql
 {
 namespace mariadb
 {
-  const Shared::Logger StandardPacketInputStream::logger= LoggerFactory::getLogger(typeid(StandardPacketInputStream));
+  Logger* StandardPacketInputStream::logger= LoggerFactory::getLogger(typeid(StandardPacketInputStream));
   /**
     * Constructor of standard socket MySQL packet stream reader.
     *

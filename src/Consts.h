@@ -176,7 +176,6 @@ namespace mariadb
     typedef std::shared_ptr<std::mutex> mutex;
     typedef std::shared_ptr<sql::mariadb::UrlParser> UrlParser;
     typedef std::shared_ptr<sql::mariadb::Options> Options;
-    typedef std::shared_ptr<sql::mariadb::Logger> Logger;
     typedef std::shared_ptr<sql::mariadb::Pool> Pool;
     typedef std::shared_ptr<sql::mariadb::Protocol> Protocol;
     typedef std::shared_ptr<sql::mariadb::Listener> Listener;
@@ -216,6 +215,7 @@ namespace mariadb
     typedef std::unique_ptr<sql::mariadb::ClientSidePreparedStatement> ClientSidePreparedStatement;
     typedef std::unique_ptr<sql::mariadb::ServerPrepareResult> ServerPrepareResult;
     typedef std::unique_ptr<sql::mariadb::ParameterHolder> ParameterHolder;
+    typedef std::unique_ptr<sql::mariadb::Logger> Logger;
   }
 
   namespace Weak

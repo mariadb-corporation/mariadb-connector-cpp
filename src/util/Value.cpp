@@ -59,9 +59,16 @@ namespace mariadb
     }
   }
 
+
   Value::Value(int32_t v) : type(VINT32), isPtr(false)
   {
     value.iv= v;
+  }
+
+
+  Value::Value(uint32_t v) : type(VUINT32), isPtr(false)
+  {
+    value.uv= v;
   }
 
 
@@ -90,6 +97,12 @@ namespace mariadb
 
 
   Value::Value(int32_t* v) : type(VINT32), isPtr(true)
+  {
+    value.pv= v;
+  }
+
+
+  Value::Value(uint32_t* v) : type(VUINT32), isPtr(true)
   {
     value.pv= v;
   }
@@ -129,7 +142,7 @@ namespace mariadb
     return value.sv;
   }
 
-  int32_t & Value::operator=(int32_t num)
+  int32_t& Value::operator=(int32_t num)
   {
     if (type == VSTRING && !isPtr)
     {
@@ -142,7 +155,22 @@ namespace mariadb
     return value.iv;
   }
 
-  int64_t & Value::operator=(int64_t num)
+
+  uint32_t& Value::operator=(uint32_t num)
+  {
+    if (type == VSTRING && !isPtr)
+    {
+      value.sv.~SQLString();
+    }
+    isPtr= false;
+    type= VUINT32;
+    value.uv= num;
+
+    return value.uv;
+  }
+
+
+  int64_t& Value::operator=(int64_t num)
   {
     if (type == VSTRING && !isPtr)
     {
@@ -155,7 +183,7 @@ namespace mariadb
     return value.lv;
   }
 
-  bool & Value::operator=(bool v)
+  bool& Value::operator=(bool v)
   {
     if (type == VSTRING && !isPtr)
     {
@@ -168,7 +196,8 @@ namespace mariadb
     return value.bv;
   }
 
-  SQLString * Value::operator=(SQLString *str)
+
+  SQLString* Value::operator=(SQLString *str)
   {
     if (type == VSTRING && !isPtr)
     {
@@ -179,6 +208,48 @@ namespace mariadb
     value.pv= str;
 
     return str;
+  }
+
+
+  int32_t* Value::operator=(int32_t *i)
+  {
+    if (type == VSTRING && !isPtr)
+    {
+      value.sv.~SQLString();
+    }
+    isPtr= true;
+    type= VINT32;
+    value.pv= i;
+
+    return i;
+  }
+
+
+  int64_t* Value::operator=(int64_t *l)
+  {
+    if (type == VSTRING && !isPtr)
+    {
+      value.sv.~SQLString();
+    }
+    isPtr= true;
+    type= VINT64;
+    value.pv= l;
+
+    return l;
+  }
+
+
+  bool* Value::operator=(bool *b)
+  {
+    if (type == VSTRING && !isPtr)
+    {
+      value.sv.~SQLString();
+    }
+    isPtr= true;
+    type= VINT32;
+    value.pv= b;
+
+    return b;
   }
 
 
@@ -201,6 +272,7 @@ namespace mariadb
     return 0;
   }
 
+
   Value::operator int32_t&()
   {
     if (type == VINT32)
@@ -210,6 +282,40 @@ namespace mariadb
 
     throw std::runtime_error("Wrong lvalue type requested - the type is not int32");
   }
+
+
+  Value::operator uint32_t() const
+  {
+    switch (type)
+    {
+    case sql::mariadb::Value::VUINT32:
+      return isPtr ? *static_cast<int32_t*>(value.pv) : value.uv;
+    case sql::mariadb::Value::VINT32:
+      return static_cast<uint32_t>(isPtr ? *static_cast<int32_t*>(value.pv) : value.iv);
+    case sql::mariadb::Value::VINT64:
+      return static_cast<uint32_t>(isPtr ? *static_cast<int64_t*>(value.pv) : value.lv);
+    case sql::mariadb::Value::VBOOL:
+      return (isPtr ? *static_cast<bool*>(value.pv) : value.bv) ? 1 : 0;
+    case sql::mariadb::Value::VSTRING:
+      return static_cast<uint32_t>(std::stoul(StringImp::get(isPtr ? *static_cast<SQLString*>(value.pv) : value.sv)));
+    case sql::mariadb::Value::VNONE:
+      // or exception if empty?
+      return 0;
+    }
+    return 0;
+  }
+
+
+  Value::operator uint32_t&()
+  {
+    if (type == VUINT32)
+    {
+      return isPtr ? *static_cast<uint32_t*>(value.pv) : value.uv;
+    }
+
+    throw std::runtime_error("Wrong lvalue type requested - the type is not int32");
+  }
+
 
   Value::operator int64_t() const
   {

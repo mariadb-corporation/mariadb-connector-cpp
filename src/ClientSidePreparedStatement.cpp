@@ -34,7 +34,7 @@ namespace sql
 {
 namespace mariadb
 {
-  const Shared::Logger ClientSidePreparedStatement::logger= LoggerFactory::getLogger(typeid(ClientSidePreparedStatement));
+  Logger* ClientSidePreparedStatement::logger= LoggerFactory::getLogger(typeid(ClientSidePreparedStatement));
  
   /**
     * Private constructor for the clone.

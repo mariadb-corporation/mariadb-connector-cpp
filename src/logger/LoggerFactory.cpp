@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -19,55 +19,48 @@
 
 
 #include "LoggerFactory.h"
-#include "NoLogger.h"
+#include "SimpleLogger.h"
 
 namespace sql
 {
 namespace mariadb
 {
-  Shared::Logger LoggerFactory::NO_LOGGER= (NO_LOGGER ? NO_LOGGER : Shared::Logger(new NoLogger()));
+  std::unique_ptr<std::unordered_map<std::type_index, SimpleLogger>> LoggerFactory::logger;
   bool LoggerFactory::hasToLog= false;
 
-  void LoggerFactory::init(bool mustLog)
+  void LoggerFactory::init(uint32_t logLevel)
   {
-    if ((hasToLog != mustLog ) && mustLog)
+    if ((hasToLog != (logLevel > 0)) && logLevel > 0)
     {
-      if (hasToLog != mustLog)
-      {
-        //try
-        {
-          //Class.forName("org.slf4j.LoggerFactory");
-          hasToLog= true;
-        }
-        //catch (ClassNotFoundException classNotFound)
-        {
-          //System.out.println("Logging cannot be activated, missing slf4j dependency");
-          //hasToLog= false;
-        }
-      }
+      hasToLog= true;
+      SimpleLogger::setLoggingLevel(logLevel);
     }
   }
 
   bool LoggerFactory::initLoggersIfNeeded()
   {
-    if (!NO_LOGGER) {
-      NO_LOGGER.reset(new NoLogger());
+    if (!logger) {
+      logger.reset(new std::unordered_map<std::type_index, SimpleLogger>());
     }
     return true;
   }
 
-  Shared::Logger LoggerFactory::getLogger(const std::type_info& /*typeId*/)
+  SimpleLogger* LoggerFactory::getLogger(const std::type_info& typeId)
   {
     static bool inited= initLoggersIfNeeded();
     // Just to use inited and shut up the compiler
-    if (inited && hasToLog)
+    if (inited)
     {
-      return NO_LOGGER;//Slf4JLogger(typeId);
+      auto& it= logger->find(std::type_index(typeId));
+      if (it == logger->end()) {
+        auto inserted= logger->emplace(std::type_index(typeId), SimpleLogger(typeId.name()));
+        return &inserted.first->second;
+      }
+      else {
+        return &it->second;
+      }
     }
-    else
-    {
-      return NO_LOGGER;
-    }
+    return nullptr;
   }
 }
 }

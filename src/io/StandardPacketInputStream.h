@@ -37,7 +37,7 @@ namespace mariadb
 
 class StandardPacketInputStream  : public PacketInputStream
 {
-  static const Shared::Logger logger ; /*LoggerFactory.getLogger(typeid(StandardPacketInputStream))*/
+  static Logger* logger;
   std::array<char, 4> header ; /*new int8_t[4]*/
   std::array<char, REUSABLE_BUFFER_LENGTH> reusableArray ; /*new int8_t[REUSABLE_BUFFER_LENGTH]*/
   std::istream* inputStream;

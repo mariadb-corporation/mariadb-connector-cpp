@@ -483,13 +483,11 @@ namespace sql
         (int32_t)100,
         int32_t(1)}},
       {
-        "log", {"log",
-        "0.9.1",
+        "log", {"log", (uint32_t)5,
+        "1.1.3",
         "Enable log information. \n"
-        "require Slf4j version > 1.4 dependency.\n"
-        "Log level correspond to Slf4j logging implementation",
-        false,
-        false}},
+        "The value defines logging level: 1 - error, 2 - warning, 3 - info, 4 - debug, 5 - trace" }
+      },
       {"profileSql", {"profileSql", "0.9.1", "log query execution time.", false, false}},
       {"maxQuerySizeToLog", {"maxQuerySizeToLog", "0.9.1", "Max query log size.", false, 1024, 0}},
       {
@@ -804,6 +802,17 @@ namespace sql
     {
     }
 
+    DefaultOptions::DefaultOptions(const char* _optionName, uint32_t _maxValue, const char* /*implementationVersion*/,
+      const char* _description, uint32_t _defaultValue, bool _required) :
+      optionName(_optionName),
+      description(_description),
+      required(_required),
+      minValue(0U),
+      maxValue(_maxValue),
+      defaultValue(_defaultValue)
+    {
+    }
+
 #ifdef WE_NEED_INT_ARRAY_DEFAULT_VALUE
     DefaultOptions::DefaultOptions(const SQLString& optionName, int32_t* defaultValue, int32_t minValue,
       const SQLString& /*implementationVersion*/, SQLString& description, bool required) :
@@ -871,7 +880,7 @@ namespace sql
     Shared::Options DefaultOptions::parse(enum HaMode haMode, const SQLString& urlParameters, PropertiesImp::ImpType& properties,
       Shared::Options options)
     {
-      if (/*urlParameters != nullptr &&*/ !urlParameters.empty())
+      if (!urlParameters.empty())
       {
         Tokens parameters= split(urlParameters, "&");
 
@@ -911,11 +920,12 @@ namespace sql
             DefaultOptions *o= cit->second;
             const ClassField<Options> field= Options::getField(o->optionName);
 
-            if (o->objType() == Value::VSTRING ){
-              field.set(options, propertyValue);
-            }
-            else if (o->objType() == Value::VBOOL)
+            switch (o->objType())
             {
+            case Value::VSTRING:
+              field.set(options, propertyValue);
+              break;
+            case Value::VBOOL:
               if (propertyValue.toLowerCase().length() == 0
                 || propertyValue.compare("1") == 0
                 || propertyValue.compare("true") == 0)
@@ -930,15 +940,14 @@ namespace sql
               else
               {
                 throw IllegalArgumentException(
-                    "Optional parameter "
-                    +o->optionName
-                    +" must be bool (true/false or 0/1) was \""
-                    +propertyValue
-                    +"\"");
+                  "Optional parameter "
+                  + o->optionName
+                  + " must be bool (true/false or 0/1) was \""
+                  + propertyValue
+                  + "\"");
               }
-            }
-            else if (o->objType() == Value::VINT32)
-            {
+              break;
+            case Value::VINT32:
               try {
                 int32_t value= std::stoi(StringImp::get(propertyValue));
 
@@ -948,19 +957,19 @@ namespace sql
                 int32_t maxValue= o->maxValue;
 
                 if (value < minValue
-                    || (maxValue != INT32_MAX && value > maxValue))
+                  || (maxValue != INT32_MAX && value > maxValue))
                 {
                   throw IllegalArgumentException(
-                      "Optional parameter "
-                      +o->optionName
-                      +" must be greater or equal to "
-                      + o->minValue.toString()
-                      + (maxValue != INT32_MAX
-                        ?" and smaller than " + o->maxValue.toString()
-                        :" ")
-                      +", was \""
-                      +propertyValue
-                      +"\"");
+                    "Optional parameter "
+                    + o->optionName
+                    + " must be greater or equal to "
+                    + o->minValue.toString()
+                    + (maxValue != INT32_MAX
+                      ? " and smaller than " + o->maxValue.toString()
+                      : " ")
+                    + ", was \""
+                    + propertyValue
+                    + "\"");
                 }
 
                 field.set(options, value);
@@ -968,15 +977,51 @@ namespace sql
               catch (std::invalid_argument&)
               {
                 throw IllegalArgumentException(
+                  "Optional parameter "
+                  + o->optionName
+                  + " must be Integer, was \""
+                  + propertyValue
+                  + "\"");
+              }
+              break;
+            case Value::VUINT32:
+              try {
+                uint64_t value= std::stoul(StringImp::get(propertyValue));
+
+                assert(!o->minValue.empty());
+                assert(!o->maxValue.empty());
+                uint32_t minValue= o->minValue;
+                uint32_t maxValue= o->maxValue;
+
+                if (value < minValue
+                  || (maxValue != 0 && value > maxValue) || value > UINT32_MAX)
+                {
+                  throw IllegalArgumentException(
                     "Optional parameter "
                     + o->optionName
-                    + " must be Integer, was \""
+                    + " must be in uint32_t range, and greater or equal to "
+                    + o->minValue.toString()
+                    + (maxValue != UINT32_MAX
+                      ? " and smaller than " + o->maxValue.toString()
+                      : " ")
+                    + ", was \""
                     + propertyValue
                     + "\"");
+                }
+
+                field.set(options, static_cast<uint32_t>(value));
               }
-            }
-            else if (o->objType() == Value::VINT64)
-            {
+              catch (std::invalid_argument&)
+              {
+                throw IllegalArgumentException(
+                  "Optional parameter "
+                  + o->optionName
+                  + " must be Integer, was \""
+                  + propertyValue
+                  + "\"");
+              }
+              break;
+            case Value::VINT64:
               try {
                 int64_t value= std::stoll(StringImp::get(propertyValue));
 
@@ -987,31 +1032,33 @@ namespace sql
                 int64_t maxValue= o->maxValue;
 
                 if (value < minValue
-                    || (maxValue != INT64_MAX && value > maxValue))
+                  || (maxValue != INT64_MAX && value > maxValue))
                 {
                   throw IllegalArgumentException(
-                      "Optional parameter "
-                      + o->optionName
-                      + " must be greater or equal to "
-                      + o->minValue.toString()
-                      + (maxValue !=INT64_MAX
-                        ? " and smaller than " + o->maxValue.toString()
-                        : SQLString(" "))
-                      + ", was \""
-                      + propertyValue
-                      + "\"");
+                    "Optional parameter "
+                    + o->optionName
+                    + " must be greater or equal to "
+                    + o->minValue.toString()
+                    + (maxValue != INT64_MAX
+                      ? " and smaller than " + o->maxValue.toString()
+                      : SQLString(" "))
+                    + ", was \""
+                    + propertyValue
+                    + "\"");
                 }
-                field.set(options,value);
+                field.set(options, value);
               }
               catch (std::invalid_argument&)
               {
                 throw IllegalArgumentException(
-                    "Optional parameter "
-                    +o->optionName
-                    +" must be Long, was \""
-                    +propertyValue
-                    +"\"");
+                  "Optional parameter "
+                  + o->optionName
+                  + " must be Long, was \""
+                  + propertyValue
+                  + "\"");
               }
+            default:
+              break;
             }
           }
           else

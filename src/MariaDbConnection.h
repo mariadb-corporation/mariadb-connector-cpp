@@ -59,7 +59,7 @@ namespace mariadb
 
 class MariaDbConnection  : public Connection
 {
-    static std::shared_ptr<sql::mariadb::Logger> logger ; /*LoggerFactory.getLogger(MariaDbConnection.class)*/
+    static Logger* logger;
 
     Shared::Protocol protocol;
     Shared::Options options;

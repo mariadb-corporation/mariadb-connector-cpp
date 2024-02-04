@@ -19,7 +19,8 @@
 
 
 #include <iostream>
-//#include "Consts.h"
+#include <sstream>
+
 #include "ExceptionFactory.h"
 #include "Pools.h"
 #include "Pool.h"
@@ -37,7 +38,7 @@ namespace sql
 {
 namespace mariadb
 {
-  Shared::Logger Pool::logger= LoggerFactory::getLogger(typeid(Pool));
+  Logger* Pool::logger= LoggerFactory::getLogger(typeid(Pool));
 
   /**
     * Create pool from configuration.
@@ -101,7 +102,7 @@ namespace mariadb
 
   Pool::~Pool()
   {
-    //LoggerFactory::getLogger().trace("Pool","Pool::~Pool");
+    GET_LOGGER()->trace("Pool", "Pool::~Pool");
     scheduledFuture->cancel(true);
     connectionAppender.shutdown();
     /* Normally that is done while pool is close()-ed. TODO: lock? */
@@ -123,7 +124,7 @@ namespace mariadb
       connectionAppender.prestartCoreThread();
       connectionAppenderQueue.emplace_back(
         [&]()->void{
-        //LoggerFactory::getLogger().trace("Pool","Doing adding task");
+        GET_LOGGER()->trace("Pool","Doing adding task");
         if ((totalConnection.load() < options->minPoolSize || pendingRequestNumber.load() > 0)
           && totalConnection.load() < options->maxPoolSize) {
           try {
@@ -133,7 +134,7 @@ namespace mariadb
           {
           }
         }
-        //LoggerFactory::getLogger().trace("Pool","Done adding task");
+        GET_LOGGER()->trace("Pool","Done adding task");
       });
     }
   }
@@ -144,7 +145,7 @@ namespace mariadb
     */
   void Pool::removeIdleTimeoutConnection()
   {
-    //LoggerFactory::getLogger().trace("Pool","Checking idles");
+    GET_LOGGER()->trace("Pool: Checking idles");
     std::lock_guard<std::mutex> synchronized(idleConnections.getLock());
 
     Idles::iterator iterator= idleConnections.begin();
@@ -186,19 +187,17 @@ namespace mariadb
         
         addConnectionRequest();
         if (logger->isDebugEnabled()) {
-          logger->debug(
-            "pool {} connection removed due to inactivity (total:{}, active:{}, pending:{})",
-            poolTag,
-            totalConnection.load(std::memory_order_relaxed),
-            getActiveConnections(),
-            pendingRequestNumber.load(std::memory_order_relaxed));
+          std::ostringstream s(poolTag);
+          s << " connection removed due to inactivity (total:" << totalConnection.load(std::memory_order_relaxed) <<
+            ", active:" << getActiveConnections() << ", pending:" << pendingRequestNumber.load(std::memory_order_relaxed) << ")";
+          logger->debug(s.str());
         }
       }
       else {
         ++iterator;
       }
     }
-    //LoggerFactory::getLogger().trace("Pool","Done checking idles");
+    GET_LOGGER()->trace("Pool: Done checking idles");
   }
 
   /**
@@ -232,12 +231,10 @@ namespace mariadb
       idleConnections.push(item);
 
       if (logger->isDebugEnabled()) {
-        logger->debug(
-          "pool {} new physical connection created (total:{}, active:{}, pending:{})",
-          poolTag,
-          totalConnection.load(),
-          getActiveConnections(),
-          pendingRequestNumber.load());
+        std::ostringstream s(poolTag);
+        s << " new physical connection created (total:" << totalConnection.load(std::memory_order_relaxed) <<
+          ", active:" << getActiveConnections() << ", pending:" << pendingRequestNumber.load(std::memory_order_relaxed) << ")";
+        logger->debug(s.str());
       }
       return;
     }
@@ -273,16 +270,19 @@ namespace mariadb
             // validate connection
             if (connection->isValid(10)) { // 10 seconds timeout
               // It's probably not quite right to operate here with MariaDbConnection
-              dynamic_cast<MariaDbConnection*>(item->getConnection())->markClosed(false);
+              connection->markClosed(false);
               item->lastUsedToNow();
+              GET_LOGGER()->trace("Pool Connection Closed:", connection->isClosed(), "getting idle 2", std::hex, item, "Protocol:", connection->getProtocol().get(),
+                "expClosed:", connection->getProtocol()->isExplicitClosed());
               return item;
             }
           }
           else {
             // connection has been retrieved recently -> skip connection validation
-            dynamic_cast<MariaDbConnection*>(item->getConnection())->markClosed(false);
+            connection->markClosed(false);
             item->lastUsedToNow();
-            //LoggerFactory::getLogger().trace("Pool",connection->isClosed(),"getting idle 2, ",std::hex, item->getConnection());
+            GET_LOGGER()->trace("Pool", connection->isClosed(), "getting idle 2", std::hex, item, "Protocol:", connection->getProtocol().get(),
+              "expClosed:", connection->getProtocol()->isExplicitClosed());
             return item;
           }
         }
@@ -296,12 +296,10 @@ namespace mariadb
         delete item;
         addConnectionRequest();
         if (logger->isDebugEnabled()) {
-          logger->debug(
-            "pool {} connection removed from pool due to failed validation (total:{}, active:{}, pending:{})",
-            poolTag,
-            totalConnection.load(std::memory_order_relaxed),
-            getActiveConnections(),
-            pendingRequestNumber.load(std::memory_order_relaxed));
+          std::ostringstream s(poolTag);
+          s << "  connection removed from pool due to failed validation (total:" << totalConnection.load(std::memory_order_relaxed) <<
+            ", active:" << getActiveConnections() << ", pending:" << pendingRequestNumber.load(std::memory_order_relaxed) << ")";
+          logger->debug(s.str());
         }
         continue;
       }
@@ -452,13 +450,13 @@ namespace mariadb
     return new MariaDbInnerPoolConnection(new MariaDbConnection(protocol));
   }
 
-  SQLString Pool::generatePoolTag(int32_t poolIndex)
+  std::string Pool::generatePoolTag(int32_t poolIndex)
   {
     if (options->poolName.empty())
     {
       options->poolName= "MariaDB-pool";
     }
-    return options->poolName + "-" + poolIndex;
+    return StringImp::get(options->poolName) + "-" + std::to_string(poolIndex);
   }
 
   const UrlParser& Pool::getUrlParser()
@@ -473,7 +471,7 @@ namespace mariadb
     */
   void Pool::close()
   {
-    //LoggerFactory::getLogger().trace("Pool","Pool::close");
+    logger->trace("Pool::close");
     // If here must be a lock - then some other lock
     //std::unique_lock<std::mutex> lock(listsLock);
     poolState.store(POOL_STATE_CLOSING);
@@ -491,12 +489,10 @@ namespace mariadb
       //closeAll(idleConnections);
     }
     if (logger->isInfoEnabled()) {
-      logger->debug(
-        "closing pool {} (total:{}, active:{}, pending:{})",
-        poolTag,
-        totalConnection.load(),
-        getActiveConnections(),
-        pendingRequestNumber.load());
+      std::ostringstream s(poolTag);
+      s << " closing pool (total:" << totalConnection.load(std::memory_order_relaxed) <<
+        ", active:" << getActiveConnections() << ", pending:" << pendingRequestNumber.load(std::memory_order_relaxed) << ")";
+      logger->debug(s.str());
     }
 
     // TODO not sure if that is really needed
@@ -593,7 +589,7 @@ namespace mariadb
       }
     }*/
 
-    SQLString Pool::getPoolTag() {
+    std::string Pool::getPoolTag() {
       return poolTag;
     }
 

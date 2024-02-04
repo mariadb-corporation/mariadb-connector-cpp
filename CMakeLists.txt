@@ -105,6 +105,7 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/util/String.cpp
 
                    src/logger/NoLogger.cpp
+                   src/logger/SimpleLogger.cpp
                    src/logger/LoggerFactory.cpp
                    src/logger/ProtocolLoggingProxy.cpp
 
@@ -230,6 +231,7 @@ IF(WIN32)
                    src/util/String.h
 
                    src/logger/NoLogger.h
+                   src/logger/SimpleLogger.h
                    src/logger/LoggerFactory.h
                    src/logger/Logger.h
                    src/logger/ProtocolLoggingProxy.h

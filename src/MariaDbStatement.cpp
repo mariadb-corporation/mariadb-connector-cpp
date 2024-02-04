@@ -42,7 +42,7 @@ namespace mariadb
     {"\\",     "\\\\"},
   };
 
-  Shared::Logger MariaDbStatement::logger= LoggerFactory::getLogger(typeid(MariaDbStatement));
+  Logger* MariaDbStatement::logger= LoggerFactory::getLogger(typeid(MariaDbStatement));
   /**
    * Creates a new Statement.
    *
@@ -152,7 +152,11 @@ namespace mariadb
    */
   void MariaDbStatement::executeQueryPrologue(bool isBatch) {
     setExecutingFlag();
-    if (closed){
+    if (closed) {
+      logger->trace("Query Prolog:", std::hex, this, "Closed: ", closed, "Connection:", connection, "Protocol:", protocol.get(), "Closed: ", protocol ? protocol->isClosed(): true);
+      if (connection) {
+        logger->trace("QP: Connection closed: ", connection->isClosed());
+      }
       exceptionFactory->raiseStatementError(connection, this)->create("execute() is called on closed statement").Throw();
     }
     protocol->prolog(maxRows, protocol->getProxy(), connection, this);
@@ -743,17 +747,16 @@ namespace mariadb
       }
       std::lock_guard<std::mutex> localScopeLock(*lock);
 
-      if (protocol->isClosed()
+      if (connection && !((protocol && protocol->isClosed())
         || !connection->poolConnection
-        || connection->poolConnection->noStmtEventListeners()) {
-        //protocol.reset();
-        return;
+        || connection->poolConnection->noStmtEventListeners())) {
+        connection->poolConnection->fireStatementClosed(this);
       }
-      connection->poolConnection->fireStatementClosed(this);
+      
     }
     catch (...) {
     }
-    //protocol.reset();
+    protocol= nullptr;
     connection= nullptr;
   }
 

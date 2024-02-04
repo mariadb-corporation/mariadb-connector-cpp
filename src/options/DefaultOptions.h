@@ -60,8 +60,8 @@ public:
                  bool required, int32_t defaultValue, int32_t minValue);
   DefaultOptions(const char* optionName, const char* implementationVersion, const char* description,
                  int64_t defaultValue, bool required, int64_t minValue);
-  /*DefaultOptions(const SQLString& optionName, const int32_t* defaultValue, int32_t minValue, const SQLString& implementationVersion,
-    SQLString& description, bool required);*/
+  DefaultOptions(const char* optionName, uint32_t maxValue, const char* implementationVersion,
+    const char* description, uint32_t defaultValue= 0, bool required= false);
 
   static Shared::Options defaultValues(HaMode haMode);
   static Shared::Options defaultValues(HaMode haMode, bool pool);

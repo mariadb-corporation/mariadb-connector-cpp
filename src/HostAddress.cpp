@@ -29,7 +29,7 @@ namespace sql
 {
   namespace mariadb
   {
-    Shared::Logger HostAddress::logger= LoggerFactory::getLogger(typeid(HostAddress));
+    Logger* HostAddress::logger= LoggerFactory::getLogger(typeid(HostAddress));
 
     HostAddress::HostAddress() : host(""), port(DefaultPort) {}
 

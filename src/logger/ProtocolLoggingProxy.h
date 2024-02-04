@@ -35,7 +35,7 @@ class LogQueryTool;
 class ProtocolLoggingProxy : public Protocol
 {
   Shared::Protocol protocol;
-  static Shared::Logger logger/*= LoggerFactory.getLogger(ProtocolLoggingProxy.class)*/;
+  static Logger* logger;
   //NumberFormat* numberFormat; /* I don't think we will need it(any time soon) */
   bool profileSql;
   int64_t slowQueryThresholdNanos;

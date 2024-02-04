@@ -22,9 +22,11 @@
 
 #include <chrono>
 #include <list>
+#include <vector>
 #include <map>
 #include <numeric>
 #include <stdexcept>
+#include <algorithm>
 
 namespace mariadb
 {
@@ -50,6 +52,12 @@ public:
   {
     duration= std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - start);
     return duration;
+  }
+
+  void reset()
+  {
+    duration= Duration(0);
+    start= Clock::now();
   }
 
   operator uint32_t() const
