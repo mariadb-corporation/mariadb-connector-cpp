@@ -35,6 +35,7 @@ namespace sql
 
   SQLString::SQLString(SQLString&& moved) : theString(std::move(moved.theString))
   {
+    moved.theString= nullptr;
   }
 
 
@@ -63,6 +64,9 @@ namespace sql
 
   SQLString::~SQLString()
   {
+    if (theString != nullptr) {
+      delete theString;
+    }
   }
 
   const char* SQLString::c_str() const

@@ -745,14 +745,15 @@ namespace mariadb
         }
         results->close();
       }
-      std::lock_guard<std::mutex> localScopeLock(*lock);
 
       if (connection && !((protocol && protocol->isClosed())
         || !connection->poolConnection
         || connection->poolConnection->noStmtEventListeners())) {
+        // Commenting this out so far, as fireStatementClosed does not do anything, and it's not even clear
+        // if that lock was needed here in first turn
+        //std::lock_guard<std::mutex> localScopeLock(*lock);
         connection->poolConnection->fireStatementClosed(this);
       }
-      
     }
     catch (...) {
     }

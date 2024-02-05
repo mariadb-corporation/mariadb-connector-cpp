@@ -323,7 +323,7 @@ const sql::Driver *const Client::driver= sql::mariadb::get_driver_instance();
 
 void pool2::pool_threaded()
 {
-  constexpr std::size_t minPoolSize= 10, maxPoolSize= 15, maxClientsCount= 16; // Initially was 30, 40 and 43. Probbaly too much. Possibly makes sense to make configurable
+  constexpr std::size_t minPoolSize= 8, maxPoolSize= 12, maxClientsCount= 13; // Initially was 30, 40 and 43. Probbaly too much. Possibly makes sense to make configurable
   std::array<std::unique_ptr<Client>, maxClientsCount> c;
   bool verbosity= TestsListener::setVerbose(true);
   std::random_device rd;
@@ -381,13 +381,26 @@ void pool2::pool_concpp97()
                     {"password", "--wrongPwd--"},
                     {"useTls", useTls ? "true" : "false"},
                     {"pool", "true"},
-                    {"minPoolSize", "2"},
-                    {"maxPoolSize", "3"},
+                    {"minPoolSize", "1"},
+                    {"maxPoolSize", "2"},
                     {"testMinRemovalDelay", "10"},
                     {"connectTimeout", "10000"}/*,
                     {"log", "5"} */
                    };
   ::mariadb::StopTimer t;
+  try {
+    con.reset(driver->connect(p));
+  }
+  catch (sql::SQLException &e)
+  {
+    ASSERT(std::chrono::duration_cast<std::chrono::milliseconds>(t.stop()).count() < 5000);
+    ASSERT_EQUALS(1045, e.getErrorCode());
+  }
+  p["password"]= passwd;
+  con.reset(driver->connect(p));
+  p["password"]= "--wrongPwd--";
+
+  t.reset();
   try {
     con.reset(driver->connect(p));
   }

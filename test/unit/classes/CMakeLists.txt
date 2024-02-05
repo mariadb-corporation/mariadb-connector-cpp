@@ -1,5 +1,5 @@
 # Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
-#               2020, 2023 MariaDB Corporation plc
+#               2020, 2024 MariaDB Corporation plc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -89,7 +89,9 @@ SET_TARGET_PROPERTIES(test_pool2 PROPERTIES
           LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
 TARGET_LINK_LIBRARIES(test_pool2 ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
-
+IF(NOT WIN32)
+  TARGET_LINK_LIBRARIES(test_pool2 pthread)
+ENDIF()
 MESSAGE(STATUS "Configuring unit tests - pool2")
 
 SET(test_databasemetadata_sources

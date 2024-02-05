@@ -1532,10 +1532,8 @@ namespace mariadb
         close();
       }
       catch (SQLException&) {
-
       }
     }
-
     return stmt->executeExceptionEpilogue(sqle);
   }
 

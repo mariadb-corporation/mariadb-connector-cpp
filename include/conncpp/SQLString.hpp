@@ -1,3 +1,4 @@
+
 /************************************************************************************
    Copyright (C) 2020, 2021 MariaDB Corporation AB
 
@@ -36,7 +37,7 @@ class SQLString final {
 
   friend class StringImp;
 
-  std::unique_ptr<StringImp> theString;
+  StringImp* theString;
 public:
   MARIADB_EXPORTED SQLString(const SQLString&);
   MARIADB_EXPORTED SQLString(SQLString&&); //Move constructor
