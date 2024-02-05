@@ -21,6 +21,8 @@
 #include <mutex>
 #include <chrono>
 #include <iomanip>
+#include <thread>
+#include <cstring>
 
 #include "SimpleLogger.h"
 
@@ -42,17 +44,17 @@ namespace mariadb
 
   SimpleLogger::SimpleLogger(const char* loggedClassName)
   {
-    std::size_t len= strlen(loggedClassName), off= 0;
+    std::size_t len= std::strlen(loggedClassName), offset= 0;
     if (len > 5) {
-      if (strncmp(loggedClassName, "class", 5) == 0 ) {
-        off= 6;
+      if (std::strncmp(loggedClassName, "class", 5) == 0 ) {
+        offset= 6;
       }
-      else if (strncmp(loggedClassName, "struct", 6) == 0) {
-        off= 7;
+      else if (std::strncmp(loggedClassName, "struct", 6) == 0) {
+        offset= 7;
       }
     }
-    signature.reserve(len - off + 3/*"[]"*/);
-    signature.append(1, '[').append(loggedClassName + off, len - off).append(1,']');
+    signature.reserve(len - offset + 3/*"[]"*/);
+    signature.append(1, '[').append(loggedClassName + offset, len - offset).append(1,']');
   }
 
 

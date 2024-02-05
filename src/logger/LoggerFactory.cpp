@@ -51,7 +51,7 @@ namespace mariadb
     // Just to use inited and shut up the compiler
     if (inited)
     {
-      auto& it= logger->find(std::type_index(typeId));
+      const auto& it= logger->find(std::type_index(typeId));
       if (it == logger->end()) {
         auto inserted= logger->emplace(std::type_index(typeId), SimpleLogger(typeId.name()));
         return &inserted.first->second;

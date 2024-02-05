@@ -356,7 +356,7 @@ void pool2::pool_threaded()
     const Client::Stats& stats= c[i]->getStats();
 
     TestsListener::messagesLog() << "Client #" << i + 1 << std::endl;
-    auto& connects= stats.find(Client::doConnect);
+    const auto& connects= stats.find(Client::doConnect);
     if (connects != stats.end())
     {
       TestsListener::messagesLog() << " Connects count " << connects->second.size() << std::endl;
@@ -364,7 +364,7 @@ void pool2::pool_threaded()
       TestsListener::messagesLog() << "   max " << duration_cast<microseconds>(Client::maxVal(connects->second)).count() << "mks" << std::endl;
       TestsListener::messagesLog() << "   min " << duration_cast<microseconds>(Client::minVal(connects->second)).count() << "mks" << std::endl;
     }
-    auto& refusals= stats.find(Client::connectRefused);
+    const auto& refusals= stats.find(Client::connectRefused);
     if (refusals != stats.end())
     {
       TestsListener::messagesLog() << " Connection refusals " << connects->second.size() << std::endl;
@@ -372,5 +372,30 @@ void pool2::pool_threaded()
   } 
 }
 
+
+void pool2::pool_concpp97()
+{
+  bool verbosity= TestsListener::setVerbose(true);
+  sql::Properties p{{"hostName", url},
+                    {"user", user},
+                    {"password", "--wrongPwd--"},
+                    {"useTls", useTls ? "true" : "false"},
+                    {"pool", "true"},
+                    {"minPoolSize", "2"},
+                    {"maxPoolSize", "3"},
+                    {"testMinRemovalDelay", "10"},
+                    {"connectTimeout", "10000"}/*,
+                    {"log", "5"} */
+                   };
+  ::mariadb::StopTimer t;
+  try {
+    con.reset(driver->connect(p));
+  }
+  catch (sql::SQLException &e)
+  {
+    ASSERT(std::chrono::duration_cast<std::chrono::milliseconds>(t.stop()).count() < 5000);
+    ASSERT_EQUALS(1045, e.getErrorCode());
+  }
+}
 } /* namespace connection */
 } /* namespace testsuite */

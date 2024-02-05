@@ -67,22 +67,22 @@ namespace mariadb
   {
     connectionAppender.allowCoreThreadTimeOut(true);
 
-    connectionAppender.prestartCoreThread();
-
     auto cit= options->nonMappedOptions.find("testMinRemovalDelay");
     int32_t minDelay= 30;
     if (cit != options->nonMappedOptions.end()) {
       minDelay= std::stoi(cit->second.c_str());
     }
-    int32_t scheduleDelay= std::min(minDelay, options->maxIdleTime / 2);
-    scheduledFuture.reset(
-      poolExecutor.scheduleAtFixedRate(
-        std::bind(&Pool::removeIdleTimeoutConnection, this), std::chrono::seconds(scheduleDelay),
-        std::chrono::seconds(scheduleDelay)));
 
     try
     {
       addConnection();
+      // Doing heave thing after first connection - so if it fails and throws, we throw further with light heart
+      connectionAppender.prestartCoreThread();
+      int32_t scheduleDelay= std::min(minDelay, options->maxIdleTime / 2);
+      scheduledFuture.reset(
+        poolExecutor.scheduleAtFixedRate(
+          std::bind(&Pool::removeIdleTimeoutConnection, this), std::chrono::seconds(scheduleDelay),
+          std::chrono::seconds(scheduleDelay)));
       for (int32_t i= 1; i < options->minPoolSize; ++i) {
         addConnectionRequest();
       }
@@ -96,6 +96,8 @@ namespace mariadb
     }
     catch (sql::SQLException& sqle) {
       logger->error("Error initializing pool connection", sqle);
+      // Why to continue if things already went wrong?
+      throw sqle;
     }
   }
 
@@ -254,7 +256,7 @@ namespace mariadb
     *
     * @return an IDLE connection.
     */
-  MariaDbInnerPoolConnection* Pool::getIdleConnection(::mariadb::Timer::Clock::duration& timeout) {
+  MariaDbInnerPoolConnection* Pool::getIdleConnection(const ::mariadb::Timer::Clock::duration& timeout) {
 
     while (true) {
       auto item= 

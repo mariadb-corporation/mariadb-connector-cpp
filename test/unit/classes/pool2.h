@@ -47,10 +47,13 @@ public:
   EXAMPLE_TEST_FIXTURE(pool2)
   {
     TEST_CASE(pool_threaded);
+    TEST_CASE(pool_concpp97);
   }
 
-  /* Simple test of the connection pool */
+  /* Test of the concurrent use of the connection pool */
   void pool_threaded();
+  /* Getting connection from the pool with wrong credentials */
+  void pool_concpp97();
 };
 
 

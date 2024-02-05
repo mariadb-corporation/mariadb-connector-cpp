@@ -79,7 +79,7 @@ public:
 
   SQLString& operator=(const SQLString&);
   int32_t&   operator=(int32_t);
-  uint32_t& Value::operator=(uint32_t num);
+  uint32_t&  operator=(uint32_t num);
   int64_t&   operator=(int64_t);
   bool&      operator=(bool);
   SQLString* operator=(SQLString*);
