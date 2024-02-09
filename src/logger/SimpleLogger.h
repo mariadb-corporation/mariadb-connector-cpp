@@ -41,6 +41,7 @@ public:
   SimpleLogger(const char* loggedClassName);
 
   static void setLoggingLevel(uint32_t _level);
+  static void setLogFilename(const std::string& name);
 
   bool isTraceEnabled();
   void trace(const SQLString& msg);

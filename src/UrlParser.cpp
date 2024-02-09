@@ -188,7 +188,7 @@ namespace mariadb
     LoggerFactory::init(
       urlParser.options->log > 0 ? urlParser.options->log : (
       urlParser.options->profileSql
-      || urlParser.options->slowQueryThresholdNanos  > 0) ? 3/*INFO*/ : 0);
+      || urlParser.options->slowQueryThresholdNanos  > 0) ? 3/*INFO*/ : 0, StringImp::get(urlParser.options->logname));
 
     urlParser.addresses= HostAddress::parse(hostAddressesString, urlParser.haMode);
   }

@@ -126,7 +126,7 @@ namespace mariadb
       connectionAppender.prestartCoreThread();
       connectionAppenderQueue.emplace_back(
         [&]()->void{
-        GET_LOGGER()->trace("Pool","Doing adding task");
+        logger->trace("Pool","Doing adding task");
         if ((totalConnection.load() < options->minPoolSize || pendingRequestNumber.load() > 0)
           && totalConnection.load() < options->maxPoolSize) {
           try {
@@ -136,7 +136,7 @@ namespace mariadb
           {
           }
         }
-        GET_LOGGER()->trace("Pool","Done adding task");
+        logger->trace("Pool","Done adding task");
       });
     }
   }
@@ -147,7 +147,7 @@ namespace mariadb
     */
   void Pool::removeIdleTimeoutConnection()
   {
-    GET_LOGGER()->trace("Pool: Checking idles");
+    logger->trace("Pool: Checking idles");
     std::lock_guard<std::mutex> synchronized(idleConnections.getLock());
 
     Idles::iterator iterator= idleConnections.begin();
@@ -401,6 +401,7 @@ namespace mariadb
       // try to get Idle connection if any (with a very small timeout)
       if ((pooledConnection=
         getIdleConnection(::mariadb::Timer::Clock::duration(std::chrono::microseconds(totalConnection.load() > 4 ? 0 : 50))))) {
+        --pendingRequestNumber;
         return pooledConnection;
       }
 
@@ -410,9 +411,16 @@ namespace mariadb
       // try to create new connection
       if ((pooledConnection=
         getIdleConnection(::mariadb::Timer::Clock::duration(std::chrono::milliseconds(urlParser->getOptions()->connectTimeout))))) {
+        --pendingRequestNumber;
         return pooledConnection;
       }
-
+      --pendingRequestNumber;
+      if (logger->isDebugEnabled()) {
+        std::ostringstream s(poolTag);
+        s << "Connection could not been got (total:" << totalConnection.load(std::memory_order_relaxed) <<
+          ", active:" << getActiveConnections() << ", pending:" << pendingRequestNumber.load(std::memory_order_relaxed) << ")";
+        logger->debug(s.str());
+      }
       throw SQLException(
         "No connection available within the specified time of connectTimeout("
         + std::to_string(urlParser->getOptions()->connectTimeout)
@@ -425,7 +433,6 @@ namespace mariadb
     //  --pendingRequestNumber;
     //  throw SQLException("Thread was interrupted", "70100", 0, &interrupted);
     //}
-    --pendingRequestNumber;
   }
 
   /**
@@ -494,7 +501,7 @@ namespace mariadb
       std::ostringstream s(poolTag);
       s << " closing pool (total:" << totalConnection.load(std::memory_order_relaxed) <<
         ", active:" << getActiveConnections() << ", pending:" << pendingRequestNumber.load(std::memory_order_relaxed) << ")";
-      logger->debug(s.str());
+      logger->info(s.str());
     }
 
     // TODO not sure if that is really needed

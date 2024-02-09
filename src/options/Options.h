@@ -114,6 +114,7 @@ struct Options
   Properties nonMappedOptions;
 
   uint32_t  log;
+  SQLString logname;
   bool      profileSql;
   int32_t   maxQuerySizeToLog= 1024;
   int64_t   slowQueryThresholdNanos;

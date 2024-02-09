@@ -117,6 +117,7 @@ namespace mariadb
     OPTIONS_FIELD(defaultFetchSize),
     OPTIONS_FIELD(tlsPeerFPList),
     OPTIONS_FIELD(log),
+    OPTIONS_FIELD(logname),
     OPTIONS_FIELD(profileSql),
     OPTIONS_FIELD(maxQuerySizeToLog),
     OPTIONS_FIELD(slowQueryThresholdNanos),

@@ -28,12 +28,13 @@ namespace mariadb
   std::unique_ptr<std::unordered_map<std::type_index, SimpleLogger>> LoggerFactory::logger;
   bool LoggerFactory::hasToLog= false;
 
-  void LoggerFactory::init(uint32_t logLevel)
+  void LoggerFactory::init(uint32_t logLevel, const std::string& logFileName)
   {
     if ((hasToLog != (logLevel > 0)) && logLevel > 0)
     {
       hasToLog= true;
       SimpleLogger::setLoggingLevel(logLevel);
+      SimpleLogger::setLogFilename(logFileName);
     }
   }
 

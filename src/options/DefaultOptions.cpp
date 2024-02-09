@@ -458,8 +458,9 @@ namespace sql
         "(example: connectionAttributes=key1:value1,key2,value2).\n"
         "This information can be retrieved on server within tables performance_schema.session_connect_attrs "
         "and performance_schema.session_account_connect_attrs.\n"
-        "This allowa an identification of client/application on server",
-        false}},
+        "This allows the identification of client/application on the server",
+        false}
+      },
       {
         "useBatchMultiSend", {"useBatchMultiSend",
         "0.9.1",
@@ -487,6 +488,14 @@ namespace sql
         "1.1.3",
         "Enable log information. \n"
         "The value defines logging level: 1 - error, 2 - warning, 3 - info, 4 - debug, 5 - trace" }
+      },
+      {
+        "logname", {"logname",
+        "1.1.3",
+        "File name for the log. The default name is mariadbccpp.log,"
+        "and default location is home dir if found, or directory for temporary files\n"
+        "(%TMP% or /tmp)",
+        false}
       },
       {"profileSql", {"profileSql", "0.9.1", "log query execution time.", false, false}},
       {"maxQuerySizeToLog", {"maxQuerySizeToLog", "0.9.1", "Max query log size.", false, 1024, 0}},
@@ -749,14 +758,14 @@ namespace sql
     std::map<std::string, DefaultOptions*> DefaultOptions::OPTIONS_MAP;
     static bool aliasesAdded= addAliases(DefaultOptions::OPTIONS_MAP);
 //-------------------------------------------------------------------------------------------------------------------------------------
-    DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char* description, bool required)
-      : optionName(optionName)
-      , description(description), required(required)
-      , minValue()
-      , maxValue()
-      , defaultValue("")
-    {
-    }
+    //DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char* description, bool required, const char* defaultVal)
+    //  : optionName(optionName)
+    //  , description(description), required(required)
+    //  , minValue()
+    //  , maxValue()
+    //  , defaultValue(defaultVal)
+    //{
+    //}
 
     DefaultOptions::DefaultOptions(const char * optionName, const char * /*implementationVersion*/, const char * description,
         bool required, const char * defaultValue) :

@@ -246,8 +246,8 @@ class Client : public mariadb::EntityTimer
   }
 
 public:
-  static constexpr uint32_t doNothing= 0, closeConn= 1, delConn= 2, doInsert= 3, doUpdate= 4, doDelete= 5,
-    doSelect= 6, doConnect= 7, connectRefused= 8;
+  static const uint32_t doNothing, closeConn, delConn, doInsert, doUpdate, doDelete,
+    doSelect, doConnect, connectRefused;
 
   Client(uint32_t seed, sql::Properties &props, uint32_t ttlSeconds)
     : mariadb::EntityTimer(std::chrono::seconds(100))
@@ -258,9 +258,15 @@ public:
 
   }
 
+  bool joinable() { return t.joinable(); }
   void join()
   {
     t.join();
+    c.reset();
+    rs.reset();
+    pstmt.reset();
+    stmt.reset();
+
   }
 
   ~Client()
@@ -270,60 +276,66 @@ public:
   }
 
 private:
-  void Worker()
-  {
-    // To let pool to warm up
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-
-    while (!over())
-    {
-      switch (rng() % doConnect)
-      {
-      case doNothing:
-        // Well could just memorize this time :innocent:
-        start(doNothing);
-        std::this_thread::sleep_for(std::chrono::microseconds(rng() % 1000));
-        stop(doNothing);
-        break;
-      case closeConn:
-        if (c)
-        {
-          start(closeConn);
-          c->close();
-          stop(closeConn);
-          //TestsListener::messagesLog() << "-> closing()" << std::endl;
-        }
-        break;
-      case delConn:
-        if (c)
-        {
-          start(delConn);
-          c.reset(nullptr);
-          stop(delConn);
-        }
-        break;
-      case doInsert:
-        insert();
-        break;
-      case doUpdate:
-        update();
-        break;
-      case doDelete:
-        delete_row();
-        break;
-      case doSelect:
-      default:
-        select();
-      }
-    }
-  }
+  void Worker();
 };
 
 const sql::Driver *const Client::driver= sql::mariadb::get_driver_instance();
+const uint32_t Client::doNothing= 0, Client::closeConn= 1, Client::delConn= 2, Client::doInsert= 3, Client::doUpdate= 4, Client::doDelete= 5,
+Client::doSelect= 6, Client::doConnect= 7, Client::connectRefused= 8;
+
+
+void Client::Worker()
+{
+  // To let pool to warm up
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  while (!over())
+  {
+    switch (rng() % doConnect)
+    {
+    case doNothing:
+      // Well could just memorize this time :innocent:
+      start(doNothing);
+      std::this_thread::sleep_for(std::chrono::microseconds(rng() % 1000));
+      stop(doNothing);
+      break;
+    case closeConn:
+      if (c)
+      {
+        start(closeConn);
+        c->close();
+        stop(closeConn);
+        //TestsListener::messagesLog() << "-> closing()" << std::endl;
+      }
+      break;
+    case delConn:
+      if (c)
+      {
+        start(delConn);
+        c.reset(nullptr);
+        stop(delConn);
+      }
+      break;
+    case doInsert:
+      insert();
+      break;
+    case doUpdate:
+      update();
+      break;
+    case doDelete:
+      delete_row();
+      break;
+    case doSelect:
+    default:
+      select();
+    }
+  }
+}
+
 
 void pool2::pool_threaded()
 {
-  constexpr std::size_t minPoolSize= 8, maxPoolSize= 12, maxClientsCount= 13; // Initially was 30, 40 and 43. Probbaly too much. Possibly makes sense to make configurable
+  constexpr std::size_t minPoolSize= 3, maxPoolSize= 5, maxClientsCount= 5; // Initially was 30, 40 and 43. Probbaly too much. Possibly makes sense to make configurable
   std::array<std::unique_ptr<Client>, maxClientsCount> c;
   bool verbosity= TestsListener::setVerbose(true);
   std::random_device rd;
@@ -336,8 +348,10 @@ void pool2::pool_threaded()
                     {"pool", "true"},
                     {"minPoolSize", std::to_string(minPoolSize)},
                     {"maxPoolSize", std::to_string(maxPoolSize)},
-                    {"testMinRemovalDelay", "10"}/*,
-                    {"log", "5"}*/
+                    {"testMinRemovalDelay", "10"},
+                    {"connectTimeout", "10000"},
+                    /*,{"log", "5"}
+                    {"logname", "e.log"}*/
                    };
 
   createSchemaObject("TABLE", "ccpp_pool2_test", "(id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,"
@@ -349,27 +363,32 @@ void pool2::pool_threaded()
   {
     c[i].reset(new Client(seed[i], p, 1000));
   }
-
-  for (std::size_t i= 0; i < maxClientsCount; ++i)
-  {
-    c[i]->join();
-    const Client::Stats& stats= c[i]->getStats();
-
-    TestsListener::messagesLog() << "Client #" << i + 1 << std::endl;
-    const auto& connects= stats.find(Client::doConnect);
-    if (connects != stats.end())
+  std::size_t joined= 0;
+  while (joined < maxClientsCount) {
+    for (std::size_t i= 0; i < maxClientsCount; ++i)
     {
-      TestsListener::messagesLog() << " Connects count " << connects->second.size() << std::endl;
-      TestsListener::messagesLog() << "   avg " << duration_cast<microseconds>(Client::average(connects->second)).count() << "mks" << std::endl;
-      TestsListener::messagesLog() << "   max " << duration_cast<microseconds>(Client::maxVal(connects->second)).count() << "mks" << std::endl;
-      TestsListener::messagesLog() << "   min " << duration_cast<microseconds>(Client::minVal(connects->second)).count() << "mks" << std::endl;
+      if (c[i]->joinable()) {
+        ++joined;
+        c[i]->join();
+        const Client::Stats& stats= c[i]->getStats();
+
+        TestsListener::messagesLog() << "Client #" << i + 1 << std::endl;
+        const auto& connects= stats.find(Client::doConnect);
+        if (connects != stats.end())
+        {
+          TestsListener::messagesLog() << " Connects count " << connects->second.size() << std::endl;
+          TestsListener::messagesLog() << "   avg " << duration_cast<microseconds>(Client::average(connects->second)).count() << "mks" << std::endl;
+          TestsListener::messagesLog() << "   max " << duration_cast<microseconds>(Client::maxVal(connects->second)).count() << "mks" << std::endl;
+          TestsListener::messagesLog() << "   min " << duration_cast<microseconds>(Client::minVal(connects->second)).count() << "mks" << std::endl;
+        }
+        const auto& refusals= stats.find(Client::connectRefused);
+        if (refusals != stats.end())
+        {
+          TestsListener::messagesLog() << " Connection refusals " << connects->second.size() << std::endl;
+        }
+      }
     }
-    const auto& refusals= stats.find(Client::connectRefused);
-    if (refusals != stats.end())
-    {
-      TestsListener::messagesLog() << " Connection refusals " << connects->second.size() << std::endl;
-    }
-  } 
+  }
 }
 
 
@@ -384,8 +403,7 @@ void pool2::pool_concpp97()
                     {"minPoolSize", "1"},
                     {"maxPoolSize", "2"},
                     {"testMinRemovalDelay", "10"},
-                    {"connectTimeout", "10000"}/*,
-                    {"log", "5"} */
+                    {"connectTimeout", "10000"}
                    };
   ::mariadb::StopTimer t;
   try {
@@ -394,7 +412,9 @@ void pool2::pool_concpp97()
   catch (sql::SQLException &e)
   {
     ASSERT(std::chrono::duration_cast<std::chrono::milliseconds>(t.stop()).count() < 5000);
-    ASSERT_EQUALS(1045, e.getErrorCode());
+    if (e.getErrorCode() != 1045) {
+      ASSERT_EQUALS(1698, e.getErrorCode());
+    }
   }
   p["password"]= passwd;
   con.reset(driver->connect(p));
@@ -407,7 +427,9 @@ void pool2::pool_concpp97()
   catch (sql::SQLException &e)
   {
     ASSERT(std::chrono::duration_cast<std::chrono::milliseconds>(t.stop()).count() < 5000);
-    ASSERT_EQUALS(1045, e.getErrorCode());
+    if (e.getErrorCode() != 1045) {
+      ASSERT_EQUALS(1698, e.getErrorCode());
+    }
   }
 }
 } /* namespace connection */

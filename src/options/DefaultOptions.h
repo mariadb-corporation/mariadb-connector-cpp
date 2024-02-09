@@ -49,10 +49,10 @@ public:
   /* These constructor makes use of [] operator on the OptionsMap possible */
   DefaultOptions() : required(false) {}
 
-  DefaultOptions(const char * optionName, const char * implementationVersion, const char * description, bool required);
+  //DefaultOptions(const char * optionName, const char * implementationVersion, const char * description, bool required, const char* defaultVal="");
 
   DefaultOptions(const char * optionName, const char * implementationVersion, const char * description,
-                 bool required, const char * defaultValue);
+                 bool required, const char * defaultValue="");
   DefaultOptions(const char * optionName, const char * implementationVersion, const char * description,
                  bool required, bool defaultValue);
 

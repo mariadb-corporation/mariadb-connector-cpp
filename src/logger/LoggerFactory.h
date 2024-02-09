@@ -38,7 +38,7 @@ class LoggerFactory
   static bool hasToLog;
   static bool initLoggersIfNeeded();
 public:
-  static void init(uint32_t logLevel);
+  static void init(uint32_t logLevel, const std::string& logFileName);
   static SimpleLogger* getLogger(const std::type_info &typeId);
 };
 }
