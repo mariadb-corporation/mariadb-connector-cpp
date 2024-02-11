@@ -852,7 +852,7 @@ namespace sql
       PropertiesImp::ImpType  properties;
       properties.insert({ "pool", pool ? "true" : "false" });
       Shared::Options options= parse(haMode, emptyStr, properties);
-      postOptionProcess(options, nullptr);
+      postOptionProcess(options.get(), nullptr);
       return options;
     }
 
@@ -867,13 +867,13 @@ namespace sql
     {
       PropertiesImp::ImpType prop;
       parse(haMode, urlParameters, prop, options);
-      postOptionProcess(options, nullptr);
+      postOptionProcess(options.get(), nullptr);
     }
 
 
     Shared::Options DefaultOptions::parse( const enum HaMode haMode,const SQLString& urlParameters, PropertiesImp::ImpType& properties) {
       Shared::Options options= parse(haMode, urlParameters, properties, nullptr);
-      postOptionProcess(options, nullptr);
+      postOptionProcess(options.get(), nullptr);
       return options;
     }
 
@@ -1094,7 +1094,7 @@ namespace sql
      * @param options options
      * @param credentialPlugin credential plugin
      */
-    void DefaultOptions::postOptionProcess(const Shared::Options options, CredentialPlugin* credentialPlugin)
+    void DefaultOptions::postOptionProcess(Options* options, CredentialPlugin* credentialPlugin)
     {
       if (options->rewriteBatchedStatements){
         options->useServerPrepStmts= false;
@@ -1130,6 +1130,10 @@ namespace sql
 
       if (options->useCharacterEncoding.compare("utf8") == 0) {
         options->useCharacterEncoding = "utf8mb4";
+      }
+
+      if (!options->logname.empty() && options->log == 0) {
+        options->log= SimpleLogger::ERROR;
       }
     }
 

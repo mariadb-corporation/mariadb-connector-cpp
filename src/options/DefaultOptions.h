@@ -77,7 +77,7 @@ public:
     static Shared::Options parse(enum HaMode haMode, const PropertiesImp::ImpType& properties, Shared::Options paramOptions);
 
   public:
-    static void postOptionProcess(const Shared::Options options, CredentialPlugin* credentialPlugin);
+    static void postOptionProcess(Options* options, CredentialPlugin* credentialPlugin);
     static void propertyString(const Shared::Options options, enum HaMode haMode, SQLString& sb);  /*SQLString? stringstream?*/
 
     SQLString getOptionName();

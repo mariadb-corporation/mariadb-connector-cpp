@@ -111,6 +111,8 @@ The list of supported options:
 | **`prepStmtCacheSize`**|This sets the number of prepared statements that the driver will cache per connection if "cachePrepStmts" is enabled.|*int*|250||
 | **`prepStmtCacheSqlLimit`**|This is the maximum length of a (SQL query length + schema name length + 1) for the statement that the driver will cache  if "cachePrepStmts" is enabled.|*int*|2048||
 | **`connectionAttributes`** |If performance_schema is enabled, permits to send server some client information in a key:value pair format (example: connectionAttributes=key1:value1,key2,value2) This information can be retrieved on server within tables performance_schema.session_connect_attrs and performance_schema.session_account_connect_attrs. This allows an identification of client/application on server|*string* |||
+| **`log`**|The logging level. Setting it to non-zero effectively turns on the logging. The levels are 1- error, 2- warning, 3- info, 4 - debug, 5-trace|*uint*|0||
+| **`logname`** |Name of the file to write the log in. If the name is set, and the log level is not, the level will be set to 'error'. The option does not have default value, but the logger has default name and location for the log file. The name is mariadbccpp.log, the location is %TMP% or %USERPROFILE% or current dir on Windows, or $HOME or /tmp on other systems.|*string*|||
 
 
 Properties is map of strings, and is another way to pass optional parameters.

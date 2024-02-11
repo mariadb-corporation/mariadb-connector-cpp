@@ -74,7 +74,7 @@ namespace mariadb
       }
     }
     this->credentialPlugin= CredentialPluginLoader::get(StringImp::get(options->credentialType));
-    DefaultOptions::postOptionProcess(options, credentialPlugin.get());
+    DefaultOptions::postOptionProcess(options.get(), credentialPlugin.get());
     setInitialUrl();
     loadMultiMasterValue();
   }
@@ -183,7 +183,7 @@ namespace mariadb
       urlParser.options= DefaultOptions::parse(urlParser.haMode, emptyStr, properties, urlParser.options);
     }
     urlParser.credentialPlugin= CredentialPluginLoader::get(StringImp::get(urlParser.options->credentialType));
-    DefaultOptions::postOptionProcess(urlParser.options, urlParser.credentialPlugin.get());
+    DefaultOptions::postOptionProcess(urlParser.options.get(), urlParser.credentialPlugin.get());
 
     LoggerFactory::init(
       urlParser.options->log > 0 ? urlParser.options->log : (

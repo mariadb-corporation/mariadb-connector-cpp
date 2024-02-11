@@ -352,8 +352,8 @@ void pool2::pool_threaded()
                     {"minPoolSize", std::to_string(minPoolSize)},
                     {"maxPoolSize", std::to_string(maxPoolSize)},
                     {"testMinRemovalDelay", "10"},
-                    {"connectTimeout", "10000"},
-                    /*,{"log", "5"}
+                    {"connectTimeout", "10000"}/*,
+                    {"log", "5"},
                     {"logname", "e.log"}*/
                    };
 

@@ -44,7 +44,7 @@ namespace mariadb
 #ifdef _WIN32
 #define MAPATHSEP '\\'
 
-    const char *defaultLogDir= "c:";
+    const char *defaultLogDir= ".";
     char *tmp= getenv("USERPROFILE");
     if (tmp)
     {

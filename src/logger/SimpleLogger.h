@@ -33,11 +33,12 @@ namespace mariadb
 
 class SimpleLogger
 {
-  constexpr static uint32_t ERROR= 1, WARNING= 2, INFO= 3, DEBUG= 4, TRACE= 5;
   static uint32_t level;
   std::string signature;
 
 public:
+  constexpr static uint32_t ERROR= 1, WARNING= 2, INFO= 3, DEBUG= 4, TRACE= 5;
+
   SimpleLogger(const char* loggedClassName);
 
   static void setLoggingLevel(uint32_t _level);
