@@ -186,7 +186,7 @@ namespace sql
       //for (;;)
       if (!closed && !realQueue.empty())
       {
-        T& result= realQueue.front();
+        T result(std::move(realQueue.front()));
         realQueue.pop_front();
 
         return std::move(result);

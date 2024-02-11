@@ -258,6 +258,7 @@ public:
 
   }
 
+  bool finished() { return done; }
   bool joinable() { return t.joinable(); }
   void join()
   {
@@ -276,6 +277,7 @@ public:
   }
 
 private:
+  bool done= false;
   void Worker();
 };
 
@@ -330,12 +332,13 @@ void Client::Worker()
       select();
     }
   }
+  done= true;
 }
 
 
 void pool2::pool_threaded()
 {
-  constexpr std::size_t minPoolSize= 3, maxPoolSize= 5, maxClientsCount= 5; // Initially was 30, 40 and 43. Probbaly too much. Possibly makes sense to make configurable
+  constexpr std::size_t minPoolSize= 3, maxPoolSize= 5, maxClientsCount= 6; // Initially was 30, 40 and 43. Probbaly too much. Possibly makes sense to make configurable
   std::array<std::unique_ptr<Client>, maxClientsCount> c;
   bool verbosity= TestsListener::setVerbose(true);
   std::random_device rd;
@@ -367,7 +370,7 @@ void pool2::pool_threaded()
   while (joined < maxClientsCount) {
     for (std::size_t i= 0; i < maxClientsCount; ++i)
     {
-      if (c[i]->joinable()) {
+      if (c[i]->finished() && c[i]->joinable()) {
         ++joined;
         c[i]->join();
         const Client::Stats& stats= c[i]->getStats();
