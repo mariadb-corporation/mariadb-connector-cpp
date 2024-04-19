@@ -82,6 +82,7 @@
     </Component>
     <Component Id="CcInclude" Guid="@GUID_INCLUDES@" Directory="INCLUDESMARIADB" DiskId="1" Win64="@IS_WIN64@">
       <File Id="ConnCppH" Name="conncpp.hpp"  DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp.hpp" />
+      <File Id="MariaDbDataSourceH" Name="MariaDbDataSource.hpp"  DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/MariaDbDataSource.hpp" />
     </Component>
     <Component Id="CcIncludeClasses" Guid="@GUID_INCLUDESCLASSES@" Directory="CLASSESINCLUDES" DiskId="1" Win64="@IS_WIN64@">
       <File Id="CallableStatementH" Name="CallableStatement.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/CallableStatement.hpp" />
@@ -91,6 +92,10 @@
       <File Id="DriverManagerH" Name="DriverManager.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/DriverManager.hpp" />
       <File Id="ExceptionH" Name="Exception.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/Exception.hpp" />
       <File Id="jdbccompatH" Name="jdbccompat.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/jdbccompat.hpp" />
+      <File Id="ListH" Name="List.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/List.hpp" />
+      <File Id="PooledConnectionH" Name="PooledConnection.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/PooledConnection.hpp" />
+      <File Id="PropertiesH" Name="Properties.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/Properties.hpp" />
+      <File Id="XAConnectionH" Name="XAConnection.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/XAConnection.hpp" />
       <File Id="ParameterMetaDataH" Name="ParameterMetaData.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/ParameterMetaData.hpp" />
       <File Id="PreparedStatementH" Name="PreparedStatement.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/PreparedStatement.hpp" />
       <File Id="ResultSetH" Name="ResultSet.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/ResultSet.hpp" />
@@ -110,6 +115,7 @@
       <File Id="ObjectH" Name="Object.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/compat/Object.hpp" />
       <File Id="SQLTypeH" Name="SQLType.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/compat/SQLType.hpp" />
       <File Id="StructH" Name="Struct.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/compat/Struct.hpp" />
+      <File Id="XAResourceH" Name="XAResource.hpp" DiskId="1" Source="@CMAKE_SOURCE_DIR@/include/conncpp/compat/XAResource.hpp" />
       <CreateFolder />
     </Component>
     <@TLS_LIB_BEGIN@Component Id="TlsLib" Guid="@GUID_TLS_LIB@" Directory="INSTALLFOLDER" DiskId="1" Win64="@IS_WIN64@">
