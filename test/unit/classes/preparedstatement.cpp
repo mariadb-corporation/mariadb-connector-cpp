@@ -2070,7 +2070,8 @@ void preparedstatement::concpp99_batchRewrite()
  */
 void preparedstatement::concpp106_batchBulk()
 {
-  sql::ConnectOptionsMap connection_properties{ {"userName", user}, {"password", passwd}, {"useBulkStmts", "true"}, {"useTls", useTls ? "true" : "false"} };
+  sql::ConnectOptionsMap connection_properties{ {"userName", user}, {"password", passwd},
+    {"useBulkStmts", "true"}, {"useTls", useTls ? "true" : "false"} };
 
   con.reset(driver->connect(url, connection_properties));
   stmt.reset(con->createStatement());
