@@ -935,13 +935,13 @@ namespace sql
               field.set(options, propertyValue);
               break;
             case Value::VBOOL:
-              if (propertyValue.toLowerCase().length() == 0
+              if (!StringImp::isNull(propertyValue) && (propertyValue.toLowerCase().length() == 0
                 || propertyValue.compare("1") == 0
-                || propertyValue.compare("true") == 0)
+                || propertyValue.compare("true") == 0))
               {
                 field.set(options, true);
               }
-              else if (propertyValue.compare("0") == 0
+              else if (StringImp::isNull(propertyValue) || propertyValue.compare("0") == 0
                 || propertyValue.compare("false") == 0)
               {
                 field.set(options, false);

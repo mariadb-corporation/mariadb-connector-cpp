@@ -21,6 +21,7 @@
 #include <cctype>
 #include <functional>
 #include <iostream>
+#include <cstring>
 
 #include "string.h"
 
@@ -29,7 +30,7 @@
 namespace sql
 {
 
-  SQLString::SQLString(const SQLString& other) : theString(new StringImp((*other.theString)->c_str(), (*other.theString)->length()))
+  SQLString::SQLString(const SQLString& other) : theString(StringImp::createString(other))
   {
   }
 
@@ -40,20 +41,19 @@ namespace sql
 
 
   //TODO: not sure if it's not better to throw on null pointer
-  SQLString::SQLString(const char* str) : theString(new StringImp(str != nullptr ? str : ""))
+  SQLString::SQLString(const char* str) : theString(StringImp::createString(str))
   {
   }
 
 
-  SQLString::SQLString(const char* str, std::size_t count) : theString(new StringImp(str, count))
+  SQLString::SQLString(const char* str, std::size_t count) : theString(StringImp::createString(str, count))
   {
   }
 
 
   SQLString& SQLString::operator=(const SQLString &other)
   {
-    *theString= *other.theString;
-    return *this;
+    return StringImp::copyString(*this, other);
   }
 
 
@@ -65,7 +65,7 @@ namespace sql
   SQLString::~SQLString()
   {
     if (theString != nullptr) {
-      delete theString;
+      StringImp::deleteString(*this);
     }
   }
 
@@ -125,29 +125,25 @@ namespace sql
     return (*theString)->compare(pos1, count1, str, count2);
   }
 
-
+  //append removes "nulliness"
   SQLString & SQLString::append(const SQLString & addition)
   {
-    (*theString)->append((*addition.theString)->c_str(), (*addition.theString)->length());
-    return *this;
+    return StringImp::appendString(*this, addition);
   }
 
   SQLString& SQLString::append(const char* const addition)
   {
-    (*theString)->append(addition);
-    return *this;
+    return StringImp::appendString(*this, addition);
   }
 
   SQLString & SQLString::append(const char * const addition, std::size_t len)
   {
-    (*theString)->append(addition, len);
-    return *this;
+    return StringImp::appendString(*this, addition, len);
   }
 
   SQLString & SQLString::append(char c)
   {
-    (*theString)->append(1, c);
-    return *this;
+    return StringImp::appendString(*this, c);
   }
 
 
@@ -231,15 +227,18 @@ namespace sql
     return (*theString)->length();
   }
 
+  // reserve removes "nulliness"
   void SQLString::reserve(std::size_t n)
   {
-    (*theString)->reserve(n);
+    StringImp::reserveSize(*this, n);
   }
 
-  char & SQLString::at(std::size_t pos)
+
+  char& SQLString::at(std::size_t pos)
   {
     return (*theString)->at(pos);
   }
+
 
   const char & SQLString::at(std::size_t pos) const
   {
@@ -270,6 +269,7 @@ namespace sql
     return (*theString)->end();
   }
 
+
   void SQLString::clear()
   {
     (*theString)->clear();
@@ -289,6 +289,8 @@ namespace sql
   }
 
 
+  // Following comparison operator do not fully consider possible operands "Nulliness"
+  // "null" and empty string will be equal
   bool operator==(const SQLString & str1, const SQLString & str2)
   {
     return str1.compare(str2) == 0;
@@ -296,12 +298,13 @@ namespace sql
 
   bool operator==(const SQLString& str1, const char* str2)
   {
-    return str2 != nullptr && str1.compare(0, str1.length(), str2, strlen(str2)) == 0;
+    // Here too - "Null" str1 == "". Should be || (!StringImp::isNull(str1) && str1.compare(...
+    return (str2 == nullptr && StringImp::isNull(str1)) || str1.compare(0, str1.length(), str2, std::strlen(str2)) == 0;
   }
 
   bool operator==(const char* str1, const SQLString& str2)
   {
-    return str1 != nullptr && str2.compare(0, str2.length(), str1, strlen(str1)) == 0;
+    return (str1 == nullptr && StringImp::isNull(str2)) || str2.compare(0, str2.length(), str1, std::strlen(str1)) == 0;
   }
 
 
@@ -310,14 +313,16 @@ namespace sql
     return str1.compare(str2) != 0;
   }
 
+
   bool operator!=(const SQLString& str1, const char* str2)
   {
-    return str2 == nullptr || str1.compare(0, str1.length(), str2, strlen(str2)) != 0;
+    return (str2 == nullptr && !StringImp::isNull(str1)) || str1.compare(0, str1.length(), str2, std::strlen(str2)) != 0;
   }
+
 
   bool operator!=(const char* str1, const SQLString& str2)
   {
-    return str1 == nullptr || str2.compare(0, str2.length(), str1, strlen(str1)) != 0;
+    return (str1 == nullptr && !StringImp::isNull(str2)) || str2.compare(0, str2.length(), str1, std::strlen(str1)) != 0;
   }
 
 
@@ -335,8 +340,7 @@ namespace sql
 
   SQLString & SQLString::operator=(const char * right)
   {
-    *theString= (right != nullptr ? right : "");
-    return *this;
+    return StringImp::copyString(*this, right);
   }
 
 

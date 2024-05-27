@@ -2067,11 +2067,15 @@ void preparedstatement::concpp99_batchRewrite()
 
 
 /** Test of useBulkStmts option. The test does cannot test if the batch is really rewritten, though.
+ * Contains bits to test CONCPP-129 - introduced SQLString "nulliness"
  */
 void preparedstatement::concpp106_batchBulk()
 {
+  // Testing that false(null) doesn't lead to option being treated as true.
+  sql::SQLString nullStr(nullptr);
+  ASSERT(nullStr == nullptr);
   sql::ConnectOptionsMap connection_properties{ {"userName", user}, {"password", passwd},
-    {"useBulkStmts", "true"}, {"useTls", useTls ? "true" : "false"} };
+    {"useBulkStmts", "true"}, {"useTls", useTls ? "true" : nullptr} };
 
   con.reset(driver->connect(url, connection_properties));
   stmt.reset(con->createStatement());

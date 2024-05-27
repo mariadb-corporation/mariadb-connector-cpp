@@ -963,7 +963,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& /*catalog*/, cons
    */
   ResultSet* MariaDbDatabaseMetaData::getImportedKeysUsingInformationSchema(const SQLString& catalog, const SQLString& table)  {
     if (table.empty() == true) {
-      throw SQLException("'table' parameter in getImportedKeys cannot be NULL");
+      throw SQLException("'table' parameter in getImportedKeys cannot be empty");
     }
     SQLString sql(
       "SELECT NULL PKTABLE_CAT, KCU.REFERENCED_TABLE_SCHEMA PKTABLE_SCHEM, KCU.REFERENCED_TABLE_NAME PKTABLE_NAME,"

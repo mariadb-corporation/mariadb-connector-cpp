@@ -26,22 +26,37 @@
 
 namespace sql
 {
+  
 class StringImp
 {
   std::string realStr;
+
+  StringImp(const char* str, std::size_t count);
 
 public:
   static std::string& get(SQLString& str);
   static const std::string& get(const SQLString& str);
 
-  StringImp(const char* str);
-  StringImp(const char* str, std::size_t count);
-  StringImp()=default; //or delete?
+  
+  StringImp()=delete; //or delete?
   ~StringImp()=default;
 
   std::string* operator ->() { return &realStr; }
 
   std::string& get() { return realStr; }
+
+  static StringImp* createString(const SQLString& str);
+  static StringImp* createString(const char* str, std::size_t count);
+  static StringImp* createString(const char* str);
+  static void deleteString(SQLString& str);
+  static SQLString& copyString(SQLString& to, const SQLString& from);
+  static SQLString& copyString(SQLString& to, const char* from);
+  static SQLString& appendString(SQLString& to, const SQLString& from);
+  static SQLString& appendString(SQLString& to, const char* from);
+  static SQLString& appendString(SQLString& to, const char* from, std::size_t len);
+  static SQLString& appendString(SQLString& to, char c);
+  static void reserveSize(SQLString& str, std::size_t requiredCapacity);
+  static bool isNull(const SQLString& str);
 };
 
 }
