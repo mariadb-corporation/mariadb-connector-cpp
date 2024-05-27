@@ -25,10 +25,7 @@ jobs:
     - os: linux
       arch: s390x
       dist: focal
-    - env: srv=maxscale MAXSCALE_TEST_DISABLE=true
-    - env: srv=xpand
-#    - env: srv=skysql SKYSQL=true
-#    - env: srv=skysql-ha SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
+    - env: srv=maxscale
   include:
     - stage: Minimal
       env: srv=mariadb v=10.6 local=1
@@ -47,14 +44,6 @@ jobs:
     - env: srv=mariadb-es-test v=23.08
       name: "ES 23.08"
       if: type = push AND fork = false
-    - env: srv=maxscale MAXSCALE_TEST_DISABLE=true
-      name: "Maxscale"
-#    - env: srv=skysql SKYSQL=true
-#      name: "SkySQL"
-#    - env: srv=skysql-ha SKYSQL_HA=true MAXSCALE_TEST_DISABLE=true
-#      name: "SkySQL with replication"
-    - env: srv=xpand
-      name: "Xpand"
 
     - stage: Community
       env: srv=mariadb v=10.4

@@ -5,17 +5,9 @@ environment:
       TEST_SERVER: localhost
       TEST_SCHEMA: test
     matrix:
-        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-          DB: 10.5.9
-
-        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-          DB: 10.4.18
-
-        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-          DB: 10.5.9
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
+          DB: 10.11.7
 matrix:
-    allow_failures:
-        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
 
 # scripts that are called at very beginning, before repo cloning
 init:
