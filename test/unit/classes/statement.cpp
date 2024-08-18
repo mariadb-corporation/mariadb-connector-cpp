@@ -776,5 +776,27 @@ void statement::concpp107_setFetchSizeExeption()
     ASSERT(!res->next());
   }
 }
+
+/* CONCPP-132 getMoreResults highjacks other statement's pending result */
+void statement::otherstmts_result()
+{
+  res.reset(stmt->executeQuery("SELECT 100"));
+  ASSERT(res->next());
+  ASSERT(!res->next());
+
+  Statement stmt1(con->createStatement());
+  ResultSet res1(stmt1->executeQuery("SELECT 3;SELECT 2 UNION SELECT 4"));
+  ASSERT(res1->next());
+  ASSERT(!res1->next());
+  ASSERT(!stmt->getMoreResults());
+  ASSERT(stmt->getUpdateCount()==-1);
+  ASSERT(stmt1->getMoreResults());
+  res1.reset(stmt1->getResultSet());
+  ASSERT(res1->next());
+  ASSERT_EQUALS(2, res1->getInt(1));
+  ASSERT(res1->next());
+  ASSERT_EQUALS(4, res1->getInt(1));
+  ASSERT(!res1->next());
+}
 } /* namespace statement */
 } /* namespace testsuite */

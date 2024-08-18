@@ -87,8 +87,7 @@ namespace capi
     else {
       lock= protocol->getLock();
 
-      Shared::Results shRes(results);
-      protocol->setActiveStreamingResult(shRes);
+      protocol->setActiveStreamingResult(results);
 
       protocol->removeHasMoreResults();
       data.reserve(std::max(10, fetchSize)); // Same
@@ -132,9 +131,7 @@ namespace capi
     }
     else {
       lock = protocol->getLock();
-      //TODO: This may be wrong. We get plain ptr and putting it to smart ptr, which will eventually destrct the object w/out object's owner control
-      Shared::Results shRes(results);
-      protocol->setActiveStreamingResult(shRes);
+      protocol->setActiveStreamingResult(results);
 
       protocol->removeHasMoreResults();
       data.reserve(std::max(10, fetchSize)); // Same

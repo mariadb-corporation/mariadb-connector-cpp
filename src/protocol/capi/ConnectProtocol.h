@@ -71,7 +71,7 @@ namespace capi
   public:
     bool hasWarningsFlag= false;
     /* This cannot be Shared as long as C/C stmt handle is owned by  statement(SSPS class in this case) object */
-    Weak::Results activeStreamingResult; /*NULL*/
+    Results* activeStreamingResult= nullptr;
     uint32_t serverStatus= 0;
 
   protected:
@@ -225,8 +225,8 @@ namespace capi
     TimeZone* getTimeZone();
     const Shared::Options& getOptions() const;
     void setHasWarnings(bool hasWarnings);
-    Shared::Results getActiveStreamingResult();
-    void setActiveStreamingResult(Shared::Results& activeStreamingResult);
+    Results* getActiveStreamingResult();
+    void setActiveStreamingResult(Results* activeStreamingResult);
     void removeActiveStreamingResult();
     Shared::mutex& getLock();
     bool hasMoreResults();

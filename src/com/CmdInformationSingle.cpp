@@ -70,17 +70,14 @@ namespace mariadb
 
   void CmdInformationSingle::addErrorStat()
   {
-
   }
 
   void CmdInformationSingle::reset()
   {
-
   }
 
   void CmdInformationSingle::addResultSetStat()
   {
-
   }
 
   /**

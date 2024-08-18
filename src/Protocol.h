@@ -135,8 +135,8 @@ public:
   virtual void prolog(int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement)= 0;
   virtual void prologProxy(ServerPrepareResult* serverPrepareResult, int64_t maxRows, bool hasProxy, MariaDbConnection* connection,
     MariaDbStatement* statement)= 0;
-  virtual Shared::Results getActiveStreamingResult()=0;
-  virtual void setActiveStreamingResult(Shared::Results& mariaSelectResultSet)=0;
+  virtual Results* getActiveStreamingResult()=0;
+  virtual void setActiveStreamingResult(Results* mariaSelectResultSet)=0;
   virtual Shared::mutex& getLock()=0;
   virtual void setServerStatus(uint32_t serverStatus)=0;
   virtual uint32_t getServerStatus()=0;

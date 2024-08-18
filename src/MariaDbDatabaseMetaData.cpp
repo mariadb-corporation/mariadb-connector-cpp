@@ -609,7 +609,7 @@ SQLString schemaPatternCond(const SQLString& columnName, const SQLString& schema
  */
 ResultSet* MariaDbDatabaseMetaData::getPrimaryKeys(const SQLString& /*catalog*/, const SQLString& schema, const SQLString& table) {
 
-
+  // TODO: the better query is possible here(like in C/ODBC)
   SQLString sql(
     "SELECT NULL TABLE_CAT, A.TABLE_SCHEMA TABLE_SCHEM, A.TABLE_NAME, A.COLUMN_NAME, B.SEQ_IN_INDEX KEY_SEQ, B.INDEX_NAME PK_NAME "
     " FROM INFORMATION_SCHEMA.COLUMNS A, INFORMATION_SCHEMA.STATISTICS B"

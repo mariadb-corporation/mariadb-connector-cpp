@@ -1675,7 +1675,12 @@ namespace capi
           selectResultSet= UpdatableResultSet::create(results, this, pr, callableResult, eofDeprecated);
         }
       }
-      results->addResultSet(selectResultSet, hasMoreResults() || results->getFetchSize() > 0);
+      // Not sure where we get status and more results there is and if it's available if we are streaming result
+      bool pendingReusults= hasMoreResults() || results->getFetchSize() > 0;
+      results->addResultSet(selectResultSet, pendingReusults);
+      if (pendingReusults) {
+        setActiveStreamingResult(results);
+      }
 
     }
     catch (SQLException & e) {
@@ -1737,10 +1742,10 @@ namespace capi
 
   void QueryProtocol::cmdPrologue()
   {
-    Shared::Results activeStream = getActiveStreamingResult();
+    auto activeStream= getActiveStreamingResult();
     if (activeStream) {
       activeStream->loadFully(false, this);
-      activeStreamingResult.reset();
+      activeStreamingResult= nullptr;
     }
 
     if (activeFutureTask){

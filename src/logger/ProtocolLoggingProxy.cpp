@@ -532,14 +532,14 @@ namespace mariadb
   }
 
 
-  Shared::Results ProtocolLoggingProxy::getActiveStreamingResult()
+  Results* ProtocolLoggingProxy::getActiveStreamingResult()
 	{
 		/* Add here logging if needed */
 	  return protocol->getActiveStreamingResult();
 	}
 
 
-  void ProtocolLoggingProxy::setActiveStreamingResult(Shared::Results& mariaSelectResultSet)
+  void ProtocolLoggingProxy::setActiveStreamingResult(Results* mariaSelectResultSet)
 	{
 		/* Add here logging if needed */
 	  protocol->setActiveStreamingResult(mariaSelectResultSet);

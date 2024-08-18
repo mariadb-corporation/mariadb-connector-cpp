@@ -98,6 +98,9 @@ namespace mariadb
 
   MariaDbStatement::~MariaDbStatement()
   {
+    if (results) {
+      results->isFullyLoaded(protocol.get());
+    }
   }
 
   // Part of query prolog - setup timeout timer

@@ -181,7 +181,7 @@ public:
   void setInternalResults(Results* newResults);
   void setExecutingFlag(bool _set= true);
   void markClosed();
-  //Shared::Protocol& getProtocol() { return protocol; }
+  Protocol* getProtocol() { return protocol.get(); }
   //Shared::Options& getOptions() { return options; }
   sql::Ints& getBatchResArr() { return batchRes; }
   sql::Longs& getLargeBatchResArr() { return largeBatchRes; }
