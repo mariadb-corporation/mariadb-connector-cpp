@@ -122,6 +122,7 @@ private:
   const char* getSqlState();
   uint32_t getErrNo();
   uint32_t warningCount();
+  void fetchRemainingInternal(); // no Locking
 public:
   void fetchRemaining();
 
@@ -138,7 +139,7 @@ protected:
   void addRowData(std::vector<sql::bytes>& rawData);
 
 private:
-  void growDataArray();
+  void growDataArray(bool complete= false);
 
 public:
   void abort();
@@ -380,6 +381,7 @@ protected:
 public:
   std::size_t getDataSize();
   bool isBinaryEncoded();
+  void cacheCompleteLocally();
   };
 
 }

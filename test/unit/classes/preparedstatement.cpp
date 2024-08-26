@@ -2157,5 +2157,52 @@ void preparedstatement::concpp116_getByte()
   ASSERT_EQUALS(2177LL, res->getLong(4));
 }
 
+
+void preparedstatement::multirs_caching()
+{
+  SKIP("This is not working and won't be fixed in this version");
+
+  createSchemaObject("PROCEDURE", "ccpptest_multirs_caching", "()\
+                        BEGIN\
+                          SELECT 1 as id, 'text' as val UNION SELECT 7 as id, 'seven' as val;\
+                          SELECT 'some text';\
+                          SELECT 2;\
+                        END");
+
+  PreparedStatement pstmt1(sspsCon->prepareStatement("CALL ccpptest_multirs_caching()"));
+  ResultSet res1(pstmt1->executeQuery());
+  ASSERT(res1->next()); // next() does not read the record - only increments internal cursor position
+  /* We need stmt to use the same conneciton as pstmt1*/
+  stmt.reset(sspsCon->createStatement());
+  /* Executing another query - stmt1 has to cache pending results */
+  res.reset(stmt->executeQuery("SELECT 100"));
+  /* Making sure we are at same position after caching */
+  ASSERT_EQUALS(1, res1->getInt(1));
+  ASSERT_EQUALS("text", res->getString("val"));
+  ASSERT(res1->next());
+  ASSERT_EQUALS(7, res1->getInt("id"));
+  ASSERT_EQUALS("text", res->getString(2));
+  ASSERT(!res1->next());
+  ASSERT(pstmt1->getMoreResults());
+  res1.reset(pstmt1->getResultSet());
+  ASSERT(res1->next());
+  ASSERT_EQUALS("some text", res1->getString(1));
+  ASSERT(!res1->next());
+  /* Now reading 2nd query result*/
+  ASSERT(res->next());
+  ASSERT_EQUALS(100, res->getInt(1));
+  ASSERT(!res->next());
+  ASSERT(!stmt->getMoreResults());
+  ASSERT(stmt->getUpdateCount() == -1);
+  /* Getting back to 1st query */
+  ASSERT(pstmt1->getMoreResults());
+  res1.reset(pstmt1->getResultSet());
+  ASSERT(res1->next());
+  ASSERT_EQUALS(2, res1->getInt(1));
+  ASSERT(!res1->next());
+  ASSERT(!pstmt1->getMoreResults());
+  ASSERT(pstmt1->getUpdateCount() == -1);
+}
+
 } /* namespace preparedstatement */
 } /* namespace testsuite */

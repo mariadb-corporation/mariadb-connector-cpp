@@ -161,6 +161,8 @@ public:
   virtual bool isInterrupted()=0;
   virtual void stopIfInterrupted()=0;
   virtual void reconnect()=0;
+  virtual void skipAllResults(ServerPrepareResult* spr)=0;
+  virtual void skipAllResults()=0;
   /* I guess at some point we will need it */
   //virtual Protocol* clone();
   };

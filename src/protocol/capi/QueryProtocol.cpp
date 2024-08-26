@@ -1415,12 +1415,13 @@ namespace capi
     capi::mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
     hasWarningsFlag= capi::mysql_warning_count(connection.get()) > 0;
 
-    if ((serverStatus & ServerStatus::SERVER_SESSION_STATE_CHANGED_)!=0){
+    if ((serverStatus & ServerStatus::SERVER_SESSION_STATE_CHANGED_)!=0) {
       handleStateChange(results);
     }
 
     results->addStats(updateCount, insertId, hasMoreResults());
   }
+
 
   void QueryProtocol::handleStateChange(Results* results)
   {
@@ -1453,6 +1454,7 @@ namespace capi
       }
     }
   }
+
 
   uint32_t capi::QueryProtocol::errorOccurred(ServerPrepareResult * pr)
   {
@@ -1720,7 +1722,7 @@ namespace capi
     if (!hasProxy && shouldReconnectWithoutProxy()) {
       try {
         connectWithoutProxy();
-      } catch (SQLException& qe){
+      } catch (SQLException& qe) {
         exceptionFactory.reset(ExceptionFactory::of(serverThreadId, options));
         exceptionFactory->create(qe).Throw();
       }
@@ -1951,6 +1953,42 @@ namespace capi
     if (isInterrupted()){
 
       throw SQLTimeoutException("Timeout during batch execution", "");
+    }
+  }
+
+
+  void QueryProtocol::skipAllResults()
+  {
+    if (hasMoreResults()) {
+      //std::lock_guard<std::mutex> localScopeLock(lock);
+      auto conn= connection.get();
+      MYSQL_RES *res= nullptr;
+      while (mysql_more_results(conn) && mysql_next_result(conn) == 0) {
+        res= mysql_use_result(conn);
+        mysql_free_result(res);
+      }
+      // Server and session can be changed
+      getServerStatus();
+      if ((serverStatus & ServerStatus::SERVER_SESSION_STATE_CHANGED_) != 0) {
+        handleStateChange(activeStreamingResult);
+      }
+      removeActiveStreamingResult();
+    }
+  }
+
+
+  void QueryProtocol::skipAllResults(ServerPrepareResult * spr)
+  {
+    if (hasMoreResults()) {
+      auto stmt= spr->getStatementId();
+      while (mysql_stmt_more_results(stmt)) mysql_stmt_next_result(stmt);
+      // Server and session can be changed
+      getServerStatus();
+      if((serverStatus & ServerStatus::SERVER_SESSION_STATE_CHANGED_) != 0) {
+        handleStateChange(activeStreamingResult);
+      }
+      removeActiveStreamingResult();
+      return;
     }
   }
 

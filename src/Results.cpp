@@ -175,9 +175,7 @@ namespace mariadb
       callableResultSet.reset(resultSet);
       return;
     }
-    if (executionResults.size() == 0){
-     /* executionResults= new ArrayDeque<>()*/;
-    }
+
     executionResults.emplace_back(resultSet);
 
     if (!cmdInformation) {
@@ -208,7 +206,8 @@ namespace mariadb
    *
    * @return true id has cmdInformation
    */
-  bool Results::commandEnd(){
+  bool Results::commandEnd() {
+
     if (cmdInformation)
     {
       if (executionResults.size() > 0 && !cmdInformation->isCurrentUpdateCount())
@@ -253,38 +252,30 @@ namespace mariadb
    */
   void Results::loadFully(bool skip, Protocol* protocol) {
 
-    if (fetchSize != 0) {
+    // Only very last of already loaded resultsets might need fetching of remaining rows or caching on our side
+    // (i.e. making copy of datat that is already cached on C/C side)
+    SelectResultSet* rs= executionResults.empty() ? resultSet.get() : executionResults.back().get();
 
-      fetchSize= 0;
-      if (resultSet) {
-
-        if (skip) {
-          resultSet->close();
-        }
-        else {
-          resultSet->fetchRemaining();
-        }
+    if (rs) {
+      if (skip) {
+        rs->close();
       }
       else {
-
-        const auto& it= executionResults.begin();
-
-        if (it != executionResults.end())
-        {
-          if (skip) {
-            it->get()->close();
-          }
-          else {
-            it->get()->fetchRemaining();
-          }
-        }
+        // cacheCompleteLocally does fetchRemaining in case of RS streaming
+        rs->cacheCompleteLocally();
       }
     }
+    
     if (haveResultInWire){
+      if (skip) {
+        protocol->skipAllResults();
+        return;
+      }
+
       while (protocol->hasMoreResults()) {
         protocol->moveToNextResult(this, serverPrepResult);
         if (!skip) {
-          protocol->getResult(this);
+          protocol->getResult(this, serverPrepResult);
         }
       }
       haveResultInWire= false;
@@ -343,15 +334,17 @@ namespace mariadb
   bool Results::getMoreResults(int32_t current, Protocol* protocol) {
 
     std::lock_guard<std::mutex> localScopeLock(*(protocol->getLock()));
-    if (fetchSize != 0 && resultSet) {
-      
-      try {
+    auto rs= resultSet.get();
 
-        if (current == Statement::CLOSE_CURRENT_RESULT && resultSet) {
-          resultSet->close();
+    if (rs) {
+      try {
+        if (current == Statement::CLOSE_CURRENT_RESULT) {
+          rs->close();
         }
         else {
-          resultSet->fetchRemaining();
+          // for binary results we need to copy everything on our side even if we are not streaming, as it won't be available otherwise
+          // once we move to the next result
+          rs->cacheCompleteLocally();
         }
       }
       catch (SQLException& e) {
@@ -366,19 +359,14 @@ namespace mariadb
 
     if (cmdInformation->moreResults() && !batch){
 
-      if (current == Statement::CLOSE_CURRENT_RESULT && resultSet){
-        resultSet->close();
-      }
-      if (executionResults.empty() != true){
+      if (!executionResults.empty()){
         resultSet.reset(executionResults.begin()->release());
         executionResults.pop_front();
       }
       return resultSet ? true : false;
     }
     else {
-      if (current == Statement::CLOSE_CURRENT_RESULT && resultSet){
-        resultSet->close();
-      }
+
       resultSet.reset(nullptr);
 
       if (cmdInformation->getUpdateCount() == -1 && haveResultInWire) {
@@ -388,6 +376,7 @@ namespace mariadb
       return false;
     }
   }
+
 
   int32_t Results::getFetchSize(){
     return fetchSize;

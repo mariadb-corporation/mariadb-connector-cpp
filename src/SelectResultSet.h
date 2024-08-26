@@ -145,6 +145,8 @@ protected:
 public:
   virtual std::size_t getDataSize()=0;
   virtual bool isBinaryEncoded()=0;
+  // If we need to cache rs, that did not stream, it will not have protocol, as it's kinda not needed after fetching everything
+  virtual void cacheCompleteLocally(/*Protocol**/)=0;
   };
 
 }

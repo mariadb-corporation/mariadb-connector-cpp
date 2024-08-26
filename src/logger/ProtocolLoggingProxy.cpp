@@ -709,5 +709,13 @@ namespace mariadb
 	{
 		protocol->reconnect();
 	}
+
+
+	void ProtocolLoggingProxy::skipAllResults() {
+		protocol->skipAllResults();
+	}
+	void ProtocolLoggingProxy::skipAllResults(ServerPrepareResult* spr) {
+		protocol->skipAllResults(spr);
+	}
 }
 }

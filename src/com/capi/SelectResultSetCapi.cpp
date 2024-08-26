@@ -76,7 +76,7 @@ namespace capi
     //timeZone(protocol->getTimeZone(),
   {
     if (fetchSize == 0 || callableResult) {
-      data.reserve(10);//= new char[10]; // This has to be array of arrays. Need to decide what to use for its representation
+      data.reserve(10);
       if (mysql_stmt_store_result(capiStmtHandle)) {
         throwStmtError(capiStmtHandle);
       }
@@ -272,6 +272,24 @@ namespace capi
     return 0;
   }
 
+  /* Does fetchRemaing's job, but w/out locking */
+  void SelectResultSetCapi::fetchRemainingInternal() {
+    try {
+      lastRowPointer= -1;
+      while (!isEof) {
+        addStreamingValue();
+      }
+
+    }
+    catch (SQLException& queryException) {
+      ExceptionFactory::INSTANCE.create(queryException).Throw();
+    }
+    catch (std::exception& ioe) {
+      handleIoException(ioe);
+    }
+    ++dataFetchTime;
+  }
+
   /**
     * When protocol has a current Streaming result (this) fetch all to permit another query is
     * executing.
@@ -281,20 +299,7 @@ namespace capi
   void SelectResultSetCapi::fetchRemaining() {
     if (!isEof) {
       std::lock_guard<std::mutex> localScopeLock(*lock);
-      try {
-        lastRowPointer= -1;
-        while (!isEof) {
-          addStreamingValue();
-        }
-
-      }
-      catch (SQLException& queryException) {
-        ExceptionFactory::INSTANCE.create(queryException).Throw();
-      }
-      catch (std::exception& ioe) {
-        handleIoException(ioe);
-      }
-      dataFetchTime++;
+      fetchRemainingInternal();
     }
   }
 
@@ -338,7 +343,7 @@ namespace capi
     while (fetchSizeTmp > 0 && readNextValue()) {
       fetchSizeTmp--;
     }
-    dataFetchTime++;
+    ++dataFetchTime;
   }
 
 
@@ -370,35 +375,37 @@ namespace capi
 
     case MYSQL_NO_DATA: {
       uint32_t serverStatus;
+      if (protocol) {
+        if (!eofDeprecated) {
 
-      if (!eofDeprecated) {
+          protocol->readEofPacket();
+          serverStatus= protocol->getServerStatus();
 
-        protocol->readEofPacket();
-        serverStatus= protocol->getServerStatus();
-
-        // CallableResult has been read from intermediate EOF server_status
-        // and is mandatory because :
-        //
-        // - Call query will have an callable resultSet for OUT parameters
-        //   this resultSet must be identified and not listed in JDBC statement.getResultSet()
-        //
-        // - after a callable resultSet, a OK packet is send,
-        //   but mysql before 5.7.4 doesn't send MORE_RESULTS_EXISTS flag
-        if (callableResult) {
-          serverStatus|= MORE_RESULTS_EXISTS;
+          // CallableResult has been read from intermediate EOF server_status
+          // and is mandatory because :
+          //
+          // - Call query will have an callable resultSet for OUT parameters
+          //   this resultSet must be identified and not listed in JDBC statement.getResultSet()
+          //
+          // - after a callable resultSet, a OK packet is send,
+          //   but mysql before 5.7.4 doesn't send MORE_RESULTS_EXISTS flag
+          if (callableResult) {
+            serverStatus|= MORE_RESULTS_EXISTS;
+          }
         }
-      }
-      else {
-        // OK_Packet with a 0xFE header
-        // protocol->readOkPacket()?
-        serverStatus= protocol->getServerStatus();
-        callableResult= (serverStatus & PS_OUT_PARAMETERS)!=0;
-      }
-      protocol->setServerStatus(serverStatus);
-      protocol->setHasWarnings(warningCount() > 0);
+        else {
+          // OK_Packet with a 0xFE header
+          // protocol->readOkPacket()?
+        
+          serverStatus= protocol->getServerStatus();
+          callableResult= (serverStatus & PS_OUT_PARAMETERS) != 0;
+        }
+        protocol->setServerStatus(serverStatus);
+        protocol->setHasWarnings(warningCount() > 0);
 
-      if ((serverStatus & MORE_RESULTS_EXISTS) == 0) {
-        protocol->removeActiveStreamingResult();
+        if ((serverStatus & MORE_RESULTS_EXISTS) == 0) {
+          protocol->removeActiveStreamingResult();
+        }
       }
 
       resetVariables();
@@ -488,14 +495,26 @@ namespace capi
   }*/
 
   /** Grow data array. */
-  void SelectResultSetCapi::growDataArray() {
-    int32_t newCapacity= static_cast<int32_t>(data.size() + (data.size() >>1));
-
-    if (newCapacity - MAX_ARRAY_SIZE > 0) {
-      newCapacity= MAX_ARRAY_SIZE;
+  void SelectResultSetCapi::growDataArray(bool complete) {
+    std::size_t curSize= data.size(), newSize= curSize + 1;
+    if (complete) {
+      newSize= dataSize;
     }
-    // Commenting this out so far as we do not put data from server here, thus growing is in vain
-    //data.reserve(newCapacity);
+
+    if (data.capacity() < newSize) {
+      std::size_t newCapacity= complete ? newSize : static_cast<std::size_t>(curSize + (curSize >> 1));
+
+      // I don't remember what is MAX_ARRAY_SIZE is about. it might be irrelevant for C/ODBC and C/C++
+      if (!complete && newCapacity > MAX_ARRAY_SIZE) {
+        newCapacity= static_cast<std::size_t>(MAX_ARRAY_SIZE);
+      }
+
+      data.reserve(newCapacity);
+    }
+    for (std::size_t i= curSize; i < newSize; ++i) {
+      data.push_back({});
+      data.back().reserve(columnsInformation.size());
+    }
   }
 
   /**
@@ -1978,6 +1997,41 @@ namespace capi
 
   bool SelectResultSetCapi::isBinaryEncoded() {
     return row->isBinaryEncoded();
+  }
+
+
+  void sql::mariadb::capi::SelectResultSetCapi::cacheCompleteLocally() {
+
+    if (fetchSize > 0) {
+      fetchRemaining();
+    }
+    else if (row->isBinaryEncoded()) {
+      if (data.size()) {
+        // we have already it cached
+        return;
+      }
+      auto preservedPosition= rowPointer;
+      // fetchRemaining does remaining stream
+      if (streaming) {
+        fetchRemainingInternal();
+      }
+      else {
+        if (rowPointer > -1) {
+          beforeFirst();
+          row->installCursorAtPosition(rowPointer > -1 ? rowPointer : 0);
+          lastRowPointer= -1;
+        }
+        growDataArray(true);
+        isEof= false;
+        fetchSize= static_cast<int32_t>(dataSize);
+        fetchRemainingInternal();
+        dataSize= data.size();
+        isEof= true;
+        rowPointer= preservedPosition;
+        fetchSize= 0;
+      }
+    }
+    // else it is already cached in case of Text protocol
   }
 }
 }

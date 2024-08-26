@@ -152,6 +152,8 @@ public:
   bool isInterrupted();
   void stopIfInterrupted();
   void reconnect();
+  void skipAllResults() override;
+  void skipAllResults(ServerPrepareResult* spr) override;
   };
 
 }
