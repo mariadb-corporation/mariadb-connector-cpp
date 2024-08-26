@@ -369,13 +369,13 @@ namespace capi
 
   /** Grow data array. */
   void SelectResultSetBin::growDataArray() {
-    std::size_t curSize = data.size();
+    std::size_t curSize= data.size();
 
     if (data.capacity() < curSize + 1) {
-      uint64_t newCapacity = static_cast<uint64_t>(curSize + (curSize >> 1));
+      uint64_t newCapacity= static_cast<uint64_t>(curSize + (curSize >> 1));
 
       if (newCapacity > MAX_ARRAY_SIZE) {
-        newCapacity = MAX_ARRAY_SIZE;
+        newCapacity= MAX_ARRAY_SIZE;
       }
 
       data.reserve(newCapacity);

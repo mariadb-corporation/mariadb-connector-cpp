@@ -75,6 +75,12 @@ public:
   }
 };
 
+
+//StopTimer::Duration operator +(const StopTimer& op1, const StopTimer& op2)
+//{
+//  return static_cast<StopTimer::Duration>(op1) + static_cast<StopTimer::Duration>(op2);
+//}
+
 // A small extension - with ttl and method to say if it's over
 class Timer : public StopTimer
 {
@@ -180,7 +186,7 @@ public:
     {
       sum+= it;
     }
-    return sum;//std::accumulate(data.begin(), data.end(), Duration(0));
+    return sum;// std::accumulate(data.begin(), data.end(), Duration(0));
   }
 
   // Expected value

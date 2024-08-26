@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2024 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -678,10 +679,9 @@ void StatementTest::testGetMoreResults01()
   bool moreResVal=stmt->getMoreResults();
 
   // Hmm... smth is wrong here. Bad test
-  if ((moreResVal == true) || (moreResVal == false)) {
+  if ((moreResVal == true) || (moreResVal == false && stmt->getUpdateCount() != -1)) {
     TestsListener::messagesLog()
             << "getMoreResults method returns :" << moreResVal << std::endl;
-    TestsListener::setTestExecutionComment("This test needs to be changed or removed. It's wrong");
   } else {
     logErr(" getMoreResults method returns a invalid value");
     FAIL("Call to getMoreResults is Failed!");

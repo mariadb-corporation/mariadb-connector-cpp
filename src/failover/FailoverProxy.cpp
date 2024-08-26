@@ -245,12 +245,11 @@ namespace mariadb
 
           queryException= addHostInformationToException(queryException,protocol);
 
-
-          bool killCmd =
+          bool killCmd=
             queryException.empty() != true
-            &&queryException.getSQLState().empty() != true
-            &&(queryException.getSQLState().compare("70100") == 0)
-            &&1927= queryException.getErrorCode();
+            && queryException.getSQLState().empty() != true
+            && (queryException.getSQLState().compare("70100") == 0)
+            && 1927= queryException.getErrorCode();
 
           if (killCmd){
             handleFailOver(queryException,method,args,protocol,isClosed);

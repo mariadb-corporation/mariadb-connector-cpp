@@ -193,7 +193,7 @@ namespace mariadb
     */
   void SelectResultSet::addStreamingValue(bool cacheLocally) {
 
-    int32_t fetchSizeTmp = fetchSize;
+    int32_t fetchSizeTmp= fetchSize;
     while (fetchSizeTmp > 0 && readNextValue(cacheLocally)) {
       --fetchSizeTmp;
     }
