@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2023 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -70,7 +70,8 @@ namespace capi
   public:
     bool hasWarningsFlag= false;
     /* This cannot be Shared as long as C/C stmt handle is owned by  statement(SSPS class in this case) object */
-    Weak::Results activeStreamingResult;
+
+    Results* activeStreamingResult= nullptr;
     uint32_t serverStatus= 0;
 
   protected:
@@ -224,8 +225,8 @@ namespace capi
     TimeZone* getTimeZone();
     const Shared::Options& getOptions() const;
     void setHasWarnings(bool hasWarnings);
-    Shared::Results getActiveStreamingResult();
-    void setActiveStreamingResult(Shared::Results& activeStreamingResult);
+    Results* getActiveStreamingResult() override;
+    void setActiveStreamingResult(Results* activeStreamingResult) override;
     void removeActiveStreamingResult();
     std::mutex *const getLock();
     bool hasMoreResults();

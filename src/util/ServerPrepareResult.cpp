@@ -107,14 +107,9 @@ namespace mariadb
   void ServerPrepareResult::reReadColumnInfo()
   {
     metadata.reset(mysql_stmt_result_metadata(statementId));
-
+    columns.clear();
     for (uint32_t i= 0; i < mysql_stmt_field_count(statementId); ++i) {
-      if (i >= columns.size()) {
-        columns.emplace_back(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata.get(), i)));
-      }
-      else {
-        columns[i].reset(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata.get(), i)));
-      }
+      columns.emplace_back(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata.get(), i)));
     }
   }
 

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -128,8 +128,8 @@ public:
   TimeZone* getTimeZone();
   void prolog(int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement);
   void prologProxy( ServerPrepareResult* serverPrepareResult, int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement);
-  Shared::Results getActiveStreamingResult();
-  void setActiveStreamingResult(Shared::Results& mariaSelectResultSet);
+  Results* getActiveStreamingResult();
+  void setActiveStreamingResult(Results* mariaSelectResultSet);
   std::mutex *const getLock();
   void setServerStatus(uint32_t serverStatus);
   uint32_t getServerStatus();
@@ -154,6 +154,8 @@ public:
   bool isInterrupted();
   void stopIfInterrupted();
   void reconnect();
+  void skipAllResults() override;
+  void skipAllResults(ServerPrepareResult* spr) override;
   };
 
 }

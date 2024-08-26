@@ -36,8 +36,9 @@ class ColumnNameMap
   std::map<SQLString,int32_t>aliasMap;
 
 public:
-  ColumnNameMap(std::vector<Shared::ColumnDefinition>& columnInformations);
+  ColumnNameMap(std::vector<Shared::ColumnDefinition>& columnInformation);
   int32_t getIndex(const SQLString& name);
+  void changeColumnInfo(std::vector<Shared::ColumnDefinition>& columnInformation);
 };
 
 }

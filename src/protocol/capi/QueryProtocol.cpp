@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2022 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -1416,12 +1416,13 @@ namespace capi
     capi::mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
     hasWarningsFlag= capi::mysql_warning_count(connection.get()) > 0;
 
-    if ((serverStatus & ServerStatus::SERVER_SESSION_STATE_CHANGED_)!=0){
+    if ((serverStatus & ServerStatus::SERVER_SESSION_STATE_CHANGED_)!=0) {
       handleStateChange(results);
     }
 
     results->addStats(updateCount, insertId, hasMoreResults());
   }
+
 
   void QueryProtocol::handleStateChange(Results* results)
   {
@@ -1454,6 +1455,7 @@ namespace capi
       }
     }
   }
+
 
   uint32_t capi::QueryProtocol::errorOccurred(ServerPrepareResult * pr)
   {
@@ -1677,7 +1679,13 @@ namespace capi
           selectResultSet= UpdatableResultSet::create(results, this, pr, callableResult, eofDeprecated);
         }
       }
-      results->addResultSet(selectResultSet, hasMoreResults() || results->getFetchSize() > 0);
+
+      // Not sure where we get status and more results there is and if it's available if we are streaming result
+      bool pendingResults= hasMoreResults() || results->getFetchSize() > 0;
+      results->addResultSet(selectResultSet, pendingResults);
+      if (pendingResults) {
+        setActiveStreamingResult(results);
+      }
     }
     catch (SQLException & e) {
       throw e;
@@ -1716,7 +1724,7 @@ namespace capi
     if (!hasProxy && shouldReconnectWithoutProxy()) {
       try {
         connectWithoutProxy();
-      } catch (SQLException& qe){
+      } catch (SQLException& qe) {
         exceptionFactory.reset(ExceptionFactory::of(serverThreadId, options));
         exceptionFactory->create(qe).Throw();
       }
@@ -1738,10 +1746,10 @@ namespace capi
 
   void QueryProtocol::cmdPrologue()
   {
-    Shared::Results activeStream = getActiveStreamingResult();
+    auto activeStream= getActiveStreamingResult();
     if (activeStream) {
       activeStream->loadFully(false, this);
-      activeStreamingResult.reset();
+      activeStreamingResult= nullptr;
     }
     forceReleaseWaitingPrepareStatement();
     if (activeFutureTask) {
@@ -1947,6 +1955,42 @@ namespace capi
     if (isInterrupted()){
 
       throw SQLTimeoutException("Timeout during batch execution", "");
+    }
+  }
+
+
+  void QueryProtocol::skipAllResults()
+  {
+    if (hasMoreResults()) {
+      //std::lock_guard<std::mutex> localScopeLock(lock);
+      auto conn= connection.get();
+      MYSQL_RES *res= nullptr;
+      while (mysql_more_results(conn) && mysql_next_result(conn) == 0) {
+        res= mysql_use_result(conn);
+        mysql_free_result(res);
+      }
+      // Server and session can be changed
+      getServerStatus();
+      if ((serverStatus & ServerStatus::SERVER_SESSION_STATE_CHANGED_) != 0) {
+        handleStateChange(activeStreamingResult);
+      }
+      removeActiveStreamingResult();
+    }
+  }
+
+
+  void QueryProtocol::skipAllResults(ServerPrepareResult * spr)
+  {
+    if (hasMoreResults()) {
+      auto stmt= spr->getStatementId();
+      while (mysql_stmt_more_results(stmt)) mysql_stmt_next_result(stmt);
+      // Server and session can be changed
+      getServerStatus();
+      if((serverStatus & ServerStatus::SERVER_SESSION_STATE_CHANGED_) != 0) {
+        handleStateChange(activeStreamingResult);
+      }
+      removeActiveStreamingResult();
+      return;
     }
   }
 

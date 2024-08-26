@@ -207,6 +207,8 @@ namespace capi
     void interrupt();
     bool isInterrupted();
     void stopIfInterrupted();
+    void skipAllResults() override;
+    void skipAllResults(ServerPrepareResult* spr) override;
   };
 
 }  //capi

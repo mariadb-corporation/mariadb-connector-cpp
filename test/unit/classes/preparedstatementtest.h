@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2023 MariaDB Corporation AB
+ *               2020, 2024 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -78,6 +78,7 @@ public:
     TEST_CASE(concpp106_batchBulk);
     TEST_CASE(psCache);
     TEST_CASE(concpp116_getByte);
+    TEST_CASE(multirs_caching);
   }
 
   /**
@@ -173,6 +174,8 @@ public:
   void psCache();
 
   void concpp116_getByte();
+
+  void multirs_caching();
 
   /* unit_fixture methods overriding */
   void setUp();

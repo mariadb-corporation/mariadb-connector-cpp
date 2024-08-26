@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -85,7 +85,7 @@ namespace capi
     }
     else {
       
-      protocol->setActiveStreamingResult(statement->getInternalResults());
+      protocol->setActiveStreamingResult(results);
 
       protocol->removeHasMoreResults();
       data.reserve(std::max(10, fetchSize)); // Same
@@ -247,36 +247,37 @@ namespace capi
     case MYSQL_NO_DATA: {
       uint32_t serverStatus;
       uint32_t warnings;
+      if (protocol) {
+        if (!eofDeprecated) {
+          protocol->readEofPacket();
+          warnings= warningCount();
+          serverStatus= protocol->getServerStatus();
 
-      if (!eofDeprecated) {
-        protocol->readEofPacket();
-        warnings= warningCount();
-        serverStatus= protocol->getServerStatus();
-
-        // CallableResult has been read from intermediate EOF server_status
-        // and is mandatory because :
-        //
-        // - Call query will have an callable resultSet for OUT parameters
-        //   this resultSet must be identified and not listed in JDBC statement.getResultSet()
-        //
-        // - after a callable resultSet, a OK packet is send,
-        //   but mysql before 5.7.4 doesn't send MORE_RESULTS_EXISTS flag
-        if (callableResult) {
-          serverStatus|= MORE_RESULTS_EXISTS;
+          // CallableResult has been read from intermediate EOF server_status
+          // and is mandatory because :
+          //
+          // - Call query will have an callable resultSet for OUT parameters
+          //   this resultSet must be identified and not listed in JDBC statement.getResultSet()
+          //
+          // - after a callable resultSet, a OK packet is send,
+          //   but mysql before 5.7.4 doesn't send MORE_RESULTS_EXISTS flag
+          if (callableResult) {
+            serverStatus|= MORE_RESULTS_EXISTS;
+          }
         }
-      }
-      else {
-        // OK_Packet with a 0xFE header
-        // protocol->readOkPacket()?
-        serverStatus= protocol->getServerStatus();
-        warnings= warningCount();;
-        callableResult= (serverStatus & PS_OUT_PARAMETERS)!=0;
-      }
-      protocol->setServerStatus(serverStatus);
-      protocol->setHasWarnings(warnings > 0);
+        else {
+          // OK_Packet with a 0xFE header
+          // protocol->readOkPacket()?
+          serverStatus= protocol->getServerStatus();
+          warnings= warningCount();;
+          callableResult= (serverStatus & PS_OUT_PARAMETERS) != 0;
+        }
+        protocol->setServerStatus(serverStatus);
+        protocol->setHasWarnings(warnings > 0);
 
-      if ((serverStatus & MORE_RESULTS_EXISTS) == 0) {
-        protocol->removeActiveStreamingResult();
+        if ((serverStatus & MORE_RESULTS_EXISTS) == 0) {
+          protocol->removeActiveStreamingResult();
+        }
       }
       resetVariables();
       return false;
@@ -368,22 +369,26 @@ namespace capi
   }*/
 
   /** Grow data array. */
-  void SelectResultSetBin::growDataArray() {
-    std::size_t curSize= data.size();
+  void SelectResultSetBin::growDataArray(bool complete) {
+    std::size_t curSize= data.size(), newSize= curSize + 1;
+    if (complete) {
+      newSize= dataSize;
+    }
 
-    if (data.capacity() < curSize + 1) {
-      uint64_t newCapacity= static_cast<uint64_t>(curSize + (curSize >> 1));
+    if (data.capacity() < newSize) {
+      std::size_t newCapacity= complete ? newSize : static_cast<std::size_t>(curSize + (curSize >> 1));
 
-      if (newCapacity > MAX_ARRAY_SIZE) {
-        newCapacity= MAX_ARRAY_SIZE;
+      // I don't remember what is MAX_ARRAY_SIZE is about. it might be irrelevant for C/ODBC and C/C++
+      if (!complete && newCapacity > MAX_ARRAY_SIZE) {
+        newCapacity= static_cast<std::size_t>(MAX_ARRAY_SIZE);
       }
 
       data.reserve(newCapacity);
     }
-    for (std::size_t i = curSize; i < dataSize + 1; ++i) {
+    for (std::size_t i= curSize; i < newSize; ++i) {
       data.push_back({});
+      data.back().reserve(columnsInformation.size());
     }
-    data[dataSize].reserve(columnsInformation.size());
   }
 
   /**
@@ -532,12 +537,14 @@ namespace capi
     row->setPosition(position - 1);
   }
 
+
   SQLWarning* SelectResultSetBin::getWarnings() {
     if (this->statement == nullptr) {
       return nullptr;
     }
     return this->statement->getWarnings();
   }
+
 
   void SelectResultSetBin::clearWarnings() {
     if (this->statement != nullptr) {
@@ -1914,6 +1921,39 @@ namespace capi
       statement->checkCloseOnCompletion(this);
       statement= nullptr;
     }
+  }
+
+
+  void SelectResultSetBin::cacheCompleteLocally() {
+
+    if (data.size()) {
+      // we have already it cached
+      return;
+    }
+    auto preservedPosition= rowPointer;
+    // fetchRemaining does remaining stream
+    if (streaming) {
+      fetchRemaining();
+    }
+    else {
+      if (rowPointer > -1) {
+        beforeFirst();
+        row->installCursorAtPosition(rowPointer > -1 ? rowPointer : 0);
+        lastRowPointer= -1;
+      }
+      growDataArray(true);
+
+      for (std::size_t rowNum= 0; rowNum < dataSize; ++rowNum) {
+        row->fetchNext();
+        row->cacheCurrentRow(data[rowNum], columnInformationLength);
+      }
+      for (auto& colInfo : columnsInformation) {
+        colInfo->makeLocalCopy();
+      }
+      columnNameMap->changeColumnInfo(columnsInformation);
+      rowPointer= preservedPosition;
+    }
+  // else it is already cached in case of Text protocol
   }
 }
 }

@@ -45,7 +45,7 @@ public:
   virtual SQLString getOriginalTable() const=0;
   virtual SQLString getName() const=0;
   virtual SQLString getOriginalName() const=0;
-  virtual short getCharsetNumber() const=0;
+  virtual short     getCharsetNumber() const=0;
   virtual SQLString getCollation() const=0;
   /* Length of the column */
   virtual uint32_t getLength() const=0;
@@ -65,6 +65,8 @@ public:
   virtual bool isZeroFill() const=0;
   virtual bool isBinary() const=0;
   virtual bool isReadonly() const=0;
+  // In case of resultset caching we might need to make local copy of metadata
+  virtual void makeLocalCopy()=0;
 };
 
 }

@@ -47,6 +47,7 @@ class ColumnDefinitionCapi : public sql::mariadb::ColumnDefinition
   std::shared_ptr<MYSQL_FIELD> owned;
   const ColumnType& type;
   uint32_t length;
+  std::string name, table, orgname, orgtable, db;
   //SQLString db;
 
 public:
@@ -59,13 +60,13 @@ public:
   SQLString getOriginalTable() const;
   SQLString getName() const;
   SQLString getOriginalName() const;
-  int16_t getCharsetNumber() const;
+  int16_t   getCharsetNumber() const;
   SQLString getCollation() const;
-  uint32_t getLength() const;
-  uint32_t getMaxLength() const;
-  int64_t getPrecision() const;
-  uint32_t getDisplaySize() const;
-  uint8_t getDecimals() const;
+  uint32_t  getLength() const;
+  uint32_t  getMaxLength() const;
+  int64_t   getPrecision() const;
+  uint32_t  getDisplaySize() const;
+  uint8_t   getDecimals() const;
   const ColumnType& getColumnType() const;
   int16_t getFlags() const;
   bool isSigned() const;
@@ -77,6 +78,7 @@ public:
   bool isZeroFill() const;
   bool isBinary() const;
   bool isReadonly() const;
+  void makeLocalCopy() override;
 };
 
 }

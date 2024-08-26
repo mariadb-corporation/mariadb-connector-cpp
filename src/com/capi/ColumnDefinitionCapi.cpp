@@ -110,6 +110,33 @@ namespace capi
   }
 
 
+  void ColumnDefinitionCapi::makeLocalCopy()
+  {
+    // TODO: it's better to make a separate class
+    if (!owned) {
+      auto copy= new capi::MYSQL_FIELD();
+      std::memcpy(copy, metadata, sizeof(capi::MYSQL_FIELD));
+      name.reserve(copy->name_length + 1);
+      name.assign(copy->name, copy->name_length);
+      copy->name= const_cast<char*>(name.c_str());
+      orgname.reserve(copy->org_name_length + 1);
+      orgname.assign(copy->org_name, copy->org_name_length);
+      copy->org_name= const_cast<char*>(orgname.c_str());
+      db.reserve(copy->db_length + 1);
+      db.assign(copy->db, copy->db_length);
+      copy->db= const_cast<char*>(db.c_str());
+      table.reserve(copy->table_length + 1);
+      table.assign(copy->table, copy->table_length);
+      copy->table= const_cast<char*>(table.c_str());
+      orgtable.reserve(copy->org_table_length + 1);
+      orgtable.assign(copy->org_table, copy->org_table_length);
+      copy->org_table= const_cast<char*>(orgtable.c_str());
+      owned.reset(copy);
+      metadata= copy;
+    }
+  }
+
+
   SQLString ColumnDefinitionCapi::getName() const
   {
     return metadata->name;
@@ -150,10 +177,10 @@ namespace capi
     if (type == ColumnType::OLDDECIMAL || type == ColumnType::DECIMAL)
     {
       if (isSigned()) {
-        return length -((metadata->decimals >0) ? 2 : 1);
+        return length -((metadata->decimals > 0) ? 2 : 1);
       }
       else {
-        return length -((metadata->decimals >0) ? 1 : 0);
+        return length -((metadata->decimals > 0) ? 1 : 0);
       }
     }
     return length;

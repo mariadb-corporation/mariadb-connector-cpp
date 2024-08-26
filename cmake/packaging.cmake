@@ -196,8 +196,8 @@ IF(RPM)
   ENDIF()
 ENDIF()
 IF("${CPACK_GENERATOR}" STREQUAL "TGZ" OR "${CPACK_GENERATOR}" STREQUAL "ZIP")
-  CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/install_test/CMakeLists.txt.in
-                 ${CMAKE_SOURCE_DIR}/install_test/CMakeLists.txt @ONLY)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/install_test/CMakeLists.txt.in
+                 ${CMAKE_CURRENT_SOURCE_DIR}/install_test/CMakeLists.txt @ONLY)
 ENDIF()
 MESSAGE(STATUS "Package Name: ${CPACK_PACKAGE_FILE_NAME} Generator: ${CPACK_GENERATOR}")
 #

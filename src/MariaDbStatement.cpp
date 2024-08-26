@@ -108,6 +108,7 @@ namespace mariadb
   {
     // We need to close associated resultset(the last one, previous should be closed once next result is requested)
     if (results) {
+      results->loadFully(true, protocol.get()); //?
       results->close();
     }
   }

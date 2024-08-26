@@ -679,7 +679,7 @@ void StatementTest::testGetMoreResults01()
   bool moreResVal=stmt->getMoreResults();
 
   // Hmm... smth is wrong here. Bad test
-  if ((moreResVal == true) || (moreResVal == false && stmt->getUpdateCount() != -1)) {
+  if (moreResVal || stmt->getUpdateCount() == -1) {
     TestsListener::messagesLog()
             << "getMoreResults method returns :" << moreResVal << std::endl;
   } else {

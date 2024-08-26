@@ -122,5 +122,13 @@ namespace mariadb
     return cit->second;
   }
 
+  void ColumnNameMap::changeColumnInfo(std::vector<Shared::ColumnDefinition>& columnInformation)
+  {
+    // Vectors should be the same size. we change it only if we make local copy of data and metadata.
+    for (std::size_t i= 0; i < columnInformation.size(); ++i) {
+      columnInfo[i]= columnInformation[i];
+    }
+  }
+
 }
 }

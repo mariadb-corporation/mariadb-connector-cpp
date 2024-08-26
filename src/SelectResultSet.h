@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -158,8 +158,9 @@ public:
   virtual bool isBinaryEncoded()=0;
   ResultSet* release();
   virtual void realClose(bool noLock=false)=0;
+  // If we need to cache rs, that did not stream, it will not have protocol, as it's kinda not needed after fetching everything
+  virtual void cacheCompleteLocally(/*Protocol**/)=0;
   };
-
 }
 }
 #endif

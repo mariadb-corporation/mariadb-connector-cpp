@@ -68,6 +68,8 @@ public:
     TEST_CASE(addBatch);
     TEST_CASE(concpp88);
     TEST_CASE(concpp99_batchRewrite);
+    TEST_CASE(otherstmts_result);
+    TEST_CASE(multirs_caching);
   }
 
   /**
@@ -122,6 +124,9 @@ public:
 
   /* addBatch with rewrite option */
   void concpp99_batchRewrite();
+
+  void otherstmts_result();
+  void multirs_caching();
 };
 
 REGISTER_FIXTURE(statement);

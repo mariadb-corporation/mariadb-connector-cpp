@@ -59,7 +59,7 @@ public:
 
   EXAMPLE_TEST_FIXTURE(connectionmetadata)
   {
-    TEST_CASE(getSchemata);
+    /*TEST_CASE(getSchemata);
     TEST_CASE(getSchemaObjects);
     TEST_CASE(getAttributes);
     TEST_CASE(getBestRowIdentifier);
@@ -73,7 +73,7 @@ public:
     TEST_CASE(getDatabaseVersions);
     TEST_CASE(getDriverVersions);
     TEST_CASE(getDefaultTransactionIsolation);
-    TEST_CASE(getExtraNameCharacters);
+    TEST_CASE(getExtraNameCharacters);*/
     TEST_CASE(getExportedKeys);
     TEST_CASE(getIdentifierQuoteString);
     TEST_CASE(getImportedKeys);

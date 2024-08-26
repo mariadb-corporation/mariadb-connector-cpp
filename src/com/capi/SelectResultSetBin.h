@@ -121,8 +121,8 @@ protected:
   void addRowData(std::vector<sql::bytes>& rawData);
 
 private:
-  void growDataArray();
-
+  void growDataArray(bool complete= false);
+ 
 public:
   void abort();
   void close();
@@ -365,6 +365,7 @@ public:
   std::size_t getDataSize();
   bool isBinaryEncoded();
   void realClose(bool noLock= false);
+  void cacheCompleteLocally();
   };
 
 }

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -139,8 +139,8 @@ public:
   virtual void prolog(int64_t maxRows, bool hasProxy, MariaDbConnection* connection, MariaDbStatement* statement)= 0;
   virtual void prologProxy(ServerPrepareResult* serverPrepareResult, int64_t maxRows, bool hasProxy, MariaDbConnection* connection,
     MariaDbStatement* statement)= 0;
-  virtual Shared::Results getActiveStreamingResult()=0;
-  virtual void setActiveStreamingResult(Shared::Results& mariaSelectResultSet)=0;
+  virtual Results* getActiveStreamingResult()=0;
+  virtual void setActiveStreamingResult(Results* mariaSelectResultSet)=0;
   virtual std::mutex *const getLock()=0;
   virtual void setServerStatus(uint32_t serverStatus)=0;
   virtual uint32_t getServerStatus()=0;
@@ -165,6 +165,8 @@ public:
   virtual bool isInterrupted()=0;
   virtual void stopIfInterrupted()=0;
   virtual void reconnect()=0;
+  virtual void skipAllResults(ServerPrepareResult* spr)=0;
+  virtual void skipAllResults()=0;
   /* I guess at some point we will need it */
   //virtual Protocol* clone();
   };

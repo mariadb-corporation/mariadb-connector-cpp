@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2023 MariaDB Corporation AB
+   Copyright (C) 2020, 2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -73,7 +73,7 @@ namespace capi
     }
     else {
 
-      protocol->setActiveStreamingResult(statement->getInternalResults());
+      protocol->setActiveStreamingResult(results);
 
       protocol->removeHasMoreResults();
       data.reserve(std::max(10, fetchSize)); // Same
@@ -204,6 +204,24 @@ namespace capi
     return 0;
   }
 
+  /* Does fetchRemaing's job, but w/out locking */
+  void SelectResultSetCapi::fetchRemainingInternal() {
+    try {
+      lastRowPointer= -1;
+      while (!isEof) {
+        addStreamingValue();
+      }
+
+    }
+    catch (SQLException& queryException) {
+      ExceptionFactory::INSTANCE.create(queryException).Throw();
+    }
+    catch (std::exception& ioe) {
+      handleIoException(ioe);
+    }
+    ++dataFetchTime;
+  }
+
   /**
     * When protocol has a current Streaming result (this) fetch all to permit another query is
     * executing. The lock should be acquired before calling this method
@@ -237,7 +255,7 @@ namespace capi
       catch (std::exception& ioe) {
         handleIoException(ioe);
       }
-      dataFetchTime++;
+      ++dataFetchTime;
     }
   }
 
@@ -268,7 +286,6 @@ namespace capi
 
     addStreamingValue(fetchSize > 1);
   }
-
 
   /**
     * Read next value.
@@ -303,34 +320,37 @@ namespace capi
     }
     case MYSQL_NO_DATA: {
       uint32_t serverStatus;
+      if (protocol) {
+        if (!eofDeprecated) {
 
-      if (!eofDeprecated) {
-        protocol->readEofPacket();
-        serverStatus= protocol->getServerStatus();
+          protocol->readEofPacket();
+          serverStatus= protocol->getServerStatus();
 
-        // CallableResult has been read from intermediate EOF server_status
-        // and is mandatory because :
-        //
-        // - Call query will have an callable resultSet for OUT parameters
-        //   this resultSet must be identified and not listed in JDBC statement.getResultSet()
-        //
-        // - after a callable resultSet, a OK packet is send,
-        //   but mysql before 5.7.4 doesn't send MORE_RESULTS_EXISTS flag
-        if (callableResult) {
-          serverStatus|= MORE_RESULTS_EXISTS;
+          // CallableResult has been read from intermediate EOF server_status
+          // and is mandatory because :
+          //
+          // - Call query will have an callable resultSet for OUT parameters
+          //   this resultSet must be identified and not listed in JDBC statement.getResultSet()
+          //
+          // - after a callable resultSet, a OK packet is send,
+          //   but mysql before 5.7.4 doesn't send MORE_RESULTS_EXISTS flag
+          if (callableResult) {
+            serverStatus|= MORE_RESULTS_EXISTS;
+          }
         }
-      }
-      else {
-        // OK_Packet with a 0xFE header
-        //protocol->readOkPacket();
-        serverStatus= protocol->getServerStatus();
-        callableResult= (serverStatus & PS_OUT_PARAMETERS)!=0;
-      }
-      protocol->setServerStatus(serverStatus);
-      protocol->setHasWarnings(warningCount() > 0);
+        else {
+          // OK_Packet with a 0xFE header
+          // protocol->readOkPacket()?
+        
+          serverStatus= protocol->getServerStatus();
+          callableResult= (serverStatus & PS_OUT_PARAMETERS) != 0;
+        }
+        protocol->setServerStatus(serverStatus);
+        protocol->setHasWarnings(warningCount() > 0);
 
-      if ((serverStatus & MORE_RESULTS_EXISTS) == 0) {
-        protocol->removeActiveStreamingResult();
+        if ((serverStatus & MORE_RESULTS_EXISTS) == 0) {
+          protocol->removeActiveStreamingResult();
+        }
       }
       resetVariables();
       return false;
@@ -423,22 +443,26 @@ namespace capi
   }*/
 
   /** Grow data array. */
-  void SelectResultSetCapi::growDataArray() {
-    std::size_t curSize= data.size();
+  void SelectResultSetCapi::growDataArray(bool complete) {
+    std::size_t curSize= data.size(), newSize= curSize + 1;
+    if (complete) {
+      newSize= dataSize;
+    }
 
-    if (data.capacity() < curSize + 1) {
-      uint64_t newCapacity= static_cast<uint64_t>(curSize + (curSize >> 1));
+    if (data.capacity() < newSize) {
+      std::size_t newCapacity= complete ? newSize : static_cast<std::size_t>(curSize + (curSize >> 1));
 
-      if (newCapacity > MAX_ARRAY_SIZE) {
-        newCapacity = MAX_ARRAY_SIZE;
+      // I don't remember what is MAX_ARRAY_SIZE is about. it might be irrelevant for C/ODBC and C/C++
+      if (!complete && newCapacity > MAX_ARRAY_SIZE) {
+        newCapacity= static_cast<std::size_t>(MAX_ARRAY_SIZE);
       }
 
       data.reserve(newCapacity);
     }
-    for (std::size_t i= curSize; i < dataSize + 1; ++i) {
+    for (std::size_t i= curSize; i < newSize; ++i) {
       data.push_back({});
+      data.back().reserve(columnsInformation.size());
     }
-    data[dataSize].reserve(columnsInformation.size());
   }
 
   /**
@@ -1944,6 +1968,16 @@ namespace capi
       statement = nullptr;
     }
   }
+
+
+  void SelectResultSetCapi::cacheCompleteLocally() {
+
+    if (fetchSize > 0) {
+      fetchRemaining();
+    }
+    // else it is already cached in case of Text protocol
+  }
+
 }
 }
 }
