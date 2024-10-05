@@ -135,8 +135,8 @@ public:
   virtual int16_t getInternalShort(ColumnDefinition* columnInfo)=0;
   virtual SQLString getInternalTimeString(ColumnDefinition* columnInfo)=0;
 
-
   virtual bool isBinaryEncoded()=0;
+  virtual void cacheCurrentRow(std::vector<sql::bytes>& rowData, std::size_t columnCount)=0;
   bool lastValueWasNull();
 
 protected:

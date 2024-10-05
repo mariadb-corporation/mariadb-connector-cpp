@@ -70,10 +70,9 @@ namespace capi
       dataSize(0),
       fetchSize(results->getFetchSize()),
       resultSetScrollType(results->getResultSetScrollType()),
-      columnNameMap(new ColumnNameMap(columnsInformation)),
+      columnNameMap(columnsInformation),
       eofDeprecated(eofDeprecated),
       forceAlias(false)
-    //timeZone(protocol->getTimeZone(),
   {
     if (fetchSize == 0 || callableResult) {
       data.reserve(10);
@@ -114,6 +113,7 @@ namespace capi
       dataSize(0),
       fetchSize(results->getFetchSize()),
       resultSetScrollType(results->getResultSetScrollType()),
+      columnNameMap(columnsInformation),
       eofDeprecated(eofDeprecated),
       forceAlias(false)
   {
@@ -130,7 +130,7 @@ namespace capi
       resetVariables();
     }
     else {
-      lock = protocol->getLock();
+      lock= protocol->getLock();
       protocol->setActiveStreamingResult(results);
 
       protocol->removeHasMoreResults();
@@ -148,7 +148,7 @@ namespace capi
     }
     row.reset(new capi::TextRowProtocolCapi(results->getMaxFieldSize(), options, textNativeResults));
 
-    columnNameMap.reset(new ColumnNameMap(columnsInformation));
+    //columnNameMap.init(columnsInformation);
     columnInformationLength= static_cast<int32_t>(columnsInformation.size());
 
     if (streaming) {
@@ -188,17 +188,23 @@ namespace capi
       fetchSize(0),
       resultSetScrollType(resultSetScrollType),
       rowPointer(-1),
-      columnNameMap(new ColumnNameMap(columnsInformation)),
+      columnNameMap(columnsInformation),
       eofDeprecated(false),
       forceAlias(false)
   {
     if (protocol != nullptr) {
       this->options= protocol->getOptions();
-      this->timeZone= protocol->getTimeZone();
     }
-    else {
-      // this->timeZone= TimeZone.getDefault();
+  }
+
+
+  SelectResultSetCapi::~SelectResultSetCapi()
+  {
+    if (!isFullyLoaded()) {
+      //close();
+      fetchAllResults();
     }
+    checkOut();
   }
 
   /**
@@ -556,13 +562,10 @@ namespace capi
         handleIoException(ioe);
       }
     }
+    checkOut();
     resetVariables();
 
-    for (size_t i= 0; i < data.size(); i++)
-    {
-      data[i].clear();
-
-    }
+    data.clear();
 
     if (statement != nullptr) {
       statement->checkCloseOnCompletion(this);
@@ -1202,7 +1205,7 @@ namespace capi
 
   /** {inheritDoc}. */
   int32_t SelectResultSetCapi::findColumn(const SQLString& columnLabel) {
-    return columnNameMap->getIndex(columnLabel) + 1;
+    return columnNameMap.getIndex(columnLabel) + 1;
   }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
@@ -1991,6 +1994,15 @@ namespace capi
     rowPointer= pointer;
   }
 
+
+  void SelectResultSetCapi::checkOut()
+  {
+    if (released && statement != nullptr && statement->getInternalResults()) {
+      statement->getInternalResults()->checkOut(this);
+    }
+  }
+
+
   std::size_t SelectResultSetCapi::getDataSize() {
     return dataSize;
   }
@@ -2000,7 +2012,7 @@ namespace capi
   }
 
 
-  void sql::mariadb::capi::SelectResultSetCapi::cacheCompleteLocally() {
+  void SelectResultSetCapi::cacheCompleteLocally() {
 
     if (fetchSize > 0) {
       fetchRemaining();
@@ -2022,11 +2034,14 @@ namespace capi
           lastRowPointer= -1;
         }
         growDataArray(true);
-        isEof= false;
-        fetchSize= static_cast<int32_t>(dataSize);
-        fetchRemainingInternal();
-        dataSize= data.size();
-        isEof= true;
+        for (std::size_t rowNum= 0; rowNum < dataSize; ++rowNum) {
+          row->fetchNext();
+          row->cacheCurrentRow(data[rowNum], columnInformationLength);
+        }
+        for (auto& colInfo : columnsInformation) {
+          colInfo->makeLocalCopy();
+        }
+        //columnNameMap.init(columnsInformation);
         rowPointer= preservedPosition;
         fetchSize= 0;
       }

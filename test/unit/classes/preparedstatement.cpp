@@ -2160,7 +2160,7 @@ void preparedstatement::concpp116_getByte()
 
 void preparedstatement::multirs_caching()
 {
-  SKIP("This is not working and won't be fixed in this version");
+  //SKIP("This is not working and won't be fixed in this version");
 
   createSchemaObject("PROCEDURE", "ccpptest_multirs_caching", "()\
                         BEGIN\
@@ -2178,10 +2178,10 @@ void preparedstatement::multirs_caching()
   res.reset(stmt->executeQuery("SELECT 100"));
   /* Making sure we are at same position after caching */
   ASSERT_EQUALS(1, res1->getInt(1));
-  ASSERT_EQUALS("text", res->getString("val"));
+  ASSERT_EQUALS("text", res1->getString("val"));
   ASSERT(res1->next());
   ASSERT_EQUALS(7, res1->getInt("id"));
-  ASSERT_EQUALS("text", res->getString(2));
+  ASSERT_EQUALS("seven", res1->getString(2));
   ASSERT(!res1->next());
   ASSERT(pstmt1->getMoreResults());
   res1.reset(pstmt1->getResultSet());
@@ -2200,8 +2200,12 @@ void preparedstatement::multirs_caching()
   ASSERT(res1->next());
   ASSERT_EQUALS(2, res1->getInt(1));
   ASSERT(!res1->next());
+  // Now SP execution result code
   ASSERT(!pstmt1->getMoreResults());
-  ASSERT(pstmt1->getUpdateCount() == -1);
+  ASSERT_EQUALS(0, pstmt1->getUpdateCount());
+  // Nothing else
+  ASSERT(!pstmt1->getMoreResults());
+  ASSERT_EQUALS(-1, pstmt1->getUpdateCount());
 }
 
 } /* namespace preparedstatement */

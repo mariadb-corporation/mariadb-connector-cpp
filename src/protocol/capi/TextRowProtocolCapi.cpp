@@ -1165,6 +1165,14 @@ namespace capi
    return false;
  }
 
+
+ void TextRowProtocolCapi::cacheCurrentRow(std::vector<sql::bytes>& rowDataCache, std::size_t columnCount)
+ {
+   rowDataCache.clear();
+   for (std::size_t i = 0; i < columnCount; ++i) {
+     rowDataCache.emplace_back(const_cast<const char*>(rowData[i]), lengthArr[i]);
+   }
+ }
 }
 }
 }

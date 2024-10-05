@@ -1693,6 +1693,20 @@ namespace capi
   {
     return true;
   }
+
+
+  void BinRowProtocolCapi::cacheCurrentRow(std::vector<sql::bytes>& rowDataCache, std::size_t columnCount)
+  {
+    rowDataCache.clear();
+    for (std::size_t i = 0; i < columnCount; ++i) {
+      if (bind[i].is_null_value != '\0') {
+        rowDataCache.emplace_back(0);
+      }
+      else {
+        rowDataCache.emplace_back(static_cast<const char*>(bind[i].buffer), bind[i].length_value);
+      }
+    }
+  }
 }
 }
 }

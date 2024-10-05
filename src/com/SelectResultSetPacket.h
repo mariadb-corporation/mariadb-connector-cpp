@@ -86,7 +86,7 @@ private:
   int32_t fetchSize;
   int32_t resultSetScrollType;
   int32_t rowPointer;
-  std::unique_ptr<ColumnNameMap> columnNameMap;
+  ColumnNameMap columnNameMap;
   int32_t lastRowPointer; /*-1*/
   bool isClosedFlag;
   bool eofDeprecated;

@@ -29,9 +29,13 @@ namespace mariadb
 {
 
   ColumnNameMap::ColumnNameMap(std::vector<Shared::ColumnDefinition>& columnInformations)
-    : columnInfo(columnInformations)
+    : columnInfo(&columnInformations)
   {}
 
+  void ColumnNameMap::init(std::vector<Shared::ColumnDefinition>& columnInformations)
+  {
+    columnInfo= &columnInformations;
+  }
   /**
     * Get column index by name.
     *
@@ -52,7 +56,7 @@ namespace mariadb
     {
       int32_t counter= 0;
 
-      for (auto& ci : columnInfo)
+      for (auto& ci : *columnInfo)
       {
         SQLString columnAlias(ci->getName());
         if (!columnAlias.empty())
@@ -87,7 +91,7 @@ namespace mariadb
     if (originalMap.empty())
     {
       int32_t counter= 0;
-      for (auto& ci : columnInfo)
+      for (auto& ci : *columnInfo)
       {
         SQLString columnRealName(ci->getOriginalName());
 

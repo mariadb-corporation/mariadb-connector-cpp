@@ -165,19 +165,21 @@ namespace mariadb
    * @param resultSet new resultSet.
    * @param moreResultAvailable indicate if other results (ResultSet or updateCount) are available.
    */
-  void Results::addResultSet(SelectResultSet* resultSet, bool moreResultAvailable) {
+  void Results::addResultSet(SelectResultSet* _resultSet, bool moreResultAvailable) {
 
     if (haveResultInWire && !moreResultAvailable && fetchSize == 0) {
       statement->getProtocol()->removeActiveStreamingResult();
     }
     haveResultInWire= moreResultAvailable;
-    if (resultSet->isCallableResult()){
-      callableResultSet.reset(resultSet);
+    if (_resultSet->isCallableResult()){
+      callableResultSet.reset(_resultSet);
       return;
     }
 
-    executionResults.emplace_back(resultSet);
-
+    executionResults.emplace_back(_resultSet);
+    if (cachingLocally) {
+      _resultSet->cacheCompleteLocally();
+    }
     if (!cmdInformation) {
       if (batch) {
         cmdInformation.reset(new CmdInformationBatch(expectedSize, autoIncrement));
@@ -193,9 +195,11 @@ namespace mariadb
     cmdInformation->addResultSetStat();
   }
 
+
   Shared::CmdInformation Results::getCmdInformation(){
     return cmdInformation;
   }
+
 
   void Results::setCmdInformation(CmdInformation* _cmdInformation){
     cmdInformation.reset(_cmdInformation);
@@ -228,12 +232,13 @@ namespace mariadb
 
 
   SelectResultSet* Results::getResultSet(){
-    return resultSet.get();
+    return resultSet ? resultSet.get() : given2appRs;
   }
 
 
-  SelectResultSet* Results::releaseResultSet() {
-    return resultSet.release();
+  ResultSet* Results::releaseResultSet() {
+    given2appRs= resultSet.release();
+    return (given2appRs != nullptr ? given2appRs->release() : nullptr);
   }
 
 
@@ -255,7 +260,9 @@ namespace mariadb
     // Only very last of already loaded resultsets might need fetching of remaining rows or caching on our side
     // (i.e. making copy of datat that is already cached on C/C side)
     SelectResultSet* rs= executionResults.empty() ? resultSet.get() : executionResults.back().get();
-
+    if (rs == nullptr) {
+      rs= given2appRs;
+    }
     if (rs) {
       if (skip) {
         rs->close();
@@ -271,13 +278,14 @@ namespace mariadb
         protocol->skipAllResults();
         return;
       }
-
+      cachingLocally= true;
       while (protocol->hasMoreResults()) {
         protocol->moveToNextResult(this, serverPrepResult);
         if (!skip) {
           protocol->getResult(this, serverPrepResult);
         }
       }
+      cachingLocally= false;
       haveResultInWire= false;
     }
   }
@@ -474,5 +482,15 @@ namespace mariadb
     this->rewritten= rewritten;
   }
 
+  /* Resets remembered bare ptr of the current resultSet if it's equal the one checking out.
+     @param ptr to the resultset object being destructed
+   */
+  void Results::checkOut(SelectResultSet* iamleaving)
+  {
+    /*This has to be guarded, mutex should be acquired by the caller */
+    if (given2appRs == iamleaving) {
+      given2appRs= nullptr;
+    }
+  }
 }
 }

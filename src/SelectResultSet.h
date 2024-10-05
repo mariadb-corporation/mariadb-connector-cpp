@@ -33,7 +33,6 @@
 
 #include "ResultSet.hpp"
 #include "ColumnType.h"
-//#include "ColumnNameMap.h"
 #include "io/StandardPacketInputStream.h"
 
 #include "jdbccompat.hpp"
@@ -65,6 +64,7 @@ protected:
 
   static int32_t TINYINT1_IS_BIT; /*1*/
   static int32_t YEAR_IS_DATE_TYPE; /*2*/
+  bool released=  false;
 
 public:
   static SelectResultSet* create(
@@ -143,8 +143,14 @@ protected:
   virtual void setRowPointer(int32_t pointer)=0;
 
 public:
+  /* Some classes(Results) may hold pointer to this object - it may be required to initiate caching before moving to next RS
+     to unblock connection for new queries, or to close RS, if next RS is requested or statements is destructed.
+     After releasing the RS by API methods, it's owned by application. If app destructs the RS, this method is called by destructor, and
+     implementation should do the job on checking out of the object, so it can't be attempted to use any more */
+  virtual void checkOut()= 0;
   virtual std::size_t getDataSize()=0;
   virtual bool isBinaryEncoded()=0;
+  ResultSet* release();
   // If we need to cache rs, that did not stream, it will not have protocol, as it's kinda not needed after fetching everything
   virtual void cacheCompleteLocally(/*Protocol**/)=0;
   };

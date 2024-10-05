@@ -35,6 +35,15 @@ namespace capi
 
 #include "mysql.h"
 
+// Small helper not to keep all those objects in ColumnDefinition object by default and to create copy of names in MYSQL_FIELD for deep copy
+struct FieldNames
+{
+  std::string name, table, orgname, orgtable, db;
+
+  FieldNames(MYSQL_FIELD *metadata);
+};
+
+
 class ColumnDefinitionCapi : public sql::mariadb::ColumnDefinition
 {
   static uint8_t maxCharlen[];
@@ -42,11 +51,12 @@ class ColumnDefinitionCapi : public sql::mariadb::ColumnDefinition
   /** Fow "hand-made" RS we need to take care of freeing memory, while for "natural" MYSQL_FIELD
     we have to use pointer to C/C structures(to automatically get max_length when it's calculated -
     that happens later, than the object is created).
-    It has to be shared since we have copy-copyconstructor(not sure why we have it)
+    It has to be shared since we have copy-copyconstructor(TODO: not sure why we have it)
   */
   std::shared_ptr<MYSQL_FIELD> owned;
   const ColumnType& type;
   uint32_t length;
+  std::unique_ptr<FieldNames> names;
   //SQLString db;
 
 public:
@@ -77,6 +87,7 @@ public:
   bool isZeroFill() const;
   bool isBinary() const;
   bool isReadonly() const;
+  void makeLocalCopy() override;
 };
 
 }

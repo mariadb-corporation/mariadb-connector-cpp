@@ -73,6 +73,7 @@ public:
   SQLString getInternalTimeString(ColumnDefinition* columnInfo);
 
   bool isBinaryEncoded();
+  void cacheCurrentRow(std::vector<sql::bytes>& rowData, std::size_t columnCount) override;
   };
 
 }

@@ -99,7 +99,7 @@ namespace mariadb
   MariaDbStatement::~MariaDbStatement()
   {
     if (results) {
-      results->isFullyLoaded(protocol.get());
+      results->loadFully(true, protocol.get());
     }
   }
 

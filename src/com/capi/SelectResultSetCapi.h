@@ -55,8 +55,7 @@ namespace capi
 
 class SelectResultSetCapi : public SelectResultSet
 {
-
-  TimeZone* timeZone= nullptr;
+  //TimeZone* timeZone= nullptr;
   Shared::Options options;
   std::vector<Shared::ColumnDefinition> columnsInformation;
   int32_t columnInformationLength;
@@ -84,7 +83,7 @@ class SelectResultSetCapi : public SelectResultSet
   int32_t resultSetScrollType;
   int32_t rowPointer= -1;
 
-  std::unique_ptr<ColumnNameMap> columnNameMap;
+  ColumnNameMap columnNameMap;
 
   int32_t lastRowPointer= -1;
   bool isClosedFlag= false;
@@ -112,6 +111,7 @@ public:
     /*std::unique_ptr<*/std::vector<std::vector<sql::bytes>>& resultSet,
     Protocol* protocol,
     int32_t resultSetScrollType);
+  ~SelectResultSetCapi();
 
   bool isFullyLoaded() const;
 
@@ -379,6 +379,7 @@ public:
 protected:
   void setRowPointer(int32_t pointer);
 public:
+  void checkOut() override;
   std::size_t getDataSize();
   bool isBinaryEncoded();
   void cacheCompleteLocally();

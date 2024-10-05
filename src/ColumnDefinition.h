@@ -65,6 +65,8 @@ public:
   virtual bool isZeroFill() const=0;
   virtual bool isBinary() const=0;
   virtual bool isReadonly() const=0;
+  // In case of resultset caching we might need to make local copy of metadata, and it does not make sense to make copy by default. it seems.
+  virtual void makeLocalCopy()=0;
 };
 
 }

@@ -513,6 +513,7 @@ namespace sql
     stmt->setFetchSize(0);
     SelectResultSet* rs= dynamic_cast<SelectResultSet*>(stmt->executeQuery(sql));
     rs->setForceTableAlias();
+    rs->checkOut();
     rs->setStatement(nullptr);
     return rs;
   }

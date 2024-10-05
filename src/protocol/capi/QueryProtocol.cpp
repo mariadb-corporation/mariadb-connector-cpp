@@ -1678,9 +1678,9 @@ namespace capi
         }
       }
       // Not sure where we get status and more results there is and if it's available if we are streaming result
-      bool pendingReusults= hasMoreResults() || results->getFetchSize() > 0;
-      results->addResultSet(selectResultSet, pendingReusults);
-      if (pendingReusults) {
+      bool pendingResults= hasMoreResults() || results->getFetchSize() > 0;
+      results->addResultSet(selectResultSet, pendingResults);
+      if (pendingResults) {
         setActiveStreamingResult(results);
       }
 

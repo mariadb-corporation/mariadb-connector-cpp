@@ -31,12 +31,14 @@ class ColumnDefinition;
 
 class ColumnNameMap
 {
-  std::vector<Shared::ColumnDefinition> columnInfo;
+  std::vector<Shared::ColumnDefinition>* columnInfo;
   std::map<SQLString,int32_t>originalMap;
   std::map<SQLString,int32_t>aliasMap;
 
 public:
+  ColumnNameMap() : columnInfo(nullptr) {}
   ColumnNameMap(std::vector<Shared::ColumnDefinition>& columnInformations);
+  void init(std::vector<Shared::ColumnDefinition>& columnInformations);
   int32_t getIndex(const SQLString& name);
 };
 
