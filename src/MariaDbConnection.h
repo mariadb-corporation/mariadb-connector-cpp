@@ -21,6 +21,7 @@
 #ifndef _MARIADBCONNECTION_H_
 #define _MARIADBCONNECTION_H_
 
+#include <atomic>
 #include <mutex>
 
 #include "MariaDbStatement.h"
@@ -74,7 +75,7 @@ public:
   bool nullCatalogMeansCurrent;
 private:
   std::unique_ptr<CallableStatementCache> callableStatementCache;
-  volatile int32_t lowercaseTableNames= -1;
+  std::atomic<int32_t> lowercaseTableNames{-1};
   bool _canUseServerTimeout;
   bool sessionStateAware;
   int32_t stateFlag= 0 ;

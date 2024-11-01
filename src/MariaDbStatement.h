@@ -21,6 +21,7 @@
 #ifndef _MARIADBSTATEMENT_H_
 #define _MARIADBSTATEMENT_H_
 
+#include <atomic>
 #include <map>
 #include <mutex>
 
@@ -57,12 +58,12 @@ protected:
   bool canUseServerTimeout;
   Shared::ExceptionFactory exceptionFactory;
 
-  volatile bool closed= false;
+  std::atomic<bool> closed{false};
   int32_t queryTimeout= 0;
   int64_t maxRows= 0;
   Shared::Results results;
   int32_t fetchSize;
-  volatile bool executing= false;
+  std::atomic<bool> executing{false};
   sql::Ints batchRes;
   sql::Longs largeBatchRes;
 
