@@ -25,7 +25,7 @@ namespace sql
 {
 namespace mariadb
 {
-  Shared::Logger LoggerFactory::NO_LOGGER= (NO_LOGGER ? NO_LOGGER : Shared::Logger(new NoLogger()));
+  Shared::Logger LoggerFactory::NO_LOGGER;
   bool LoggerFactory::hasToLog= false;
 
   void LoggerFactory::init(bool mustLog)
