@@ -55,6 +55,7 @@ namespace capi
       capiConnHandle(capiConnHandle),
       dataSize(0),
       resultSetScrollType(results->getResultSetScrollType()),
+      columnNameMap(columnsInformation),
       eofDeprecated(eofDeprecated),
       lock(protocol->getLock()),
       forceAlias(false)
@@ -72,7 +73,6 @@ namespace capi
       resetVariables();
     }
     else {
-
       protocol->setActiveStreamingResult(results);
 
       protocol->removeHasMoreResults();
@@ -90,7 +90,7 @@ namespace capi
     }
     row.reset(new capi::TextRowProtocolCapi(results->getMaxFieldSize(), options, textNativeResults));
 
-    columnNameMap.reset(new ColumnNameMap(columnsInformation));
+    //columnNameMap.init(columnsInformation);
     columnInformationLength= static_cast<int32_t>(columnsInformation.size());
 
     if (streaming) {
@@ -126,19 +126,16 @@ namespace capi
       data(std::move(resultSet)),
       dataSize(data.size()),
       resultSetScrollType(resultSetScrollType),
-      columnNameMap(new ColumnNameMap(columnsInformation)),
+      columnNameMap(columnsInformation),
       eofDeprecated(false),
       lock(nullptr),
       forceAlias(false)
   {
     if (protocol != nullptr) {
       this->options= protocol->getOptions();
-      this->timeZone= protocol->getTimeZone();
-    }
-    else {
-      // this->timeZone= TimeZone.getDefault();
     }
   }
+
 
   SelectResultSetCapi::~SelectResultSetCapi()
   {
@@ -1120,7 +1117,7 @@ namespace capi
 
   /** {inheritDoc}. */
   int32_t SelectResultSetCapi::findColumn(const SQLString& columnLabel) const {
-    return columnNameMap->getIndex(columnLabel) + 1;
+    return columnNameMap.getIndex(columnLabel) + 1;
   }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
@@ -1909,12 +1906,14 @@ namespace capi
     rowPointer= pointer;
   }
 
+
   void SelectResultSetCapi::checkOut()
   {
     if (released && statement != nullptr && statement->getInternalResults()) {
       statement->getInternalResults()->checkOut(this);
     }
   }
+
 
   std::size_t SelectResultSetCapi::getDataSize() {
     return dataSize;

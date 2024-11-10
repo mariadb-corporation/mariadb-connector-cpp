@@ -79,7 +79,7 @@ namespace capi
 
     bool readOnly= false;
     FailoverProxy* proxy= nullptr;
-    volatile bool connected= false;
+    std::atomic<bool> connected{false};
     bool explicitClosed= false;
     SQLString database;
     int64_t serverThreadId= 0;

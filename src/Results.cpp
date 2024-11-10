@@ -270,9 +270,11 @@ namespace mariadb
     cmdInformation->addResultSetStat();
   }
 
+
   CmdInformation* Results::getCmdInformation(){
     return cmdInformation.get();
   }
+
 
   void Results::setCmdInformation(CmdInformation* _cmdInformation){
     cmdInformation.reset(_cmdInformation);
@@ -306,7 +308,7 @@ namespace mariadb
   }
 
 
-  SelectResultSet* Results::getResultSet(){
+  SelectResultSet* Results::getResultSet() {
     return currentRs ? currentRs.get() : resultSet;
   }
 

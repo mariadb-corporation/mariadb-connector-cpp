@@ -288,7 +288,7 @@ static void test_connection_0(std::unique_ptr<sql::Connection> & conn)
 
     ensure("connection is closed", !conn->isClosed());
 
-    sprintf(buff, "KILL %d", rset1->getInt(1));
+    snprintf(buff, sizeof(buff), "KILL %d", rset1->getInt(1));
 
     try {
       stmt1->execute(buff);

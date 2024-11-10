@@ -1,5 +1,5 @@
 # ************************************************************************************
-#   Copyright (C) 2013,2023 MariaDB Corporation AB
+#   Copyright (C) 2013,2024 MariaDB Corporation AB
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Library General Public
@@ -654,6 +654,7 @@ ENDIF()
 
 TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${MARIADB_CLIENT_TARGET_NAME} ${PLATFORM_DEPENDENCIES})
 TARGET_LINK_LIBRARIES(${STATIC_LIBRARY_NAME} mariadbclient)
+
 
 # MINGW Specific includes and linking
 IF(MINGW)

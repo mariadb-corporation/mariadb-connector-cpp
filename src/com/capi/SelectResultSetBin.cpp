@@ -1950,7 +1950,6 @@ namespace capi
       for (auto& colInfo : columnsInformation) {
         colInfo->makeLocalCopy();
       }
-      columnNameMap->changeColumnInfo(columnsInformation);
       rowPointer= preservedPosition;
     }
   // else it is already cached in case of Text protocol

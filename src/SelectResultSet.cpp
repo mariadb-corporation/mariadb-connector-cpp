@@ -175,9 +175,11 @@ namespace mariadb
     return create(columns, data, protocol, TYPE_SCROLL_SENSITIVE);
   }
 
+
   SelectResultSet::~SelectResultSet()
   {
   }
+
 
   ResultSet* SelectResultSet::release()
   {

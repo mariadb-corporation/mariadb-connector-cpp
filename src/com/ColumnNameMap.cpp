@@ -29,9 +29,13 @@ namespace mariadb
 {
 
   ColumnNameMap::ColumnNameMap(std::vector<Shared::ColumnDefinition>& columnInformations)
-    : columnInfo(columnInformations)
+    : columnInfo(&columnInformations)
   {}
 
+  void ColumnNameMap::init(std::vector<Shared::ColumnDefinition>& columnInformations)
+  {
+    columnInfo= &columnInformations;
+  }
   /**
     * Get column index by name.
     *
@@ -39,7 +43,7 @@ namespace mariadb
     * @return index.
     * @throws SQLException if no column info exists, or column is unknown
     */
-  int32_t ColumnNameMap::getIndex(const SQLString& name)
+  int32_t ColumnNameMap::getIndex(const SQLString& name) const
   {
     if (name.empty() == true) {
       throw SQLException("Column name cannot be empty");
@@ -52,7 +56,7 @@ namespace mariadb
     {
       int32_t counter= 0;
 
-      for (auto& ci : columnInfo)
+      for (auto& ci : *columnInfo)
       {
         SQLString columnAlias(ci->getName());
         if (!columnAlias.empty())
@@ -87,7 +91,7 @@ namespace mariadb
     if (originalMap.empty())
     {
       int32_t counter= 0;
-      for (auto& ci : columnInfo)
+      for (auto& ci : *columnInfo)
       {
         SQLString columnRealName(ci->getOriginalName());
 
@@ -120,14 +124,6 @@ namespace mariadb
       throw IllegalArgumentException("No such column: " + name, "42S22", 1054);
     }
     return cit->second;
-  }
-
-  void ColumnNameMap::changeColumnInfo(std::vector<Shared::ColumnDefinition>& columnInformation)
-  {
-    // Vectors should be the same size. we change it only if we make local copy of data and metadata.
-    for (std::size_t i= 0; i < columnInformation.size(); ++i) {
-      columnInfo[i]= columnInformation[i];
-    }
   }
 
 }

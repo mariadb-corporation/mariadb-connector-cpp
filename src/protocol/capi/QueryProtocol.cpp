@@ -329,7 +329,7 @@ namespace capi
       return true;
     }
 
-    if (options->useBatchMultiSend) {
+    if (options->continueBatchOnError) {//options->useBatchMultiSend) {
       executeBatchMulti(results, prepareResult, parametersList);
       return true;
     }
@@ -498,14 +498,31 @@ namespace capi
     initializeBatchReader();
 
     SQLString sql;
+    bool autoCommit= getAutocommit();
+
+    if (autoCommit) {
+      capi::mysql_send_query(connection.get(), "SET AUTOCOMMIT=0", static_cast<unsigned long>(sizeof("SET AUTOCOMMIT=0")));
+    }
 
     for (auto& parameters : parametersList)
     {
       sql.clear();
 
       assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, -1);
-      realQuery(sql);
+      capi::mysql_send_query(connection.get(), sql.c_str(), static_cast<unsigned long>(sql.length()));
+    }
+    if (autoCommit) {
+      capi::mysql_send_query(connection.get(), "SET AUTOCOMMIT=1", static_cast<unsigned long>(sizeof("SET AUTOCOMMIT=0")));
+      // Getting result for setting autocommit off - we don't need it
+      capi::mysql_read_query_result(connection.get());
+    }
+    for (std::size_t i= 0; i < parametersList.size(); ++i) {
+      capi::mysql_read_query_result(connection.get());
       getResult(results);
+    }
+    if (autoCommit) {
+      // Getting result for setting autocommit back on to clear the connection
+      capi::mysql_read_query_result(connection.get());
     }
   }
 

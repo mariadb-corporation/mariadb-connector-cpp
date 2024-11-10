@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2023 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -108,7 +108,7 @@ namespace mariadb
   {
     // We need to close associated resultset(the last one, previous should be closed once next result is requested)
     if (results) {
-      results->loadFully(true, protocol.get()); //?
+      results->loadFully(true, protocol.get());
       results->close();
     }
   }
@@ -154,7 +154,7 @@ namespace mariadb
   void MariaDbStatement::executeQueryPrologue(bool isBatch) {
     setExecutingFlag();
     if (closed) {
-      logger->trace("Query Prolog:", std::hex, this, "Closed: ", closed, "Connection:", connection, "Protocol:", protocol.get(), "Closed: ", protocol ? protocol->isClosed(): true);
+      logger->trace("Query Prolog:", std::hex, this, "Closed: ", true, "Connection:", connection, "Protocol:", protocol.get(), "Closed: ", protocol ? protocol->isClosed(): true);
       if (connection) {
         logger->trace("QP: Connection closed: ", connection->isClosed());
       }

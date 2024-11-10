@@ -33,7 +33,6 @@
 
 #include "ResultSet.hpp"
 #include "ColumnType.h"
-//#include "ColumnNameMap.h"
 #include "io/StandardPacketInputStream.h"
 
 #include "jdbccompat.hpp"

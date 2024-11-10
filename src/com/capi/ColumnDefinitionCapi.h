@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -35,19 +35,28 @@ namespace capi
 
 #include "mysql.h"
 
+// Small helper not to keep all those objects in ColumnDefinition object by default and to create copy of names in MYSQL_FIELD for deep copy
+struct FieldNames
+{
+  std::string name, table, orgname, orgtable, db;
+
+  FieldNames(MYSQL_FIELD *metadata);
+};
+
+
 class ColumnDefinitionCapi : public sql::mariadb::ColumnDefinition
 {
   static uint8_t maxCharlen[];
   MYSQL_FIELD* metadata;
-  /** Fow "hand-made" RS we need to take care of freeing memory, while for "natural" MYSQL_FIELD
+  /** For "hand-made" RS we need to take care of freeing memory, while for "natural" MYSQL_FIELD
     we have to use pointer to C/C structures(to automatically get max_length when it's calculated -
     that happens later, than the object is created).
-    It has to be shared since we have copy-copyconstructor(not sure why we have it)
+    It has to be shared since we have copy-copyconstructor(TODO: not sure why we have it)
   */
   std::shared_ptr<MYSQL_FIELD> owned;
   const ColumnType& type;
   uint32_t length;
-  std::string name, table, orgname, orgtable, db;
+  std::unique_ptr<FieldNames> names;
   //SQLString db;
 
 public:

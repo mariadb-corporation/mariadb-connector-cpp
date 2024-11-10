@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -85,7 +85,7 @@ public:
   SQLString getInternalTimeString(ColumnDefinition* columnInfo);
 
   bool isBinaryEncoded();
-  void cacheCurrentRow(std::vector<sql::bytes>& rowDataCache, std::size_t columnCount);
+  void cacheCurrentRow(std::vector<sql::bytes>& rowDataCache, std::size_t columnCount) override;
   };
 
 }
