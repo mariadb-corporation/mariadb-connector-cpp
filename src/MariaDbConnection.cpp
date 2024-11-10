@@ -735,7 +735,7 @@ namespace mariadb
     if (stmt)
     {
       stateFlag|= ConnectionState::STATE_AUTOCOMMIT;
-      stmt->executeUpdate(SQLString("set autocommit=").append((autoCommit) ? '1' : '0'));
+      stmt->executeUpdate(SQLString("SET AUTOCOMMIT=").append((autoCommit) ? '1' : '0'));
     }
   }
 
@@ -1727,7 +1727,7 @@ namespace mariadb
       throw SQLException("The catalog name may not be empty", "XAE05");
     }
     try {
-      stateFlag |= ConnectionState::STATE_DATABASE;
+      stateFlag|= ConnectionState::STATE_DATABASE;
       protocol->setCatalog(schema);
     }
     catch (SQLException &e) {

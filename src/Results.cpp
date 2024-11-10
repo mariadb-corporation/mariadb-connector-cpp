@@ -333,7 +333,7 @@ namespace mariadb
   void Results::loadFully(bool skip, Protocol* protocol) {
 
     // Only very last of already loaded resultsets might need fetching of remaining rows or caching on our side
-    // (i.e. making copy of datat that is already cached on C/C side)
+    // (i.e. making copy of data that is already cached on C/C side)
     SelectResultSet* rs= executionResults.empty() ? currentRs.get() : executionResults.back().get();
     if (rs == nullptr) {
       rs= resultSet;

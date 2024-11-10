@@ -65,7 +65,7 @@ void preparedstatement::setUp()
   }
   catch (sql::SQLException& sqle)
   {
-    logErr(String("Couldn't get connection") + sqle.what());
+    logErr(String("Couldn't get connection: ") + sqle.what());
     throw sqle;
   }
 

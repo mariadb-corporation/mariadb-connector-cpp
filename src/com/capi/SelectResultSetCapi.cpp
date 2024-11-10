@@ -1909,7 +1909,7 @@ namespace capi
     rowPointer= pointer;
   }
 
-  void sql::mariadb::capi::SelectResultSetCapi::checkOut()
+  void SelectResultSetCapi::checkOut()
   {
     if (released && statement != nullptr && statement->getInternalResults()) {
       statement->getInternalResults()->checkOut(this);

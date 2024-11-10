@@ -44,7 +44,7 @@ class ParameterHolder;
 class ServerPrepareResult  : public PrepareResult {
 
   std::vector<Shared::ColumnDefinition> columns;
-  std::vector<Shared::ColumnDefinition> parameters; // atm it's always containempty elements and only used for parameters number
+  std::vector<Shared::ColumnDefinition> parameters; // atm it always contains empty elements and only used for parameters number
   const SQLString sql;
   capi::MYSQL_STMT* statementId;
   std::unique_ptr<capi::MYSQL_RES, decltype(&capi::mysql_free_result)> metadata;

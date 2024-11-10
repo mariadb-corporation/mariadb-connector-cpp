@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2024 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -728,7 +729,7 @@ void BaseTestFixture::setUp()
   }
   catch (sql::SQLException & sqle)
   {
-    logErr(String("Couldn't get connection") + sqle.what());
+    logErr(String("Couldn't get connection: ") + sqle.what());
     throw sqle;
   }
 
