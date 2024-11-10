@@ -1421,6 +1421,8 @@ namespace capi
     return "";
   }
 
+  /* Unsynced execution of a query. Indtended for internal purposes.
+     Process error and throws execution with error info */
   void ConnectProtocol::realQuery(const SQLString& sql)
   {
     if (capi::mysql_real_query(connection.get(), sql.c_str(), static_cast<unsigned long>(sql.length()))) {

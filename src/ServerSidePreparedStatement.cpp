@@ -282,51 +282,50 @@ namespace sql
 
       SQLException exception("");
       bool exceptionSet= false;
-      if (stmt->getQueryTimeout() > 0)
+      bool autoCommit= protocol->getAutocommit();
+      bool queryTimeout= stmt->getQueryTimeout() > 0;
+      auto& results= stmt->getInternalResults();
+      auto pr= serverPrepareResult.get();
+
+      if (autoCommit) {
+        protocol->executeQuery("SET AUTOCOMMIT=0");
+      }
+      //protocol->executeQuery("LOCK TABLE <parse query for table name> WRITE")
+      for (int32_t counter= 0; counter < queryParameterSize; counter++)
       {
-        for (int32_t counter= 0; counter < queryParameterSize; counter++)
-        {
-          // TODO: verify if paramsets are guaranteed to exist at this point for all queryParameterSize
-          std::vector<Shared::ParameterHolder>& parameterHolder= queryParameters[counter];
-          try {
+        // TODO: verify if paramsets are guaranteed to exist at this point for all queryParameterSize
+        std::vector<Shared::ParameterHolder>& parameterHolder= queryParameters[counter];
+        try {
+          if (queryTimeout) {
             protocol->stopIfInterrupted();
-            protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults(), parameterHolder);
           }
-          catch (SQLException& queryException)
+          protocol->executePreparedQuery(mustExecuteOnMaster, pr, results, parameterHolder);
+        }
+        catch (SQLException& queryException)
+        {
+          if (protocol->getOptions()->continueBatchOnError
+            && protocol->isConnected()
+            && !protocol->isInterrupted())
           {
-            if (protocol->getOptions()->continueBatchOnError
-              && protocol->isConnected()
-              &&!protocol->isInterrupted())
-            {
-              if (exceptionSet) {
-                exception= queryException;
-                exceptionSet= true;
-              }
+            if (exceptionSet) {
+              exception= queryException;
+              exceptionSet= true;
             }
-            else {
-              throw queryException;
+          }
+          else {
+            if (autoCommit) {
+              // If we had autocommit on, we have to commit everything up to the point. Otherwise that's up to the application
+              protocol->executeQuery("COMMIT");// connection->commit() tries to acquire lock, and our lock is not re-entrant;
+              protocol->executeQuery("SET AUTOCOMMIT=1");
             }
+            throw queryException;
           }
         }
       }
-      else {
-        for (int32_t counter= 0; counter < queryParameterSize; counter++) {
-          std::vector<Shared::ParameterHolder>& parameterHolder= queryParameters[counter];
-          try {
-            protocol->executePreparedQuery(
-              mustExecuteOnMaster, serverPrepareResult.get(), stmt->getInternalResults(), parameterHolder);
-          }
-          catch (SQLException& queryException) {
-            if (protocol->getOptions()->continueBatchOnError) {
-              if (!exceptionSet) {
-                exception= queryException;
-              }
-            }
-            else {
-              throw queryException;
-            }
-          }
-        }
+      if (autoCommit) {
+        // If we had autocommit on, we have to commit everything up to the point. Otherwise that's up to the application
+        protocol->executeQuery("COMMIT");
+        protocol->executeQuery("SET AUTOCOMMIT=1");
       }
       if (exceptionSet) {
         throw exception;

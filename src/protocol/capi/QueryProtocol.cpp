@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2024 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -110,7 +110,6 @@ namespace capi
 
   void QueryProtocol::executeQuery(bool /*mustExecuteOnMaster*/, Shared::Results& results, const SQLString& sql)
   {
-
     cmdPrologue();
     try {
 
@@ -313,8 +312,7 @@ namespace capi
       return true;
     }
 
-    if (options->useBatchMultiSend){
-
+    if (options->continueBatchOnError) {//options->useBatchMultiSend) {
       executeBatchMulti(results, prepareResult, parametersList);
       return true;
     }
@@ -487,19 +485,35 @@ namespace capi
       std::vector<std::vector<Shared::ParameterHolder>>& parametersList)
 
   {
-
     cmdPrologue();
     initializeBatchReader();
 
     SQLString sql;
+    bool autoCommit= getAutocommit();
+
+    if (autoCommit) {
+      capi::mysql_send_query(connection.get(), "SET AUTOCOMMIT=0", static_cast<unsigned long>(sizeof("SET AUTOCOMMIT=0")));
+    }
 
     for (auto& parameters : parametersList)
     {
       sql.clear();
 
       assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, -1);
-      realQuery(sql);
+      capi::mysql_send_query(connection.get(), sql.c_str(), static_cast<unsigned long>(sql.length()));
+    }
+    if (autoCommit) {
+      capi::mysql_send_query(connection.get(), "SET AUTOCOMMIT=1", static_cast<unsigned long>(sizeof("SET AUTOCOMMIT=0")));
+      // Getting result for setting autocommit off - we don't need it
+      capi::mysql_read_query_result(connection.get());
+    }
+    for (std::size_t i= 0; i < parametersList.size(); ++i) {
+      capi::mysql_read_query_result(connection.get());
       getResult(results.get());
+    }
+    if (autoCommit) {
+      // Getting result for setting autocommit back on to clear the connection
+      capi::mysql_read_query_result(connection.get());
     }
   }
 
