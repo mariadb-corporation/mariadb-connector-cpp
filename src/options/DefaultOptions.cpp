@@ -555,7 +555,7 @@ namespace sql
         "possible(batch without Statement::RETURN_GENERATED_KEYS and streams). Can be significanlty faster."
         "(works only with server MariaDB >= 10.2.7)",
         false,
-        false}},
+        true}},
       {
         "autocommit", {"autocommit",
         "0.9.1",
