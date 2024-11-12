@@ -45,14 +45,6 @@ namespace classes
 {
 void preparedstatement::setUp()
 {
-  sql::SQLString sspsOptionValue;
-  sql::Properties::iterator useServerPrepStmts= commonProperties.find("useServerPrepStmts");
-  bool hadOption= useServerPrepStmts != commonProperties.end();
-
-  if (hadOption) {
-    sspsOptionValue= useServerPrepStmts->second;
-  }
-
   commonProperties["useServerPrepStmts"]= "false";
   super::setUp();
 
@@ -1843,6 +1835,14 @@ void preparedstatement::executeQuery()
 
 void preparedstatement::addBatch()
 {
+  sql::ConnectOptionsMap connection_properties{{"userName", user},
+                                               {"password", passwd},
+                                               {"useBulkStmts", "false"},
+                                               {"useTls", useTls ? "true" : "false"}};
+
+  con.reset(driver->connect(url, connection_properties));
+  stmt.reset(con->createStatement());
+
   stmt->executeUpdate("DROP TABLE IF EXISTS testAddBatchPs");
   stmt->executeUpdate("CREATE TABLE testAddBatchPs "
     "(id int not NULL)");
@@ -1855,7 +1855,7 @@ void preparedstatement::addBatch()
   pstmt->setInt(1, 3);
   pstmt->addBatch();
 
-  const sql::Ints& batchRes = pstmt->executeBatch();
+  const sql::Ints& batchRes= pstmt->executeBatch();
 
   res.reset(stmt->executeQuery("SELECT MIN(id), MAX(id), SUM(id), count(*) FROM testAddBatchPs"));
 
@@ -1996,7 +1996,12 @@ void preparedstatement::bugConcpp96()
  */
 void preparedstatement::concpp99_batchRewrite()
 {
-  sql::ConnectOptionsMap connection_properties{{"userName", user}, {"password", passwd}, {"rewriteBatchedStatements", "true"}, {"useTls", useTls ? "true" : "false"}};
+  sql::ConnectOptionsMap connection_properties{
+    {"userName", user},
+    {"password", passwd},
+    {"useBulkStmts", "false"},
+    {"rewriteBatchedStatements", "true"},
+    {"useTls", useTls ? "true" : "false"}};
 
   con.reset(driver->connect(url, connection_properties));
   stmt.reset(con->createStatement());
@@ -2011,15 +2016,11 @@ void preparedstatement::concpp99_batchRewrite()
 
   for (std::size_t i= 0; i < sizeof(insertQuery) / sizeof(insertQuery[0]); ++i) {
     pstmt.reset(con->prepareStatement(insertQuery[i]));
-    //ssps.reset(sspsCon->prepareStatement(insertQuery[i]));
 
     for (size_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row]);
       pstmt->setString(2, val[i][row]);
       pstmt->addBatch();
-      /*ssps->setInt(1, id[row]);
-      ssps->setString(2, val[0][row]);
-      ssps->addBatch();*/
     }
 
     const sql::Ints& batchRes = pstmt->executeBatch();
