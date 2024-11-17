@@ -280,53 +280,10 @@ namespace mariadb
         protocol->getAutoIncrementIncrement(),
         nullptr,
         dummy));
-    if (protocol->executeBatchClient(
-      protocol->isMasterConnection(), stmt->getInternalResults(), prepareResult.get(), parameterList, hasLongData)) {
-      return;
-    }
 
-    // send query one by one, reading results for each query before sending another one
-    SQLException exception("");
-    bool autoCommit= protocol->getAutocommit();
-    bool queryTimeout= stmt->queryTimeout > 0, isMaster= protocol->isMasterConnection();
-    auto& results= stmt->getInternalResults();
-    auto pr= prepareResult.get();
-    
-    if (autoCommit) {
-      connection->setAutoCommit(false);
-    }
-    //protocol->executeQuery("LOCK TABLE <parse query for table name> WRITE")
-    for (auto& it: parameterList) {
-      try {
-        if (queryTimeout) {
-          protocol->stopIfInterrupted();
-        }
-        protocol->executeQuery(isMaster, results, pr, it);
-      }
-      catch (SQLException& e) {
-        if (stmt->options->continueBatchOnError) {
-          exception= e;
-        }
-        else {
-          if (autoCommit) {
-            // If we had autocommit on, we have to commit everything up to the point. Otherwise that's up to the application
-            connection->commit();
-            connection->setAutoCommit(true);
-          }
-          throw e;
-        }
-      }
-    }
-    if (autoCommit) {
-      // If we had autocommit on, we have to commit everything up to the point. Otherwise that's up to the application
-      connection->commit();
-      connection->setAutoCommit(true);
-    }
-    /* We creating default exception w/out message.
-       Using that to test if we caught an exception during the execution */
-    if (*exception.getMessage() != '\0') {
-      throw exception;
-    }
+    protocol->executeBatchClient(protocol->isMasterConnection(), stmt->getInternalResults(),
+      prepareResult.get(), parameterList, hasLongData);
+    return;
   }
 
   /**

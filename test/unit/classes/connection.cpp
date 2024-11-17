@@ -1947,9 +1947,9 @@ void connection::connectOptReconnect()
 {
   logMsg("connection::connectOptReconnect - OPT_RECONNECT");
   std::stringstream msg;
-    if (std::getenv("MAXSCALE_TEST_DISABLE") != nullptr) {
-        printf("# <<<<  canceled for maxscale \n# ");
-        return void();
+    if (isMaxScale()) {
+      printf("# <<<<  canceled for maxscale \n# ");
+      return void();
     }
 
   try
@@ -2815,7 +2815,7 @@ void connection::setDefaultAuth()
     catch (sql::SQLException &e)
     {
       /* With maxscale that happens to be 1105, and does not make sense to test it */
-      if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+      if (!isMaxScale()) {
         /* Error expected as trying to load unknown authentication plugin */
         ASSERT_EQUALS(2059, e.getErrorCode()/*CR_AUTH_PLUGIN_CANNOT_LOAD_ERROR*/);
       }

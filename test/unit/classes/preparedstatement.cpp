@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2023 MariaDB Corporation AB
+ *               2020, 2024 MariaDB Corporation AB
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -1835,9 +1835,7 @@ void preparedstatement::executeQuery()
 
 void preparedstatement::addBatch()
 {
-  stmt->executeUpdate("DROP TABLE IF EXISTS testAddBatchPs");
-  stmt->executeUpdate("CREATE TABLE testAddBatchPs "
-    "(id int not NULL)");
+  createSchemaObject("TABLE", "testAddBatchPs", "(id int not NULL)");
 
   pstmt.reset(con->prepareStatement("INSERT INTO testAddBatchPs VALUES(?)"));
   pstmt->setInt(1, 1);
@@ -1848,7 +1846,9 @@ void preparedstatement::addBatch()
   pstmt->addBatch();
 
   const sql::Ints& batchRes = pstmt->executeBatch();
-
+  // Checking results in other connection since connector may turn autocommit off and we have to be sure
+  // that it still commits the batch
+  stmt.reset(sspsCon->createStatement());
   res.reset(stmt->executeQuery("SELECT MIN(id), MAX(id), SUM(id), count(*) FROM testAddBatchPs"));
 
   ASSERT(res->next());
@@ -1889,8 +1889,6 @@ void preparedstatement::addBatch()
   ASSERT_EQUALS(1LL, batchLRes[0]);
   ASSERT_EQUALS(1LL, batchLRes[1]);
   ASSERT_EQUALS(1LL, batchLRes[2]);
-
-  stmt->executeUpdate("DROP TABLE testAddBatchPs");
 }
 
 /* Connector wasn't precise enough with double numbers operations and could lose significant digits */
@@ -1952,7 +1950,8 @@ void preparedstatement::concpp99_batchRewrite()
   sql::ConnectOptionsMap connection_properties{{"userName", user}, {"password", passwd}, {"rewriteBatchedStatements", "true"}, {"useTls", useTls ? "true" : "false"}};
 
   con.reset(driver->connect(url, connection_properties));
-  stmt.reset(con->createStatement());
+  // Reading results must be on the different connection to ensure that the driver commits the batch
+  stmt.reset(sspsCon->createStatement());
   createSchemaObject("TABLE", "concpp99_batchRewrite", "(id int not NULL PRIMARY KEY, val VARCHAR(31) NOT NULL DEFAULT '')");
 
   const sql::SQLString insertQuery[]{"INSERT INTO concpp99_batchRewrite VALUES(?,?)",
@@ -1964,15 +1963,11 @@ void preparedstatement::concpp99_batchRewrite()
 
   for (std::size_t i= 0; i < sizeof(insertQuery) / sizeof(insertQuery[0]); ++i) {
     pstmt.reset(con->prepareStatement(insertQuery[i]));
-    //ssps.reset(sspsCon->prepareStatement(insertQuery[i]));
 
     for (size_t row = 0; row < sizeof(id) / sizeof(id[0]); ++row) {
       pstmt->setInt(1, id[row]);
       pstmt->setString(2, val[i][row]);
       pstmt->addBatch();
-      /*ssps->setInt(1, id[row]);
-      ssps->setString(2, val[0][row]);
-      ssps->addBatch();*/
     }
 
     const sql::Ints& batchRes = pstmt->executeBatch();
@@ -1990,7 +1985,6 @@ void preparedstatement::concpp99_batchRewrite()
     ASSERT(!res->next());
     ////// The same, but for executeLargeBatch
     stmt->executeUpdate(deleteQuery);
-    //const sql::Ints& batchRes2= ssps->executeBatch();
 
     pstmt->clearBatch();
     pstmt->clearParameters();
@@ -2026,7 +2020,8 @@ void preparedstatement::concpp106_batchBulk()
   sql::ConnectOptionsMap connection_properties{ {"userName", user}, {"password", passwd}, {"useBulkStmts", "true"}, {"useTls", useTls ? "true" : "false"} };
 
   con.reset(driver->connect(url, connection_properties));
-  stmt.reset(con->createStatement());
+  // Reading results must be on the different connection to ensure that the driver commits the batch
+  stmt.reset(sspsCon->createStatement());
   createSchemaObject("TABLE", "concpp106_batchBulk", "(id int not NULL PRIMARY KEY, val VARCHAR(31))");
 
   const sql::SQLString insertQuery[]{ "INSERT INTO concpp106_batchBulk VALUES(?,?)",
@@ -2050,9 +2045,6 @@ void preparedstatement::concpp106_batchBulk()
         pstmt->setNull(2, sql::Types::VARCHAR);
       }
       pstmt->addBatch();
-      /*ssps->setInt(1, id[row]);
-      ssps->setString(2, val[0][row]);
-      ssps->addBatch();*/
     }
 
     logMsg("Executing batch");

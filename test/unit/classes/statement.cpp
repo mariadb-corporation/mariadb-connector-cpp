@@ -252,7 +252,7 @@ void statement::callSP()
     ASSERT(stmt->execute("SELECT @version AS _version"));
     res.reset(stmt->getResultSet());
     ASSERT(res->next());
-    if (std::getenv("MAXSCALE_TEST_DISABLE") == nullptr) {
+    if (!isMaxScale()) {
       ASSERT_EQUALS(dbmeta->getDatabaseProductVersion(), res->getString("_version"));
     }
 
@@ -628,7 +628,9 @@ void statement::queryTimeout()
 
 void statement::addBatch()
 {
-  Statement st2(con->createStatement());
+  // Have to test results in separate conenction as connector may turn auto commit off
+  Connection con2(getConnection());
+  Statement st2(con2->createStatement());
   createSchemaObject("TABLE", "testAddBatch", "(id int not NULL)");
   
   stmt->addBatch("INSERT INTO testAddBatch VALUES(1)");
