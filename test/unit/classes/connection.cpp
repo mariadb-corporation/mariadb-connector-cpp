@@ -2142,9 +2142,7 @@ void connection::setTransactionIsolation()
   bool have_innodb=false;
   int cant_be_changed_error= -1;
   int server_dependent_insert= -1;
-  if (std::getenv("srv") != nullptr && strcmp(std::getenv("srv"), "mysql") == 0) {
-    SKIP("Skipping test for mysql since doesn't use tx_isolation");
-  }
+  sql::SQLString query(isMySQL() ? "SHOW VARIABLES LIKE 'transaction_isolation'" : "SHOW VARIABLES LIKE 'tx_isolation'");
 
   stmt.reset(con->createStatement());
   try
@@ -2152,26 +2150,26 @@ void connection::setTransactionIsolation()
     con->setTransactionIsolation(sql::TRANSACTION_READ_COMMITTED);
     ASSERT_EQUALS(sql::TRANSACTION_READ_COMMITTED, con->getTransactionIsolation());
     // Should this be transaction_isolation with MySQL servers?
-    res.reset(stmt->executeQuery("SHOW VARIABLES LIKE 'tx_isolation'"));
+    res.reset(stmt->executeQuery(query));
     checkResultSetScrolling(res);
     res->next();
     ASSERT_EQUALS("READ-COMMITTED", res->getString("Value"));
 
     con->setTransactionIsolation(sql::TRANSACTION_READ_UNCOMMITTED);
     ASSERT_EQUALS(sql::TRANSACTION_READ_UNCOMMITTED, con->getTransactionIsolation());
-    res.reset(stmt->executeQuery("SHOW VARIABLES LIKE 'tx_isolation'"));
+    res.reset(stmt->executeQuery(query));
     res->next();
     ASSERT_EQUALS("READ-UNCOMMITTED", res->getString("Value"));
 
     con->setTransactionIsolation(sql::TRANSACTION_REPEATABLE_READ);
     ASSERT_EQUALS(sql::TRANSACTION_REPEATABLE_READ, con->getTransactionIsolation());
-    res.reset(stmt->executeQuery("SHOW VARIABLES LIKE 'tx_isolation'"));
+    res.reset(stmt->executeQuery(query));
     res->next();
     ASSERT_EQUALS("REPEATABLE-READ", res->getString("Value"));
 
     con->setTransactionIsolation(sql::TRANSACTION_SERIALIZABLE);
     ASSERT_EQUALS(sql::TRANSACTION_SERIALIZABLE, con->getTransactionIsolation());
-    res.reset(stmt->executeQuery("SHOW VARIABLES LIKE 'tx_isolation'"));
+    res.reset(stmt->executeQuery(query));
     res->next();
     ASSERT_EQUALS("SERIALIZABLE", res->getString("Value"));
   }
@@ -3163,16 +3161,14 @@ void connection::tls_version()
 
 void connection::cached_sha2_auth()
 {
-
   logMsg("connection::auth - MYSQL_OPT_GET_SERVER_PUBLIC_KEY");
 
-  int serverVersion= getServerVersion(con);
-  if (serverVersion < 800000 || serverVersion > 1000000)
+  if (!isMySQL())
   {
     SKIP("Server doesn't support caching_sha2_password");
     return;
   }
-
+  SKIP("This version does not support caching_sha2_password");
   try {
     stmt->execute("DROP USER 'doomuser'@'%';");
   } catch (...) {}

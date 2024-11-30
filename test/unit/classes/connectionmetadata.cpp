@@ -1221,7 +1221,7 @@ void connectionmetadata::getIndexInfo()
       ASSERT_EQUALS(false, res->getBoolean("NON_UNIQUE"));
       ASSERT(res->next());
       ASSERT_EQUALS("idx_col4_col5", res->getString("INDEX_NAME"));
-      ASSERT_EQUALS((("MariaDB" != dbmeta->getDatabaseProductName() && getServerVersion(con) > 800000) || getServerVersion(con) > 1008000) ? "D" : "A", res->getString("ASC_OR_DESC"));
+      ASSERT_EQUALS(((isMySQL() && getServerVersion(con) > 800000) || getServerVersion(con) > 1008000) ? "D" : "A", res->getString("ASC_OR_DESC"));
       ASSERT_EQUALS("col5", res->getString("COLUMN_NAME"));
       ASSERT_EQUALS(true, res->getBoolean("NON_UNIQUE"));
       ASSERT(res->next());

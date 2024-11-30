@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2024 MariaDB Corporation AB
+ *               2020, 2024 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -156,6 +156,9 @@ void preparedstatement::InsertSelectAllTypes()
       {
       }
 
+      if (pstmt->getResultSetType() == sql::ResultSet::TYPE_FORWARD_ONLY) {
+        continue;
+      }
       res->beforeFirst();
       try
       {
@@ -528,7 +531,6 @@ void preparedstatement::assortedSetType()
 
   try
   {
-
     for (it=columns.end(), it--; it != columns.begin(); it--)
     {
       stmt->execute("DROP TABLE IF EXISTS test");
@@ -570,7 +572,6 @@ void preparedstatement::assortedSetType()
         ASSERT_EQUALS(1, pstmt->executeUpdate());
       }
       
-
       pstmt->clearParameters();
       try
       {
@@ -612,9 +613,25 @@ void preparedstatement::assortedSetType()
       }
 
       pstmt->clearParameters();
-      // enum won't accept 0 as a value
+      // enum won't accept 0 as a value. Same for TIMESTAMP on MySQL
       pstmt->setBoolean(1, it->name.compare("ENUM") == 0);
-      ASSERT_EQUALS(1, pstmt->executeUpdate());
+      try
+      {
+        ASSERT_EQUALS(1, pstmt->executeUpdate());
+      }
+      catch (sql::SQLException& e)
+      {
+        if (isMySQL() && (it->name.compare("TIMESTAMP") == 0 ||
+                          it->name.compare("DATETIME") == 0  ||
+                          it->name.compare("DATE") == 0))
+        {
+          ASSERT_EQUALS("22007", e.getSQLState());
+        }
+        else
+        {
+          TEST_THROW(sql::SQLException, e);
+        }
+      }
 
       pstmt->clearParameters();
       try
@@ -2065,8 +2082,9 @@ void preparedstatement::concpp106_batchBulk()
       else {
         ASSERT_EQUALS(val_expected[i][row], res->getString(2));
       }
-      // With rewriteBatchedStatements we don't have separate results for each parameters set - only SUCCESS_NO_INFO
-      ASSERT_EQUALS(batchResult[i], batchRes[row]);
+      // With bulk we don't have separate results for each parameters set - only SUCCESS_NO_INFO.
+      // Unless with mysql where it is not supported
+      ASSERT_EQUALS(isMySQL() ? 1 : batchResult[i], batchRes[row]);
     }
     ASSERT(!res->next());
     ////// The same, but for executeLargeBatch
@@ -2104,7 +2122,7 @@ void preparedstatement::concpp106_batchBulk()
         ASSERT_EQUALS(val_expected[i][row], res->getString(2));
       }
       // With rewriteBatchedStatements we don't have separate results for each parameters set - only SUCCESS_NO_INFO
-      ASSERT_EQUALS(static_cast<int64_t>(batchResult[i]), batchLRes[row]);
+      ASSERT_EQUALS(isMySQL() ? 1LL : static_cast<int64_t>(batchResult[i]), batchLRes[row]);
     }
     ASSERT(!res->next());
     stmt->executeUpdate(deleteQuery);
@@ -2149,7 +2167,7 @@ void preparedstatement::concpp116_getByte()
   ASSERT_EQUALS(2177LL, res->getLong(4));
 }
 
-
+/* CONCPP - 133 */
 void preparedstatement::multirs_caching()
 {
   //SKIP("This is not working and won't be fixed in this version");
@@ -2185,7 +2203,7 @@ void preparedstatement::multirs_caching()
   ASSERT_EQUALS(100, res->getInt(1));
   ASSERT(!res->next());
   ASSERT(!stmt->getMoreResults());
-  ASSERT(stmt->getUpdateCount() == -1);
+  ASSERT_EQUALS(-1, stmt->getUpdateCount());
   /* Getting back to 1st query */
   ASSERT(pstmt1->getMoreResults());
   res1.reset(pstmt1->getResultSet());

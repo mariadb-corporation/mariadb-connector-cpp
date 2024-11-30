@@ -553,19 +553,15 @@ void unit_fixture::checkResultSetScrolling(ResultSet &res_ref)
     return;
   }
 
-  int before;
-
-  before=static_cast<int> (res_ref->getRow());
+  auto before= res_ref->getRow();
   if (!res_ref->last())
   {
     res_ref->absolute(before);
     return;
   }
 
-  int num_rows;
+  auto num_rows= res_ref->getRow();
   int i;
-
-  num_rows=(int) res_ref->getRow();
 
   res_ref->beforeFirst();
 
@@ -749,5 +745,12 @@ bool unit_fixture::isMaxScale() const
   static bool MaxScaleOnTravis= (std::getenv("MAXSCALE_TEST_DISABLE") != nullptr ||
     std::getenv("srv") != nullptr && strcmp(std::getenv("srv"), "maxscale") == 0);
   return MaxScaleOnTravis;
+}
+
+bool unit_fixture::isMySQL() const
+{
+  static DatabaseMetaData dbmeta(con->getMetaData());
+  static bool MySQL= dbmeta->getDatabaseProductName().compare("MariaDB");
+  return MySQL;
 }
 } /* namespace testsuite */
