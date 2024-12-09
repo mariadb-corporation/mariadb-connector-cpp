@@ -78,7 +78,8 @@ public:
     TEST_CASE(concpp106_batchBulk);
     TEST_CASE(psCache);
     TEST_CASE(concpp116_getByte);
-    TEST_CASE(multirs_caching);
+    TEST_CASE(multirsCaching);
+    TEST_CASE(moreResultsAfterPrepare);
   }
 
   /**
@@ -175,7 +176,9 @@ public:
 
   void concpp116_getByte();
 
-  void multirs_caching();
+  void multirsCaching();
+
+  void moreResultsAfterPrepare();
 
   /* unit_fixture methods overriding */
   void setUp();

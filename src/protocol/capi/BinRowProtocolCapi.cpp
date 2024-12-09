@@ -271,8 +271,7 @@ namespace capi
       }
       else {
         try {
-          std::string str(fieldBuf.arr, length);
-          value= std::stoll(str);
+          value= safer_strtoll(fieldBuf.arr, length);
         }
         // Common parent for std::invalid_argument and std::out_of_range
         catch (std::logic_error&) {
@@ -395,8 +394,7 @@ namespace capi
           return parseBinaryAsInteger<int64_t>(columnInfo);
         }
         else {
-          std::string str(fieldBuf.arr, length);
-          return std::stoll(str);
+          return safer_strtoll(fieldBuf.arr, length);
         }
       default:
         throw SQLException(
@@ -1057,8 +1055,7 @@ namespace capi
       }
       else {
         try {
-          std::string str(fieldBuf.arr, length);
-          value= std::stoll(str);
+          value= safer_strtoll(fieldBuf.arr, length);
         }
         catch (std::logic_error&) {
           throw SQLException(
@@ -1126,8 +1123,7 @@ namespace capi
       }
       else {
         try {
-          std::string str(fieldBuf.arr, length);
-          value= std::stoll(str);
+          value= safer_strtoll(fieldBuf.arr, length);
           
         }
         catch (std::logic_error&) {

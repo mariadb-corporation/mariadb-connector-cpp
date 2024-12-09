@@ -187,6 +187,73 @@ namespace mariadb
   }
 
 
+  //
+  int64_t core_strtoll(const char* str, uint32_t len) {
+
+    int64_t result=0, digit= 0;
+    const char* end= str + len;
+
+    while (str < end) {
+      switch (*str) {
+      case '0':
+        digit= 0;
+        break;
+      case '1':
+        digit= 1;
+        break;
+      case '2':
+        digit= 2;
+        break;
+      case '3':
+        digit= 3;
+        break;
+      case '4':
+        digit= 4;
+        break;
+      case '5':
+        digit= 5;
+        break;
+      case '6':
+        digit= 6;
+        break;
+      case '7':
+        digit= 7;
+        break;
+      case '8':
+        digit= 8;
+        break;
+      case '9':
+        digit= 9;
+        break;
+      default:
+        return result;
+      }
+      result= result * 10 + digit;
+      ++str;
+    }
+    return result;
+  }
+
+
+  int64_t safer_strtoll(const char* str, uint32_t len) {
+
+    int64_t sign= 1;
+
+    while (*str == ' ') {
+      ++str;
+      --len;
+    }
+
+    if (*str == '-') {
+      sign= -1;
+      ++str;
+      --len;
+    }
+
+    return core_strtoll(str, len) * sign;
+  }
+
+
   long double RowProtocol::stringToDouble(const char* str, uint32_t len)
   {
     std::string doubleAsString(str, len);

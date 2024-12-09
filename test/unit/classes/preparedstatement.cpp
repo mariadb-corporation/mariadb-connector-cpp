@@ -2276,7 +2276,7 @@ void preparedstatement::concpp116_getByte()
 }
 
 /* CONCPP - 133 */
-void preparedstatement::multirs_caching()
+void preparedstatement::multirsCaching()
 {
   createSchemaObject("PROCEDURE", "ccpptest_multirs_caching", "()\
                         BEGIN\
@@ -2324,5 +2324,16 @@ void preparedstatement::multirs_caching()
   ASSERT_EQUALS(-1, pstmt1->getUpdateCount());
 }
 
+
+void preparedstatement::moreResultsAfterPrepare()
+{
+  pstmt.reset(con->prepareStatement("SELECT 1"));
+  ASSERT(!pstmt->getMoreResults());
+  ASSERT_EQUALS(-1, pstmt->getUpdateCount());
+
+  ssps.reset(con->prepareStatement("SELECT 1"));
+  ASSERT(!ssps->getMoreResults());
+  ASSERT_EQUALS(-1, ssps->getUpdateCount());
+}
 } /* namespace preparedstatement */
 } /* namespace testsuite */

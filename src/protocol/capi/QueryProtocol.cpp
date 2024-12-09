@@ -167,7 +167,7 @@ namespace capi
   }
 
 
-  std::size_t estimatePreparedQuerySize(ClientPrepareResult* clientPrepareResult, const std::vector<SQLString> &queryPart,
+  std::size_t estimatePreparedQuerySize(ClientPrepareResult* clientPrepareResult, const std::vector<std::string> &queryPart,
       std::vector<Unique::ParameterHolder>& parameters)
   {
     std::size_t estimate= queryPart.front().length() + 1/* for \0 */, offset = 0;
@@ -191,7 +191,7 @@ namespace capi
   {
     addQueryTimeout(out, queryTimeout);
 
-    const std::vector<SQLString> &queryPart= clientPrepareResult->getQueryParts();
+    auto &queryPart= clientPrepareResult->getQueryParts();
     std::size_t estimate= estimatePreparedQuerySize(clientPrepareResult, queryPart, parameters);
 
     if (estimate > StringImp::get(out).capacity() - out.length()) {
@@ -241,8 +241,8 @@ namespace capi
       addQueryTimeout(sql, queryTimeout);
       if (clientPrepareResult->getParamCount() == 0
         && !clientPrepareResult->isQueryMultiValuesRewritable()) {
-        if (clientPrepareResult->getQueryParts().size() == 1) {
-          sql.append(clientPrepareResult->getQueryParts().front());
+        if (clientPrepareResult->getQueryParts().size() == 0) {
+          sql.append(clientPrepareResult->getSql());
           realQuery(sql);
         }
         else {
@@ -542,7 +542,7 @@ namespace capi
       // check that queries are rewritable
       bool canAggregateSemiColumn= true;
       std::size_t totalLen= 0;
-      for (SQLString query : queries){
+      for (auto& query : queries){
         if (!ClientPrepareResult::canAggregateSemiColon(query,noBackslashEscapes())){
           canAggregateSemiColumn= false;
           break;
@@ -763,7 +763,7 @@ namespace capi
   * @throws IOException if connection fail
   */
   std::size_t rewriteQuery(SQLString& pos,
-    const std::vector<SQLString> &queryParts,
+    const std::vector<std::string> &queryParts,
     std::size_t currentIndex,
     std::size_t paramCount,
     std::vector<std::vector<Unique::ParameterHolder>>& parameterList,
