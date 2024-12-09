@@ -28,8 +28,11 @@ namespace sql
 namespace mariadb
 {
   class PrepareResult  {
-    PrepareResult(const PrepareResult &)=delete;
     void operator=(PrepareResult &)= delete;
+
+  protected:
+    PrepareResult(const PrepareResult &)= default;
+
   public:
     PrepareResult() {}
     virtual ~PrepareResult(){}

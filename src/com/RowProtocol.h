@@ -67,6 +67,7 @@ bool isDate(const SQLString& str);
 bool isTime(const SQLString& str);
 bool parseTime(const SQLString& str, std::vector<std::string>& time);
 bool needsBinaryConversion(ColumnDefinition* columnInfo);
+int64_t safer_strtoll(const char* str, uint32_t len);
 
 class RowProtocol  {
 

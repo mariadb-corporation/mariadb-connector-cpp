@@ -749,7 +749,7 @@ namespace capi
      case MYSQL_TYPE_LONG:
      case MYSQL_TYPE_INT24:
      case MYSQL_TYPE_LONGLONG:
-       return std::stoll(std::string(fieldBuf.arr + pos, length));
+       return safer_strtoll(fieldBuf.arr + pos, length);
      case MYSQL_TYPE_TIMESTAMP:
      case MYSQL_TYPE_DATETIME:
      case MYSQL_TYPE_TIME:
@@ -762,7 +762,7 @@ namespace capi
          return parseBinaryAsInteger<int64_t>(columnInfo);
        }
        else {
-         return std::stoll(std::string(fieldBuf.arr + pos, length));
+         return safer_strtoll(fieldBuf.arr + pos, length);
        }
      }
 

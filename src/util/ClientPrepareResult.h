@@ -35,7 +35,8 @@ namespace mariadb
 class ClientPrepareResult : public PrepareResult
 {
   const SQLString& sql;
-  const std::vector<SQLString> queryParts;
+  //const std::vector<std::pair<std::size_t, std::size_t>> queryParts;
+  const std::vector<std::string> queryParts;
   bool rewriteType;
   uint32_t paramCount;
   bool isQueryMultiValuesRewritableFlag= true;
@@ -43,7 +44,7 @@ class ClientPrepareResult : public PrepareResult
 
  ClientPrepareResult(
    const SQLString& sql,
-   std::vector<SQLString>& queryParts,
+   std::vector<std::string>& queryParts,
    bool isQueryMultiValuesRewritable,
    bool isQueryMultipleRewritable,
    bool rewriteType);
@@ -54,7 +55,7 @@ public:
   static ClientPrepareResult* rewritableParts(const SQLString& queryString, bool noBackslashEscapes);
 
   const SQLString& getSql() const;
-  const std::vector<SQLString>& getQueryParts() const;
+  const std::vector<std::string>& getQueryParts() const;
   bool isQueryMultiValuesRewritable() const;
   bool isQueryMultipleRewritable() const;
   bool isRewriteType() const;

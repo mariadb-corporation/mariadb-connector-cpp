@@ -36,7 +36,7 @@ namespace mariadb
 class ClientSidePreparedStatement : public BasePrepareStatement
 {
   static Logger* logger;
-  Shared::ClientPrepareResult prepareResult;
+  Unique::ClientPrepareResult prepareResult;
   SQLString sqlQuery;
   Shared::ResultSetMetaData resultSetMetaData; /*NULL*/
   Shared::ParameterMetaData parameterMetaData ; /*NULL*/
