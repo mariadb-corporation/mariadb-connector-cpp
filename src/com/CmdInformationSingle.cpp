@@ -105,6 +105,7 @@ namespace mariadb
     return SelectResultSet::createGeneratedData(insertIds, protocol, true);
   }
 
+
   bool CmdInformationSingle::isDuplicateKeyUpdate(const SQLString& sql)
   {
     //dupKeyUpdate("(?i).*ON\\s+DUPLICATE\\s+KEY\\s+UPDATE.*");

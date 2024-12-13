@@ -138,7 +138,6 @@ namespace mariadb
           this->listener.preExecute();
         }catch (SQLException& e){
 
-
           if (hasToHandleFailover(e)){
             return handleFailOver(e,method,args,listener.getCurrentProtocol(),isClosed);
           }
@@ -168,15 +167,12 @@ namespace mariadb
               &&serverPrepareResult.getUnProxiedProtocol().isMasterConnection()
               &&!this->listener.hasHostFail()){
 
-
-
             try {
               logger.trace(
                   "re-prepare query \"{}\" on slave (was "+"temporary on master since failover)",
                   serverPrepareResult.getSql());
               this->listener.rePrepareOnSlave(serverPrepareResult,false);
             }catch (SQLException& e){
-
             }
           }
           bool wasClosed= this->listener.isClosed();
@@ -232,6 +228,7 @@ namespace mariadb
     return executeInvocation(method,args,false);
   }
 
+
   sql::Object* FailoverProxy::executeInvocation(Method method,sql::sql::Object** args,bool isSecondExecution)  {
     bool isClosed= listener.isClosed();
     try {
@@ -259,9 +256,6 @@ namespace mariadb
           if (hasToHandleFailover(queryException)){
             return handleFailOver(queryException,method,args,protocol,isClosed);
           }
-
-
-
 
 
           if (queryException.getErrorCode()==1290

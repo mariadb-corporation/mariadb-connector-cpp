@@ -286,24 +286,24 @@ namespace mariadb
     return functionString;
   }
 
-  SQLString Utils::resolveEscapes( SQLString& escaped, Protocol* protocol)
+  SQLString Utils::resolveEscapes(const SQLString& escaped, Protocol* protocol)
   {
     if (escaped.at(0) != '{' || escaped.at(escaped.size() - 1) != '}')
     {
       throw SQLException("unexpected escaped string");
     }
     size_t endIndex= escaped.size() - 1;
-    SQLString escapedLower(escaped);
+    SQLString escapedLower(escaped), buffer;
     escapedLower.toLowerCase();
 
     if (escaped.startsWith("{fn "))
     {
-      SQLString resolvedParams= replaceFunctionParameter(escaped.substr(4, endIndex - 4), protocol);
-      return nativeSql(resolvedParams, protocol);
+      const SQLString resolvedParams(replaceFunctionParameter(escaped.substr(4, endIndex - 4), protocol));
+      return nativeSql(resolvedParams, buffer, protocol);
     }
     else if (escapedLower.startsWith("{oj "))
     {
-      return nativeSql(escaped.substr(4, endIndex - 4), protocol);
+      return nativeSql(escaped.substr(4, endIndex - 4), buffer, protocol);
     }
     else if (escaped.startsWith("{d "))
     {
@@ -331,7 +331,7 @@ namespace mariadb
     }
     else if (escapedLower.startsWith("{call "))
     {
-      return nativeSql(escaped.substr(1, endIndex - 1), protocol);
+      return nativeSql(escaped.substr(1, endIndex - 1), buffer, protocol);
     }
     else if (escaped.startsWith("{escape "))
     {
@@ -340,10 +340,10 @@ namespace mariadb
     else if (escaped.startsWith("{?"))
     {
       if (escaped[2] == '=') {
-        return nativeSql(escaped.substr(3, endIndex - 3), protocol);
+        return nativeSql(escaped.substr(3, endIndex - 3), buffer, protocol);
       }
       else {
-        return nativeSql(escaped.substr(2, endIndex - 2), protocol);
+        return nativeSql(escaped.substr(2, endIndex - 2), buffer, protocol);
       }
     }
     else if (escaped.startsWith("{ ") || escaped.startsWith("{\n"))
@@ -375,15 +375,16 @@ namespace mariadb
   }
 
 
-  SQLString Utils::nativeSql(const SQLString& sqlStr, Protocol* protocol)
+  const SQLString& Utils::nativeSql(const SQLString& sqlStr, SQLString& modifiedSqlBuf, Protocol* protocol)
   {
     const std::string &sql= StringImp::get(sqlStr);
     if (sql.find_first_of('{') == std::string::npos) {
-      return sql;
+      return sqlStr;
     }
 
-    SQLString escapeSequenceBuf;
-    SQLString sqlBuffer;
+    SQLString escapeSequence;
+    std::string& escapeSequenceBuf= StringImp::get(escapeSequence);
+    std::string& sqlBuffer= StringImp::get(modifiedSqlBuf);
 
     char lastChar= 0;
     bool inQuote= false;
@@ -393,14 +394,14 @@ namespace mariadb
     int32_t inEscapeSeq= 0;
 
     // To stars something from
-    sqlBuffer.reserve((sql.length()+7)/8*8);
+    sqlBuffer.reserve((sql.length() + 7) / 8 * 8);
     escapeSequenceBuf.reserve(std::min(sql.length(), std::size_t(64)));
 
     for (auto it= sql.begin(); it < sql.end(); ++it)
     {
       char car= *it;
-      if (lastChar == '\\' && !protocol->noBackslashEscapes()){
-        sqlBuffer.append(car);
+      if (lastChar == '\\' && !protocol->noBackslashEscapes()) {
+        sqlBuffer.append(1, car);
         lastChar = 0;
         continue;
       }
@@ -430,18 +431,18 @@ namespace mariadb
           break;
         case '/':
         case '-':
-          if (!inQuote){
-            if (inComment){
-              if (lastChar =='*'&&!isSlashSlashComment){
+          if (!inQuote) {
+            if (inComment) {
+              if (lastChar == '*' && !isSlashSlashComment) {
                 inComment= false;
-              }else if (lastChar ==car &&isSlashSlashComment){
+              }else if (lastChar == car && isSlashSlashComment) {
                 inComment= false;
               }
             }else {
               if (lastChar ==car){
                 inComment= true;
                 isSlashSlashComment= true;
-              }else if (lastChar =='*'){
+              }else if (lastChar == '*'){
                 inComment= true;
                 isSlashSlashComment= false;
               }
@@ -449,22 +450,22 @@ namespace mariadb
           }
           break;
         case '\n':
-          if (inComment && isSlashSlashComment){
+          if (inComment && isSlashSlashComment) {
             inComment= false;
           }
           break;
         case '{':
-          if (!inQuote && !inComment){
-            inEscapeSeq++;
+          if (!inQuote && !inComment) {
+            ++inEscapeSeq;
           }
           break;
 
         case '}':
-          if (!inQuote && !inComment){
+          if (!inQuote && !inComment) {
             inEscapeSeq--;
-            if (inEscapeSeq == 0){
-              escapeSequenceBuf.append(car);
-              sqlBuffer.append(resolveEscapes(escapeSequenceBuf, protocol));
+            if (inEscapeSeq == 0) {
+              escapeSequenceBuf.append(1, car);
+              sqlBuffer.append(resolveEscapes(escapeSequence, protocol));
               escapeSequenceBuf= "";
               continue;
             }
@@ -476,16 +477,16 @@ namespace mariadb
       }
       lastChar= car;
       if (inEscapeSeq > 0) {
-        escapeSequenceBuf.append(car);
+        escapeSequenceBuf.append(1, car);
       } else {
-        sqlBuffer.append(car);
+        sqlBuffer.append(1, car);
       }
     }
     if (inEscapeSeq > 0){
       throw SQLException(
           "Invalid escape sequence , missing closing '}' character in '"+sqlBuffer);
     }
-    return sqlBuffer;
+    return modifiedSqlBuf;
   }
 
   /**

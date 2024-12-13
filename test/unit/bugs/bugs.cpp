@@ -1110,10 +1110,10 @@ void bugs::bug22292073()
     SKIP("Server does not support tested functionality(JSON type)")
   }
   stmt->execute("DROP TABLE IF EXISTS bug22292073");
-  stmt->execute("create table bug22292073 (jdoc JSON);");
-  stmt->execute("insert into bug22292073 values('{ \"name\": \"abc\", \"age\": 1 , \"misc\":\
+  stmt->execute("CREATE TABLE bug22292073 (jdoc JSON);");
+  stmt->execute("INSERT INTO bug22292073 VALUES('{ \"name\": \"abc\", \"age\": 1 , \"misc\":\
                 1.2}'), ('{ \"name\": \"abcdef\", \"age\": 31 , \"misc\": 1.237843}');");
-  pstmt.reset(con->prepareStatement("select JSON_EXTRACT(jdoc, '$.age') from bug22292073;"));
+  pstmt.reset(con->prepareStatement("SELECT JSON_EXTRACT(jdoc, '$.age') FROM bug22292073;"));
   res.reset(pstmt->executeQuery());
 
   res->next();

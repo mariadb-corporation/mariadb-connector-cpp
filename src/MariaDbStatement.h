@@ -106,7 +106,7 @@ public:
   bool isSimpleIdentifier(const SQLString& identifier);
   SQLString enquoteNCharLiteral(const SQLString& val);
 private:
-  SQLString getTimeoutSql(const SQLString& sql);
+  const SQLString& getTimeoutSql(const SQLString& sql, SQLString& buffer);
 public:
   bool testExecute(const SQLString& sql, const Charset& charset);
 

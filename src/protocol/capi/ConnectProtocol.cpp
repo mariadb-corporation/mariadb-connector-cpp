@@ -743,15 +743,15 @@ namespace capi
 
     results->commandEnd();
     ResultSet* resultSet= results->getResultSet();
-    if (resultSet){
+    if (resultSet) {
       resultSet->next();
 
       serverData.emplace("max_allowed_packet",resultSet->getString(1));
       serverData.emplace("system_time_zone",resultSet->getString(2));
       serverData.emplace("time_zone",resultSet->getString(3));
       serverData.emplace("auto_increment_increment", resultSet->getString(4));
-
-    }else {
+    }
+    else {
       throw SQLException(mysql_get_socket(connection.get()) == MARIADB_INVALID_SOCKET ?
         "Error reading SessionVariables results. Socket is NOT connected" :
         "Error reading SessionVariables results. Socket IS connected");
@@ -772,14 +772,13 @@ namespace capi
 
   void ConnectProtocol::readPipelineAdditionalData(std::map<SQLString, SQLString>& serverData)
   {
-
     MariaDBExceptionThrower resultingException;
 
     try {
       Unique::Results res(new Results());
       getResult(res.get());
-    }catch (SQLException& sqlException){
-
+    }
+    catch (SQLException& sqlException) {
       resultingException.take(sqlException);
     }
 
@@ -787,8 +786,9 @@ namespace capi
 
     try {
       readRequestSessionVariables(serverData);
-    }catch (SQLException& sqlException){
-      if (!resultingException){
+    }
+    catch (SQLException& sqlException) {
+      if (!resultingException) {
         resultingException.assign(exceptionFactory->create("could not load system variables", "08000", &sqlException));
         canTrySessionWithShow= true;
       }
@@ -796,16 +796,16 @@ namespace capi
 
     try {
       readPipelineCheckMaster();
-    }catch (SQLException& sqlException){
+    }
+    catch (SQLException& sqlException) {
       canTrySessionWithShow= false;
-      if (!resultingException){
+      if (!resultingException) {
         exceptionFactory->create(
             "could not identified if server is master", "08000", &sqlException).Throw();
       }
     }
 
-    if (canTrySessionWithShow){
-
+    if (canTrySessionWithShow) {
       requestSessionDataWithShow(serverData);
       connected= true;
       return;
@@ -867,7 +867,7 @@ namespace capi
     sendPipelineCheckMaster();
     readPipelineCheckMaster();
 
-    if (options->createDatabaseIfNotExist && !database.empty()){
+    if (options->createDatabaseIfNotExist && !database.empty()) {
 
       SQLString quotedDb(MariaDbConnection::quoteIdentifier(this->database));
       sendCreateDatabaseIfNotExist(quotedDb);
@@ -893,7 +893,6 @@ namespace capi
 
   void ConnectProtocol::loadCalendar(const SQLString& /*srvTimeZone*/, const SQLString& /*srvSystemTimeZone*/)
   {
-
     timeZone= nullptr;// Calendar.getInstance().getTimeZone();
 
 #ifdef WE_HAVE_NEED_TIMEZONE

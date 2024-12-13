@@ -53,9 +53,9 @@ public:
 #endif
 private:
   static SQLString replaceFunctionParameter(const SQLString& functionString, Protocol* protocol);
-  static SQLString resolveEscapes(SQLString& escaped, Protocol* protocol);
+  static SQLString resolveEscapes(const SQLString& escaped, Protocol* protocol);
 public:
-  static SQLString nativeSql(const SQLString& sql, Protocol* protocol);
+  static const SQLString& nativeSql(const SQLString& sql, SQLString& modifiedSqlBuf, Protocol* protocol);
   static Shared::Protocol retrieveProxy(Shared::UrlParser& urlParser, GlobalStateInfo* globalInfo);
 
 private:

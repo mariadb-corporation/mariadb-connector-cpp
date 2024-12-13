@@ -461,7 +461,8 @@ namespace mariadb
   {
     if (!sql.empty())
     {
-      SQLString sqlQuery(Utils::nativeSql(sql, protocol.get()));
+      SQLString buffer;
+      const SQLString& sqlQuery= Utils::nativeSql(sql, buffer, protocol.get());
 
       if (options->useServerPrepStmts && shouldPrepareOnServer(sql))
       {
@@ -551,8 +552,7 @@ namespace mariadb
         
       }
       if (!wrongFormat) {
-        native= Utils::nativeSql(sql, protocol.get());
-        query= &native;
+        query= &Utils::nativeSql(sql, native, protocol.get());
         firstUsefulChar= Utils::skipCommentsAndBlanks(StringImp::get(native));
       }
     }
@@ -704,7 +704,8 @@ namespace mariadb
 
   SQLString MariaDbConnection::nativeSQL(const SQLString& sql)
   {
-    return Utils::nativeSql(sql, protocol.get());
+    SQLString buffer;
+    return Utils::nativeSql(sql, buffer, protocol.get());
   }
 
   /**
