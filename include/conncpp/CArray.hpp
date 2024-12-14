@@ -23,6 +23,7 @@
 
 #include "buildconf.hpp"
 #include <initializer_list>
+#include <cstdint>
 #include <vector>
 
 
