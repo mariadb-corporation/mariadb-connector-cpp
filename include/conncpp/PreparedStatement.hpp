@@ -103,7 +103,7 @@ public:
   virtual void setTimestamp(int32_t parameterIndex,const Timestamp timestamp)=0;
 
   virtual void setNCharacterStream(int32_t parameterIndex,const std::istringstream& value,const int64_t length)=0;
-  virtual void setNCharacterStream(int32_t parameterIndex,const std::istringstream& value)=0;#endif
+  virtual void setNCharacterStream(int32_t parameterIndex,const std::istringstream& value)=0;
   virtual void setNClob(int32_t parameterIndex, const NClob& value)=0;
   virtual void setNClob(int32_t parameterIndex, const std::istringstream& reader, const int64_t length)=0;
   virtual void setNClob(int32_t parameterIndex, const std::istringstream& reader)=0;
