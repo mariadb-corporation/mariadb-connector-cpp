@@ -37,7 +37,7 @@ namespace sql
   void ByteArrayParameter::writeTo(SQLString& str)
   {
     str.append(BINARY_INTRODUCER);
-    Utils::escapeData(bytes.arr, static_cast<size_t>(bytes.length), noBackslashEscapes, str);
+    Utils::escapeData(bytes.arr, static_cast<size_t>(bytes.length>0?bytes.length:-bytes.length), noBackslashEscapes, str);
     str.append(QUOTE);
   }
 
