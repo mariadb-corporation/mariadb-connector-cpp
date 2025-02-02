@@ -79,6 +79,7 @@ public:
     TEST_CASE(concpp106_batchBulk);
     TEST_CASE(concpp116_getByte);
     TEST_CASE(multirs_caching);
+    TEST_CASE(negativeBytesLength);
   }
 
   /**
@@ -170,6 +171,11 @@ public:
   void concpp116_getByte();
 
   void multirs_caching();
+
+  /**
+   * sql::bytes may be negative and cause problems
+   */
+  void negativeBytesLength();
 
   /* unit_fixture methods overriding */
   void setUp();
