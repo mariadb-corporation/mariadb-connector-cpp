@@ -2218,5 +2218,15 @@ void preparedstatement::multirs_caching()
   ASSERT_EQUALS(-1, pstmt1->getUpdateCount());
 }
 
+void preparedstatement::negativeBytesLength()
+{
+  pstmt.reset(con->prepareStatement("SELECT ?"));
+  char charArray[1];
+  sql::bytes sqlBytes{ charArray, 1 };
+  //sqlBytes have a negative length, let's see if it throws
+  pstmt->setBytes(1, &sqlBytes);
+  pstmt->executeQuery();
+}
+
 } /* namespace preparedstatement */
 } /* namespace testsuite */
