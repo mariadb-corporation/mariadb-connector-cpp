@@ -102,5 +102,9 @@ fi
 echo "run connector test suite"
 
 cd ./test
+if [ "$srv" = "mysql" ] ; then
+  cp caching_sha2_password.* ../
+fi
+
 ctest --output-on-failure
 

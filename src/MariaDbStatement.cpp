@@ -158,7 +158,7 @@ namespace mariadb
       exceptionFactory->raiseStatementError(connection, this)->create("execute() is called on closed statement").Throw();
     }
     protocol->prolog(maxRows, protocol->getProxy(), connection, this);
-    if (queryTimeout != 0 &&(!canUseServerTimeout ||isBatch)){
+    if (queryTimeout != 0 &&(!canUseServerTimeout ||isBatch)) {
       setTimerTask(isBatch);
     }
   }
@@ -193,11 +193,11 @@ namespace mariadb
    */
   MariaDBExceptionThrower MariaDbStatement::executeExceptionEpilogue(SQLException& sqle)
   {
-    if (!sqle.getSQLState().empty() && sqle.getSQLState().startsWith("08")){
+    if (!sqle.getSQLState().empty() && sqle.getSQLState().startsWith("08")) {
       try {
         close();
-      }catch (SQLException& ){
-
+      }
+      catch (SQLException& ) {
       }
     }
 

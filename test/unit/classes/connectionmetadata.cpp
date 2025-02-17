@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2023 MariaDB Corporation AB
+ *               2020, 2025 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -1221,7 +1221,7 @@ void connectionmetadata::getIndexInfo()
       ASSERT_EQUALS(false, res->getBoolean("NON_UNIQUE"));
       ASSERT(res->next());
       ASSERT_EQUALS("idx_col4_col5", res->getString("INDEX_NAME"));
-      ASSERT_EQUALS((("MariaDB" != dbmeta->getDatabaseProductName() && getServerVersion(con) > 800000) || getServerVersion(con) > 1008000) ? "D" : "A", res->getString("ASC_OR_DESC"));
+      ASSERT_EQUALS(((isMySQL() && getServerVersion(con) > 800000) || getServerVersion(con) > 1008000) ? "D" : "A", res->getString("ASC_OR_DESC"));
       ASSERT_EQUALS("col5", res->getString("COLUMN_NAME"));
       ASSERT_EQUALS(true, res->getBoolean("NON_UNIQUE"));
       ASSERT(res->next());
@@ -2540,7 +2540,7 @@ void connectionmetadata::bugCpp25()
 
   ASSERT_EQUALS(3ULL, static_cast<uint64_t>(verParts->size()));
   ASSERT_EQUALS(major, std::stoul((*verParts)[0].c_str()));
-  if (std::getenv("srv") == nullptr || strcmp(std::getenv("srv"), "maxscale") != 0) {
+  if (isMaxScale()) {
     ASSERT_EQUALS(minor, std::stoul((*verParts)[1].c_str()));
     std::size_t dashPos = (*verParts)[2].find_first_of('-');
     ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? (*verParts)[2].c_str() : (*verParts)[2].substr(0, dashPos).c_str()));
@@ -2564,7 +2564,7 @@ void connectionmetadata::bugCpp25()
   ASSERT_EQUALS(minor, std::stoul(verParts[1].c_str()));
 
   std::size_t dashPos = verParts[2].find_first_of('-');
-  if (std::getenv("srv") == nullptr || strcmp(std::getenv("srv"), "maxscale") != 0) {
+  if (!isMaxScale()) {
     ASSERT_EQUALS(patch, std::stoul(dashPos == std::string::npos ? verParts[2].c_str() : verParts[2].substr(0, dashPos).c_str()));
   }
 #endif // !_WIN32

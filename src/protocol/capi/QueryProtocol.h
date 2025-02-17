@@ -107,6 +107,12 @@ namespace capi
       ClientPrepareResult* clientPrepareResult,
       std::vector<std::vector<Unique::ParameterHolder>>& parametersList);
 
+    void executeBatchSlow(
+      bool mustExecuteOnMaster,
+      Results* results,
+      ClientPrepareResult* clientPrepareResult,
+      std::vector<std::vector<Unique::ParameterHolder>>& parametersList);
+
   public:
     void executeBatchStmt(bool mustExecuteOnMaster, Results* results, const std::vector<SQLString>& queries);
 

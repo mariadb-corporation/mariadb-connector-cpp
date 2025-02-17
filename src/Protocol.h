@@ -89,6 +89,7 @@ public:
   virtual const SQLString& getUsername() const=0;
   virtual bool ping()=0;
   virtual bool isValid(int32_t timeout)=0;
+
   virtual void executeQuery(const SQLString& sql)=0;
   virtual void executeQuery(bool mustExecuteOnMaster, Results* results, const SQLString& sql)= 0;
   virtual void executeQuery(bool mustExecuteOnMaster, Results* results, const SQLString& sql, const Charset* charset)= 0;

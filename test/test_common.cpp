@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
+ *               2020, 2025 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -275,7 +275,8 @@ static void test_connection_0(std::unique_ptr<sql::Connection> & conn)
   ENTER_FUNCTION();
   try {
     char buff[64];
-    if (std::getenv("srv") != nullptr && strcmp(std::getenv("srv"), "maxscale") == 0) {
+    if (std::getenv("MAXSCALE_TEST_DISABLE") != nullptr ||
+      std::getenv("srv") != nullptr && strcmp(std::getenv("srv"), "maxscale") == 0) {
         LEAVE_FUNCTION();
         return void();
     }

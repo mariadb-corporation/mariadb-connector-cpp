@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2025 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -37,7 +37,7 @@ namespace sql
   void ByteArrayParameter::writeTo(SQLString& str)
   {
     str.append(BINARY_INTRODUCER);
-    Utils::escapeData(bytes.arr, static_cast<size_t>(bytes.length), noBackslashEscapes, str);
+    Utils::escapeData(bytes.arr, static_cast<size_t>(bytes.size()), noBackslashEscapes, str);
     str.append(QUOTE);
   }
 
@@ -50,13 +50,13 @@ namespace sql
   void ByteArrayParameter::writeTo(PacketOutputStream& pos)
   {
     pos.write(BINARY_INTRODUCER);
-    pos.writeBytesEscaped(bytes.arr, static_cast<int32_t>(bytes.length), noBackslashEscapes);
+    pos.writeBytesEscaped(bytes.arr, static_cast<int32_t>(bytes.size()), noBackslashEscapes);
     pos.write(QUOTE);
   }
 
   int64_t ByteArrayParameter::getApproximateTextProtocolLength() const
   {
-    return bytes.length*2;
+    return bytes.size()*2;
   }
 
   /**
@@ -67,7 +67,7 @@ namespace sql
     */
   void ByteArrayParameter::writeBinary(PacketOutputStream& pos)
   {
-    pos.writeFieldLength(bytes.length);
+    pos.writeFieldLength(bytes.size());
     pos.write(bytes.arr);
   }
 
@@ -89,11 +89,11 @@ namespace sql
 
   SQLString ByteArrayParameter::toString()
   {
-    if (bytes.length >1024) {
+    if (bytes.size() >1024) {
       return "<bytearray:"+std::string(bytes.arr, 1024)+"...>";
     }
     else {
-      return "<bytearray:"+ std::string(bytes.arr, static_cast<std::string::size_type>(bytes.length))+">";
+      return "<bytearray:"+ std::string(bytes.arr, static_cast<std::string::size_type>(bytes.size()))+">";
     }
   }
 

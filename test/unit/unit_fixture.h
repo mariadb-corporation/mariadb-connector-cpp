@@ -411,6 +411,7 @@ public:
 
   bool isSkySqlHA() const;
   bool isMaxScale() const;
+  bool isMySQL() const;
 };
 
 } /* namespace testsuite */

@@ -32,6 +32,7 @@
 #include "util/Utils.h"
 #include "util/LogQueryTool.h"
 
+
 namespace sql
 {
 namespace mariadb
@@ -1435,6 +1436,57 @@ namespace capi
     }
   }
 
+  void ConnectProtocol::commitReturnAutocommit(bool justReadMultiSendResults)
+  {
+    if (justReadMultiSendResults) {
+      readQueryResult();//COMMIT
+      readQueryResult();//SET AUTOCOMMIT=1
+    }
+    else {
+      CONST_QUERY("COMMIT");
+      CONST_QUERY("SET AUTOCOMMIT=1");
+    }
+    // Need to get autocommit returned to the stored serverstatus
+    capi::mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
+  }
+
+  void ConnectProtocol::sendQuery(const SQLString & sql)
+  {
+    if (capi::mysql_send_query(connection.get(), sql.c_str(), static_cast<unsigned long>(sql.length()))) {
+      throw SQLException(capi::mysql_error(connection.get()), capi::mysql_sqlstate(connection.get()),
+        capi::mysql_errno(connection.get()));
+    }
+  }
+
+
+  void ConnectProtocol::sendQuery(const char * sql, std::size_t length)
+  {
+    if (capi::mysql_send_query(connection.get(), sql, static_cast<unsigned long>(length))) {
+      throw SQLException(capi::mysql_error(connection.get()), capi::mysql_sqlstate(connection.get()),
+        capi::mysql_errno(connection.get()));
+    }
+  }
+
+
+  void ConnectProtocol::readQueryResult()
+  {
+    if (capi::mysql_read_query_result(connection.get())) {
+      throw SQLException(capi::mysql_error(connection.get()), capi::mysql_sqlstate(connection.get()),
+        capi::mysql_errno(connection.get()));
+    }
+  }
+
+  /* Unsynced execution of a query. Indtended for internal purposes.
+     Process error and throws execution with error info. There is no sense to create SQLString
+     object if we have const char literal */
+  void ConnectProtocol::realQuery(const char* sql, std::size_t len)
+  {
+    auto con= connection.get();
+    if (capi::mysql_real_query(con, sql, static_cast<unsigned long>(len))) {
+      throw SQLException(capi::mysql_error(con), capi::mysql_sqlstate(con),
+                        capi::mysql_errno(con));
+    }
+  }
   void ConnectProtocol::reconnect()
   {
     std::lock_guard<std::mutex> localScopeLock(lock);
