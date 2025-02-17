@@ -3159,6 +3159,10 @@ void connection::tls_version()
   }
 }
 
+/* With MariaDB C/C this test doesn't have much sense as we don't have option to request the public key, but do this
+ * implicitly when needed. The test idea was to show that when the key is already cached the connection will work even
+ * w/out (explicit) request for the key
+ */
 void connection::cached_sha2_auth()
 {
   logMsg("connection::auth - MYSQL_OPT_GET_SERVER_PUBLIC_KEY");
@@ -3168,19 +3172,19 @@ void connection::cached_sha2_auth()
     SKIP("Server doesn't support caching_sha2_password");
     return;
   }
-  SKIP("This version does not support caching_sha2_password");
+
   try {
     stmt->execute("DROP USER 'doomuser'@'%';");
   } catch (...) {}
 
-
-  stmt->execute("CREATE USER 'doomuser'@'%' IDENTIFIED WITH caching_sha2_password BY '!sha2user_pass';");
+  stmt->execute("CREATE USER 'doomuser'@'%' IDENTIFIED WITH caching_sha2_password BY '!sha2user_pass'");
+  stmt->execute("GRANT ALL ON " + db + ".* TO 'doomuser'@'%'");
 
   sql::ConnectOptionsMap opts;
   opts["hostName"]= url;
   opts["userName"]= "doomuser";
   opts["password"]= "!sha2user_pass";
-  opts["OPT_GET_SERVER_PUBLIC_KEY"]= "false";
+  opts["serverRsaPublicKeyFile"]= "test_mysql_server.pem";
   opts["useTls"]= "false";
 
   try {
@@ -3191,26 +3195,14 @@ void connection::cached_sha2_auth()
     //need to close connection, otherwise will use fast auth!
     con->close();
     con.reset(driver->connect(opts));
-    FAIL("caching_sha2_password can't be used on unencrypted connection");
-    throw "caching_sha2_password can't be used on unencrypted connection";
   }
-  catch(std::exception &e)
+  catch(std::exception &/*e*/)
   {
-    std::stringstream err;
-    err << "Expected error: ";
-    err << e.what();
-    logMsg(err.str());
+    FAIL("Could not establish connection");
   }
 
-  opts["OPT_GET_SERVER_PUBLIC_KEY"]= "true";
-
-  // Now we can connect using unencrypted connection, since we now can ask for
-  // the server public key
-  con.reset(driver->connect(opts));
-
-  //Now using fast auth!
+  //Now reconnection, but we can't really know if it uses cached key
   con->close();
-  opts["OPT_GET_SERVER_PUBLIC_KEY"]= "false";
   con.reset(driver->connect(opts));
 
   // Cleanup
