@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2024 MariaDB Corporation plc
+ *               2020, 2025 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -2218,14 +2218,31 @@ void preparedstatement::multirs_caching()
   ASSERT_EQUALS(-1, pstmt1->getUpdateCount());
 }
 
-void preparedstatement::negativeBytesLength()
+void preparedstatement::bytesArrParam()
 {
   pstmt.reset(con->prepareStatement("SELECT ?"));
-  char charArray[1];
-  sql::bytes sqlBytes{ charArray, 1 };
-  //sqlBytes have a negative length, let's see if it throws
+  char charArray[3]= {'\1', '\0', '\1'};
+  sql::bytes sqlBytes(charArray, 3), b2{'\1', '\0', '\2'};
+  b2[2]= '\0';
+  // sqlBytes has internally a negative length, i.e. it does not own the array. let's see if it throws
   pstmt->setBytes(1, &sqlBytes);
-  pstmt->executeQuery();
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS(65537, res->getInt(1));
+  
+  // b2 owns the array and internal length is positive - checking it's also alright
+  pstmt->setBytes(1, &b2);
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS(65536, res->getInt(1));
+
+  sqlBytes[0]= '\0';
+  // Just to show, that original array has been changed
+  ASSERT_EQUALS('\0', charArray[0]);
+  pstmt->setBytes(1, &sqlBytes);
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS(1, res->getInt(1));
 }
 
 } /* namespace preparedstatement */
