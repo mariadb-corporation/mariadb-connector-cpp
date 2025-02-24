@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2023 MariaDB Corporation AB
+ *               2020, 2025 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -3194,6 +3194,7 @@ void connection::cached_sha2_auth()
     created_objects.clear();
     //need to close connection, otherwise will use fast auth!
     con->close();
+    // we can't really know, if we used the key from the given file :/
     con.reset(driver->connect(opts));
   }
   catch(std::exception &/*e*/)

@@ -98,8 +98,13 @@ public:
   virtual int32_t getNetworkTimeout()=0;
   virtual SQLString getSchema()=0;
   virtual void setSchema(const SQLString& arg0)=0;
+  /**
+   * @deprecated This method is deprecated and will be removed in future versions.
+   */
   virtual void reset()=0;
-
+  /**
+   * @deprecated This method is deprecated and will be removed in future versions.
+   */
   virtual bool reconnect()=0;
 
   virtual Connection* setClientOption(const SQLString& name, void* value)=0;
