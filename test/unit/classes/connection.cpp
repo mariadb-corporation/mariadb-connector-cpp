@@ -3195,6 +3195,7 @@ void connection::cached_sha2_auth()
     created_objects.clear();
     //need to close connection, otherwise will use fast auth!
     con->close();
+    // we can't really know, if we used the key from the given file :/
     con.reset(driver->connect(opts));
   }
   catch(std::exception &/*e*/)

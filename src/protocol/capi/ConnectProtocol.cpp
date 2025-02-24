@@ -254,15 +254,16 @@ namespace capi
   /** Closes socket and stream readers/writers Attempts graceful shutdown. */
   void ConnectProtocol::close()
   {
-    std::unique_lock<std::mutex> localScopeLock(lock);
     this->connected= false;
     try {
       // skip acquires lock
-      localScopeLock.unlock();
       skip();
-    }catch (std::runtime_error& ){
     }
-    localScopeLock.lock();
+    catch (std::runtime_error& ) {
+    }
+    std::unique_lock<std::mutex> localScopeLock(lock);
+    // We still can statements waiting to be closed
+    forceReleaseWaitingPrepareStatement();
     closeSocket();
     cleanMemory();
   }

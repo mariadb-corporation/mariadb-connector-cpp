@@ -81,6 +81,7 @@ public:
     TEST_CASE(multirsCaching);
     TEST_CASE(moreResultsAfterPrepare);
     TEST_CASE(bytesArrParam);
+    TEST_CASE(concpp138_useRsAfterConClose);
   }
 
   /**
@@ -181,10 +182,13 @@ public:
 
   void moreResultsAfterPrepare();
 
+  void multirs_caching();
   /**
    * sql::bytes may have negative length(internally) and that caused problems
    */
   void bytesArrParam();
+
+  void concpp138_useRsAfterConClose();
 
   /* unit_fixture methods overriding */
   void setUp();

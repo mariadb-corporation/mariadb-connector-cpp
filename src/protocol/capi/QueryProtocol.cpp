@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2024 MariaDB Corporation plc
+   Copyright (C) 2020,2025 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -367,7 +367,6 @@ namespace capi
     if ((serverCapabilities & MariaDbServerCapabilities::_MARIADB_CLIENT_STMT_BULK_OPERATIONS) == 0)
       return false;
 
-    SQLString sql(origSql);
     // ensure that type doesn't change
     std::vector<Unique::ParameterHolder> &initParameters= parametersList.front();
     std::size_t parameterCount= initParameters.size();
@@ -398,7 +397,7 @@ namespace capi
     }
 
     // any select query is not applicable to bulk
-    if (Utils::findstrni(StringImp::get(sql), "select", 6) != std::string::npos) {
+    if (Utils::findstrni(StringImp::get(origSql), "select", 6) != std::string::npos) {
       return false;
     }
 
@@ -413,7 +412,7 @@ namespace capi
       // send PREPARE if needed
       // **************************************************************************************
       if (!tmpServerPrepareResult){
-        tmpServerPrepareResult= prepareInternal(sql, true);
+        tmpServerPrepareResult= prepareInternal(origSql, true);
       }
 
       capi::MYSQL_STMT* statementId= tmpServerPrepareResult ? tmpServerPrepareResult->getStatementId() : nullptr;
@@ -437,6 +436,12 @@ namespace capi
         getResult(results, tmpServerPrepareResult);
       }
       catch (SQLException& sqle) {
+        if (!serverPrepareResult && tmpServerPrepareResult) {
+          releasePrepareStatement(tmpServerPrepareResult);
+          // releasePrepareStatement basically cares only about releasing stmt on server(and C API handle)
+          delete tmpServerPrepareResult;
+          tmpServerPrepareResult= nullptr;
+        }
         if (sqle.getSQLState().compare("HY000") == 0 && sqle.getErrorCode()==1295){
           // query contain commands that cannot be handled by BULK protocol
           // clear error and special error code, so it won't leak anywhere
@@ -445,16 +450,13 @@ namespace capi
           return false;
         }
         if (exception.getMessage().empty()) {
-          exception= logQuery->exceptionWithQuery(sql, sqle, explicitClosed);
+          exception= logQuery->exceptionWithQuery(origSql, sqle, explicitClosed);
           if (!options->continueBatchOnError){
             throw exception;
           }
         }
       }
 
-      if (!exception.getMessage().empty()) {
-        throw exception;
-      }
       results->setRewritten(true);
       
       if (!serverPrepareResult && tmpServerPrepareResult) {
@@ -462,8 +464,11 @@ namespace capi
         // releasePrepareStatement basically cares only about releasing stmt on server(and C API handle)
         delete tmpServerPrepareResult;
       }
+      
+      if (!exception.getMessage().empty()) {
+        throw exception;
+      }
       return true;
-
     }
     catch (std::runtime_error& e) {
       if (!serverPrepareResult && tmpServerPrepareResult) {
@@ -476,6 +481,7 @@ namespace capi
     //To please compilers etc
     return false;
   }
+
 
   void QueryProtocol::initializeBatchReader()
   {
@@ -1081,7 +1087,6 @@ namespace capi
       Results* results,
       std::vector<Unique::ParameterHolder>& parameters)
   {
-
     cmdPrologue();
 
     try {
@@ -1109,10 +1114,15 @@ namespace capi
       }
       /*CURSOR_TYPE_NO_CURSOR);*/
       getResult(results, serverPrepareResult);
-
-    }catch (SQLException& qex){
+      // We have to do this due to CONCPP-138, but only when we are not streaming
+      if (results->getFetchSize() == 0) {
+        results->loadFully(false, this);
+      }
+    }
+    catch (SQLException& qex) {
       throw logQuery->exceptionWithQuery(parameters, qex, serverPrepareResult);
-    }catch (std::runtime_error& e){
+    }
+    catch (std::runtime_error& e) {
       handleIoException(e).Throw();
     }
   }
