@@ -2170,8 +2170,6 @@ void preparedstatement::concpp116_getByte()
 /* CONCPP - 133 */
 void preparedstatement::multirs_caching()
 {
-  //SKIP("This is not working and won't be fixed in this version");
-
   createSchemaObject("PROCEDURE", "ccpptest_multirs_caching", "()\
                         BEGIN\
                           SELECT 1 as id, 'text' as val UNION SELECT 7 as id, 'seven' as val;\
@@ -2218,6 +2216,7 @@ void preparedstatement::multirs_caching()
   ASSERT_EQUALS(-1, pstmt1->getUpdateCount());
 }
 
+/* if sql::bytes wrapped C array, setBytes would crash the application */
 void preparedstatement::bytesArrParam()
 {
   pstmt.reset(con->prepareStatement("SELECT ?"));
@@ -2245,5 +2244,24 @@ void preparedstatement::bytesArrParam()
   ASSERT_EQUALS(1, res->getInt(1));
 }
 
+/* CONCPP-138 application crashes if binary resultset used after closing the connection */
+void preparedstatement::concpp138_useRsAfterConClose()
+{
+  pstmt.reset(sspsCon->prepareStatement("SELECT 1275, 'Just some text', 1.25"));
+  ssps.reset(sspsCon->prepareStatement("SELECT 55555"));
+
+  ResultSet rs(pstmt->executeQuery());
+  res.reset(ssps->executeQuery());
+  sspsCon->close();
+  ASSERT(res->next());
+  ASSERT_EQUALS(55555, res->getInt(1));
+  ASSERT(rs->next());
+  ASSERT_EQUALS(1275, rs->getInt(1));
+  ASSERT_EQUALS("Just some text", rs->getString(2));
+  ASSERT_EQUALS_EPSILON(1.25, rs->getDouble(3), 0.0001);
+  ASSERT(!res->next());
+  ASSERT(!rs->next());
+  sspsCon.reset();
+}
 } /* namespace preparedstatement */
 } /* namespace testsuite */

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2024 MariaDB Corporation plc
+   Copyright (C) 2020,2025 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -349,7 +349,6 @@ namespace capi
     if ((serverCapabilities & MariaDbServerCapabilities::_MARIADB_CLIENT_STMT_BULK_OPERATIONS) == 0)
       return false;
 
-    SQLString sql(origSql);
     // ensure that type doesn't change
     std::vector<Shared::ParameterHolder> initParameters= parametersList.front();
     std::size_t parameterCount= initParameters.size();
@@ -380,7 +379,7 @@ namespace capi
     }
 
     // any select query is not applicable to bulk
-    if (Utils::findstrni(StringImp::get(sql), "select", 6) != std::string::npos) {
+    if (Utils::findstrni(StringImp::get(origSql), "select", 6) != std::string::npos) {
       return false;
     }
 
@@ -395,7 +394,7 @@ namespace capi
       // send PREPARE if needed
       // **************************************************************************************
       if (!tmpServerPrepareResult){
-        tmpServerPrepareResult= prepareInternal(sql, true);
+        tmpServerPrepareResult= prepareInternal(origSql, true);
       }
 
       // **************************************************************************************
@@ -421,7 +420,7 @@ namespace capi
       }
       catch (SQLException& sqle) {
         if (!serverPrepareResult && tmpServerPrepareResult) {
-          releasePrepareStatement(tmpServerPrepareResult);
+          //releasePrepareStatement(tmpServerPrepareResult);
           // releasePrepareStatement basically cares only about releasing stmt on server(and C API handle)
           delete tmpServerPrepareResult;
           tmpServerPrepareResult= nullptr;
@@ -434,7 +433,7 @@ namespace capi
           return false;
         }
         if (exception.getMessage().empty()) {
-          exception= logQuery->exceptionWithQuery(sql, sqle, explicitClosed);
+          exception= logQuery->exceptionWithQuery(origSql, sqle, explicitClosed);
           if (!options->continueBatchOnError){
             throw exception;
           }
@@ -447,16 +446,15 @@ namespace capi
       results->setRewritten(true);
       
       if (!serverPrepareResult && tmpServerPrepareResult) {
-        releasePrepareStatement(tmpServerPrepareResult);
+        //releasePrepareStatement(tmpServerPrepareResult);
         // releasePrepareStatement basically cares only about releasing stmt on server(and C API handle)
         delete tmpServerPrepareResult;
       }
       return true;
-
     }
     catch (std::runtime_error& e) {
       if (!serverPrepareResult && tmpServerPrepareResult) {
-        releasePrepareStatement(tmpServerPrepareResult);
+        //releasePrepareStatement(tmpServerPrepareResult);
         // releasePrepareStatement basically cares only about releasing stmt on server(and C API handle)
         delete tmpServerPrepareResult;
       }
@@ -1075,7 +1073,6 @@ namespace capi
       Shared::Results& results,
       std::vector<Shared::ParameterHolder>& parameters)
   {
-
     cmdPrologue();
 
     try {
@@ -1103,10 +1100,13 @@ namespace capi
       }
       /*CURSOR_TYPE_NO_CURSOR);*/
       getResult(results.get(), serverPrepareResult);
-
-    }catch (SQLException& qex){
+      // We have to do this due to CONCPP-138
+      results->loadFully(false, this);
+    }
+    catch (SQLException& qex) {
       throw logQuery->exceptionWithQuery(parameters, qex, serverPrepareResult);
-    }catch (std::runtime_error& e){
+    }
+    catch (std::runtime_error& e) {
       handleIoException(e).Throw();
     }
   }
@@ -1167,7 +1167,7 @@ namespace capi
    */
   void QueryProtocol::forceReleaseWaitingPrepareStatement()
   {
-    if (statementIdToRelease != nullptr && forceReleasePrepareStatement(statementIdToRelease)){
+    if (statementIdToRelease != nullptr && capi::mysql_stmt_close(statementIdToRelease) == 0) {
       statementIdToRelease= nullptr;
     }
   }

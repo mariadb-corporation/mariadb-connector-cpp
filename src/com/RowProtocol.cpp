@@ -17,7 +17,7 @@
    51 Franklin St., Fifth Floor, Boston, MA 02110, USA
 *************************************************************************************/
 
-
+#include <cstring>
 #include "RowProtocol.h"
 
 #include "ColumnDefinition.h"
@@ -188,13 +188,17 @@ namespace mariadb
 
   long double RowProtocol::stringToDouble(const char* str, uint32_t len)
   {
-    std::string doubleAsString(str, len);
-    std::istringstream convStream(doubleAsString);
-    std::locale C("C");
-    long double result;
-    convStream.imbue(C);
-    convStream >> result;
-
+    char *end= nullptr;
+    long double result= std::strtod(str, &end);
+    /* Noramlly it should be always NULL-terminated. And if we read past the end - that could already end up bad
+     * but leaving in place this paranoid branch with old code
+     */
+    if (end - str > len) {
+      std::istringstream convStream(str, len);
+      std::locale C("C");
+      convStream.imbue(C);
+      convStream >> result;
+    }
     return result;
   }
 

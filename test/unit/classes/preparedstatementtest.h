@@ -80,6 +80,7 @@ public:
     TEST_CASE(concpp116_getByte);
     TEST_CASE(multirs_caching);
     TEST_CASE(bytesArrParam);
+    TEST_CASE(concpp138_useRsAfterConClose);
   }
 
   /**
@@ -171,11 +172,12 @@ public:
   void concpp116_getByte();
 
   void multirs_caching();
-
   /**
    * sql::bytes may have negative length(internally) and that caused problems
    */
   void bytesArrParam();
+
+  void concpp138_useRsAfterConClose();
 
   /* unit_fixture methods overriding */
   void setUp();
