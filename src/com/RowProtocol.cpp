@@ -190,11 +190,11 @@ namespace mariadb
   {
     char *end= nullptr;
     long double result= std::strtod(str, &end);
-    /* Noramlly it should be always NULL-terminated. And if we read past the end - that could already end up bad
+    /* Noramlly it should be always NULL-terminated, and if we read past the end - that could already have ended up badly.
      * but leaving in place this paranoid branch with old code
      */
     if (end - str > len) {
-      std::istringstream convStream(str, len);
+      std::istringstream convStream(std::string(str, len));
       std::locale C("C");
       convStream.imbue(C);
       convStream >> result;

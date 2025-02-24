@@ -28,34 +28,34 @@ namespace capi
 {
 #include "mysql.h"
 }
-  const ColumnType ColumnType::OLDDECIMAL(0, Types::DECIMAL, "Types::DECIMAL", "BigDecimal", 0);
-  const ColumnType ColumnType::TINYINT(1, Types::SMALLINT, "Types::SMALLINT", "int32_t", 1);
-  const ColumnType ColumnType::SMALLINT(2, Types::SMALLINT, "Types::SMALLINT", "int32_t", 2);
-  const ColumnType ColumnType::INTEGER(3, Types::INTEGER, "Types::INTEGER", "int32_t", 4);
-  const ColumnType ColumnType::FLOAT(4, Types::REAL, "Types::REAL", "float", 4);
-  const ColumnType ColumnType::DOUBLE(5, Types::DOUBLE, "Types::DOUBLE", "long double", 8);
-  const ColumnType ColumnType::_NULL(6, Types::_NULL, "Types::NULL", "SQLString", 0);
-  const ColumnType ColumnType::TIMESTAMP(7, Types::TIMESTAMP, "Types::TIMESTAMP", "Timestamp", sizeof(capi::MYSQL_TIME));
-  const ColumnType ColumnType::BIGINT(8, Types::BIGINT, "Types::BIGINT", "int64_t", 8);
-  const ColumnType ColumnType::MEDIUMINT(9, Types::INTEGER, "Types::INTEGER", "int32_t", 4);
-  const ColumnType ColumnType::DATE(10, Types::DATE, "Types::DATE", "Date", sizeof(capi::MYSQL_TIME));
-  const ColumnType ColumnType::TIME(11, Types::TIME, "Types::TIME", "Time", sizeof(capi::MYSQL_TIME));
-  const ColumnType ColumnType::DATETIME(12, Types::TIMESTAMP, "Types::TIMESTAMP", "Timestamp", sizeof(capi::MYSQL_TIME));
-  const ColumnType ColumnType::YEAR(13, Types::SMALLINT, "Types::SMALLINT", "int16_t", 2);
-  const ColumnType ColumnType::NEWDATE(14, Types::DATE, "Types::DATE", "Date", sizeof(capi::MYSQL_TIME));
-  const ColumnType ColumnType::VARCHAR(15, Types::VARCHAR, "Types::VARCHAR", "SQLString", 0);
-  const ColumnType ColumnType::BIT(16, Types::BIT, "Types::BIT", "[B", 0);
-  const ColumnType ColumnType::JSON(245, Types::VARCHAR, "Types::VARCHAR", "SQLString", 0);
-  const ColumnType ColumnType::DECIMAL(246, Types::DECIMAL, "Types::DECIMAL", "BigDecimal", 0);
-  const ColumnType ColumnType::ENUM(247, Types::VARCHAR, "Types::VARCHAR", "SQLString", 0);
-  const ColumnType ColumnType::SET(248, Types::VARCHAR, "Types::VARCHAR", "SQLString", 0);
-  const ColumnType ColumnType::TINYBLOB(249, Types::VARBINARY, "Types::VARBINARY", "[B", 0);
-  const ColumnType ColumnType::MEDIUMBLOB(250, Types::VARBINARY, "Types::VARBINARY", "[B", 0);
-  const ColumnType ColumnType::LONGBLOB(251, Types::LONGVARBINARY, "Types::LONGVARBINARY", "[B", 0);
-  const ColumnType ColumnType::BLOB(252, Types::LONGVARBINARY, "Types::LONGVARBINARY", "[B", 0);
-  const ColumnType ColumnType::VARSTRING(253, Types::VARCHAR, "Types::VARCHAR", "SQLString", 0);
-  const ColumnType ColumnType::STRING(254, Types::VARCHAR, "Types::VARCHAR", "SQLString", 0);
-  const ColumnType ColumnType::GEOMETRY(255, Types::VARBINARY, "Types::VARBINARY", "[B", 0);
+  const ColumnType ColumnType::OLDDECIMAL(0, Types::DECIMAL, "DECIMAL", "BigDecimal", 0);
+  const ColumnType ColumnType::TINYINT(1, Types::SMALLINT, "SMALLINT", "int32_t", 1);
+  const ColumnType ColumnType::SMALLINT(2, Types::SMALLINT, "SMALLINT", "int32_t", 2);
+  const ColumnType ColumnType::INTEGER(3, Types::INTEGER, "INTEGER", "int32_t", 4);
+  const ColumnType ColumnType::FLOAT(4, Types::REAL, "REAL", "float", 4);
+  const ColumnType ColumnType::DOUBLE(5, Types::DOUBLE, "DOUBLE", "long double", 8);
+  const ColumnType ColumnType::_NULL(6, Types::_NULL, "NULL", "SQLString", 0);
+  const ColumnType ColumnType::TIMESTAMP(7, Types::TIMESTAMP, "TIMESTAMP", "Timestamp", sizeof(capi::MYSQL_TIME));
+  const ColumnType ColumnType::BIGINT(8, Types::BIGINT, "BIGINT", "int64_t", 8);
+  const ColumnType ColumnType::MEDIUMINT(9, Types::INTEGER, "INTEGER", "int32_t", 4);
+  const ColumnType ColumnType::DATE(10, Types::DATE, "DATE", "Date", sizeof(capi::MYSQL_TIME));
+  const ColumnType ColumnType::TIME(11, Types::TIME, "TIME", "Time", sizeof(capi::MYSQL_TIME));
+  const ColumnType ColumnType::DATETIME(12, Types::TIMESTAMP, "TIMESTAMP", "Timestamp", sizeof(capi::MYSQL_TIME));
+  const ColumnType ColumnType::YEAR(13, Types::SMALLINT, "SMALLINT", "int16_t", 2);
+  const ColumnType ColumnType::NEWDATE(14, Types::DATE, "DATE", "Date", sizeof(capi::MYSQL_TIME));
+  const ColumnType ColumnType::VARCHAR(15, Types::VARCHAR, "VARCHAR", "SQLString", 0);
+  const ColumnType ColumnType::BIT(16, Types::BIT, "BIT", "[B", 0);
+  const ColumnType ColumnType::JSON(245, Types::VARCHAR, "VARCHAR", "SQLString", 0);
+  const ColumnType ColumnType::DECIMAL(246, Types::DECIMAL, "DECIMAL", "BigDecimal", 0);
+  const ColumnType ColumnType::ENUM(247, Types::VARCHAR, "VARCHAR", "SQLString", 0);
+  const ColumnType ColumnType::SET(248, Types::VARCHAR, "VARCHAR", "SQLString", 0);
+  const ColumnType ColumnType::TINYBLOB(249, Types::VARBINARY, "VARBINARY", "[B", 0);
+  const ColumnType ColumnType::MEDIUMBLOB(250, Types::VARBINARY, "VARBINARY", "[B", 0);
+  const ColumnType ColumnType::LONGBLOB(251, Types::LONGVARBINARY, "LONGVARBINARY", "[B", 0);
+  const ColumnType ColumnType::BLOB(252, Types::LONGVARBINARY, "LONGVARBINARY", "[B", 0);
+  const ColumnType ColumnType::VARSTRING(253, Types::VARCHAR, "VARCHAR", "SQLString", 0);
+  const ColumnType ColumnType::STRING(254, Types::VARCHAR, "VARCHAR", "SQLString", 0);
+  const ColumnType ColumnType::GEOMETRY(255, Types::VARBINARY, "VARBINARY", "[B", 0);
 
   const std::map<int32_t, const ColumnType&> ColumnType::typeMap= {
     {ColumnType::OLDDECIMAL.mariadbType, ColumnType::OLDDECIMAL},
