@@ -553,7 +553,6 @@ namespace capi
       mysql_optionsv(connection.get(), MARIADB_OPT_TLS_PEER_FP, options->tlsPeerFP.c_str());
     }
 
-
     // This is not quite a TLS option, but still putting it here
     if (!options->serverRsaPublicKeyFile.empty()) {
       mysql_optionsv(connection.get(), MYSQL_SERVER_PUBLIC_KEY, (void*)options->serverRsaPublicKeyFile.c_str());

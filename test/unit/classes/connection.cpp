@@ -3334,16 +3334,17 @@ void connection::concpp94_loadLocalInfile()
     stmt->execute("LOAD DATA LOCAL INFILE 'nonexistent.txt' INTO TABLE nonexistent(b)");
   }
   catch (sql::SQLException& e) {
-    if (e.getErrorCode() != 1148 && e.getErrorCode() != 4166) {
+    if (e.getErrorCode() != 1148 && e.getErrorCode() != 4166 &&
+      e.getErrorCode() != 3948) {
       FAIL("Wrong error code - local infile is allowed");
     }
-    //ASSERT_EQUALS(4166, e.getErrorCode());
+    ASSERT_EQUALS("42000", e.getSQLState());
   }
 
-  p["user"] = user;
-  p["password"] = passwd;
-  p["allowLocalInfile"] = "true";
-  p["useTls"] = useTls ? "true" : "false";
+  p["user"]=             user;
+  p["password"]=         passwd;
+  p["allowLocalInfile"]= "true";
+  p["useTls"]=           useTls ? "true" : "false";
 
   con.reset(driver->connect(url, p));
   ASSERT(con.get());
@@ -3356,7 +3357,6 @@ void connection::concpp94_loadLocalInfile()
     if (e.getErrorCode() == 1148 || e.getErrorCode() == 4166) {
       FAIL("Wrong error code - local infile is still not allowed");
     }
-    //ASSERT(4166!=e.getErrorCode());
     ASSERT_EQUALS("42S02", e.getSQLState());
   }
 }
