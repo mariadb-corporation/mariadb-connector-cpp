@@ -204,11 +204,12 @@ namespace sql
         " implements javax.net.SocketFactory.",
         false}},
       {
-        "pinGlobalTxToPhysicalConnection", {"pinGlobalTxToPhysicalConnection", "0.9.1", "", false, false}},
+        "pinGlobalTxToPhysicalConnection", {"pinGlobalTxToPhysicalConnection", "0.9.1", "", false, false}
+      },
       {
         "trustServerCertificate", {"trustServerCertificate",
-        "0.9.2",
-        "When using SSL, do not check server's certificate.",
+        "1.0.5",
+        "When using TLS, do not check server's certificate.",
         false,
         true}
       },

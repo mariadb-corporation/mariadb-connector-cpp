@@ -90,6 +90,7 @@ The list of supported options:
 | **`tlsCRLPath`** |A path to a directory that contains one or more PEM files that should each contain one revoked X509 certificate. The directory specified by this option needs to be run through the openssl rehash command. This option is only supported if the connector was built with OpenSSL.|*string* ||tlsCrlPath, sslCRLPath|
 | **`tlsPeerFP`** |A SHA1 fingerprint of a server certificate for validation during the TLS handshake.|*string* ||tlsPeerFp, MARIADB_OPT_SSL_FP|
 | **`tlsPeerFPList`** |A file containing one or more SHA1 fingerprints of server certificates for validation during the TLS handshake.|*string* ||tlsPeerFpList, MARIADB_OPT_SSL_FP_LIST|
+| **`trustServerCertificate`** |When using TLS, do not check server's certificate.|*bool* |true||
 | **`serverRsaPublicKeyFile`** |The name of the file which contains the RSA public key of the database server. The format of this file must be in PEM format. This option is used by the caching_sha2_password client authentication plugin.|*string* ||rsaKey|
 | **`useCompression`** |Compresses the exchange with the database|*bool* |false|CLIENT_COMPRESS|
 | **`jdbcCompliantTruncation`** |Truncation error will be thrown as error, and not as warning|*bool* |true||
