@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2023 MariaDB Corporation AB
+   Copyright (C) 2020,2025 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -37,7 +37,7 @@ namespace mariadb
 {
 namespace capi
 {
-  static const char OptionSelected= 1, OptionNotSelected= 0;
+  static const char OptionSelected= '\1', OptionNotSelected= '\0';
   static const unsigned int uintOptionSelected= 1, uintOptionNotSelected= 0;
   const char * attrPairSeparators= ",";
 
@@ -559,7 +559,10 @@ namespace capi
     //sslSocket->startHandshake();
 
     if (!options->disableSslHostnameVerification && !options->trustServerCertificate) {
-      mysql_optionsv(connection.get(), MYSQL_OPT_SSL_VERIFY_SERVER_CERT, (const char*)&safeCApiTrue);
+      mysql_optionsv(connection.get(), MYSQL_OPT_SSL_VERIFY_SERVER_CERT, (const char*)&OptionSelected);
+    }
+    else {
+      mysql_optionsv(connection.get(), MYSQL_OPT_SSL_VERIFY_SERVER_CERT, (const char*)&OptionNotSelected);
     }
 
     assignStream(options);
