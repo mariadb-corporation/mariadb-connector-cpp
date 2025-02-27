@@ -200,8 +200,8 @@ namespace mariadb
       catch (SQLException& ) {
       }
     }
-
-    if (sqle.getErrorCode()==1148 && !options->allowLocalInfile) {
+    auto errorCode= sqle.getErrorCode();
+    if ((errorCode == 1148 || errorCode == 4166) && !options->allowLocalInfile) {
       return exceptionFactory->raiseStatementError(connection, this)->create(
           "Usage of LOCAL INFILE is disabled. "
           "To use it enable it via the connection property allowLocalInfile=true",

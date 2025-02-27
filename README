@@ -99,6 +99,8 @@ tlsPeerFP   A SHA1 fingerprint of a server certificate for validation during the
 tlsPeerFPList  A file containing one or more SHA1 fingerprints of server certificates
                for validation during the TLS handshake.                              string tlsPeerFpList, MARIADB_OPT_SSL_FP_LIST
 
+trustServerCertificate  When using TLS, do not check server's certificate(def. true) bool
+
 serverRsaPublicKeyFile  The name of the file which contains the RSA public key of the
            database server. The format of this file must be in PEM format. This
            option is used by the caching_sha2_password client authentication plugin  string rsaKey

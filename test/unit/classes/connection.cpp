@@ -3322,6 +3322,7 @@ void connection::concpp94_loadLocalInfile()
   sql::Properties p;
   sql::SQLString onServer(getVariableValue("local_infile", true));
 
+  // Turning it on it it is off at the server
   if (onServer.compare("0") == 0) {
     try {
       setVariableValue("local_infile", "ON", true); // can't be session
@@ -3330,6 +3331,7 @@ void connection::concpp94_loadLocalInfile()
       SKIP("local_infile is OFF at the server, and test could not change that. Doesn't make sense to continue the test");
     }
   }
+  // Assuming allowLocalInfile is off(that is default value)
   try {
     stmt->execute("LOAD DATA LOCAL INFILE 'nonexistent.txt' INTO TABLE nonexistent(b)");
   }

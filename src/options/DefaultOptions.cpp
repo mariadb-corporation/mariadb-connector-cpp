@@ -109,9 +109,12 @@ namespace sql
         "Metadata ResultSetMetaData.getTableName() returns the physical table name. \"useOldAliasMetadataBehavior\""
         " permits activating the legacy code that sends the table alias if set.",
         false,
-        false}},
+        false}
+      },
       {
-        "allowLocalInfile", {"allowLocalInfile", "1.1.1", "Permits loading data from local file(on the client)", false, false}},
+        "allowLocalInfile", { "allowLocalInfile",
+        "1.1.1", "Permits loading data from local file(on the client)", false, false}
+      },
       {
         "sessionVariables", {"sessionVariables",
         "0.9.1",
@@ -204,11 +207,12 @@ namespace sql
         " implements javax.net.SocketFactory.",
         false}},
       {
-        "pinGlobalTxToPhysicalConnection", {"pinGlobalTxToPhysicalConnection", "0.9.1", "", false, false}},
+        "pinGlobalTxToPhysicalConnection", {"pinGlobalTxToPhysicalConnection", "0.9.1", "", false, false}
+      },
       {
         "trustServerCertificate", {"trustServerCertificate",
-        "0.9.2",
-        "When using SSL, do not check server's certificate.",
+        "1.0.5",
+        "When using TLS, do not check server's certificate.",
         false,
         true}
       },
