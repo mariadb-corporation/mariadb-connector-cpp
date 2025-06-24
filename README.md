@@ -67,7 +67,7 @@ The list of supported options:
 | **`tcpSndBuf`** |The buffer size for TCP/IP and socket communication. `tcpRcvBuf` changes the same buffer value, and the biggest value of the two is selected|*int* |0x4000|tcpRcvBuf|
 | **`localSocket`** |For connections to localhost, the Unix socket file to use.|*string* |||
 | **`pipe`** |On Windows, specify the named pipe name to connect.|*string* |||
-| **`useTls`** |Whether to force TLS. This enables TLS with the default system settings. |*bool* ||useSsl,useSSL|
+| **`useTls`** |Whether to force TLS. This enables TLS with the default system settings. |*bool* |false|useSsl,useSSL|
 | **`tlsKey`** |File path to a private key file |*string* ||sslKey|
 | **`keyPassword`** |Password for the private key |*string* ||MARIADB_OPT_TLS_PASSPHRASE|
 | **`tlsCert`** |Path to the X509 certificate file|*string* ||sslCert|
