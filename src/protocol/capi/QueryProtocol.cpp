@@ -282,11 +282,9 @@ namespace capi
   bool QueryProtocol::executeBatchClient(
       bool mustExecuteOnMaster,
       Results* results,
-
       ClientPrepareResult* prepareResult,
       std::vector<std::vector<Unique::ParameterHolder>>& parametersList,
       bool hasLongData)
-
   {
     // ***********************************************************************************************************
     // Multiple solution for batching :
