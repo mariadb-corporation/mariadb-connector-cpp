@@ -1,0 +1,112 @@
+---
+name: Run CI Tests
+
+on:
+  push:
+    branches:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Run weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  MYSQL_TEST_HOST: mariadb.example.com
+  MYSQL_TEST_PORT: 3306
+  MYSQL_TEST_USER: root
+  MYSQL_TEST_PASSWD: "heyPassw+-_20oRd"
+  MYSQL_TEST_DB: testcpp
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    # Only run scheduled jobs if we're on the right branch
+    if: github.event_name != 'schedule' || contains(fromJSON('["1.0", "1.1"]'), github.ref_name)
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.final-matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-matrix
+        name: build matrix
+        uses: rusher/mariadb-test-build-matrix@main
+        with:
+          additional-matrix: '[]'
+
+  ci:
+    name: ${{ matrix.name }}
+    needs: setup
+    timeout-minutes: 50
+    strategy:
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.continue-on-error || matrix.os == 'macos-latest' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Test Environment
+        id: setup-env
+        uses: rusher/mariadb-test-setup@master
+        with:
+          node-version: ${{ matrix.node }}
+          db-type: ${{ matrix.db-type }}
+          db-tag: ${{ matrix.db-tag }}
+          test-db-password: ${{ env.MYSQL_TEST_PASSWD }}
+          test-db-database: ${{ env.MYSQL_TEST_DB }}
+          test-db-port: ${{ env.MYSQL_TEST_PORT }}
+          additional-conf: ${{ matrix.additional-conf || '' }}
+          registry-user: ${{ matrix.db-type == 'enterprise' && secrets.ENTERPRISE_USER || (secrets.DOCKER_PWD != '' && 'mariadbtest' || '') }}
+          registry-password: ${{ matrix.db-type == 'enterprise' && secrets.ENTERPRISE_TOKEN || secrets.DOCKER_PWD }}
+          os: ${{ matrix.os }}
+
+      - name: make ubuntu
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
+        run: |
+          sudo apt install unixodbc-dev
+          cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=OPENSSL -DTEST_HOST="jdbc:mariadb://${{ env.MYSQL_TEST_HOST }}:${{ env.MYSQL_TEST_PORT }}" .
+          cmake --build . --config RelWithDebInfo 
+        env:
+          MARIADB_PLUGIN_DIR: ${{ github.workspace }}
+
+      - name: make macos
+        if: ${{ startsWith(matrix.os, 'mac') }}
+        run: |
+          brew install libiodbc openssl
+          ls -lrt /opt/homebrew/opt/libiodbc/lib
+          
+          TEST_DRIVER=${{ github.workspace }}/RelWithDebInfo/libmaodbc.dylib
+          echo "TEST_DRIVER=${{ github.workspace }}/RelWithDebInfo/libmaodbc.dylib" >> $GITHUB_ENV
+          cmake -G Xcode -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="" -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DWITH_SIGNCODE=OFF -DODBC_LIB_DIR=/opt/homebrew/opt/libiodbc/lib -DODBC_INCLUDE_DIR=/opt/homebrew/opt/libiodbc/include -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=OPENSSL -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -DWITH_EXTERNAL_ZLIB=On -DTEST_HOST="jdbc:mariadb://${{ env.MYSQL_TEST_HOST }}:${{ env.MYSQL_TEST_PORT }}" .
+          cmake --build . --config RelWithDebInfo
+
+      - name: make windows
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        shell: powershell
+        run: |
+          cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DWITH_MSI=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=SCHANNEL -DTEST_HOST="jdbc:mariadb://${{ env.MYSQL_TEST_HOST }}:${{ env.MYSQL_TEST_PORT }}" .
+          cmake --build . --config RelWithDebInfo 
+
+      - name: Run test suite
+        shell: bash
+        run: |
+          cd ./test
+          if [ "$DB_TYPE" = "mysql" ] ; then
+            cp ../libmariadb/caching_sha2_password.* ../
+          fi
+          ctest --output-on-failure
+        env:
+          DB_TYPE: ${{ matrix.db-type }}
+          LOCAL_DB: ${{ steps.setup-env.outputs.database-type }}
+          os: ${{ matrix.os }}
+          TEST_UID: ${{ env.MYSQL_TEST_USER }}
+          TEST_SERVER: ${{ env.MYSQL_TEST_HOST }}
+          TEST_PASSWORD: ${{ env.MYSQL_TEST_PASSWD }}
+          TEST_PORT: ${{ env.MYSQL_TEST_PORT }}
+          TEST_SCHEMA: ${{ env.MYSQL_TEST_DB }}
+          TEST_VERBOSE: true
+          SSLCERT: ${{ matrix.db-type == 'container' && format('{0}/.github/workflows/certs/server.crt', github.workspace) || '' }}
+          MARIADB_PLUGIN_DIR: ${{ github.workspace }}
