@@ -704,7 +704,14 @@ namespace sql
         "Default authentication client-side plugin to use",
         false,
         ""}
-      }
+      },
+      {
+        "initCommand", {"initCommand",
+        "1.1.7",
+        "SQL statement to execute when connecting to the MySQL server. Automatically re-executed if reconnection occurs. ",
+        false,
+        ""}
+      },
     };
 
 //---------------------------------------- Aliases ------------------------------------------------------------------------------------
