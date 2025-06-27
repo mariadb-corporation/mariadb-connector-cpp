@@ -137,6 +137,7 @@ struct Options
   bool      useReadAheadInput= true;
   SQLString serverRsaPublicKeyFile;
   SQLString tlsPeerFP;
+  SQLString initCommand;
 
   SQLString toString() const;
   bool      equals(Options* obj);
