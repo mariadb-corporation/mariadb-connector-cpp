@@ -428,7 +428,8 @@ namespace capi
 
       compressionHandler(options);
       setConnectionAttributes(options->connectionAttributes);
-      mysql_optionsv(connection.get(), MYSQL_INIT_COMMAND, options->initCommand.empty() ? nullptr : (void*)options->initCommand.c_str());
+      if (!options->initCommand.empty())
+        mysql_optionsv(connection.get(), MYSQL_INIT_COMMAND, (void*)options->initCommand.c_str());
     }
     catch (SQLException& sqlException) {
       destroySocket();
