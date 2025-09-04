@@ -1,4 +1,5 @@
 ---
+
 name: Run CI Tests
 
 on:
@@ -20,6 +21,7 @@ env:
   MYSQL_TEST_USER: root
   MYSQL_TEST_PASSWD: "heyPassw+-_20oRd"
   MYSQL_TEST_DB: testcpp
+  BASE_TEST_HOST: jdbc:mariadb://mariadb.example.com:3306
 
 jobs:
   setup:
@@ -67,7 +69,7 @@ jobs:
         if: ${{ startsWith(matrix.os, 'ubuntu') }}
         run: |
           sudo apt install unixodbc-dev
-          cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=OPENSSL -DTEST_HOST="jdbc:mariadb://${{ env.MYSQL_TEST_HOST }}:${{ env.MYSQL_TEST_PORT }}" .
+          cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=OPENSSL -DTEST_HOST="${{ env.BASE_TEST_HOST }}" .
           cmake --build . --config RelWithDebInfo 
         env:
           MARIADB_PLUGIN_DIR: ${{ github.workspace }}
@@ -78,16 +80,14 @@ jobs:
           brew install libiodbc openssl
           ls -lrt /opt/homebrew/opt/libiodbc/lib
           
-          TEST_DRIVER=${{ github.workspace }}/RelWithDebInfo/libmaodbc.dylib
-          echo "TEST_DRIVER=${{ github.workspace }}/RelWithDebInfo/libmaodbc.dylib" >> $GITHUB_ENV
-          cmake -G Xcode -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="" -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DWITH_SIGNCODE=OFF -DODBC_LIB_DIR=/opt/homebrew/opt/libiodbc/lib -DODBC_INCLUDE_DIR=/opt/homebrew/opt/libiodbc/include -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=OPENSSL -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -DWITH_EXTERNAL_ZLIB=On -DTEST_HOST="jdbc:mariadb://${{ env.MYSQL_TEST_HOST }}:${{ env.MYSQL_TEST_PORT }}" .
+          cmake -G Xcode -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="" -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DWITH_SIGNCODE=OFF -DODBC_LIB_DIR=/opt/homebrew/opt/libiodbc/lib -DODBC_INCLUDE_DIR=/opt/homebrew/opt/libiodbc/include -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=OPENSSL -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -DWITH_EXTERNAL_ZLIB=On -DTEST_HOST="${{ env.BASE_TEST_HOST }}" .
           cmake --build . --config RelWithDebInfo
 
       - name: make windows
         if: ${{ startsWith(matrix.os, 'windows') }}
         shell: powershell
         run: |
-          cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DWITH_MSI=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=SCHANNEL -DTEST_HOST="jdbc:mariadb://${{ env.MYSQL_TEST_HOST }}:${{ env.MYSQL_TEST_PORT }}" .
+          cmake -DCONC_WITH_MSI=OFF -DCONC_WITH_UNIT_TESTS=OFF -DWITH_MSI=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_SSL=SCHANNEL -DTEST_HOST="${{ env.BASE_TEST_HOST }}" .
           cmake --build . --config RelWithDebInfo 
 
       - name: Run test suite
@@ -98,6 +98,9 @@ jobs:
             cp ../libmariadb/caching_sha2_password.* ../
           fi
           ctest --output-on-failure
+          export TEST_HOST=$BASE_TEST_HOST/$TEST_SCHEMA?useServerPrepStmts=true
+          ctest --output-on-failure
+
         env:
           DB_TYPE: ${{ matrix.db-type }}
           LOCAL_DB: ${{ steps.setup-env.outputs.database-type }}

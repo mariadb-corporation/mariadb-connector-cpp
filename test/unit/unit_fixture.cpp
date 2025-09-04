@@ -438,7 +438,7 @@ void unit_fixture::dropTable(String table_name)
 sql::Connection *
 unit_fixture::getConnection(sql::ConnectOptionsMap *additional_options)
 {
-  if (driver == NULL)
+  if (driver == nullptr)
   {
     driver=sql::mariadb::get_driver_instance();
   }
