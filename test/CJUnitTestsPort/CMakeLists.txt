@@ -28,7 +28,9 @@
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
 IF(WIN32)
-  LINK_DIRECTORIES(../framework/$(ConfigurationName))
+  # Use CMake generator expression instead of VS-specific $(ConfigurationName)
+  # to be compatible with Ninja and other generators.
+  LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../framework/$<CONFIG>)
 ENDIF()
 SET(MY_TARGET_LINK_LIBRARIES test_framework ${LIBRARY_NAME})
 
