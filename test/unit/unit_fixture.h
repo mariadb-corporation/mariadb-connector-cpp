@@ -362,6 +362,9 @@ protected:
   /* Checks current value, if it's different - then set the new value, and record what has to be done to return it to the original state */
   bool setVariableValue(const sql::SQLString& name, const sql::SQLString& value, bool global= false);
 
+  /* Adds given options to the base Url on which the tests are run */
+  String addOptions2url(String& add);
+
 public:
 
   /**

@@ -495,6 +495,7 @@ sql::SQLString unit_fixture::getVariableValue(const sql::SQLString& name, bool g
   return res->getString(1);
 }
 
+
 bool unit_fixture::setVariableValue(const sql::SQLString& name, const sql::SQLString& value, bool global)
 {
   sql::SQLString currentValue(getVariableValue(name), global);
@@ -509,6 +510,21 @@ bool unit_fixture::setVariableValue(const sql::SQLString& name, const sql::SQLSt
     }
   }
   return false;
+}
+
+String unit_fixture::addOptions2url(String& add)
+{
+  String localUrl;
+  localUrl.reserve(url.length() + 1 + add.length());
+
+  localUrl.assign(url);
+  if (url.find_first_of('?') == std::string::npos) {
+    localUrl.append(1, '?');
+  }
+  else {
+    localUrl.append(1, '&');
+  }
+  return localUrl.append(add);
 }
 
 std::string unit_fixture::exceptionIsOK(sql::SQLException & e)
