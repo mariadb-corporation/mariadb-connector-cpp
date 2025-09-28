@@ -50,7 +50,7 @@ class ServerPrepareResult  : public PrepareResult {
   capi::MYSQL_STMT* statementId;
   std::unique_ptr<capi::MYSQL_RES, decltype(&capi::mysql_free_result)> metadata;
   std::vector<capi::MYSQL_BIND> paramBind;
-  Protocol* unProxiedProtocol;
+  Protocol* unProxiedProtocol= nullptr;
   std::atomic<int32_t> shareCounter{1};
   std::atomic<bool> isBeingDeallocate{false};
   std::mutex lock;

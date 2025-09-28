@@ -20,6 +20,7 @@
 
 #include "ServerPrepareResult.h"
 
+#include "Protocol.h"
 #include "ColumnType.h"
 #include "ColumnDefinition.h"
 #include "parameters/ParameterHolder.h"
@@ -32,8 +33,20 @@ namespace mariadb
 {
   ServerPrepareResult::~ServerPrepareResult()
   {
-    std::lock_guard<std::mutex> localScopeLock(lock);
-    capi::mysql_stmt_close(statementId);
+    if (statementId) {
+      // if connection has been already destroyed before - we are busted
+      // Dirty hack - mysql is cleared in stmt handlers when conneciton is being closed. if that did not happen yet -
+      // we are rather good to use proxy object - connection is closed by its destructor
+      // Normally I would expect application to take care of that, and destroys statement objects before connection
+      // Probably a good solution would be to have a weak pointer to the protocol
+      if (statementId->mysql != nullptr) {
+        unProxiedProtocol->forceReleasePrepareStatement(statementId);
+      }
+      else {
+        // If do this while connected and connection is busy - this can break the protocol
+        capi::mysql_stmt_close(statementId);
+      }
+    }
   }
   /**
     * PrepareStatement Result object.

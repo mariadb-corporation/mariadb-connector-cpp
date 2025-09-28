@@ -1837,7 +1837,7 @@ namespace capi
       activeStream->loadFully(false, this);
       activeStreamingResult= nullptr;
     }
-
+    forceReleaseWaitingPrepareStatement();
     if (activeFutureTask){
 
       try {
@@ -1854,7 +1854,7 @@ namespace capi
             -1,
             interruptedException);
       }*/
-      /*finally*/forceReleaseWaitingPrepareStatement();
+      /*finally*/
 
       activeFutureTask= nullptr;
     }

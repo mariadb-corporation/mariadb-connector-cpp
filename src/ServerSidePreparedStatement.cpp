@@ -441,6 +441,7 @@ namespace sql
       }
       catch (SQLException&) {
       }
+      serverPrepareResult= nullptr;
     }
     if (protocol->isClosed()
      || !connection->pooledConnection
