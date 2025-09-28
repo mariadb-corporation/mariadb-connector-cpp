@@ -235,6 +235,9 @@ namespace mariadb
       nullptr,
       nullptr);
     stmt->executeQueryPrologue(true);
+    // Technically stmt after the following method call can have different instance of the object.
+    // but currently it does not and we don't want it to. If it changes - we will definetely feel it,
+    // abd then we will need to use stmt->setInternalResults() object below. 
     stmt->setInternalResults(results);
     if (protocol->executeBatchClient(protocol->isMasterConnection(), results, prepareResult.get(),
       parameterList, hasLongData)) {
@@ -245,8 +248,7 @@ namespace mariadb
     SQLException exception("");
     bool autoCommit= protocol->getAutocommit();
     bool queryTimeout= stmt->queryTimeout > 0, isMaster= protocol->isMasterConnection();
-    auto results= stmt->getInternalResults().get();
-    auto pr= prepareResult.get();
+    auto pr= prepareResult.get(); 
     
     if (autoCommit) {
       connection->setAutoCommit(false);
