@@ -66,13 +66,13 @@ public:
 
   StartOptions();
 
-  StartOptions( const TestList                    & orderedParams
-              , const TestProperties              * defStrVals  = NULL
+  StartOptions( const TestList                & orderedParams
+              , const TestProperties          * defStrVals  = NULL
               , const std::map<String, bool>  * defBoolVals = NULL );
 
   /* Last array member must be NULL */
   StartOptions( const String::value_type      * orderedParams[]
-              , const TestProperties              * defStrVals  = NULL
+              , const TestProperties          * defStrVals  = NULL
               , const std::map<String, bool>  * defBoolVals = NULL );
 
         bool      parseParams(int paramsNumber, char** paramsValues);
