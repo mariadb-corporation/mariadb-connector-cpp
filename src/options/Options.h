@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2023 MariaDB Corporation AB
+   Copyright (C) 2020,2025 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -137,6 +137,7 @@ struct Options
   bool      useReadAheadInput= true;
   SQLString serverRsaPublicKeyFile;
   SQLString tlsPeerFP;
+  SQLString restrictedAuth;
 
   SQLString toString() const;
   bool      equals(Options* obj);

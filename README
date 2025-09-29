@@ -119,6 +119,10 @@ useBulkStmts             Use dedicated COM_STMT_BULK_EXECUTE protocol for
 connectionAttributes     If performance_schema is enabled, permits to send server
                          some client information in a key:value pair format
                          (example: connectionAttributes=key1:value1,key2,value2)      string
+restrictedAuth           A comma separated list of allowed to use client-side plugins.
+                         The full list of available plugins is mysql_native_password,
+                         client_ed25519, auth_gssapi_client, caching_sha2_password,
+                         dialog and mysql_clear_password                              string
 
 
 Properties is map of strings, and is another way to pass optional parameters.

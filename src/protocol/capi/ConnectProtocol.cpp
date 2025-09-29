@@ -452,6 +452,9 @@ namespace capi
     mysql_optionsv(connection.get(), MYSQL_REPORT_DATA_TRUNCATION, &uintOptionSelected);
     mysql_optionsv(connection.get(), MYSQL_OPT_LOCAL_INFILE, (options->allowLocalInfile ? &uintOptionSelected : &uintOptionNotSelected));
 
+    if (!options.get()->restrictedAuth.empty()) {
+      mysql_optionsv(connection.get(), MARIADB_OPT_RESTRICTED_AUTH, options.get()->restrictedAuth.c_str());
+    }
     if (mysql_real_connect(connection.get(), NULL, NULL, NULL, NULL, 0, NULL, CLIENT_MULTI_STATEMENTS) == nullptr)
     {
       throw SQLException(mysql_error(connection.get()), mysql_sqlstate(connection.get()), mysql_errno(connection.get()));
