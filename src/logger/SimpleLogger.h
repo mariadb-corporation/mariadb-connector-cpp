@@ -20,6 +20,7 @@
 #ifndef _SIMPLELOGGER_H_
 #define _SIMPLELOGGER_H_
 
+#include <cstdint>
 #include <iostream>
 #include <sstream>
 #include "SQLString.hpp"
