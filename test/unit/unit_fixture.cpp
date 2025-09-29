@@ -512,7 +512,7 @@ bool unit_fixture::setVariableValue(const sql::SQLString& name, const sql::SQLSt
   return false;
 }
 
-String unit_fixture::addOptions2url(String& add)
+String unit_fixture::addOptions2url(const String& add)
 {
   String localUrl;
   localUrl.reserve(url.length() + 1 + add.length());
