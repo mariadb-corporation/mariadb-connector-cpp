@@ -363,7 +363,7 @@ protected:
   bool setVariableValue(const sql::SQLString& name, const sql::SQLString& value, bool global= false);
 
   /* Adds given options to the base Url on which the tests are run */
-  String addOptions2url(String& add);
+  String addOptions2url(const String& add);
 
 public:
 
