@@ -1853,7 +1853,6 @@ namespace capi
     }
     forceReleaseWaitingPrepareStatement();
     if (activeFutureTask) {
-
       try {
         //activeFutureTask->get();
       }
@@ -1869,7 +1868,6 @@ namespace capi
             interruptedException);
       }*/
       /*finally*/
-
       activeFutureTask= nullptr;
     }
 

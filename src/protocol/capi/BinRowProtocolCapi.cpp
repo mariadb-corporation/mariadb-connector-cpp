@@ -635,8 +635,7 @@ namespace capi
     case MYSQL_TYPE_STRING:
     case MYSQL_TYPE_DECIMAL:
       try {
-        std::string raw(fieldBuf.arr, fieldBuf.size());
-        return std::stold(raw);
+        return RowProtocol::stringToDouble(fieldBuf.arr, static_cast<uint32_t>(fieldBuf.size()));
       }
       // Common parent for std::invalid_argument and std::out_of_range
       catch (std::logic_error& nfe) {
