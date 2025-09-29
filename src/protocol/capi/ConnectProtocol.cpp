@@ -462,6 +462,10 @@ namespace capi
         mysql_optionsv(connection.get(), MYSQL_INIT_COMMAND, sql.c_str());
       }
     }
+    if (!options.get()->restrictedAuth.empty()) {
+      mysql_optionsv(connection.get(), MARIADB_OPT_RESTRICTED_AUTH, options.get()->restrictedAuth.c_str());
+    }
+
     if (mysql_real_connect(connection.get(), NULL, NULL, NULL, NULL, 0, NULL, CLIENT_MULTI_STATEMENTS) == nullptr)
     {
       throw SQLException(mysql_error(connection.get()), mysql_sqlstate(connection.get()), mysql_errno(connection.get()));

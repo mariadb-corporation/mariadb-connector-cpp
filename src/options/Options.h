@@ -139,6 +139,7 @@ struct Options
   SQLString serverRsaPublicKeyFile;
   SQLString tlsPeerFP;
   SQLString initSql;
+  SQLString restrictedAuth;
 
   SQLString toString() const;
   bool      equals(Options* obj);

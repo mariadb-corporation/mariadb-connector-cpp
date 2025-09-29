@@ -720,6 +720,14 @@ namespace sql
         "SQL command(s) to run at connection time",
         false,
         ""}
+      },
+      {
+        "restrictedAuth", {"restrictedAuth",
+        "1.0.6",
+        "A comma separated list of allowed to use client-side plugins. The full list of available plugins is"
+        " mysql_native_password, client_ed25519, auth_gssapi_client, caching_sha2_password, dialog and mysql_clear_password",
+        false,
+        ""}
       }
     };
 

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2025 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -141,7 +141,8 @@ namespace mariadb
     OPTIONS_FIELD(useReadAheadInput),
     OPTIONS_FIELD(serverRsaPublicKeyFile),
     OPTIONS_FIELD(tlsPeerFP),
-    OPTIONS_FIELD(initSql)
+    OPTIONS_FIELD(initSql),
+    OPTIONS_FIELD(restrictedAuth)
   };
 
 
@@ -529,6 +530,9 @@ namespace mariadb
     if (!(initSql.compare(opt->initSql) == 0)) {
       return false;
     }
+    if (!(restrictedAuth.compare(opt->restrictedAuth) == 0)) {
+      return false;
+    }
     return minPoolSize == opt->minPoolSize;
   }
 
@@ -626,6 +630,7 @@ namespace mariadb
 
     result= 31*result + (!tlsPeerFPList.empty() ? tlsPeerFPList.hashCode() : 0);
     result= 31*result + (!initSql.empty() ? initSql.hashCode() : 0);
+    result= 31*result + (!restrictedAuth.empty() ? restrictedAuth.hashCode() : 0);
 
     return result;
   }

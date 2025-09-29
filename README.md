@@ -113,6 +113,7 @@ The list of supported options:
 | **`log`**|The logging level. Setting it to non-zero effectively turns on the logging. The levels are 1- error, 2- warning, 3- info, 4 - debug, 5-trace|*uint*|0||
 | **`logname`** |Name of the file to write the log in. If the name is set, and the log level is not, the level will be set to 'error'. The option does not have default value, but the logger has default name and location for the log file. The name is mariadbccpp.log, the location is %TMP% or %USERPROFILE% or current dir on Windows, or $HOME or /tmp on other systems.|*string*|||
 | **`initSql`** |One query or a semicolon separated list of queried to be executed at the connection time.|*string*|||
+| **`restrictedAuth`** |A comma separated list of allowed to use client-side plugins. The full list of available plugins is mysql_native_password, client_ed25519, auth_gssapi_client, caching_sha2_password, dialog and mysql_clear_password|*string* |||
 
 
 Properties is map of strings, and is another way to pass optional parameters.
