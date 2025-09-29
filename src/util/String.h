@@ -19,6 +19,7 @@
 
 
 #include <cctype>
+#include <cstdint>
 #include <string>
 #include <vector>
 

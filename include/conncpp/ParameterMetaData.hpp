@@ -21,6 +21,7 @@
 #ifndef _PARAMETERMETADATA_H_
 #define _PARAMETERMETADATA_H_
 
+#include <cstdint>
 #include "SQLString.hpp"
 
 namespace sql
