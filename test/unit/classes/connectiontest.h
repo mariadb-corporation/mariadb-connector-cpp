@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2025 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -96,6 +96,7 @@ public:
     TEST_CASE(concpp4_sequentialfailover);
     TEST_CASE(concpp105_conn_concurrency);
     TEST_CASE(concpp112_connection_attributes);
+    TEST_CASE(concpp146_initSQL);
   }
 
   /**
@@ -296,6 +297,9 @@ public:
 
   /* Setting of connection attributes for perfschema */
   void concpp112_connection_attributes();
+
+  /* Test of initSql option */
+  void concpp146_initSQL();
 
   void setUp();
 };

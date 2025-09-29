@@ -165,7 +165,7 @@ prepStmtCacheSqlLimit    This is the maximum length of a (SQL query length + sch
 connectionAttributes     If performance_schema is enabled, permits to send server
                          some client information in a key:value pair format
                          (example: connectionAttributes=key1:value1,key2,value2)      string
-log`                     The logging level. Setting it to non-zero effectively turns
+log                      The logging level. Setting it to non-zero effectively turns
                          on the logging. The levels are 1- error, 2- warning, 3- info,
                          4 - debug, 5-trace                                           uint
 logname                  Name of the file to write the log in. If the name is set,
@@ -174,6 +174,8 @@ logname                  Name of the file to write the log in. If the name is se
                          default name and location for the log file. The name is
                          mariadbccpp.log, the location is %TMP% or %USERPROFILE% or
                          current dir on Windows, or $HOME or /tmp on other systems.   string
+initSql     One query or a semicolon separated list of queried to be executed at the
+            connection time.                                                          string
 
 
 Properties is map of strings, and is another way to pass optional parameters.

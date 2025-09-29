@@ -3523,6 +3523,25 @@ void connection::concpp112_connection_attributes()
   con.reset();
 }
 
+
+void connection::concpp146_initSQL()
+{
+  sql::Properties p{{"user", user}, {"password", passwd}};
+  con.reset(driver->connect(addOptions2url("initSql=SET @myVar='YourVar'"), p));
+  stmt.reset(con->createStatement());
+  res.reset(stmt->executeQuery("SELECT @myVar"));
+  ASSERT(res->next());
+  ASSERT_EQUALS("YourVar", res->getString(1));
+
+  con.reset(driver->connect(addOptions2url("&initSql=SET @myVar='YourVar';SET @myVar2='YourVar2'"), p));
+  stmt.reset(con->createStatement());
+  res.reset(stmt->executeQuery("SELECT @myVar, @myVar2"));
+  ASSERT(res->next());
+  ASSERT_EQUALS("YourVar", res->getString(1));
+  ASSERT_EQUALS("YourVar2", res->getString(2));
+}
+
+
 void connection::setUp()
 {
   super::setUp();

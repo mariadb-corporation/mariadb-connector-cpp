@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2023 MariaDB Corporation AB
+   Copyright (C) 2020, 2025 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -403,8 +403,7 @@ namespace sql
         "tlsCRLPath", {"tlsCRLPath",
         "0.9.2",
         "A path to a directory that contains one or more PEM files that should each contain one revoked X509 certificate.\n"
-        "The directory specified by this option needs to be run through the openssl rehash command.\n"
-        " ",
+        "The directory specified by this option needs to be run through the openssl rehash command.",
         false,
         ""}
       },
@@ -712,6 +711,13 @@ namespace sql
         "credentialType", {"credentialType",
         "0.9.1",
         "Default authentication client-side plugin to use",
+        false,
+        ""}
+      },
+      {
+        "initSql", {"initSql",
+        "1.1.7",
+        "SQL command(s) to run at connection time",
         false,
         ""}
       }

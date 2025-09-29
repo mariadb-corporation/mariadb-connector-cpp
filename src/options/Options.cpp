@@ -140,7 +140,8 @@ namespace mariadb
     OPTIONS_FIELD(useResetConnection),
     OPTIONS_FIELD(useReadAheadInput),
     OPTIONS_FIELD(serverRsaPublicKeyFile),
-    OPTIONS_FIELD(tlsPeerFP)
+    OPTIONS_FIELD(tlsPeerFP),
+    OPTIONS_FIELD(initSql)
   };
 
 
@@ -525,6 +526,9 @@ namespace mariadb
     if (!(tlsPeerFPList.compare(opt->tlsPeerFPList) == 0)) {
       return false;
     }
+    if (!(initSql.compare(opt->initSql) == 0)) {
+      return false;
+    }
     return minPoolSize == opt->minPoolSize;
   }
 
@@ -618,9 +622,11 @@ namespace mariadb
     result= 31 *result + (autocommit ? 1 : 0);
     result= 31 *result + (!credentialType.empty() ? credentialType.hashCode() : 0);
 
-    result= 31 *result + (!nonMappedOptions.empty() ? hashProps(nonMappedOptions) : 0);
+    result= 31*result + (!nonMappedOptions.empty() ? hashProps(nonMappedOptions) : 0);
 
-    result= 31 *result + (!tlsPeerFPList.empty() ? tlsPeerFPList.hashCode() : 0);
+    result= 31*result + (!tlsPeerFPList.empty() ? tlsPeerFPList.hashCode() : 0);
+    result= 31*result + (!initSql.empty() ? initSql.hashCode() : 0);
+
     return result;
   }
 
