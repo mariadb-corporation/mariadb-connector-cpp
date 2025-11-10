@@ -65,6 +65,8 @@ struct MariaDbServerCapabilities  {
       1LL << 33; /* bundle command during connection */
   static const int64_t _MARIADB_CLIENT_STMT_BULK_OPERATIONS =
     1LL << 34; /* support of array binding */
+  /* Permits sending unit result-set for BULK commands */
+  static const int64_t _MARIADB_CLIENT_BULK_UNIT_RESULTS = (1ULL << 37);
 
 };
 }

@@ -454,6 +454,7 @@ namespace capi
     }
     mysql_optionsv(connection.get(), MYSQL_REPORT_DATA_TRUNCATION, &uintOptionSelected);
     mysql_optionsv(connection.get(), MYSQL_OPT_LOCAL_INFILE, (options->allowLocalInfile ? &uintOptionSelected : &uintOptionNotSelected));
+    mysql_optionsv(connection.get(), MARIADB_OPT_BULK_UNIT_RESULTS, &OptionSelected);
 
     if (!options.get()->initSql.empty()) {
       static const SQLString initSqlDelim(";");

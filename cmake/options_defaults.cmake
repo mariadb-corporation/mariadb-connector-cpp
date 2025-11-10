@@ -61,10 +61,11 @@ IF(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
 ENDIF()
 
 IF(WITH_UNIT_TESTS)
-  SET_VALUE(TEST_HOST           "tcp://localhost:3306" "Defines Unit Tests default server")
+  SET_VALUE(TEST_HOST           "jdbc:mariadb://localhost:3306/" "Defines Unit Tests default server")
   SET_VALUE(TEST_SCHEMA         "test"                 "Defines Unit Tests default Database")
   SET_VALUE(TEST_UID            "root"                 "Defines Unit Tests default login user")
-  SET_VALUE(TEST_PASSWORD       "root"                 "Defines Unit Tests default login user password")
+  # It's easie to set password to be not a blank when the default is, than the other way around. Besides, on build or installlation root has no password by default
+  SET_VALUE(TEST_PASSWORD       ""                     "Defines Unit Tests default login user password")
   SET_VALUE(TEST_USETLS         "false"                "Defines useTls option value to use in tests")
 
   IF("${TEST_USETLS}" STREQUAL "")

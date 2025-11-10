@@ -615,9 +615,9 @@ void preparedstatement::assortedSetType()
       }
       catch (sql::SQLException& e)
       {
-        if (isMySQL() && (it->name.compare("TIMESTAMP") == 0 ||
-                          it->name.compare("DATETIME") == 0  ||
-                          it->name.compare("DATE") == 0))
+        if (it->name.compare("TIMESTAMP") == 0 ||
+            it->name.compare("DATETIME") == 0  ||
+            it->name.compare("DATE") == 0)
         {
           ASSERT_EQUALS("22007", e.getSQLState());
         }
@@ -2135,9 +2135,10 @@ void preparedstatement::concpp106_batchBulk()
       else {
         ASSERT_EQUALS(val_expected[i][row], res->getString(2));
       }
-      // With bulk we don't have separate results for each parameters set - only SUCCESS_NO_INFO.
-      // Unless with mysql where it is not supported
-      ASSERT_EQUALS(isMySQL() ? 1 : batchResult[i], batchRes[row]);
+      // With bulk we have separate results for each parameters set starting from 11.5.1 version.
+      // Or with mysql where it is not supported
+      // Older versions - only SUCCESS_NO_INFO.
+      ASSERT_EQUALS(isMySQL() || getServerVersion(con) > 1105000 ? 1 : batchResult[i], batchRes[row]);
     }
     ASSERT(!res->next());
     ////// The same, but for executeLargeBatch
@@ -2397,5 +2398,38 @@ void preparedstatement::concpp138_useRsAfterConClose()
   ASSERT(!rs->next());
   sspsCon.reset();
 }
+
+void preparedstatement::concpp128_batchWithGeneratedKeys()
+{
+    sql::ConnectOptionsMap connection_properties{ {"userName", user}, {"password", passwd},
+    {"useBulkStmts", "true"}, {"useTls", useTls ? "true" : "false"}, {"useServerPrepStmts", "true"} };
+
+    con.reset(driver->connect(url, connection_properties));
+    // Reading results must be on the different connection to ensure that the driver commits the batch
+    stmt.reset(con->createStatement());
+    stmt->executeUpdate("SET @@session.auto_increment_increment=7");
+    createSchemaObject("TABLE",
+      "t_concpp128", "(id int not NULL PRIMARY KEY AUTO_INCREMENT, val VARCHAR(31)) AUTO_INCREMENT = 71");
+    pstmt.reset(con->prepareStatement("INSERT INTO t_concpp128(val) VALUES(?)", sql::Statement::RETURN_GENERATED_KEYS));
+
+    pstmt->setString(1, "First");
+    pstmt->addBatch();
+
+    pstmt->setString(1, "Second");
+    pstmt->addBatch();
+
+    const sql::Ints& batchRes= pstmt->executeBatch();
+    res.reset(pstmt->getGeneratedKeys());
+
+    ASSERT(res->next());
+    ASSERT_EQUALS(71, res->getInt(1));
+    ASSERT_EQUALS(1, batchRes[0]);
+    ASSERT(res->next());
+    ASSERT_EQUALS(78, res->getInt(1));
+    ASSERT_EQUALS(1, batchRes[1]);
+    ASSERT(!res->next());
+    con.reset();
+}
+
 } /* namespace preparedstatement */
 } /* namespace testsuite */

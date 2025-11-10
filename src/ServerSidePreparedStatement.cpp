@@ -202,6 +202,7 @@ namespace sql
     return res.wrap(stmt->getInternalResults()->getCmdInformation()->getUpdateCounts());
   }
 
+
   const sql::Longs& ServerSidePreparedStatement::executeLargeBatch()
   {
     stmt->checkClose();
@@ -213,6 +214,7 @@ namespace sql
     executeBatchInternal(queryParameterSize);
     return res.wrap(stmt->getInternalResults()->getCmdInformation()->getLargeUpdateCounts());
   }
+
 
   void ServerSidePreparedStatement::executeBatchInternal(int32_t queryParameterSize)
   {

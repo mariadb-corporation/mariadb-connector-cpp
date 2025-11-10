@@ -295,7 +295,14 @@ namespace mariadb
       {
         currentRs.reset(executionResults.begin()->release());
         executionResults.pop_front();
-      }else {
+        if (batch) {
+          while (currentRs->next()) {
+            cmdInformation->addSuccessStat(currentRs->getLong(2), currentRs->getLong(1));
+          }
+          currentRs.reset();
+        }
+      }
+      else {
         currentRs.reset(nullptr);
       }
       cmdInformation->setRewrite(rewritten);
@@ -520,8 +527,12 @@ namespace mariadb
     }
     if (cmdInformation)
     {
-      if (batch){
-        return cmdInformation->getBatchGeneratedKeys(protocol);
+      if (batch) {
+        if (currentRs) {
+        }
+        else {
+          return cmdInformation->getBatchGeneratedKeys(protocol);
+        }
       }
       return cmdInformation->getGeneratedKeys(protocol, sql);
     }

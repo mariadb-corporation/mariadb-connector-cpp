@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2025 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -96,7 +97,7 @@ StartOptions * TestsRunner::getStartOptions()
 bool TestsRunner::Admits( const String & testName )
 {
   if ( theInstance().filter != nullptr )
-    return theInstance().filter->Admits( testName );
+    return theInstance().filter->Admits( testName, theInstance().TestSuiteNames.size() == 1);
 
   return true;
 }

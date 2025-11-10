@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2025 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -59,20 +60,23 @@ namespace testsuite
   }
 
 
-  bool SingleFilter::Admits( const String & testName ) const
+  bool SingleFilter::Admits( const String & testName, bool singleTestsuite) const
   {
-    const ciString test2filter( testName.c_str() );
+    ciString test2filter( testName.c_str() );
 
-    ciString::size_type   searchStartPos= 0;
-    ciString::size_type   partPosition=   0;
-    const TestList::size_type parts=      staticPart.size();
-    bool            meetPrevEndExactly=   true;
-
-    bool                  result=         true;
+    ciString::size_type       searchStartPos=     0;
+    ciString::size_type       partPosition=       0;
+    const TestList::size_type parts=              staticPart.size();
+    bool                      meetPrevEndExactly= true;
+    bool                      result=             true;
 
     for (TestList::size_type i= 0; i < parts; ++i )
     {
-      const String & part= staticPart[ i ];
+      const String &part= staticPart[ i ];
+      if (i == 0 && singleTestsuite && part.find("::") == String::npos)
+      {
+        test2filter= test2filter.substr(test2filter.find("::") + 2);
+      }
 
       // empty staticPart means wildcard at the begin or end of filter string
       // empty parts in the middle (can be caused by two successive wild cards) ignored
@@ -135,12 +139,12 @@ namespace testsuite
   }
 
 
-  bool SerialFilter::Admits( const String & testName ) const
+  bool SerialFilter::Admits( const String & testName, bool singleTestsuite) const
   {
     for ( FiltersList::const_iterator cit= filter.begin(); cit != filter.end();
       ++cit )
     {
-      if ( ! (*cit)->Admits( testName ) )
+      if ( ! (*cit)->Admits( testName, singleTestsuite) )
         return false;
     }
 
@@ -174,16 +178,15 @@ namespace testsuite
     }
   }
 
-  bool FiltersSuperposition::Admits( const String & testName ) const
+  bool FiltersSuperposition::Admits( const String & testName, bool singleTestsuite ) const
   {
     for ( FiltersList::const_iterator cit= filter.begin(); cit != filter.end();
       ++cit )
     {
-      if ( (*cit)->Admits( testName ) )
+      if ( (*cit)->Admits( testName, singleTestsuite ) )
         return true;
     }
-
-    //return true if filter is empty
+    // returns true if filter is empty
     return filter.size() == 0;
   }
 

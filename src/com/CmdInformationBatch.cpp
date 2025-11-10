@@ -90,6 +90,13 @@ namespace mariadb
       else if (expectedSize == 1) {
         resultValue= static_cast<int32_t>(updateCounts.front());
       }
+      else if (updateCounts.size() == expectedSize + 1 && updateCounts.front() == RESULT_SET_VALUE) {
+        batchRes.resize(expectedSize);
+        std::size_t idx= 0;
+        for (auto cit= updateCounts.cbegin() + 1; cit != updateCounts.cend(); ++cit) {
+          batchRes[idx++]= static_cast<int32_t>(*cit);
+        }
+      }
       else {
         resultValue= 0;
         for (auto updCnt : updateCounts) {
@@ -188,19 +195,30 @@ namespace mariadb
   ResultSet* CmdInformationBatch::getBatchGeneratedKeys(Protocol* protocol)
   {
     std::vector<int64_t> ret;
-    int32_t position= 0;
     int64_t insertId;
     auto idIterator= insertIds.begin();
+    // For calculations of inserted id's based on know autoincr. step
+    auto withAutoincrementStep= autoIncrement;
 
     ret.reserve(static_cast<std::size_t>(insertIdNumber));
 
     for (int64_t updateCountLong : updateCounts) {
       int32_t updateCount= static_cast<int32_t>(updateCountLong);
+      if (updateCount == RESULT_SET_VALUE && updateCounts.size() == insertIds.size() + 1) {
+        // We have resultset with id's
+        withAutoincrementStep= 0;
+        continue;
+      }
       if (updateCount != Statement::EXECUTE_FAILED
         && updateCount != RESULT_SET_VALUE
         && (insertId= *idIterator) > 0) {
-        for (int64_t i= 0; i < updateCount; i++) {
-          ret[position++]= insertId + i*autoIncrement;
+        if (withAutoincrementStep) {
+          for (int64_t i = 0; i < updateCount; i++) {
+            ret.push_back(insertId + i * withAutoincrementStep);
+          }
+        }
+        else {
+          ret.push_back(insertId);
         }
       }
       ++idIterator;
@@ -219,7 +237,6 @@ namespace mariadb
   ResultSet* CmdInformationBatch::getGeneratedKeys(Protocol* protocol, const SQLString& /*sql*/)
   {
     std::vector<int64_t> ret;
-    int32_t position= 0;
     int64_t insertId;
     auto idIterator= insertIds.begin();
 
@@ -231,7 +248,7 @@ namespace mariadb
         && updateCount != RESULT_SET_VALUE
         && (insertId= *idIterator) > 0) {
         for (int32_t i= 0; i < updateCount; i++) {
-          ret[position++]= insertId + i*autoIncrement;
+          ret.push_back(insertId + i*autoIncrement);
         }
       }
       ++idIterator;

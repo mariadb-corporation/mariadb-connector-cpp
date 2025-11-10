@@ -41,7 +41,7 @@ class ServerSidePreparedStatement : public BasePrepareStatement {
   static Logger* logger;
 
 protected:
-  int32_t parameterCount; /*-1*/
+  int32_t parameterCount= -1;
 
 private:
   SQLString sql;

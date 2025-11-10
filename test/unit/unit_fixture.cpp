@@ -323,6 +323,10 @@ void unit_fixture::init()
   }
   else
   {
+    if (slashPos == url.length() - 1)
+    {
+      url.append(db);
+    }
     urlWithoutSchema= url.substr(0, slashPos);
   }
 }

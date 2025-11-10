@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2025 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -50,7 +51,7 @@ public:
 
   virtual ~Filter(){}
 
-  virtual bool Admits( const String & name2test ) const _PURE;
+  virtual bool Admits( const String & name2test, bool singleTestsuite) const _PURE;
 
 };
 
@@ -60,14 +61,14 @@ class SingleFilter : public Filter
 private:
 
   TestList  staticPart;
-  bool  negative;
+  bool      negative;
 
 public:
 
         SingleFilter( const String & filterStr
                     , const String & NOTsymbol= "!" );
 
-  bool  Admits      ( const String & testName ) const;
+  bool  Admits      ( const String & testName, bool singleTestsuite) const;
 };
 
 
@@ -84,7 +85,7 @@ public:
 
         ~SerialFilter ();
 
-  bool  Admits        ( const String & testName ) const;
+  bool  Admits        ( const String & testName, bool singleTestsuite) const;
 
 
 };
@@ -104,7 +105,7 @@ public:
 
         ~FiltersSuperposition ();
 
-  bool  Admits                ( const String & testName ) const;
+  bool  Admits                ( const String & testName, bool singleTestsuite) const;
 };
 
 
