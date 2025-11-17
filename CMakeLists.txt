@@ -25,6 +25,7 @@ ELSE()
 ENDIF()
 CMAKE_POLICY(SET CMP0048 NEW)
 
+# not sure what to do here with versioning
 PROJECT(mariadb_connector_cpp
         VERSION 1.1.8
 #        DESCRIPTION "MariaDB Connector/C++"
@@ -50,7 +51,7 @@ ENDIF()
 SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-SET(PRODUCT_NAME "MariaDB C++ Connector")
+SET(PRODUCT_NAME "MariaDB C++ Connector(mini)")
 SET(PRODUCT_MANUFACTURER "MariaDB")
 SET(PRODUCT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 SET(PRODUCT_SERIES "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
@@ -64,306 +65,65 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 SET(LIBRARY_NAME "mariadbcpp")
 SET(STATIC_LIBRARY_NAME "${LIBRARY_NAME}-static")
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/src/Version.h.in
-               ${CMAKE_CURRENT_SOURCE_DIR}/src/Version.h)
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/src/maconncpp.rc.in
-               ${CMAKE_CURRENT_SOURCE_DIR}/src/maconncpp.rc)
 INCLUDE(SearchLibrary)
 INCLUDE(SetValueMacro)
 
 
-SET (MACPP_SOURCES src/MariaDbDriver.cpp
-                   src/DriverManager.cpp
-                   src/UrlParser.cpp
-                   src/MariaDbDatabaseMetaData.cpp
-                   src/HostAddress.cpp
-                   src/Consts.cpp
-                   src/SQLString.cpp
-                   src/MariaDbConnection.cpp
-                   src/MariaDbStatement.cpp
-                   src/MariaDBException.cpp
-                   src/MariaDBWarning.cpp
-                   src/Identifier.cpp
-                   src/MariaDbSavepoint.cpp
-                   src/SqlStates.cpp
-                   src/Results.cpp
-
-                   src/ColumnType.cpp
-
-                   src/ColumnDefinition.cpp
-                   src/protocol/MasterProtocol.cpp
-
-                   src/protocol/capi/QueryProtocol.cpp
-                   src/protocol/capi/ConnectProtocol.cpp
-                   src/com/capi/ColumnDefinitionCapi.cpp
-
-                   src/cache/CallableStatementCache.cpp
-                   src/cache/CallableStatementCacheKey.cpp
-
-                   src/util/Value.cpp
-                   src/util/Utils.cpp
-                   src/util/String.cpp
-
-                   src/logger/NoLogger.cpp
-                   src/logger/SimpleLogger.cpp
-                   src/logger/LoggerFactory.cpp
-                   src/logger/ProtocolLoggingProxy.cpp
-
-                   src/parameters/ParameterHolder.cpp
-
-                   src/options/Options.cpp
-                   src/options/DefaultOptions.cpp
-
-                   src/pool/GlobalStateInfo.cpp
-                   src/pool/Pools.cpp
-                   src/pool/Pool.cpp
-                   src/pool/MariaDbThreadFactory.cpp
-                   src/pool/MariaDbInnerPoolConnection.cpp
-                   src/pool/ConnectionEventListener.cpp
-                   src/pool/ThreadPoolExecutor.cpp
-
-                   src/failover/FailoverProxy.cpp
-
-                   src/credential/CredentialPluginLoader.cpp
-
-                   src/SelectResultSet.cpp
-                   src/com/capi/SelectResultSetCapi.cpp
-                   src/com/capi/SelectResultSetBin.cpp
-                   #src/com/SelectResultSetPacket.cpp
-                   #src/com/ColumnDefinitionPacket.cpp
-
-                   src/com/ColumnNameMap.cpp
-
-                   src/io/StandardPacketInputStream.cpp
-
-                   src/Charset.cpp
-                   src/ClientSidePreparedStatement.cpp
-                   src/BasePrepareStatement.cpp
-                   src/MariaDbFunctionStatement.cpp
-                   src/MariaDbProcedureStatement.cpp
-                   src/ServerSidePreparedStatement.cpp
-
-                   src/parameters/BigDecimalParameter.cpp
-                   src/parameters/BooleanParameter.cpp
-                   src/parameters/ByteArrayParameter.cpp
-                   src/parameters/ByteParameter.cpp
-                   src/parameters/DateParameter.cpp
-                   src/parameters/DefaultParameter.cpp
-                   src/parameters/DoubleParameter.cpp
-                   src/parameters/FloatParameter.cpp
-                   src/parameters/IntParameter.cpp
-                   #src/parameters/LocalTimeParameter.cpp
-                   src/parameters/LongParameter.cpp
-                   src/parameters/ULongParameter.cpp
-                   src/parameters/NullParameter.cpp
-                   #src/parameters/OffsetTimeParameter.cpp
-                   src/parameters/ParameterHolder.cpp
-                   src/parameters/ReaderParameter.cpp
-                   #src/parameters/SerializableParameter.cpp
-                   src/parameters/ShortParameter.cpp
-                   src/parameters/StreamParameter.cpp
-                   src/parameters/TimeParameter.cpp
-                   src/parameters/TimestampParameter.cpp
-                   #src/parameters/ZonedDateTimeParameter.cpp
-                   src/parameters/StringParameter.cpp
-                   src/MariaDbPoolConnection.cpp
-                   src/MariaDbParameterMetaData.cpp
-                   src/MariaDbResultSetMetaData.cpp
-                   src/CallParameter.cpp
-                   src/CallableParameterMetaData.cpp
-                   src/com/Packet.cpp
-                   src/credential/Credential.cpp
-                   src/util/LogQueryTool.cpp
-                   src/util/ClientPrepareResult.cpp
-                   src/util/ServerPrepareResult.cpp
-                   src/util/ServerPrepareStatementCache.cpp
-                   src/com/CmdInformationSingle.cpp
-                   src/com/CmdInformationBatch.cpp
-                   src/com/CmdInformationMultiple.cpp
-                   src/com/RowProtocol.cpp
-                   src/protocol/capi/BinRowProtocolCapi.cpp
-                   src/protocol/capi/TextRowProtocolCapi.cpp
-                   src/ExceptionFactory.cpp
-                   src/StringImp.cpp
-                   src/CArray.cpp
-                   src/SimpleParameterMetaData.cpp
-                   src/Properties.cpp
-                   "src/List.cpp"
-                   src/MariaDbDataSource.cpp
-                   ####CPP####
-                   )
+SET (MACPP_SOURCES 
+                          class/Results.cpp
+                          class/TextRow.cpp
+                          class/BinRow.cpp
+                          class/ClientSidePreparedStatement.cpp
+                          class/ServerSidePreparedStatement.cpp
+                          class/SSPSDirectExec.cpp
+                          class/ClientPrepareResult.cpp
+                          class/ServerPrepareResult.cpp
+                          class/CmdInformationSingle.cpp
+                          class/CmdInformationMultiple.cpp
+                          class/CmdInformationBatch.cpp
+                          class/ColumnDefinition.cpp
+                          class/ResultSetText.cpp
+                          class/ResultSetBin.cpp
+                          class/ResultSetMetaData.cpp
+                          class/Parameter.cpp
+                          class/Protocol.cpp
+                          interface/PreparedStatement.cpp
+                          interface/Row.cpp
+                          interface/ResultSet.cpp
+                          interface/PrepareResult.cpp
+                          interface/Exception.cpp
+                          template/CArray.cpp
+     )
 
 IF(WIN32)
   SET(MACPP_SOURCES ${MACPP_SOURCES}
-                   src/Dll.c
-
-                   src/MariaDBConnCpp.h
-                   src/MariaDbDriver.h
-                   src/UrlParser.h
-                   src/MariaDbDatabaseMetaData.h
-                   src/HostAddress.h
-                   src/Version.h
-                   src/Consts.h
-                   src/MariaDbConnection.h
-                   src/MariaDbStatement.h
-                   src/MariaDBWarning.h
-                   src/Protocol.h
-                   src/Identifier.h
-                   src/MariaDbSavepoint.h
-                   src/SqlStates.h
-                   src/Results.h
-                   src/ColumnDefinition.h
-                   src/MariaDbServerCapabilities.h
-
-                   src/protocol/MasterProtocol.h
-
-                   src/protocol/capi/QueryProtocol.h
-                   src/protocol/capi/ConnectProtocol.h
-                   src/com/capi/ColumnDefinitionCapi.h
-
-                   src/cache/CallableStatementCache.h
-                   src/cache/CallableStatementCacheKey.h
-
-                   src/util/Value.h
-                   src/util/ClassField.h
-                   src/util/Utils.h
-                   src/util/StateChange.h
-                   src/util/String.h
-
-                   src/logger/NoLogger.h
-                   src/logger/SimpleLogger.h
-                   src/logger/LoggerFactory.h
-                   src/logger/Logger.h
-                   src/logger/ProtocolLoggingProxy.h
-
-                   src/parameters/ParameterHolder.h
-
-                   src/options/Options.h
-                   src/options/DefaultOptions.h
-                   src/options/DriverPropertyInfo.h
-
-                   src/io/PacketOutputStream.h
-                   src/io/PacketInputStream.h
-                   src/io/StandardPacketInputStream.h
-
-                   src/credential/CredentialPlugin.h
-                   src/credential/CredentialPluginLoader.h
-
-                   src/pool/Pool.h
-                   src/pool/ThreadPoolExecutor.h
-                   src/pool/MariaDbThreadFactory.h
-                   src/pool/MariaDbInnerPoolConnection.h
-                   src/pool/ConnectionEventListener.h
-
-                   src/failover/FailoverProxy.h
-
-                   src/Listener.h
-
-                   src/com/CmdInformation.h
-
-                   "include/conncpp.hpp"
-                   "include/conncpp/Connection.hpp"
-                   "include/conncpp/Statement.hpp"
-                   "include/conncpp/ResultSet.hpp"
-                   "include/conncpp/PreparedStatement.hpp"
-                   "include/conncpp/ParameterMetaData.hpp"
-                   "include/conncpp/ResultSetMetaData.hpp"
-                   "include/conncpp/DatabaseMetaData.hpp"
-                   "include/conncpp/CallableStatement.hpp"
-                   "include/conncpp/SQLString.hpp"
-                   "include/conncpp/Warning.hpp"
-                   "include/conncpp/Exception.hpp"
-                   "include/conncpp/jdbccompat.hpp"
-                   "include/conncpp/Driver.hpp"
-                   "include/conncpp/DriverManager.hpp"
-                   "include/conncpp/Types.hpp"
-                   "include/conncpp/buildconf.hpp"
-                   "include/conncpp/CArray.hpp"
-                   "include/conncpp/Properties.hpp"
-                   "include/conncpp/List.hpp"
-                   "include/conncpp/PooledConnection.hpp"
-                   "include/MariaDbDataSource.hpp"
-
-                   src/SelectResultSet.h
-                   src/com/capi/SelectResultSetCapi.h
-                   src/com/capi/SelectResultSetBin.h
-                   src/com/SelectResultSetPacket.h
-                   src/ColumnType.h
-                   src/com/ColumnDefinitionPacket.h
-                   src/com/ColumnNameMap.h
-                   src/Charset.h
-                   src/ClientSidePreparedStatement.h
-                   src/BasePrepareStatement.h
-                   src/MariaDbFunctionStatement.h
-                   src/MariaDbProcedureStatement.h
-                   src/ServerSidePreparedStatement.h
-
-                   src/parameters/BigDecimalParameter.h
-                   src/parameters/BooleanParameter.h
-                   src/parameters/ByteArrayParameter.h
-                   src/parameters/ByteParameter.h
-                   src/parameters/DateParameter.h
-                   src/parameters/DefaultParameter.h
-                   src/parameters/DoubleParameter.h
-                   src/parameters/FloatParameter.h
-                   src/parameters/IntParameter.h
-                   #src/parameters/LocalTimeParameter.h
-                   src/parameters/LongParameter.h
-                   src/parameters/ULongParameter.h
-                   src/parameters/NullParameter.h
-                   #src/parameters/OffsetTimeParameter.h
-                   src/parameters/ReaderParameter.h
-                   #src/parameters/SerializableParameter.h
-                   src/parameters/ShortParameter.h
-                   src/parameters/StreamParameter.h
-                   src/parameters/TimeParameter.h
-                   src/parameters/TimestampParameter.h
-                   #src/parameters/ZonedDateTimeParameter.h
-                   src/parameters/StringParameter.h
-
-                   src/Parameters.h
-                   src/MariaDbPoolConnection.h
-                   src/MariaDbParameterMetaData.h
-                   src/CallParameter.h
-                   src/CallableParameterMetaData.h
-                   src/MariaDbResultSetMetaData.h
-                   src/com/Packet.h
-                   src/util/ServerStatus.h
-                   src/credential/Credential.h
-                   src/util/LogQueryTool.h
-                   src/PrepareResult.h
-                   src/util/ClientPrepareResult.h
-                   src/util/ServerPrepareResult.h
-                   src/util/ServerPrepareStatementCache.h
-                   src/util/BlockingQueue.h
-                   src/com/CmdInformationSingle.h
-                   src/com/CmdInformationBatch.h
-                   src/com/CmdInformationMultiple.h
-                   src/com/RowProtocol.h
-                   src/protocol/capi/BinRowProtocolCapi.h
-                   src/protocol/capi/TextRowProtocolCapi.h
-                   src/ExceptionFactory.h
-                   src/StringImp.h
-                   src/CArrayImp.h
-                   src/SimpleParameterMetaData.h
-                   src/PropertiesImp.h
-                   src/ListImp.h
-                   src/MariaDbDataSourceInternal.h
+                          class/SQLString.h
+                          class/Results.h
+                          class/TextRow.h
+                          class/BinRow.h
+                          class/ClientSidePreparedStatement.h
+                          class/ServerSidePreparedStatement.h
+                          class/SSPSDirectExec.h
+                          class/ClientPrepareResult.h
+                          class/ServerPrepareResult.h
+                          class/CmdInformationSingle.h
+                          class/CmdInformationMultiple.h
+                          class/CmdInformationBatch.h
+                          class/ColumnDefinition.h
+                          class/ResultSetText.h
+                          class/ResultSetBin.h
+                          class/ResultSetMetaData.h
+                          class/Parameter.h
+                          class/Protocol.h
+                          interface/PreparedStatement.h
+                          interface/PrepareResult.h
+                          interface/Row.h
+                          interface/ResultSet.h
+                          interface/CmdInformation.h
+                          interface/Exception.h
+                          template/CArray.h
                    ####H####
                        )
-  SOURCE_GROUP(Logging REGULAR_EXPRESSION "/logger/")
-  SOURCE_GROUP(PublicAPI REGULAR_EXPRESSION "include/")
-  SOURCE_GROUP(Parameters REGULAR_EXPRESSION "src/parameters")
-  SOURCE_GROUP(Options REGULAR_EXPRESSION "src/options")
-  SOURCE_GROUP(IO REGULAR_EXPRESSION "src/io")
-  SOURCE_GROUP(Credential REGULAR_EXPRESSION "src/credential")
-  SOURCE_GROUP(Pool REGULAR_EXPRESSION "src/pool")
-  SOURCE_GROUP(Utils REGULAR_EXPRESSION "src/util")
-  SOURCE_GROUP(Caches REGULAR_EXPRESSION "src/cache")
-  SOURCE_GROUP(Failover REGULAR_EXPRESSION "src/failover")
-  SOURCE_GROUP(Commands REGULAR_EXPRESSION "src/com/")
-  SOURCE_GROUP(Protocol REGULAR_EXPRESSION "src/protocol/")
-  SOURCE_GROUP(C_API REGULAR_EXPRESSION "/capi/")
 
   SET(PLATFORM_DEPENDENCIES ws2_32)
 ELSE()
