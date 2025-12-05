@@ -484,19 +484,19 @@ namespace mariadb
       return 0;
     }
     int32_t nanos= 0;
-    for (size_t i= index +1; i <index +10; i++) {
+    for (size_t i= index + 1; i < index + 10; ++i) {
       int32_t digit;
       if (i >= timestring.size()) {
         digit= 0;
       }
       else {
         char value= timestring.at(i);
-        if (value < '0'||value > '9') {
+        if (value < '0' || value > '9') {
           throw 1;
         }
-        digit= value -'0';
+        digit= value - '0';
       }
-      nanos= nanos *10 +digit;
+      nanos= nanos*10 + digit;
     }
     return nanos;
   }

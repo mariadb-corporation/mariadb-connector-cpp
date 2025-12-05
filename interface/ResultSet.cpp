@@ -398,7 +398,7 @@ namespace mariadb
     if (row->lastValueWasNull()) {
       *bind->is_null= '\1';
       checkObjectRange(position);
-      return true;
+      return false;
     }
     else {
       *bind->is_null= '\0';
@@ -547,7 +547,8 @@ namespace mariadb
     lastRowPointer= rowPointer;
   }
 
-
+  /* Besides checking if requested column index is withing possible range, it physically
+     movves the pointer to the current row */
   void ResultSet::checkObjectRange(int32_t position) const {
     if (rowPointer < 0) {
       throw SQLException("Current position is before the first row", "22023");

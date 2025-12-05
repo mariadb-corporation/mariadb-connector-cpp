@@ -191,10 +191,11 @@ protected:
   virtual int8_t getByte(int32_t index) const=0;
   virtual int16_t getShort(int32_t index) const=0;
 
-  bool isNull(int32_t columnIndex) const;
   void resetRow() const;
   void checkObjectRange(int32_t position) const;
+
 public:
+  bool isNull(int32_t columnIndex) const;
   virtual void abort()=0;
   virtual bool isCallableResult() const=0;
 //  virtual PreparedStatement* getStatement()=0;
