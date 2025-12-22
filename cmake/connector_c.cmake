@@ -1,12 +1,12 @@
 INCLUDE(FindGit)
 
-IF(NOT EXISTS ${CMAKE_SOURCE_DIR}/libmariadb/CMakeLists.txt AND GIT_EXECUTABLE)
+IF(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libmariadb/CMakeLists.txt AND GIT_EXECUTABLE)
   EXECUTE_PROCESS(COMMAND "${GIT_EXECUTABLE}" submodule init
-                  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+                  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
   EXECUTE_PROCESS(COMMAND "${GIT_EXECUTABLE}" submodule update
-                  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+                  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 ENDIF()
-IF(NOT EXISTS ${CMAKE_SOURCE_DIR}/libmariadb/CMakeLists.txt)
+IF(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libmariadb/CMakeLists.txt)
   MESSAGE(FATAL_ERROR "No MariaDB Connector/C! Run
     git submodule init
     git submodule update
