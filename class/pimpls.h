@@ -21,6 +21,7 @@
 #define __MADB_CPP_PIMPLS_H__
 
 #include "mysql.h"
+#include <memory>
 
 namespace mariadb
 {
@@ -38,6 +39,7 @@ namespace mariadb
   class PreparedStatement;
   class ParamCodec;
   class ResultCodec;
+  class unique_key;
 
   namespace Shared
   {
@@ -51,6 +53,8 @@ namespace mariadb
     typedef std::unique_ptr<mariadb::ResultSetMetaData> ResultSetMetaData;
     typedef std::unique_ptr<::MYSQL, decltype(&mysql_close)> MYSQL;
     typedef std::unique_ptr<::MYSQL_RES, decltype(&mysql_free_result)> MYSQL_RES;
+    // Doesn't follow the common pattern - Unique::key;
+    typedef std::unique_ptr<mariadb::unique_key> key;
   }
 
   namespace Weak
