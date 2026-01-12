@@ -1004,7 +1004,7 @@ namespace capi
 
     try {
       SQLString sql;
-      sql.reserve(1024); //No estimations. Just something for beginning. stringstream ?
+      sql.reserve(1024);
       do {
         sql.clear();
         currentIndex= rewriteQuery(sql, prepareResult->getQueryParts(), currentIndex, prepareResult->getParamCount(), parameterList, rewriteValues);

@@ -47,8 +47,8 @@ ELSE()
   SET(CMAKE_C_STANDARD 99)
 ENDIF()
 
-SET(CMAKE_CXX_STANDARD 11)
-SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_CXX_STANDARD 17)
+SET(CMAKE_CXX_STANDARD_REQUIRED OFF)
 
 SET(PRODUCT_NAME "MariaDB C++ Connector")
 SET(PRODUCT_MANUFACTURER "MariaDB")
@@ -190,6 +190,9 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/Properties.cpp
                    "src/List.cpp"
                    src/MariaDbDataSource.cpp
+                   src/jdbccompat/Timestamp.cpp
+                   src/jdbccompat/Time.cpp
+                   src/jdbccompat/Date.cpp
                    ####CPP####
                    )
 
@@ -281,7 +284,9 @@ IF(WIN32)
                    "include/conncpp/CArray.hpp"
                    "include/conncpp/Properties.hpp"
                    "include/conncpp/List.hpp"
-                   "include/conncpp/PooledConnection.hpp"
+                   "include/conncpp/Timestamp.hpp"
+                   "include/conncpp/Time.hpp"
+                   "include/conncpp/Date.hpp"
                    "include/MariaDbDataSource.hpp"
 
                    src/SelectResultSet.h
@@ -349,6 +354,9 @@ IF(WIN32)
                    src/PropertiesImp.h
                    src/ListImp.h
                    src/MariaDbDataSourceInternal.h
+                   src/jdbccompat/Timestamp.h
+                   src/jdbccompat/Time.h
+                   src/jdbccompat/Date.h
                    ####H####
                        )
   SOURCE_GROUP(Logging REGULAR_EXPRESSION "/logger/")
@@ -601,6 +609,7 @@ ENDIF()
 
 
 ADD_LIBRARY(${LIBRARY_NAME}_obj OBJECT ${MACPP_SOURCES})
+TARGET_COMPILE_FEATURES(${LIBRARY_NAME}_obj PUBLIC cxx_std_11)
 IF(UNIX)
   SET_TARGET_PROPERTIES(${LIBRARY_NAME}_obj PROPERTIES COMPILE_FLAGS "${CMAKE_SHARED_LIBRARY_C_FLAGS}")
 ENDIF()

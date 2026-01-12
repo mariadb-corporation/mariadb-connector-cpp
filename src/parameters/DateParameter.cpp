@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -32,7 +32,7 @@ namespace mariadb
     * @param timeZone timezone to use
     * @param options jdbc options
     */
-  DateParameter::DateParameter(const Date& _date, TimeZone* /*_timeZone*/, Shared::Options& _options)
+  DateParameter::DateParameter(const Date& _date, TimeZone* /*_timeZone*/, const Shared::Options& _options)
     : date(_date)
     //, timeZone(timeZone)
     , options(_options)
@@ -58,6 +58,7 @@ namespace mariadb
     str.append(QUOTE);
   }
 
+  // It's not used anyway(so far)
   const char * DateParameter::dateByteFormat()
   {
     /*SimpleDateFormat sdf= new SimpleDateFormat("yyyy-MM-dd");
@@ -68,7 +69,7 @@ namespace mariadb
       sdf.setTimeZone(timeZone);
     }*/
 
-    return date.c_str();//sdf.format(date).getBytes();
+    return static_cast<const char*>(static_cast<void*>(&sql::DateImp::get(date)));//sdf.format(date).getBytes();
   }
 
   int64_t DateParameter::getApproximateTextProtocolLength() const
@@ -86,28 +87,10 @@ namespace mariadb
   {
     /*Calendar* calendar= Calendar*.getInstance(timeZone);
     calendar->setTimeInMillis(date.getTime());*/
-    Tokens d= split(date, "-");
-    uint16_t year= 1;
-    uint8_t month= 1, day= 1;
-    auto cit= d->begin();
-    if (cit != d->end())
-    {
-      year= static_cast<int16_t>(std::stoi(StringImp::get(*cit)));
-    }
-    ++cit;
-    if (cit != d->end())
-    {
-      month= static_cast<uint8_t>(std::stoi(StringImp::get(*cit)));
-    }
-    ++cit;
-    if (cit != d->end())
-    {
-      day= static_cast<uint8_t>(std::stoi(StringImp::get(*cit)));
-    }
     pos.write(7);
-    pos.writeShort(year);//calendar->get(Calendar.YEAR));)
-    pos.write(month);// ((calendar->get(Calendar.MONTH)+1)&0xff));
-    pos.write(day);// (calendar->get(Calendar.DAY_OF_MONTH)&0xff));
+    pos.writeShort(date.getYear());//calendar->get(Calendar.YEAR));)
+    pos.write(date.getMonth());// ((calendar->get(Calendar.MONTH)+1)&0xff));
+    pos.write(date.getDate());// (calendar->get(Calendar.DAY_OF_MONTH)&0xff));
     pos.write(0);
     pos.write(0);
     pos.write(0);
@@ -119,7 +102,7 @@ namespace mariadb
     {
       throw SQLException("Parameter buffer size is too small for date value");
     }
-    std::memcpy(buffer.arr, date.c_str(), getValueBinLen());
+    std::memcpy(buffer.arr, &sql::DateImp::get(date), getValueBinLen());
     return getValueBinLen();
   }
 
@@ -130,7 +113,7 @@ namespace mariadb
 
   SQLString DateParameter::toString()
   {
-    return "'"+date/*.toString()*/+"'";
+    return "'" + date.toString() + "'";
   }
 
   bool DateParameter::isNullData() const

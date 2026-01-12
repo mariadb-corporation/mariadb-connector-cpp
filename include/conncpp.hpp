@@ -34,6 +34,9 @@
 #include "conncpp/Warning.hpp"
 #include "conncpp/Savepoint.hpp"
 #include "conncpp/Types.hpp"
+#include "conncpp/Date.hpp"
+#include "conncpp/Time.hpp"
+#include "conncpp/Timestamp.hpp"
 
 #include "conncpp/SQLString.hpp"
 #include "conncpp/Exception.hpp"

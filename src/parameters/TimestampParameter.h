@@ -25,6 +25,8 @@
 
 #include "ParameterHolder.h"
 
+#include "jdbccompat/Timestamp.h"
+
 namespace sql
 {
 namespace mariadb
@@ -49,7 +51,7 @@ public:
   bool isNullData() const;
   bool isLongData();
   void* getValuePtr();
-  unsigned long getValueBinLen() const { return static_cast<unsigned long>(ts.length()); }
+  unsigned long getValueBinLen() const { return sizeof(capi::MYSQL_TIME); }
   ParameterHolder* clone() { return new TimestampParameter(*this); }
   };
 }

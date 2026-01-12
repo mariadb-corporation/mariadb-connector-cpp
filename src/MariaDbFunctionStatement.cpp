@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2023 MariaDB Corporation AB
+   Copyright (C) 2020,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -861,6 +861,18 @@ namespace mariadb
     stmt->setBytes(nameToIndex(parameterName), bytes);
   }
 
+
+  void MariaDbFunctionStatement::setDate(int32_t parameterIndex, const Date& date) {
+    stmt->setDate(parameterIndex, date);
+  }
+
+  void MariaDbFunctionStatement::setTime(int32_t parameterIndex, const Time& time) {
+    stmt->setTime(parameterIndex, time);
+  }
+
+  void MariaDbFunctionStatement::setTimestamp(int32_t parameterIndex, const Timestamp& timestamp) {
+    stmt->setTimestamp(parameterIndex, timestamp);
+  }
 
   Statement* MariaDbFunctionStatement::setResultSetType(int32_t rsType) {
     stmt->setResultSetType(rsType);

@@ -246,67 +246,6 @@ namespace mariadb
     setCharacterStream(parameterIndex, reader);
   }
 
-  /**
-  * Sets the designated parameter to the given <code>java.sql.Date</code> value using the default
-  * time zone of the virtual machine that is running the application. The driver converts this to
-  * an SQL <code>DATE</code> value when it sends it to the database.
-  *
-  * @param parameterIndex the first parameter is 1, the second is 2, ...
-  * @param date the parameter value
-  * @throws SQLException if parameterIndex does not correspond to a parameter marker in the SQL
-  *     statement; if a database access error occurs or this method is called on a closed <code>
-  *     PreparedStatement</code>
-  */
-  void BasePrepareStatement::setDate(int32_t parameterIndex, const Date& date)
-  {
-    if (date/*.empty() == true*/) {
-      setNull(parameterIndex, Types::DATE);
-      return;
-    }
-    setParameter(
-      parameterIndex, new DateParameter(date, TimeZone.getDefault(), getProtocol()->getOptions()));
-  }
-
- /**
-  * Sets the designated parameter to the given <code>java.sql.Time</code> value. the driver uses
-  * the default timezone, which is that of the virtual machine running the application.
-  *
-  * @param parameterIndex the first parameter is 1, the second is 2, ...
-  * @param time the parameter value
-  * @throws SQLException if parameterIndex does not correspond to a parameter marker in the SQL
-  *     statement; if a database access error occurs or this method is called on a closed <code>
-  *     PreparedStatement</code>
-  */
-  void BasePrepareStatement::setTime(int32_t parameterIndex, const Time&time)
-  {
-    if (time/*.empty() == true*/) {
-      setNull(parameterIndex, ColumnType::TIME);
-      return;
-    }
-    setParameter(
-      parameterIndex, new TimeParameter(time, TimeZone.getDefault(), useFractionalSeconds));
-  }
-
-  /**
-  * Sets the designated parameter to the given <code>java.sql.Timestamp</code> value. The driver
-  * converts this to an SQL <code>TIMESTAMP</code> value when it sends it to the database.
-  *
-  * @param parameterIndex the first parameter is 1, the second is 2, ...
-  * @param timestamp the parameter value
-  * @throws SQLException if parameterIndex does not correspond to a parameter marker in the SQL
-  *     statement; if a database access error occurs or this method is called on a closed <code>
-  *     PreparedStatement</code>
-  */
-  void BasePrepareStatement::setTimestamp(int32_t parameterIndex, const Timestamp& timestamp)
-  {
-    if (timestamp.empty()) {
-      this->setNull(parameterIndex, ColumnType::DATETIME);
-      return;
-    }
-    setParameter(
-      parameterIndex,
-      new TimestampParameter(timestamp, getProtocol()->getTimeZone(), useFractionalSeconds));
-  }
 
   /**
   * Sets the designated parameter to the given <code>java.sql.RowId</code> object. The driver
@@ -445,6 +384,68 @@ namespace mariadb
     setClob(parameterIndex, reader);
   }
  #endif
+
+  /**
+  * Sets the designated parameter to the given <code>java.sql.Date</code> value using the default
+  * time zone of the virtual machine that is running the application. The driver converts this to
+  * an SQL <code>DATE</code> value when it sends it to the database.
+  *
+  * @param parameterIndex the first parameter is 1, the second is 2, ...
+  * @param date the parameter value
+  * @throws SQLException if parameterIndex does not correspond to a parameter marker in the SQL
+  *     statement; if a database access error occurs or this method is called on a closed <code>
+  *     PreparedStatement</code>
+  */
+  void BasePrepareStatement::setDate(int32_t parameterIndex, const Date& date)
+  {
+    if (date.isNull()) {
+      setNull(parameterIndex, Types::DATE);
+      return;
+    }
+    setParameter(
+      parameterIndex, new DateParameter(date, protocol->getTimeZone(), protocol->getOptions()));
+  }
+
+  /**
+   * Sets the designated parameter to the given <code>java.sql.Time</code> value. the driver uses
+   * the default timezone, which is that of the virtual machine running the application.
+   *
+   * @param parameterIndex the first parameter is 1, the second is 2, ...
+   * @param time the parameter value
+   * @throws SQLException if parameterIndex does not correspond to a parameter marker in the SQL
+   *     statement; if a database access error occurs or this method is called on a closed <code>
+   *     PreparedStatement</code>
+   */
+  void BasePrepareStatement::setTime(int32_t parameterIndex, const Time& time)
+  {
+    if (time.isNull()) {
+      setNull(parameterIndex, ColumnType::TIME);
+      return;
+    }
+    setParameter(
+      parameterIndex, new TimeParameter(time, protocol->getTimeZone(), useFractionalSeconds));
+  }
+
+  /**
+  * Sets the designated parameter to the given <code>java.sql.Timestamp</code> value. The driver
+  * converts this to an SQL <code>TIMESTAMP</code> value when it sends it to the database.
+  *
+  * @param parameterIndex the first parameter is 1, the second is 2, ...
+  * @param timestamp the parameter value
+  * @throws SQLException if parameterIndex does not correspond to a parameter marker in the SQL
+  *     statement; if a database access error occurs or this method is called on a closed <code>
+  *     PreparedStatement</code>
+  */
+  void BasePrepareStatement::setTimestamp(int32_t parameterIndex, const Timestamp& timestamp)
+  {
+    if (timestamp.isNull()) {
+      this->setNull(parameterIndex, ColumnType::DATETIME);
+      return;
+    }
+    setParameter(
+      parameterIndex,
+      new TimestampParameter(timestamp, protocol->getTimeZone(), useFractionalSeconds));
+  }
 
   /**
    * Sets the designated parameter to the given <code>REF(&lt;structured-type&gt;)</code> value. The

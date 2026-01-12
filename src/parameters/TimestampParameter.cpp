@@ -19,6 +19,7 @@
 
 
 #include "TimestampParameter.h"
+#include "jdbccompat/Timestamp.h"
 
 namespace sql
 {
@@ -43,7 +44,7 @@ namespace mariadb
   void TimestampParameter::writeTo(SQLString& str)
   {
     str.append(QUOTE);
-    str.append(ts);
+    str.append(ts.toString());
     str.append(QUOTE);
   }
 
@@ -71,7 +72,7 @@ namespace mariadb
         factor= 10;
       }
     }*/
-    pos.write(ts.c_str());
+    pos.write(ts.toString());
     pos.write(QUOTE);
   }
 
@@ -111,7 +112,7 @@ namespace mariadb
     {
       throw SQLException("Parameter buffer size is too small for timestamp value");
     }
-    std::memcpy(buffer.arr, ts.c_str(), getValueBinLen());
+    std::memcpy(buffer.arr, &sql::TimestampImp::get(ts), getValueBinLen());
     return getValueBinLen();
   }
 
@@ -122,7 +123,7 @@ namespace mariadb
 
   SQLString TimestampParameter::toString()
   {
-    return "'"+ts/*.toString()*/+"'";
+    return "'" + ts.toString() + "'";
   }
 
   bool TimestampParameter::isNullData() const
@@ -137,7 +138,7 @@ namespace mariadb
 
   void* TimestampParameter::getValuePtr()
   {
-    return const_cast<void*>(static_cast<const void*>(ts.c_str()));
+    return const_cast<void*>(static_cast<const void*>(&sql::TimestampImp::get(ts)));
   }
 
 

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -56,10 +56,7 @@ namespace sql
     REASON_VALUE_TRUNCATED
   };
 
-  typedef SQLString Time;
-  typedef SQLString Date;
   typedef SQLString BigDecimal;
-  typedef SQLString Timestamp;
 
   typedef SQLString SQLXML;
   typedef SQLString Clob;

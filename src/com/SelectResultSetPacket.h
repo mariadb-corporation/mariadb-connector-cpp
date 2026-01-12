@@ -257,11 +257,14 @@ public:
   int32_t getHoldability();
   sql::ResultSetMetaData* getMetaData();
 
+
+  Timestamp getTimestamp(const SQLString& columnLabel);
+  Timestamp getTimestamp(int32_t columnIndex);
+  Date getDate(int32_t columnIndex);
+  Date getDate(const SQLString& columnLabel);
+  Time getTime(int32_t columnIndex);
+  Time getTime(const SQLString& columnLabel);
 #ifdef MAYBE_IN_NEXTVERSION
-  Timestamp* getTimestamp(const SQLString& columnLabel);
-  Timestamp* getTimestamp(int32_t columnIndex);
-  Time* getTime(int32_t columnIndex);
-  Time* getTime(const SQLString& columnLabel);
   std::istream* getAsciiStream(const SQLString& columnLabel);
   std::istream* getAsciiStream(int32_t columnIndex);
   RowId* getRowId(int32_t columnIndex);

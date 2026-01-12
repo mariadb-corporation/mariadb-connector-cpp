@@ -97,28 +97,25 @@ namespace capi
    case MYSQL_TYPE_FLOAT:
      return zeroFillingIfNeeded(fieldBuf.arr, columnInfo);
    case MYSQL_TYPE_TIME:
-     return SQLString(getInternalTimeString(columnInfo));
+     return getInternalTimeString(columnInfo);
    case MYSQL_TYPE_DATE:
    {
-     Date date(getInternalDate(columnInfo, cal, timeZone));
-     if (date.empty() || date.compare(nullDate) == 0) {
-       if ((lastValueNull & BIT_LAST_ZERO_DATE) != 0) {
-         lastValueNull^= BIT_LAST_ZERO_DATE;
-         return SQLString(fieldBuf, length);
-       }
-       return emptyStr;
+     Date date(fieldBuf.arr, length); //= getInternalDate(columnInfo, cal, timeZone);
+     if (date.isNull()) {
+       lastValueNull|= BIT_LAST_ZERO_DATE;
+       return emptyStr; // maybe still 0000-00-00?
      }
-     return date;
+     return date.toString();
    }
    case MYSQL_TYPE_YEAR:
    {
      if (options->yearIsDateType) {
-       Date date1(getInternalDate(columnInfo, cal, timeZone));
-       if (date1.empty() || date1.compare(nullDate) == 0) {
+       Date date1= getInternalDate(columnInfo, cal, timeZone);
+       if (date1.isNull()) {
          return emptyStr;
        }
        else {
-         return date1;
+         return date1.toString();
        }
      }
      break;
@@ -127,14 +124,11 @@ namespace capi
    case MYSQL_TYPE_DATETIME:
    {
      Timestamp timestamp= getInternalTimestamp(columnInfo, cal, timeZone);
-     if (!timestamp) {
-       if ((lastValueNull & BIT_LAST_ZERO_DATE)!=0) {
-         lastValueNull ^=BIT_LAST_ZERO_DATE;
-         return SQLString(fieldBuf, length);
-       }
+     if (timestamp.isNull()) {
+       lastValueNull|= BIT_LAST_ZERO_DATE;
        return emptyStr;
      }
-     return timestamp;
+     return timestamp.toString(columnInfo->getDecimals());
    }
    case MYSQL_TYPE_NEWDECIMAL:
    case MYSQL_TYPE_DECIMAL:
@@ -146,13 +140,11 @@ namespace capi
    default:
      break;
    }
-
    return SQLString(fieldBuf, getLengthMaxFieldSize());
  }
 
 
- Date TextRowProtocolCapi::getInternalDate(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
- {
+ Date TextRowProtocolCapi::getInternalDate(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone) {
    if (lastValueWasNull()) {
      return nullDate;
    }
@@ -160,36 +152,17 @@ namespace capi
    switch (columnInfo->getColumnType().getType()) {
    case MYSQL_TYPE_DATE:
    {
-     std::vector<int32_t> datePart{ 0, 0, 0 };
-     int32_t partIdx= 0;
-     for (uint32_t begin= pos; begin < pos + length; begin++) {
-       int8_t b= fieldBuf[begin];
-       if (b == '-') {
-         partIdx++;
-         continue;
-       }
-       if (b <'0'|| b >'9') {
-         throw SQLException(
-           "cannot parse data in date string '"
-           + SQLString(fieldBuf, length)
-           + "'");
-       }
-       datePart[partIdx]= datePart[partIdx] *10 + b - 48;
-     }
-
-     if (datePart[0] == 0 && datePart[1] ==0 && datePart[2] == 0) {
-       lastValueNull|= BIT_LAST_ZERO_DATE;
-       return nullDate;
-     }
-
      Date d(fieldBuf.arr, length);
+     if (d.isNull()) {
+       lastValueNull|= BIT_LAST_ZERO_DATE;
+     }
      return d;
    }
    case MYSQL_TYPE_TIMESTAMP:
    case MYSQL_TYPE_DATETIME:
    {
-     Timestamp timestamp= getInternalTimestamp(columnInfo, cal, timeZone);
-     return timestamp.substr(0, 10 + (timestamp.at(0) == '-' ? 1 : 0));
+     Timestamp ts= getInternalTimestamp(columnInfo, cal, timeZone);
+     return Date(ts.getYear(), ts.getMonth(), ts.getDate());
    }
    case MYSQL_TYPE_TIME:
      throw SQLException("Cannot read DATE using a Types::TIME field");
@@ -205,9 +178,7 @@ namespace capi
          year +=1900;
        }
      }
-     std::ostringstream result;
-     result << year << "-01-01";
-     return result.str();
+     return Date(year, 1, 1);
    }
    default:
    {
@@ -233,15 +204,15 @@ namespace capi
  */
  Time TextRowProtocolCapi::getInternalTime(ColumnDefinition* columnInfo, Calendar* cal, TimeZone* timeZone)
  {
-   static Time nullTime("00:00:00");
    if (lastValueWasNull()) {
      return nullTime;
    }
 
-   if (columnInfo->getColumnType()==ColumnType::TIMESTAMP
-     ||columnInfo->getColumnType()==ColumnType::DATETIME) {
+   if (columnInfo->getColumnType() == ColumnType::TIMESTAMP
+     || columnInfo->getColumnType() == ColumnType::DATETIME) {
 
-     return getInternalTimestamp(columnInfo, cal, timeZone).substr(11);
+     auto ts= getInternalTimestamp(columnInfo, cal, timeZone);
+     return Time(ts.getHours(), ts.getMinutes(), ts.getSeconds(), ts.getNanos());
    }
    else if (columnInfo->getColumnType() == ColumnType::DATE) {
 
@@ -249,34 +220,7 @@ namespace capi
 
    }
    else {
-     SQLString raw(fieldBuf.arr + pos, length);
-     std::vector<std::string> matcher;
-
-     if (!parseTime(raw, matcher)) {
-       throw SQLException("Time format \"" + raw + "\" incorrect, must be [-]HH+:[0-59]:[0-59]");
-     }
-/* It makes sense to do here, as everything is ready */     
-#ifdef WE_FOUND_USE_FOR_THIS_TRANSITION_AT_THIS_LEVEL
-     bool negate= !matcher[1].empty();
-
-     int32_t hour= std::stoi(matcher[2]);
-     int32_t minutes= std::stoi(matcher[3]);
-     int32_t seconds= std::stoi(matcher[4]);
-#endif
-     auto &parts= matcher.back();
-     int32_t nanoseconds= 0;
-
-     if (parts.length() > 1)
-     {
-       std::size_t digitsCnt= parts.length() - 1;
-       nanoseconds= std::stoi(parts.substr(1, std::min(digitsCnt, (size_t)9U)));
-
-       while (digitsCnt++ < 9) {
-         nanoseconds*= 10;
-       }
-     }
-
-     return matcher[0];
+     return Time(fieldBuf.arr + pos, length);
    }
  }
 
@@ -291,7 +235,6 @@ namespace capi
  */
  Timestamp TextRowProtocolCapi::getInternalTimestamp(ColumnDefinition* columnInfo, Calendar* userCalendar, TimeZone* timeZone)
  {
-   static Timestamp nullTs("0000-00-00 00:00:00");
    if (lastValueWasNull()) {
      return nullTs;
    }
@@ -304,78 +247,18 @@ namespace capi
    case MYSQL_TYPE_VAR_STRING:
    case MYSQL_TYPE_STRING:
    {
-     const std::size_t nanosIdx= 6;
-     int32_t nanoBegin= -1;
-     std::string nanosStr("");
-     std::vector<int32_t> timestampsPart{ 0,0,0,0,0,0,0 };
-     int32_t partIdx= 0;
-
-     for (uint32_t begin= pos; begin < pos + length; begin++) {
-       int8_t b= fieldBuf[begin];
-       if (b == '-'|| b == ' ' || b == ':') {
-         partIdx++;
-         continue;
-       }
-       if (b == '.') {
-         partIdx++;
-         nanoBegin= begin;
-         nanosStr.reserve(length - (nanoBegin - pos) - 1/*dot itself*/);
-         continue;
-       }
-       if (b < '0' || b > '9') {
-         throw SQLException(
-           "cannot parse data in timestamp string '"
-           + SQLString(fieldBuf.arr + pos, length)
-           +"'");
-       }
-       timestampsPart[partIdx]= timestampsPart[partIdx]*10 + b - 48;
-       if (partIdx == nanosIdx) {
-         nanosStr.append(1, b);
-       }
-     }
-
-     if (timestampsPart[0] == 0
-       && timestampsPart[1] == 0
-       && timestampsPart[2] == 0
-       && timestampsPart[3] == 0
-       && timestampsPart[4] == 0
-       && timestampsPart[5] == 0
-       && timestampsPart[6] == 0)
-     {
+     sql::Timestamp ts(fieldBuf.arr + pos, length);
+     if (ts.isNull()) {
        lastValueNull|= BIT_LAST_ZERO_DATE;
-       return nullTs;
      }
-
-     // fix non leading tray for nanoseconds
-     if (nanoBegin > 0) {
-       for (uint32_t begin= 0; begin < 9 - (pos + length - nanoBegin - 1); begin++) {
-         timestampsPart[6]= timestampsPart[6]*10;
-       }
-     }
-
-     std::ostringstream timestamp;
-     std::locale C("C");
-     timestamp.imbue(C);
-
-     timestamp << timestampsPart[0] << "-";
-     timestamp << (timestampsPart[1] < 10 ? "0" : "") << timestampsPart[1] << "-";
-     timestamp << (timestampsPart[2] < 10 ? "0" : "") << timestampsPart[2] << " ";
-     timestamp << (timestampsPart[3] < 10 ? "0" : "") << timestampsPart[3] << ":";
-     timestamp << (timestampsPart[4] < 10 ? "0" : "") << timestampsPart[4] << ":";
-     timestamp << (timestampsPart[5] < 10 ? "0" : "") << timestampsPart[5];
-     
-     if (timestampsPart[6] > 0) {
-       /*<< (nanosStr.length() < 9 ? std::string(9 - nanosStr.length(), '0') : "")*/
-       timestamp << "." << nanosStr;
-     }
-
-     return Timestamp(timestamp.str());
+     return ts;
    }
    case MYSQL_TYPE_TIME:
    {
+     auto time= getInternalTime(columnInfo, userCalendar, timeZone);
      Timestamp tt("1970-01-01 ");
 
-     return tt.append(getInternalTime(columnInfo, userCalendar, timeZone));
+     return Timestamp(1970, 1, 1, time.getHours(), time.getMinutes(), time.getSeconds(), time.getNanos());
    }
    default:
    {
@@ -749,7 +632,13 @@ namespace capi
      case MYSQL_TYPE_LONG:
      case MYSQL_TYPE_INT24:
      case MYSQL_TYPE_LONGLONG:
-       return safer_strtoll(fieldBuf.arr + pos, length);
+     {
+       auto result= safer_strtoll(fieldBuf.arr + pos, length);
+       // Technically we can only detect here if it's signed on usigned value. then it's an overflow
+       // then maybe it's safer to if (add result < 0 && !columnInfo->isSigned()) here
+       rangeCheck("int64_t", INT64_MIN, INT64_MAX, result, columnInfo);
+       return result;
+     }
      case MYSQL_TYPE_TIMESTAMP:
      case MYSQL_TYPE_DATETIME:
      case MYSQL_TYPE_TIME:
@@ -762,7 +651,15 @@ namespace capi
          return parseBinaryAsInteger<int64_t>(columnInfo);
        }
        else {
-         return safer_strtoll(fieldBuf.arr + pos, length);
+         try {
+           safer_strtoll(fieldBuf.arr + pos, length);
+         }
+         catch (int64_t) {
+           throw SQLException(
+             "Out of range value for column '" + columnInfo->getName() + "' : could not convert to a number" + SQLString(fieldBuf.arr, length),
+             "22003",
+             1264);
+         }
        }
      }
 
@@ -1024,22 +921,18 @@ namespace capi
   * @param columnInfo column information
   * @return String representation of time
   */
- SQLString TextRowProtocolCapi::getInternalTimeString(ColumnDefinition* /*columnInfo*/)
+ SQLString TextRowProtocolCapi::getInternalTimeString(ColumnDefinition* columnInfo)
  {
    if (lastValueWasNull()) {
-     return "";
+     return emptyStr;
    }
 
-   SQLString rawValue(fieldBuf.arr + pos, length);
-   if (rawValue.compare("0000-00-00") == 0) {
-     return "";
-   }
+   sql::Time time(fieldBuf.arr + pos, length);
 
-   if (options->maximizeMysqlCompatibility
-     && rawValue.find_first_of('.') != std::string::npos) {
-     return rawValue.substr(0, rawValue.find_first_of('.'));
+   if (options->maximizeMysqlCompatibility) {
+     time.setNanos(0);
    }
-   return rawValue;
+   return time.toString(columnInfo->getDecimals());
  }
 
 

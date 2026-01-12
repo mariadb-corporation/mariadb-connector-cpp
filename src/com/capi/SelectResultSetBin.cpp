@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2024 MariaDB Corporation plc
+   Copyright (C) 2020,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -943,7 +943,7 @@ namespace capi
   /** {inheritDoc}. */
   float SelectResultSetBin::getFloat(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalFloat(columnsInformation[columnIndex -1].get());
+    return row->getInternalFloat(columnsInformation[columnIndex - 1].get());
   }
 
   /** {inheritDoc}. */
@@ -954,7 +954,7 @@ namespace capi
   /** {inheritDoc}. */
   long double SelectResultSetBin::getDouble(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalDouble(columnsInformation[columnIndex -1].get());
+    return row->getInternalDouble(columnsInformation[columnIndex - 1].get());
   }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
@@ -995,41 +995,38 @@ namespace capi
     System.arraycopy(row->buf, row->pos, data, 0, row->getLengthMaxFieldSize());
     return data;
   }
-
-
+#endif
   /** {inheritDoc}. */
-  Date* SelectResultSetBin::getDate(int32_t columnIndex) {
+  Date SelectResultSetBin::getDate(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalDate(columnsInformation[columnIndex -1], nullptr, timeZone);
+    return row->getInternalDate(columnsInformation[columnIndex - 1].get(), nullptr, timeZone);
   }
 
   /** {inheritDoc}. */
-  Date* SelectResultSetBin::getDate(const SQLString& columnLabel) {
+  Date SelectResultSetBin::getDate(const SQLString& columnLabel) const {
     return getDate(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  Time* SelectResultSetBin::getTime(int32_t columnIndex) {
+  Time SelectResultSetBin::getTime(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalTime(columnsInformation[columnIndex -1], nullptr, timeZone);
+    return row->getInternalTime(columnsInformation[columnIndex - 1].get(), nullptr, timeZone);
   }
 
-  /** {inheritDoc}. */  Time SelectResultSetBin::getTime(const SQLString& columnLabel) {
+  /** {inheritDoc}. */  Time SelectResultSetBin::getTime(const SQLString& columnLabel) const {
     return getTime(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  Timestamp* SelectResultSetBin::getTimestamp(const SQLString& columnLabel) {
+  Timestamp SelectResultSetBin::getTimestamp(const SQLString& columnLabel) const {
     return getTimestamp(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  Timestamp* SelectResultSetBin::getTimestamp(int32_t columnIndex) {
+  Timestamp SelectResultSetBin::getTimestamp(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalTimestamp(columnsInformation[columnIndex -1], nullptr, timeZone);
+    return row->getInternalTimestamp(columnsInformation[columnIndex - 1].get(), nullptr, timeZone);
   }
-#endif
-
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   /** {inheritDoc}. */
   Date* SelectResultSetBin::getDate(int32_t columnIndex, Calendar& cal) {

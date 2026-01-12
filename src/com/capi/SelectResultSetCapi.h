@@ -208,13 +208,18 @@ public:
   Blob* getBlob(int32_t columnIndex) const;
   Blob* getBlob(const SQLString& columnLabel) const;
 
+  sql::Timestamp getTimestamp(const SQLString& columnLabel) const;
+  sql::Timestamp getTimestamp(int32_t columnIndex) const;
+  sql::Date getDate(int32_t columnIndex) const;
+  sql::Date getDate(const SQLString& columnLabel) const;
+  sql::Time getTime(int32_t columnIndex) const;
+  sql::Time getTime(const SQLString& columnLabel) const;
+
 #ifdef MAYBE_IN_NEXTVERSION
 
   /* Still... maybe SQLString is better handler for this */
   sql::bytes* getBytes(const SQLString& columnLabel);
   sql::bytes* getBytes(int32_t columnIndex);
-  Timestamp* getTimestamp(const SQLString& columnLabel);
-  Timestamp* getTimestamp(int32_t columnIndex);
   Time* getTime(int32_t columnIndex);
   Time* getTime(const SQLString& columnLabel);
   std::istream* getAsciiStream(const SQLString& columnLabel);

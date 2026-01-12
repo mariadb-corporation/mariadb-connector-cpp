@@ -888,7 +888,7 @@ namespace capi
   SQLString SelectResultSetCapi::getString(int32_t columnIndex) const
   {
     checkObjectRange(columnIndex);
-    return std::move(row->getInternalString(columnsInformation[columnIndex - 1].get()));
+    return row->getInternalString(columnsInformation[columnIndex - 1].get());
   }
 
   /** {inheritDoc}. */
@@ -1035,40 +1035,39 @@ namespace capi
     System.arraycopy(row->buf, row->pos, data, 0, row->getLengthMaxFieldSize());
     return data;
   }
-
-
+#endif
   /** {inheritDoc}. */
-  Date* SelectResultSetCapi::getDate(int32_t columnIndex) {
+  sql::Date SelectResultSetCapi::getDate(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalDate(columnsInformation[columnIndex -1], nullptr, timeZone);
+    return row->getInternalDate(columnsInformation[columnIndex - 1].get(), nullptr);
   }
 
   /** {inheritDoc}. */
-  Date* SelectResultSetCapi::getDate(const SQLString& columnLabel) {
+  Date SelectResultSetCapi::getDate(const SQLString& columnLabel) const {
     return getDate(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  Time* SelectResultSetCapi::getTime(int32_t columnIndex) {
+  Time SelectResultSetCapi::getTime(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalTime(columnsInformation[columnIndex -1], nullptr, timeZone);
+    return row->getInternalTime(columnsInformation[columnIndex - 1].get(), nullptr);
   }
 
-  /** {inheritDoc}. */  Time SelectResultSetCapi::getTime(const SQLString& columnLabel) {
+  /** {inheritDoc}. */
+  Time SelectResultSetCapi::getTime(const SQLString& columnLabel) const { 
     return getTime(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  Timestamp* SelectResultSetCapi::getTimestamp(const SQLString& columnLabel) {
+  Timestamp SelectResultSetCapi::getTimestamp(const SQLString& columnLabel) const {
     return getTimestamp(findColumn(columnLabel));
   }
 
   /** {inheritDoc}. */
-  Timestamp* SelectResultSetCapi::getTimestamp(int32_t columnIndex) {
+  Timestamp SelectResultSetCapi::getTimestamp(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalTimestamp(columnsInformation[columnIndex -1], nullptr, timeZone);
+    return row->getInternalTimestamp(columnsInformation[columnIndex - 1].get(), nullptr);
   }
-#endif
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   /** {inheritDoc}. */

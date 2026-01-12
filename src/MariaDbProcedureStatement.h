@@ -116,8 +116,12 @@ public:
   Blob* getBlob(const SQLString& parameterName);
   sql::bytes* getBytes(const SQLString& parameterName);
   sql::bytes* getBytes(int32_t parameterIndex);
-  Date getDate(int32_t parameterIndex);
-  Date getDate(const SQLString& parameterName);
+  Timestamp getTimestamp(const SQLString& columnLabel);
+  Timestamp getTimestamp(int32_t columnIndex);
+  Date getDate(int32_t columnIndex);
+  Date getDate(const SQLString& columnLabel);
+  Time getTime(int32_t columnIndex);
+  Time getTime(const SQLString& columnLabel);
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   BigDecimal* getBigDecimal(int32_t parameterIndex, int32_t scale);
@@ -132,8 +136,6 @@ public:
 
   Time* getTime(const SQLString& parameterName);
   Time getTime(int32_t parameterIndex);
-  Timestamp* getTimestamp(int32_t parameterIndex);
-  Timestamp* getTimestamp(const SQLString& parameterName);
 
   /*sql::Object* getObject(int32_t parameterIndex);
   sql::Object* getObject(const SQLString& parameterName);
@@ -297,11 +299,13 @@ public:
   Statement* setResultSetType(int32_t rsType);
   void clearParameters();
 
+  void setDate(int32_t parameterIndex, const Date& date);
+  void setTime(int32_t parameterIndex, const Time& time);
+  void setTimestamp(int32_t parameterIndex, const Timestamp& timestamp);
+
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   void setURL(const SQLString& parameterName, URL& url);
-  void setDate(const SQLString& parameterName, Date& date);
-  void setTime(const SQLString& parameterName, Time& time);
-  void setTimestamp(const SQLString& parameterName, Timestamp& timestamp);
+
 
   void setDate(const SQLString& parameterName, Date& date, Calendar& cal);
   void setTime(const SQLString& parameterName, Time& time, Calendar& cal);

@@ -67,6 +67,11 @@ public:
   virtual void setBlob(int32_t parameterIndex, std::istream* inputStream)=0;
   virtual void setDateTime(int32_t parameterIndex, const SQLString& dt)=0;
 
+  virtual void setDate(int32_t parameterIndex,const Date& date)=0;
+  virtual void setTime(int32_t parameterIndex,const Time& time)=0;
+  virtual void setTimestamp(int32_t parameterIndex,const Timestamp& timestamp)=0;
+
+
 #ifdef MAKES_SENSE_TO_ADD_TO_EASE_SETTING_NULL_AND_COPY_JDBC_BEHAVIOR
   virtual void setBoolean(int32_t parameterIndex, bool *value)=0;
   virtual void setByte(int32_t parameterIndex, int8_t* bit)=0;
@@ -97,10 +102,6 @@ public:
   virtual void setAsciiStream(int32_t parameterIndex, std::istream& stream,const int64_t length)=0;
   virtual void setAsciiStream(int32_t parameterIndex, std::istream& stream)=0;
   virtual void setAsciiStream(int32_t parameterIndex, std::istream& stream, int32_t length)=0;
-
-  virtual void setDate(int32_t parameterIndex,const Date& date)=0;
-  virtual void setTime(int32_t parameterIndex,const Time time)=0;
-  virtual void setTimestamp(int32_t parameterIndex,const Timestamp timestamp)=0;
 
   virtual void setNCharacterStream(int32_t parameterIndex,const std::istringstream& value,const int64_t length)=0;
   virtual void setNCharacterStream(int32_t parameterIndex,const std::istringstream& value)=0;

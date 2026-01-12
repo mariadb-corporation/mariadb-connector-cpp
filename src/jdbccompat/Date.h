@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2025 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -18,40 +18,34 @@
 *************************************************************************************/
 
 
-#ifndef _TIMEPARAMETER_H_
-#define _TIMEPARAMETER_H_
+#ifndef _CONCPPMARIADBDATE_H_
+#define _CONCPPMARIADBDATE_H_
 
-#include "Consts.h"
-#include "jdbccompat/Time.h"
-#include "ParameterHolder.h"
+#include "conncpp/Date.hpp"
+#include "Timestamp.h"
 
 namespace sql
 {
 namespace mariadb
 {
-class TimeZone;
-
-class TimeParameter  : public ParameterHolder {
-
-  const Time time;
-  const TimeZone* timeZone;
-  bool fractionalSeconds;
+namespace capi
+{
+#include "mysql.h"
+}
+extern const sql::Date nullDate;
+}
+class DateImp {
 
 public:
-  TimeParameter( const Time&time, const TimeZone* timeZone,bool fractionalSeconds);
-  void writeTo(SQLString& str);
-  void writeTo(PacketOutputStream& str);
-  int64_t getApproximateTextProtocolLength() const;
-  void writeBinary(PacketOutputStream& pos);
-  uint32_t writeBinary(sql::bytes& buffer);
-  const ColumnType& getColumnType() const;
-  SQLString toString();
-  bool isNullData() const;
-  bool isLongData();
-  void* getValuePtr() { return const_cast<void*>(static_cast<const void*>(&sql::TimeImp::get(time))); }
-  unsigned long getValueBinLen() const { return sizeof(capi::MYSQL_TIME); }
-  ParameterHolder* clone() { return new TimeParameter(*this); }
-  };
-}
+  mariadb::TimestampStruct date;
+  DateImp();
+  DateImp(uint32_t y, uint32_t mo= 1, uint32_t d= 1);
+  static mariadb::TimestampStruct& get(sql::Date& timestamp);
+  static const mariadb::TimestampStruct& get(const sql::Date& timestamp);
+  static bool before(const mariadb::TimestampStruct& us, const mariadb::TimestampStruct& them);
+  static bool after(const mariadb::TimestampStruct& us, const mariadb::TimestampStruct& them);
+  static bool equals(const mariadb::TimestampStruct& us, const mariadb::TimestampStruct& them);
+  static SQLString toString(mariadb::TimestampStruct& date);
+};
 }
 #endif

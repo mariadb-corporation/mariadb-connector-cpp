@@ -157,20 +157,20 @@ namespace capi
     case MYSQL_TYPE_FLOAT:
       return SQLString(zeroFillingIfNeeded(std::to_string(getInternalFloat(columnInfo)), columnInfo));
     case MYSQL_TYPE_TIME:
-      return SQLString(getInternalTimeString(columnInfo));
+      return getInternalTimeString(columnInfo);
     case MYSQL_TYPE_DATE:
     {
       Date date= getInternalDate(columnInfo);// , cal, timeZone);
-      if (date.empty() || date.compare(nullDate) == 0) {
+      if (date.isNull()) {
         return emptyStr;
       }
-      return date;
+      return date.toString();
     }
     case MYSQL_TYPE_YEAR:
     {
       if (options->yearIsDateType) {
         Date dateInter = getInternalDate(columnInfo);//, cal, timeZone);
-        return (dateInter.empty() || dateInter.compare(nullDate)) == 0 ? emptyStr : dateInter;
+        return (dateInter.isNull() ? emptyStr : dateInter.toString());
       }
       int32_t year= getInternalSmallInt(columnInfo);
 
@@ -185,7 +185,7 @@ namespace capi
     case MYSQL_TYPE_TIMESTAMP:
     case MYSQL_TYPE_DATETIME:
     {
-      return getInternalTimestamp(columnInfo);
+      return getInternalTimestamp(columnInfo).toString();
     }
     case MYSQL_TYPE_NEWDECIMAL:
     case MYSQL_TYPE_DECIMAL:
@@ -722,59 +722,6 @@ namespace capi
   }
 
 
-  SQLString makeStringFromTimeStruct(MYSQL_TIME* mt, enum_field_types type, size_t decimals)
-  {
-    std::ostringstream out;
-    if (mt->neg != 0)
-    {
-      out << "-";
-    }
-
-    switch (type) {
-    case MYSQL_TYPE_TIMESTAMP:
-    case MYSQL_TYPE_DATETIME:
-    case MYSQL_TYPE_DATE:
-      out << mt->year << "-" << (mt->month < 10 ? "0" : "") << mt->month << "-" << (mt->day < 10 ? "0" : "") << mt->day;
-      if (type == MYSQL_TYPE_DATE) {
-        break;
-      }
-      out << " ";
-      // fall through
-    case MYSQL_TYPE_TIME:
-      out << (mt->hour < 10 ? "0" : "") << mt->hour << ":" << (mt->minute < 10 ? "0" : "") << mt->minute << ":" << (mt->second < 10 ? "0" : "") << mt->second;
-
-      if (mt->second_part != 0 && decimals > 0)
-      {
-        SQLString digits(std::to_string(mt->second_part));
-
-        if (digits.length() > std::min(decimals, (size_t)6U))
-        {
-          digits= digits.substr(0, 6);
-        }
-        size_t padZeros= std::min(decimals, 6 - digits.length());
-
-        out << ".";
-
-        if (digits.length() + padZeros > 6)
-        {
-          digits= digits.substr(0, 6 - padZeros);
-        }
-
-        while (padZeros--) {
-          out << "0";
-        }
-
-        out << digits.c_str();
-      }
-      break;
-    default:
-      // clang likes options for all enum members. Other types should not normally happen here. Probably would be better to throw here an exception
-      return emptyStr;
-    }
-    return out.str();
-  }
-
-
   Date BinRowProtocolCapi::getInternalDate(ColumnDefinition* columnInfo, Calendar* /*cal*/, TimeZone* /*timeZone*/)
   {
     if (lastValueWasNull()) {
@@ -788,24 +735,22 @@ namespace capi
       MYSQL_TIME* mt= reinterpret_cast<MYSQL_TIME*>(fieldBuf.arr);
 
       if (isNullTimeStruct(mt, MYSQL_TYPE_DATE)) {
-        lastValueNull |= BIT_LAST_ZERO_DATE;
+        lastValueNull|= BIT_LAST_ZERO_DATE;
         return nullDate;
       }
 
-      return makeStringFromTimeStruct(mt, MYSQL_TYPE_DATE, columnInfo->getDecimals());
+      return DateImp::toString(*mt);
     }
     case MYSQL_TYPE_TIME:
       throw SQLException("Cannot read Date using a Types::TIME field");
     case MYSQL_TYPE_STRING:
     {
-      SQLString rawValue(fieldBuf.arr, length);
-
-      if (rawValue.compare(nullDate) == 0) {
-        lastValueNull |= BIT_LAST_ZERO_DATE;
+      if (strncmp(nullDateStr, fieldBuf.arr, length) == 0) {
+        lastValueNull|= BIT_LAST_ZERO_DATE;
         return nullDate;
       }
 
-      return Date(rawValue);
+      return Date(fieldBuf.arr, length);
     }
     case MYSQL_TYPE_YEAR:
     {
@@ -818,9 +763,11 @@ namespace capi
           year += 1900;
         }
       }
-      std::ostringstream result;
-      result << year << "-01-01";
-      return result.str();
+      SQLString result;
+      auto& real= StringImp::get(result);
+      real.reserve(12);
+      real.append(std::to_string(year)).append("-01-01", 6);
+      return result;
     }
     default:
       throw SQLException(
@@ -851,15 +798,6 @@ namespace capi
     */
   Time BinRowProtocolCapi::getInternalTime(ColumnDefinition* columnInfo, Calendar* /*cal*/, TimeZone* /*timeZone*/)
   {
-    std::reference_wrapper<Time> nullTime= std::ref(RowProtocol::nullTime);
-    Time nullTimeWithMicros;
-
-    if (columnInfo->getDecimals() > 0) {
-      nullTimeWithMicros= RowProtocol::nullTime;
-      padZeroMicros(nullTimeWithMicros, columnInfo->getDecimals());
-      nullTime= std::ref(nullTimeWithMicros);
-    }
-
     if (lastValueWasNull()) {
       return nullTime;
     }
@@ -868,19 +806,13 @@ namespace capi
     case MYSQL_TYPE_DATETIME:
     {
       MYSQL_TIME* mt= reinterpret_cast<MYSQL_TIME*>(fieldBuf.arr);
-      return makeStringFromTimeStruct(mt, MYSQL_TYPE_TIME, columnInfo->getDecimals());
+      return TimeImp::toString(*mt, columnInfo->getDecimals());
     }
     case MYSQL_TYPE_DATE:
       throw SQLException("Cannot read Time using a Types::DATE field");
     case MYSQL_TYPE_STRING:
     {
-      SQLString rawValue(fieldBuf.arr, length);
-
-      if (rawValue.compare(nullTime) == 0 || rawValue.compare(RowProtocol::nullTime) == 0) {
-        lastValueNull|= BIT_LAST_ZERO_DATE;
-        return nullTime;
-      }
-      return rawValue;
+      return Time(fieldBuf.arr, length);
     }
     default:
       throw SQLException(
@@ -902,15 +834,6 @@ namespace capi
     */
   Timestamp BinRowProtocolCapi::getInternalTimestamp(ColumnDefinition* columnInfo, Calendar* /*userCalendar*/, TimeZone* /*timeZone*/)
   {
-    std::reference_wrapper<Timestamp> nullTs= std::ref(RowProtocol::nullTs);
-    Timestamp nullTsWithMicros;
-
-    if (columnInfo->getDecimals() > 0) {
-      nullTsWithMicros= RowProtocol::nullTs;
-      padZeroMicros(nullTsWithMicros, columnInfo->getDecimals());
-      nullTs= std::ref(nullTsWithMicros);
-    }
-
     if (lastValueWasNull()) {
       return nullTs;
     }
@@ -928,7 +851,7 @@ namespace capi
       MYSQL_TIME* mt= reinterpret_cast<MYSQL_TIME*>(fieldBuf.arr);
 
       if (isNullTimeStruct(mt, MYSQL_TYPE_TIMESTAMP)) {
-        lastValueNull |= BIT_LAST_ZERO_DATE;
+        lastValueNull|= BIT_LAST_ZERO_DATE;
         return nullTs;
       }
       if (columnInfo->getColumnType().getType() == MYSQL_TYPE_TIME)
@@ -938,20 +861,19 @@ namespace capi
         mt->day= mt->day > 0 ? mt->day : 1;
         //TODO if timeis negaive - shouldn't we deduct it?
       }
-
-      return makeStringFromTimeStruct(mt, MYSQL_TYPE_TIMESTAMP, columnInfo->getDecimals());
+      sql::Timestamp result;
+      TimestampImp::assign(result, mt);
+      return result;
     }
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_STRING:
     {
-      SQLString rawValue(fieldBuf.arr, length);
-
-      if (rawValue.compare(nullTs) == 0 || rawValue.compare("00:00:00") == 0) {
-        lastValueNull |= BIT_LAST_ZERO_DATE;
-        return nullTs;
+      auto result= sql::Timestamp(fieldBuf.arr, length);
+      if (result.isNull()) {
+        lastValueNull|= BIT_LAST_ZERO_DATE;
       }
 
-      return rawValue;
+      return result;
     }
     default:
       throw SQLException(
@@ -1153,10 +1075,10 @@ namespace capi
   SQLString BinRowProtocolCapi::getInternalTimeString(ColumnDefinition* columnInfo)
   {
     if (lastValueWasNull()) {
-      return "";
+      return emptyStr;
     }
     MYSQL_TIME* ts= reinterpret_cast<MYSQL_TIME*>(fieldBuf.arr);
-    return makeStringFromTimeStruct(ts, MYSQL_TYPE_TIME, columnInfo->getDecimals());
+    return TimeImp::toString(*ts, columnInfo->getDecimals());;
   }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED

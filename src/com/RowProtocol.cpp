@@ -26,7 +26,9 @@ namespace sql
 {
 namespace mariadb
 {
-  Date nullDate("0000-00-00");
+  const char * RowProtocol::nullDateStr= "0000-00-00";
+  const char * RowProtocol::nullTsStr=   "0000-00-00 00:00:00";
+  const char * RowProtocol::nullTimeStr= "00:00:00";
 
   int32_t RowProtocol::BIT_LAST_FIELD_NOT_NULL= 0b000000;
   int32_t RowProtocol::BIT_LAST_FIELD_NULL= 0b000001;
@@ -156,8 +158,6 @@ namespace mariadb
     return false;
   }
 
-  Timestamp RowProtocol::nullTs("0000-00-00 00:00:00");
-  Time RowProtocol::nullTime("00:00:00");
 
 #ifdef WE_HAVE_JAVA_TYPES_IMPLEMENTED
   const RowProtocol::TEXT_LOCAL_DATE_TIME= new DateTimeFormatterBuilder()
@@ -226,7 +226,13 @@ namespace mariadb
         digit= 9;
         break;
       default:
+      {
+        // Not a number - throwing to let the caller decide what to do
+        if (str == end - len) {
+          throw result;
+        }
         return result;
+      }
       }
       result= result * 10 + digit;
       ++str;
@@ -452,7 +458,7 @@ namespace mariadb
 
   void RowProtocol::rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo)
   {
-    if ((value < 0 && !columnInfo->isSigned() && !columnInfo->isBinary()) || value < minValue || value > maxValue) {
+    if ((value < 0 && !columnInfo->isSigned()/* && !columnInfo->isBinary()*/) || value < minValue || value > maxValue) {
       throw SQLException(
         "Out of range value for column '"
         + columnInfo->getName()

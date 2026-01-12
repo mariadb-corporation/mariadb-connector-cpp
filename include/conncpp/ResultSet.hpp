@@ -27,6 +27,9 @@
 #include "SQLString.hpp"
 #include "Warning.hpp"
 #include "jdbccompat.hpp"
+#include "Timestamp.hpp"
+#include "Date.hpp"
+#include "Time.hpp"
 
 namespace sql
 {
@@ -149,24 +152,27 @@ public:
   virtual NClob* getNClob(SQLString& columnLabel) const=0;
   virtual Clob* getClob(int32_t columnIndex) const=0;
   virtual Clob* getClob(SQLString& columnLabel) const=0;
-  virtual Timestamp* getTimestamp(int32_t columnIndex) const=0;
-  virtual Timestamp* getTimestamp(SQLString& columnLabel) const=0;
 #endif
-
   virtual RowId* getRowId(int32_t columnIndex) const=0;
   virtual RowId* getRowId(const SQLString& columnLabel) const=0;
+  virtual Date getDate(int32_t columnIndex) const=0;
+  virtual Date getDate(const SQLString& columnLabel) const=0;
+  virtual Time getTime(int32_t columnIndex) const=0;
+  virtual Time getTime(const SQLString& columnLabel) const=0;
+  virtual Timestamp getTimestamp(int32_t columnIndex) const=0;
+  virtual Timestamp getTimestamp(const SQLString& columnLabel) const=0;
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   virtual BigDecimal* getBigDecimal(SQLString& columnLabel,int32_t scale) const=0;
   virtual BigDecimal* getBigDecimal(int32_t columnIndex,int32_t scale) const=0;
   virtual BigDecimal* getBigDecimal(int32_t columnIndex) const=0;
   virtual BigDecimal* getBigDecimal(SQLString& columnLabel) const=0;
-  virtual Date* getDate(int32_t columnIndex,Calendar& cal) const=0;
-  virtual Date* getDate(SQLString& columnLabel,Calendar& cal) const=0;
-  virtual Time* getTime(int32_t columnIndex,Calendar& cal) const=0;
-  virtual Time* getTime(SQLString& columnLabel,Calendar& cal) const=0;
-  virtual Timestamp* getTimestamp(int32_t columnIndex,Calendar& cal) const=0;
-  virtual Timestamp* getTimestamp(SQLString& columnLabel,Calendar& cal) const=0;
+  virtual Date* getDate(int32_t columnIndex, Calendar& cal) const=0;
+  virtual Date* getDate(SQLString& columnLabel, Calendar& cal) const=0;
+  virtual Time* getTime(int32_t columnIndex, Calendar& cal) const=0;
+  virtual Time* getTime(SQLString& columnLabel, Calendar& cal) const=0;
+  virtual Timestamp* getTimestamp(int32_t columnIndex, Calendar& cal) const=0;
+  virtual Timestamp* getTimestamp(SQLString& columnLabel, Calendar& cal) const=0;
 
   virtual sql::Object* getObject(int32_t columnIndex) const=0;
   virtual sql::Object* getObject(SQLString& columnLabel) const=0;

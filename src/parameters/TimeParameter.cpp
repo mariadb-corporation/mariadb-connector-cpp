@@ -43,7 +43,7 @@ namespace mariadb
   void TimeParameter::writeTo(SQLString& str)
   {
     str.append(QUOTE);
-    str.append(time);
+    str.append(time.toString());
     str.append(QUOTE);
   }
 
@@ -57,7 +57,7 @@ namespace mariadb
     // TODO
     /*SimpleDateFormat sdf= new SimpleDateFormat("HH:mm:ss");
     sdf.setTimeZone(timeZone);*/
-    SQLString dateString(time);// = sdf.format(time);
+    // = sdf.format(time);
 
     pos.write(QUOTE);
     /*pos.write(dateString.getBytes());
@@ -72,7 +72,7 @@ namespace mariadb
         factor= 10;
       }
     }*/
-    pos.write(dateString.c_str());
+    pos.write(time.toString());
     pos.write(QUOTE);
   }
 
@@ -118,7 +118,7 @@ namespace mariadb
     {
       throw SQLException("Parameter buffer size is too small for time value");
     }
-    std::memcpy(buffer.arr, time.c_str(), getValueBinLen());
+    std::memcpy(buffer.arr, &sql::TimeImp::get(time), getValueBinLen());
     return getValueBinLen();
   }
 
@@ -129,7 +129,7 @@ namespace mariadb
 
   SQLString TimeParameter::toString()
   {
-    return time/*.toString()*/;
+    return time.toString();
   }
 
   bool TimeParameter::isNullData() const

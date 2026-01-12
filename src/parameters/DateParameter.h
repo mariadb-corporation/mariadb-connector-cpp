@@ -22,15 +22,15 @@
 #define _DATEPARAMETER_H_
 
 #include "Consts.h"
+#include "jdbccompat/Date.h"
 
 #include "ParameterHolder.h"
 
 namespace sql
 {
-class TimeZone;
-
 namespace mariadb
 {
+class TimeZone;
 class DateParameter  : public ParameterHolder {
 
   Date date;
@@ -38,7 +38,7 @@ class DateParameter  : public ParameterHolder {
   const Shared::Options options;
 
 public:
-  DateParameter( const Date&date, TimeZone* timeZone, Shared::Options& options);
+  DateParameter(const Date& date, TimeZone* timeZone, const Shared::Options& options);
   void writeTo(PacketOutputStream& os);
   void writeTo(SQLString& os);
 
@@ -53,8 +53,8 @@ public:
   SQLString toString();
   bool isNullData() const;
   bool isLongData();
-  void* getValuePtr() { return const_cast<void*>(static_cast<const void*>(date.c_str())); }
-  unsigned long getValueBinLen() const { return static_cast<unsigned long>(date.length()); }
+  void* getValuePtr() { return const_cast<void*>(static_cast<const void*>(&sql::DateImp::get(date))); }
+  unsigned long getValueBinLen() const { return sizeof(capi::MYSQL_TIME); }
   ParameterHolder* clone() { return new DateParameter(*this); }
   };
 }

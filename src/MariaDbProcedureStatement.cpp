@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2023 MariaDB Corporation AB
+   Copyright (C) 2020,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -702,6 +702,22 @@ namespace mariadb
     registerOutParameter(nameToIndex(parameterName), sqlType, typeName);
   }
 
+
+  void MariaDbProcedureStatement::setDate(int32_t parameterIndex, const Date& date)
+  {
+    stmt->setDate(parameterIndex, date);
+  }
+
+  void MariaDbProcedureStatement::setTime(int32_t parameterIndex, const Time& time)
+  {
+    stmt->setTime(parameterIndex, time);
+  }
+
+  void MariaDbProcedureStatement::setTimestamp(int32_t parameterIndex, const Timestamp& timestamp)
+  {
+    stmt->setTimestamp(parameterIndex, timestamp);
+  }
+
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   void MariaDbProcedureStatement::registerOutParameter(int32_t parameterIndex, SQLType* sqlType)
   {
@@ -822,21 +838,6 @@ namespace mariadb
   void MariaDbProcedureStatement::setURL(const SQLString& parameterName, const URL& url)
   {
     setURL(nameToIndex(parameterName), url);
-  }
-
-  void MariaDbProcedureStatement::setDate(const SQLString& parameterName, const Date& date)
-  {
-    setDate(nameToIndex(parameterName), date);
-  }
-
-  void MariaDbProcedureStatement::setTime(const SQLString& parameterName, const Time& time)
-  {
-    setTime(nameToIndex(parameterName), time);
-  }
-
-  void MariaDbProcedureStatement::setTimestamp(const SQLString& parameterName, const Timestamp& timestamp)
-  {
-    setTimestamp(nameToIndex(parameterName), timestamp);
   }
 
   void MariaDbProcedureStatement::setObject(const SQLString& parameterName, sql::Object* obj, int32_t targetSqlType, int32_t scale)

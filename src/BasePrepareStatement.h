@@ -129,6 +129,10 @@ public:
   void setBinaryStream(int32_t parameterIndex, std::istream& stream,int32_t length);
   void setRowId(int32_t parameterIndex, const RowId* rowid);
 #endif
+  void setDate(int32_t parameterIndex, const Date& date);
+  void setTime(int32_t parameterIndex, const Time& time);
+  void setTimestamp(int32_t parameterIndex, const Timestamp& timestamp);
+
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   void setBigDecimal(int32_t parameterIndex, const BigDecimal& bigDecimal);
   void setRef(int32_t parameterIndex, const Ref& ref);
@@ -136,9 +140,6 @@ public:
   void setDate(int32_t parameterIndex,const Date& date,const Calendar* cal);
   void setTimestamp(int32_t parameterIndex,const Timestamp& timestamp,const Calendar* cal);
   void setTime(int32_t parameterIndex,const Time& time, const Calendar* cal);
-  void setDate(int32_t parameterIndex, const Date& date);
-  void setTime(int32_t parameterIndex,const Time& time);
-  void setTimestamp(int32_t parameterIndex,const Timestamp& timestamp);
   void setURL(int32_t parameterIndex,const URL& url);
 
 

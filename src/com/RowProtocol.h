@@ -25,12 +25,14 @@
 
 #include "Consts.h"
 
+#include "jdbccompat/Date.h"
+#include "jdbccompat/Time.h"
+#include "jdbccompat/Timestamp.h"
+
 namespace sql
 {
 namespace mariadb
 {
-
-extern Date nullDate;
 
 class DateTimeFormatter;
 class Calendar;
@@ -86,8 +88,9 @@ public:
 protected:
   static const int32_t NULL_LENGTH_= -1;
   // Should be const
-  static Timestamp nullTs;//= "0000-00-00 00:00:00"
-  static Time nullTime; //("00:00:00")
+  static const char* nullDateStr;
+  static const char* nullTsStr; //= "0000-00-00 00:00:00";
+  static const char* nullTimeStr; //("00:00:00")
 
   uint32_t maxFieldSize;
   const Shared::Options options;

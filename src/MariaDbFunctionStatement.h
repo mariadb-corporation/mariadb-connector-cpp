@@ -186,6 +186,9 @@ public:
   void setDouble(const SQLString& parameterName, double doubleValue);
   void setString(const SQLString& parameterName, const SQLString& stringValue);
   void setBytes(const SQLString& parameterName, sql::bytes* bytes);
+  void setDate(int32_t parameterIndex, const Date& date);
+  void setTime(int32_t parameterIndex, const Time& time);
+  void setTimestamp(int32_t parameterIndex, const Timestamp& timestamp);
 
   Statement* setResultSetType(int32_t rsType);
   void clearParameters();
