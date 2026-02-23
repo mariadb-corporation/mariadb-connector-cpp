@@ -40,6 +40,7 @@ namespace mariadb
       // Normally I would expect application to take care of that, and destroys statement objects before connection
       // Probably a good solution would be to have a weak pointer to the protocol
       if (statementId->mysql != nullptr) {
+        unProxiedProtocol->forgetPs(this);
         unProxiedProtocol->forceReleasePrepareStatement(statementId);
       }
       else {
@@ -333,6 +334,11 @@ extern "C"
     capi::mysql_stmt_attr_set(statementId, capi::STMT_ATTR_CB_USER_DATA, &paramValue);
     capi::mysql_stmt_attr_set(statementId, capi::STMT_ATTR_CB_PARAM, (const void*)&paramRowUpdateCallback);
     capi::mysql_stmt_bind_param(statementId, paramBind.data());
+  }
+  void ServerPrepareResult::reprepare()
+  {
+    unProxiedProtocol->reprepare(this);
+    reReadColumnInfo();
   }
 }
 }

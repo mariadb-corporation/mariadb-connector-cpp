@@ -122,6 +122,7 @@ namespace capi
     ServerPrepareResult* prepareInternal(const SQLString& sql, bool executeOnMaster);
   public:
     ServerPrepareResult* prepare(const SQLString& sql, bool executeOnMaster);
+    void reprepare(ServerPrepareResult* serverPrepareResult) override;
 
   private:
     void executeBatchAggregateSemiColon(Results* results, const std::vector<SQLString>& queries, std::size_t totalLenEstimation= 0);

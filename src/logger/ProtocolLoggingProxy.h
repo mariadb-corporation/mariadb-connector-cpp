@@ -156,6 +156,8 @@ public:
   void reconnect();
   void skipAllResults() override;
   void skipAllResults(ServerPrepareResult* spr) override;
+  void reprepare(ServerPrepareResult* spr) override { protocol->reprepare(spr); }
+  void forgetPs(ServerPrepareResult* spr) override { protocol->forgetPs(spr); }
   };
 
 }

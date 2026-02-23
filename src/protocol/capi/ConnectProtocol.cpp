@@ -40,7 +40,7 @@ namespace mariadb
 namespace capi
 {
   static const char OptionSelected= '\1', OptionNotSelected= '\0';
-  static const unsigned int uintOptionSelected= 1, uintOptionNotSelected= 0;
+  static const unsigned int uintOptionSelected= 1, uintOptionNotSelected= 0, psListAllocStep= 16;
   const char * attrPairSeparators= ",";
 
   const SQLString ConnectProtocol::SESSION_QUERY("SELECT @@max_allowed_packet,"
@@ -78,6 +78,10 @@ namespace capi
     else {
       serverPrepareStatementCache.reset(new NoCache());
     }
+    if (options->autoReconnect && options->useServerPrepStmts) {
+      // Initial allocation so we don't reallocate each time.
+      activePsList.reserve(psListAllocStep);
+    }
   }
 
 
@@ -86,6 +90,15 @@ namespace capi
     try {
       connection.reset();
     }catch (std::exception& ){
+    }
+  }
+
+  void takeCareOfReconnect(void* connect, enum enum_mariadb_status_info type, ...)
+  {
+    if (type == CLIENT_EVENT_TYPE) {
+      // Doesn't matter if it's reconnect or user change - prepared statements need to be reprepared.
+      ConnectProtocol* protocol= static_cast<ConnectProtocol*>(connect);
+      protocol->processReconnect();
     }
   }
 
@@ -103,20 +116,17 @@ namespace capi
       inSeconds= (options->connectTimeout + 999) / 1000;
       mysql_optionsv(socket, MYSQL_OPT_CONNECT_TIMEOUT, (const char*)&inSeconds);
     }
-    if (options->socketTimeout){
+    if (options->socketTimeout) {
       inSeconds= (options->socketTimeout + 999) / 1000;
       mysql_optionsv(socket, MYSQL_OPT_READ_TIMEOUT, (const char *)&inSeconds);
     }
-    if (options->autoReconnect){
-      mysql_optionsv(socket, MYSQL_OPT_RECONNECT, &OptionSelected);
-    }
-    if (options->tcpRcvBuf > 0){
+    if (options->tcpRcvBuf > 0) {
       mysql_optionsv(socket, MYSQL_OPT_NET_BUFFER_LENGTH, &options->tcpRcvBuf);
     }
-    if (options->tcpSndBuf > 0 && options->tcpSndBuf > options->tcpRcvBuf){
+    if (options->tcpSndBuf > 0 && options->tcpSndBuf > options->tcpRcvBuf) {
       mysql_optionsv(socket, MYSQL_OPT_NET_BUFFER_LENGTH, &options->tcpSndBuf);
     }
-    if (options->tcpAbortiveClose){
+    if (options->tcpAbortiveClose) {
       //socket->setSoLinger(true,0);
     }
 
@@ -395,8 +405,9 @@ namespace capi
     }else {
       credential.reset(new Credential(username, urlParser->getPassword()));
     }
-
-    connection.reset(createSocket(host, port, options));
+    
+    auto conn= createSocket(host, port, options);
+    connection.reset(conn);
 
     assignStream(options);
 
@@ -452,31 +463,36 @@ namespace capi
           "08000",
           &ioException).Throw();
     }
-    mysql_optionsv(connection.get(), MYSQL_REPORT_DATA_TRUNCATION, &uintOptionSelected);
-    mysql_optionsv(connection.get(), MYSQL_OPT_LOCAL_INFILE, (options->allowLocalInfile ? &uintOptionSelected : &uintOptionNotSelected));
-    mysql_optionsv(connection.get(), MARIADB_OPT_BULK_UNIT_RESULTS, &OptionSelected);
+    if (options->autoReconnect) {
+      mysql_optionsv(conn, MYSQL_OPT_RECONNECT, &OptionSelected);
+      mysql_optionsv(conn, MARIADB_OPT_STATUS_CALLBACK, takeCareOfReconnect, static_cast<void*>(this));
 
-    if (!options.get()->initSql.empty()) {
+    }
+    mysql_optionsv(conn, MYSQL_REPORT_DATA_TRUNCATION, &uintOptionSelected);
+    mysql_optionsv(conn, MYSQL_OPT_LOCAL_INFILE, (options->allowLocalInfile ? &uintOptionSelected : &uintOptionNotSelected));
+    mysql_optionsv(conn, MARIADB_OPT_BULK_UNIT_RESULTS, &OptionSelected);
+
+    if (!options->initSql.empty()) {
       static const SQLString initSqlDelim(";");
       auto Query= split(options.get()->initSql, initSqlDelim);
       for (auto& sql : *Query) {
-        mysql_optionsv(connection.get(), MYSQL_INIT_COMMAND, sql.c_str());
+        mysql_optionsv(conn, MYSQL_INIT_COMMAND, sql.c_str());
       }
     }
     if (!options.get()->restrictedAuth.empty()) {
-      mysql_optionsv(connection.get(), MARIADB_OPT_RESTRICTED_AUTH, options.get()->restrictedAuth.c_str());
+      mysql_optionsv(conn, MARIADB_OPT_RESTRICTED_AUTH, options.get()->restrictedAuth.c_str());
     }
 
-    if (mysql_real_connect(connection.get(), NULL, NULL, NULL, NULL, 0, NULL, CLIENT_MULTI_STATEMENTS) == nullptr)
+    if (mysql_real_connect(conn, NULL, NULL, NULL, NULL, 0, NULL, CLIENT_MULTI_STATEMENTS) == nullptr)
     {
-      throw SQLException(mysql_error(connection.get()), mysql_sqlstate(connection.get()), mysql_errno(connection.get()));
+      throw SQLException(mysql_error(conn), mysql_sqlstate(conn), mysql_errno(conn));
     }
 
     connected= true;
 
-    this->serverThreadId= mysql_thread_id(connection.get());
+    this->serverThreadId= mysql_thread_id(conn);
 
-    this->serverVersion= mysql_get_server_info(connection.get());// mysql_get_server_version(connection);
+    this->serverVersion= mysql_get_server_info(conn);
     parseVersion(serverVersion);
 
     if (serverVersion.startsWith(MARIADB_RPL_HACK_PREFIX)) {
@@ -487,8 +503,8 @@ namespace capi
       serverMariaDb= serverVersion.find("MariaDB") != std::string::npos;
     }
     unsigned long baseCaps, extCaps;
-    mariadb_get_infov(connection.get(), MARIADB_CONNECTION_EXTENDED_SERVER_CAPABILITIES, (void*)&extCaps);
-    mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_CAPABILITIES, (void*)&baseCaps);
+    mariadb_get_infov(conn, MARIADB_CONNECTION_EXTENDED_SERVER_CAPABILITIES, (void*)&extCaps);
+    mariadb_get_infov(conn, MARIADB_CONNECTION_SERVER_CAPABILITIES, (void*)&baseCaps);
     int64_t serverCaps= extCaps;
     serverCaps= serverCaps << 32;
     serverCaps|= baseCaps;
@@ -512,13 +528,7 @@ namespace capi
   /** Closing socket in case of Connection error after socket creation. */
   void ConnectProtocol::destroySocket()
   {
-    if (connection){
-      try {
-        connection.reset();
-      }catch (std::exception&){
-
-      }
-    }
+     connection.reset();
   }
 
 
@@ -1113,7 +1123,8 @@ namespace capi
       try {
         createConnection(&currentHost, username);
         return;
-      }catch (SQLException& e){
+      }
+      catch (SQLException& e) {
         if (hosts.empty()){
           if (!e.getSQLState().empty()){
             ExceptionFactory::INSTANCE.create(
@@ -1189,11 +1200,6 @@ namespace capi
   int32_t ConnectProtocol::getPort() const
   {
     return (currentHost.port > 0) ? currentHost.port : 3306;
-  }
-
-  const SQLString& ConnectProtocol::getDatabase() const
-  {
-    return database;
   }
 
   const SQLString& ConnectProtocol::getUsername() const
@@ -1502,12 +1508,45 @@ namespace capi
                         capi::mysql_errno(con));
     }
   }
+
+  // Register prepared statement to be able to take care of them in case of reconnection.
+  void ConnectProtocol::registerPs(ServerPrepareResult* ps)
+  {
+    std::lock_guard<std::mutex> localScopeLock(psListLock);
+    if (activePsList.size() == activePsList.capacity()) {
+      // Making step bigger with time
+      activePsList.reserve(((activePsList.capacity() + 2*psListAllocStep)/(2*psListAllocStep))*psListAllocStep);
+    }
+    activePsList.push_back(ps);
+  }
+
+  void ConnectProtocol::forgetPs(ServerPrepareResult* ps)
+  {
+    std::lock_guard<std::mutex> localScopeLock(psListLock);
+    auto it= std::find(activePsList.begin(), activePsList.end(), ps);
+    if (it != activePsList.end()) {
+      std::iter_swap(it, activePsList.end() - 1);
+      activePsList.pop_back();
+    }
+  }
+
+  void ConnectProtocol::processReconnect()
+  {
+    // We don't need to acquire main protocol lock to avoid the deadlock - C/C detects reconnect and calls the callback when the main
+    // lock is already acquired - when we run any command requring connection.
+    std::lock_guard<std::mutex> localScopeLisyLock(psListLock);
+    for (auto ps : activePsList) {
+      ps->reprepare();
+    }
+  }
+
+
+  // reconnect method in Connection is deprecated. If app calls it - it's its business to take care of  open PS.
   void ConnectProtocol::reconnect()
   {
     std::lock_guard<std::mutex> localScopeLock(lock);
 
-    if (!options->autoReconnect)
-    {
+    if (!options->autoReconnect) {
       mysql_optionsv(connection.get(), MYSQL_OPT_RECONNECT, &OptionSelected);
     }
     if (capi::mariadb_reconnect(connection.get()) != 0) {
@@ -1515,10 +1554,6 @@ namespace capi
         capi::mysql_errno(connection.get()));
     }
     connected= true;
-    if (!options->autoReconnect)
-    {
-      mysql_optionsv(connection.get(), MYSQL_OPT_RECONNECT, &OptionNotSelected);
-    }
   }
 }
 }

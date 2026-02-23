@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2025 MariaDB Corporation plc
+ *               2020, 2026 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -1949,8 +1949,8 @@ void connection::connectOptReconnect()
   std::stringstream msg;
 
   if (isMaxScale()) {
-    printf("# <<<<  canceled for maxscale \n# ");
-    return void();
+    SKIP("Skipping the test with MaxScale");
+    return;
   }
 
   try
@@ -2091,7 +2091,7 @@ void connection::connectOptReconnect()
     }
 
     connection_properties.erase("OPT_RECONNECT");
-    connection_properties["OPT_RECONNECT"]= "false";
+    connection_properties["OPT_RECONNECT"]= "true";
 
     created_objects.clear();
     con.reset(driver->connect(connection_properties));
@@ -2100,7 +2100,7 @@ void connection::connectOptReconnect()
     res.reset(stmt->executeQuery("SELECT CONNECTION_ID() as _pid"));
     ASSERT(res->next());
     msg.str("");
-    msg << "KILL " << res->getInt("_pid");
+    msg << "KILL " << res->getString("_pid");
 
     try
     {
@@ -2115,12 +2115,11 @@ void connection::connectOptReconnect()
         stmt.reset(con->createStatement());
         logMsg("... we got a new statement object");
         stmt->execute("DROP TABLE IF EXISTS test");
-        FAIL("Statement object is still usable");
       }
       catch (sql::SQLException &e)
       {
-        /* Any error message is fine, connection should have been killed */
         logMsg(e.what());
+        FAIL("Connection should be usable usable");
       }
     }
     catch (sql::SQLException &/*e*/)
@@ -2918,8 +2917,6 @@ void connection::reconnect()
       connection_properties["userName"]=user;
       connection_properties["password"]=passwd;
       connection_properties["OPT_READ_TIMEOUT"]= "1000";
-      //connection_properties["socketTimeout"]= "1";
-      connection_properties.erase("OPT_RECONNECT");
       connection_properties["OPT_RECONNECT"]= "false";
 
       created_objects.clear();
@@ -2944,7 +2941,6 @@ void connection::reconnect()
     logErr("SQLState: " + std::string(e.getSQLState()));
     fail(e.what(), __FILE__, __LINE__);
   }
-
 
   logMsg("OPT_RECONNECT enabled");
   try

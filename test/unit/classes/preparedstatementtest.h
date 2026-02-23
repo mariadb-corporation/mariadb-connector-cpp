@@ -83,6 +83,7 @@ public:
     TEST_CASE(bytesArrParam);
     TEST_CASE(concpp138_useRsAfterConClose);
     TEST_CASE(concpp128_batchWithGeneratedKeys);
+    TEST_CASE(ps_on_reconnect);
   }
 
   /**
@@ -192,6 +193,8 @@ public:
   void concpp138_useRsAfterConClose();
 
   void concpp128_batchWithGeneratedKeys();
+
+  void ps_on_reconnect();
 
   /* unit_fixture methods overriding */
   void setUp();

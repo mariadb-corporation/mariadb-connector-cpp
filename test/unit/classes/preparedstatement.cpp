@@ -2431,5 +2431,28 @@ void preparedstatement::concpp128_batchWithGeneratedKeys()
     con.reset();
 }
 
+// Driver should be resilient to recoonections, prepared statements should be re-prepared and executed successfully after reconnection
+void preparedstatement::ps_on_reconnect()
+{
+  // Connecgtion with prepared staements and autoreconnect enabled
+  sql::ConnectOptionsMap connection_properties{ {"userName", user}, {"password", passwd},
+    {"useBulkStmts", "true"}, {"useTls", useTls ? "true" : "false"}, {"useServerPrepStmts", "true"}, {"autoReconnect", "true"}};
+  con.reset(driver->connect(url, connection_properties));
+  // Prepare query
+  pstmt.reset(con->prepareStatement("SELECT 1"));
+  stmt.reset(con->createStatement());
+  res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
+  ASSERT(res->next());
+  sql::SQLString query("KILL ");
+  query.append(res->getString(1));
+
+  auto killConn= getConnection();
+  stmt.reset(killConn->createStatement());
+  //Killing connection
+  stmt->executeUpdate(query);
+  // trying to execute the query prepared berfor reconnection. Should be re-prepared and executed successfully once it's fixed
+  res.reset(pstmt->executeQuery());
+}
+
 } /* namespace preparedstatement */
 } /* namespace testsuite */

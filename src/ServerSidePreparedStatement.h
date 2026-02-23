@@ -46,7 +46,7 @@ protected:
 private:
   SQLString sql;
 
-  ServerPrepareResult *serverPrepareResult;
+  ServerPrepareResult *serverPrepareResult= nullptr;
 
   Shared::MariaDbResultSetMetaData metadata;
   Shared::MariaDbParameterMetaData parameterMetaData;

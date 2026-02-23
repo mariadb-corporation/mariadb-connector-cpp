@@ -62,6 +62,9 @@ namespace capi
     std::shared_ptr<UrlParser> urlParser;
     Shared::Options options;
     Shared::ExceptionFactory exceptionFactory;
+    // We need to have list of active prepared statements to be able to re-prepare them in case of reconnection.
+    std::vector<ServerPrepareResult*> activePsList;
+    std::mutex psListLock;
     virtual ~ConnectProtocol() {}
 
   private:
@@ -118,7 +121,13 @@ namespace capi
     void readQueryResult();
     void realQuery(const char* query, std::size_t length);
 
+    void registerPs(ServerPrepareResult* ps);
+
   public:
+    // ServerPrepareResult destructor calls it
+    void forgetPs(ServerPrepareResult* ps) override;
+    // This is called from reconnect event callback.
+    void processReconnect();
     void close();
     void abort();
 
@@ -212,7 +221,9 @@ namespace capi
     FailoverProxy* getProxy();
     void setProxy(FailoverProxy* proxy);
     int32_t getPort() const;
-    const SQLString& getDatabase() const;
+    inline const SQLString& getDatabase() const {
+      return database;
+    }
     const SQLString& getUsername() const;
 
   private:

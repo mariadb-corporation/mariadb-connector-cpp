@@ -59,13 +59,6 @@ public:
   typedef std::vector<ParamsetType> ParamsetArrType;
   ~ServerPrepareResult();
 
-  /*ServerPrepareResult(
-    const SQLString& sql,
-    capi::MYSQL_STMT* statementId,
-    std::vector<Shared::ColumnDefinition>& columns,
-    std::vector<Shared::ColumnDefinition>& parameters,
-    Protocol* unProxiedProtocol);*/
-
   ServerPrepareResult(
     const SQLString& sql,
     capi::MYSQL_STMT* statementId,
@@ -89,7 +82,9 @@ public:
   const std::vector<capi::MYSQL_BIND>& getParameterTypeHeader() const;
   void bindParameters(ParamsetType& parameters);
   void bindParameters(ParamsetArrType& parameters, const int16_t *type= nullptr);
+  void reprepare();
   };
+
 }
 }
 #endif

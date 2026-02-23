@@ -699,8 +699,8 @@ namespace capi
 
   ServerPrepareResult* QueryProtocol::prepareInternal(const SQLString& sql, bool /*executeOnMaster*/)
   {
-    const SQLString key(getDatabase() + "-" + sql);
-    ServerPrepareResult* pr= serverPrepareStatementCache->get(StringImp::get(key));
+    const std::string key(StringImp::get(getDatabase()) + "-" + StringImp::get(sql));
+    ServerPrepareResult* pr= serverPrepareStatementCache->get(key);
 
     if (pr) {
        return pr;
@@ -717,8 +717,7 @@ namespace capi
 
     capi::mysql_stmt_attr_set(stmtId, STMT_ATTR_UPDATE_MAX_LENGTH, &updateMaxLength);
 
-    if (capi::mysql_stmt_prepare(stmtId, sql.c_str(), static_cast<unsigned long>(sql.length())))
-    {
+    if (capi::mysql_stmt_prepare(stmtId, sql.c_str(), static_cast<unsigned long>(sql.length()))) {
       SQLString err(mysql_stmt_error(stmtId)), sqlState(mysql_stmt_sqlstate(stmtId));
       uint32_t errNo = mysql_stmt_errno(stmtId);
 
@@ -728,28 +727,38 @@ namespace capi
 
     pr= new ServerPrepareResult(sql, stmtId, this);
 
-    // This condition is now enforced on cache level on the key length
-    //if (sql.length() < static_cast<size_t>(options->prepStmtCacheSqlLimit))
-    {
+    ServerPrepareResult* cachedServerPrepareResult= addPrepareInCache(key, pr);
 
-      ServerPrepareResult* cachedServerPrepareResult= addPrepareInCache(key, pr);
-
-      if (cachedServerPrepareResult != nullptr)
-      {
-        delete pr;
-        pr= cachedServerPrepareResult;
-      }
+    if (cachedServerPrepareResult != nullptr) {
+      delete pr;
+      pr= cachedServerPrepareResult;
     }
+    else if (options->autoReconnect) {
+      registerPs(pr);
+    }
+
     return pr;
   }
 
 
-  ServerPrepareResult* QueryProtocol::prepare(const SQLString& sql,bool executeOnMaster)
+  ServerPrepareResult* QueryProtocol::prepare(const SQLString& sql, bool executeOnMaster)
   {
     cmdPrologue();
     std::unique_ptr<std::lock_guard<std::mutex>> localScopeLock;
 
     return prepareInternal(sql, executeOnMaster);
+  }
+
+
+  void QueryProtocol::reprepare(ServerPrepareResult* pr)
+  {
+    capi::MYSQL_STMT* stmtId= pr->getStatementId();
+    auto& sql= StringImp::get(pr->getSql());
+    if (capi::mysql_stmt_prepare(stmtId, sql.c_str(), static_cast<unsigned long>(sql.length()))) {
+      SQLString err(mysql_stmt_error(stmtId)), sqlState(mysql_stmt_sqlstate(stmtId));
+      uint32_t errNo = mysql_stmt_errno(stmtId);
+      throw SQLException(err, sqlState, errNo);
+    }
   }
 
 
