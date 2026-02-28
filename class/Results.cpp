@@ -477,7 +477,7 @@ namespace mariadb
   MYSQL_BIND* Results::getParameters(){
     return parameters;
   }
-
+#ifdef GENERATED_IDS_ARE_NEEDED
   /**
    * Send a resultSet that contain auto generated keys. 2 differences :
    *
@@ -512,6 +512,7 @@ namespace mariadb
     }
     return SelectResultSet::createEmptyResultSet();
   }
+#endif
 
   void Results::close(){
     if (resultSet != nullptr) {

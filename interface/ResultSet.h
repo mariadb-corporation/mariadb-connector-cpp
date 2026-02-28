@@ -182,7 +182,9 @@ protected:
   // Keeping them private so far
   virtual std::istream* getBinaryStream(int32_t columnIndex) const=0;
   virtual int32_t getInt(int32_t columnIndex) const=0;
+public:
   virtual int64_t getLong(int32_t columnIndex) const=0;
+protected:
   virtual uint64_t getUInt64(int32_t columnIndex) const=0;
   virtual uint32_t getUInt(int32_t columnIndex) const=0;
   virtual float getFloat(int32_t columnIndex) const=0;

@@ -44,7 +44,7 @@ public:
   virtual std::vector<int64_t>& getUpdateCounts()=0;
   virtual std::vector<int64_t>& getServerUpdateCounts()=0;
   virtual int64_t getUpdateCount()=0;
-  virtual void addSuccessStat(int64_t updateCount)=0;
+  virtual void addSuccessStat(int64_t updateCount, int64_t /*insertId*/=-1)=0;
   virtual void addErrorStat()=0;
   virtual void reset()=0;
   virtual void addResultSetStat()=0;
@@ -53,6 +53,10 @@ public:
   virtual uint32_t hasMoreResults()=0;
   virtual bool isCurrentUpdateCount()=0;
   virtual void setRewrite(bool rewritten)=0;
+#ifdef GENERATED_IDS_ARE_NEEDED
+  virtual ResultSet* CmdInformationBatch::getBatchGeneratedKeys(Protocol* protocol)=0;
+  virtual ResultSet* CmdInformationBatch::getGeneratedKeys(Protocol* protocol, const SQLString& /*sql*/)=0;
+#endif
 };
 
 namespace Unique

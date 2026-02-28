@@ -43,10 +43,14 @@ public:
   void addErrorStat() override;
   void reset() override;
   void addResultSetStat() override;
-  void addSuccessStat(int64_t updateCount) override;
+  void addSuccessStat(int64_t updateCount, int64_t /*insertId*/) override;
   std::vector<int64_t>& getUpdateCounts() override;
   std::vector<int64_t>& getServerUpdateCounts() override;
   int64_t getUpdateCount() override;
+#ifdef GENERATED_IDS_ARE_NEEDED
+  ResultSet* CmdInformationBatch::getBatchGeneratedKeys(Protocol* protocol) override;
+  ResultSet* CmdInformationBatch::getGeneratedKeys(Protocol* protocol, const SQLString& /*sql*/) override;
+#endif
   int32_t getCurrentStatNumber() override;
   bool moreResults() override;
   inline uint32_t hasMoreResults() override { return 0U; }

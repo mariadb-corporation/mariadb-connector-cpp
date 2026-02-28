@@ -71,7 +71,7 @@ namespace mariadb
   }
 
 
-  void CmdInformationBatch::addSuccessStat(int64_t updateCount)
+  void CmdInformationBatch::addSuccessStat(int64_t updateCount, int64_t /*insertId*/)
   {
     insertIdNumber+= updateCount;
     updateCounts.push_back(updateCount);
@@ -144,6 +144,7 @@ namespace mariadb
     return (updateCounts.size() == 0 ? -1 : static_cast<int32_t>(updateCounts.front()));
   }
 
+#ifdef GENERATED_IDS_ARE_NEEDED
   /**/
   ResultSet* CmdInformationBatch::getBatchGeneratedKeys(Protocol* protocol)
   {
@@ -208,6 +209,7 @@ namespace mariadb
     }
     return ResultSet::createGeneratedData(ret, protocol, true);
   }
+#endif
 
   /**/
   int32_t CmdInformationBatch::getCurrentStatNumber()

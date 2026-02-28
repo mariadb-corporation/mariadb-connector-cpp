@@ -44,7 +44,7 @@ public:
   bool moreResults() override;
   inline uint32_t hasMoreResults() override { return 0U; }
   bool isCurrentUpdateCount() override;
-  void addSuccessStat(int64_t updateCount) override;
+  void addSuccessStat(int64_t updateCount, int64_t /*insertId*/) override;
   void setRewrite(bool rewritten) override;
 };
 

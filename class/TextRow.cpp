@@ -433,11 +433,13 @@ namespace mariadb
      case MYSQL_TYPE_LONG:
      case MYSQL_TYPE_INT24:
      case MYSQL_TYPE_LONGLONG:
+     {
        auto result= safer_strtoll(fieldBuf.arr + pos, length);
        // Technically we can only detect here if it's signed on usigned value. then it's an overflow
        // then maybe it's safer to if (add result < 0 && !columnInfo->isSigned()) here
        rangeCheck("int64_t", INT64_MIN, INT64_MAX, result, columnInfo);
        return result;
+     }
      case MYSQL_TYPE_TIMESTAMP:
      case MYSQL_TYPE_DATETIME:
      case MYSQL_TYPE_TIME:

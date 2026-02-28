@@ -92,7 +92,7 @@ namespace mariadb
     return updateCount != RESULT_SET_VALUE;
   }
 
-  void CmdInformationSingle::addSuccessStat(int64_t updateCount)
+  void CmdInformationSingle::addSuccessStat(int64_t updateCount, int64_t /*insertId*/)
   {
 
   }

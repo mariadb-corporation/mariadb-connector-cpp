@@ -139,8 +139,8 @@ namespace mariadb
  * @param 
  * @param 
  */
-  Protocol::Protocol(MYSQL* connectedHandle, const SQLString& defaultDb, Cache<std::string, ServerPrepareResult> *psCache, const char *trIsolVarName,
-    enum IsolationLevel txIsolation )
+  Protocol::Protocol(MYSQL* connectedHandle, const SQLString& defaultDb, Cache<std::string, ServerPrepareResult>* psCache, const char* trIsolVarName,
+    enum IsolationLevel txIsolation)
     : connection(connectedHandle, &mysql_close)
     , transactionIsolationLevel(txIsolation)
     , database(defaultDb)
@@ -171,8 +171,13 @@ namespace mariadb
     if (sessionStateAware()) {
       sendSessionInfos(trIsolVarName);
     }
-    //if (options->autoReconnect && options->useServerPrepStmts) {
-    activePsList.reserve(psListAllocStep);
+    my_bool autoReconnectIsOn= 0;
+    mysql_get_optionv(connectedHandle, MYSQL_OPT_RECONNECT, (void*)&autoReconnectIsOn);
+    if (autoReconnectIsOn) {
+      // Later list's capacity is used as sign that autoreconnect is on
+      activePsList.reserve(psListAllocStep);
+      mysql_optionsv(connectedHandle, MARIADB_OPT_STATUS_CALLBACK, takeCareOfReconnect, static_cast<void*>(this));
+    }
   }
 
 
@@ -654,7 +659,8 @@ namespace mariadb
       delete pr;
       pr= cachedServerPrepareResult;
     }
-    else if (options->autoReconnect) {
+    // Capacity is only allocated only if auto reconnection is on
+    if (activePsList.capacity() >= psListAllocStep) {
       registerPs(pr);
     }
     return pr;
@@ -675,11 +681,11 @@ namespace mariadb
   }
 
 
-  void QueryProtocol::reprepare(ServerPrepareResult* pr)
+  void Protocol::reprepare(ServerPrepareResult* pr)
   {
-    capi::MYSQL_STMT* stmtId= pr->getStatementId();
-    auto& sql= StringImp::get(pr->getSql());
-    if (capi::mysql_stmt_prepare(stmtId, sql.c_str(), static_cast<unsigned long>(sql.length()))) {
+    MYSQL_STMT* stmtId= pr->getStatementId();
+    auto& sql= pr->getSql();
+    if (mysql_stmt_prepare(stmtId, sql.c_str(), static_cast<unsigned long>(sql.length()))) {
       SQLString err(mysql_stmt_error(stmtId)), sqlState(mysql_stmt_sqlstate(stmtId));
       uint32_t errNo = mysql_stmt_errno(stmtId);
       throw SQLException(err, sqlState, errNo);
@@ -938,7 +944,7 @@ namespace mariadb
     if (!options->useBatchMultiSend) {
       return false;
     }
-    initializeBatchReader();
+    //initializeBatchReader();
 
     MYSQL_STMT *stmt= nullptr;
 
@@ -2309,7 +2315,7 @@ namespace mariadb
   }
 
   // Register prepared statement to be able to take care of them in case of reconnection.
-  void ConnectProtocol::registerPs(ServerPrepareResult* ps)
+  void Protocol::registerPs(ServerPrepareResult* ps)
   {
     std::lock_guard<std::mutex> localScopeLock(psListLock);
     if (activePsList.size() == activePsList.capacity()) {
@@ -2319,7 +2325,7 @@ namespace mariadb
     activePsList.push_back(ps);
   }
 
-  void ConnectProtocol::forgetPs(ServerPrepareResult* ps)
+  void Protocol::forgetPs(ServerPrepareResult* ps)
   {
     std::lock_guard<std::mutex> localScopeLock(psListLock);
     auto it= std::find(activePsList.begin(), activePsList.end(), ps);
@@ -2329,7 +2335,7 @@ namespace mariadb
     }
   }
 
-  void ConnectProtocol::processReconnect()
+  void Protocol::processReconnect()
   {
     // We don't need to acquire main protocol lock to avoid the deadlock - C/C detects reconnect and calls the callback when the main
     // lock is already acquired - when we run any command requring connection.

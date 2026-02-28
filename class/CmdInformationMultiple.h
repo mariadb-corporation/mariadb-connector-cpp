@@ -42,7 +42,7 @@ public:
   void addErrorStat();
   void reset();
   void addResultSetStat();
-  void addSuccessStat(int64_t updateCount);
+  void addSuccessStat(int64_t updateCount, int64_t /*insertId*/) override;
   std::vector<int64_t>& getServerUpdateCounts();
   std::vector<int64_t>& getUpdateCounts();
   int64_t getUpdateCount();

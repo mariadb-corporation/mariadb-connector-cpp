@@ -66,7 +66,7 @@ namespace mariadb
     updateCounts.push_back(static_cast<int64_t>(RESULT_SET_VALUE));
   }
 
-  void CmdInformationMultiple::addSuccessStat(int64_t updateCount)
+  void CmdInformationMultiple::addSuccessStat(int64_t updateCount, int64_t /*insertId*/)
   {
     updateCounts.push_back(updateCount);
   }
