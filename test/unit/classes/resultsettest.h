@@ -46,6 +46,10 @@ class resultset : public testsuite::unit_fixture
 private:
   typedef testsuite::unit_fixture super;
 
+  void checkGetDate(sql::ResultSet* res, std::vector<columndefinition>::iterator& it);
+  void checkGetTimestamp(sql::ResultSet* res, std::vector<columndefinition>::iterator& it);
+  void checkGetTime(sql::ResultSet* res, std::vector<columndefinition>::iterator& it);
+
 protected:
 #ifdef INCLUDE_NOT_IMPLEMENTED_METHODS
   void doNotImplemented();

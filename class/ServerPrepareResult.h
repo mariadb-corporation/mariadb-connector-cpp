@@ -78,6 +78,7 @@ public:
   void    decrementShareCounter();
   bool    canBeDeallocate();
   int32_t getShareCounter();
+  void reprepare();
 };
 
 namespace Unique

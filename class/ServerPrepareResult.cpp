@@ -33,6 +33,7 @@ namespace mariadb
   ServerPrepareResult::~ServerPrepareResult()
   {
     if (statementId) {
+      connection->forgetPs(this);
       connection->forceReleasePrepareStatement(statementId);
     }
   }
@@ -202,6 +203,12 @@ namespace mariadb
     return static_cast<int32_t>(shareCounter);
   }
 
+
+  void ServerPrepareResult::reprepare()
+  {
+    connection->reprepare(this);
+    reReadColumnInfo();
+  }
   /*void initBindStruct(MYSQL_BIND& bind, const MYSQL_BIND* paramInfo)
   {
     std::memset(&bind, 0, sizeof(bind));

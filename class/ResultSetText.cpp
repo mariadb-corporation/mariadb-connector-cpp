@@ -604,7 +604,7 @@ namespace mariadb
   SQLString ResultSetText::getString(int32_t columnIndex) const
   {
     checkObjectRange(columnIndex);
-    return std::move(row->getInternalString(&columnsInformation[columnIndex - 1]));
+    return row->getInternalString(&columnsInformation[columnIndex - 1]);
   }
 
 

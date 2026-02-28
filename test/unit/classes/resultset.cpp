@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2022 MariaDB Corporation AB
+ *               2020, 2026 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -49,6 +49,123 @@ namespace classes
 {
 
 static const sql::SQLString id("id");
+
+void resultset::checkGetDate(sql::ResultSet* res, std::vector<columndefinition>::iterator& it) {
+  std::ostringstream msg;
+  res->beforeFirst();
+  try {
+    res->getDate(1);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::SQLDataException&) {
+  }
+  res->afterLast();
+  try {
+    res->getDate(1);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::SQLDataException&) {
+  }
+  res->first();
+  try {
+    res->getDate(0);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::InvalidArgumentException&) {
+  }
+  try {
+    res->getDate(3);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::InvalidArgumentException&) {
+  }
+  sql::Date expected(it->as_string);
+  sql::Date returned= res->getDate(1);
+  msg.str(it->sqldef);
+  msg << "... \tExpected date: '" << expected.toString() << "'";
+  msg << ", Got date: '" << returned.toString() << "'";
+  logMsg(msg.str());
+  //ASSERT_EQUALS(expected.t)
+  ASSERT(returned.equals(expected));
+  ASSERT(returned.equals(res->getDate(id)));
+}
+
+
+void resultset::checkGetTimestamp(sql::ResultSet* res, std::vector<columndefinition>::iterator& it) {
+  std::ostringstream msg;
+  res->beforeFirst();
+  try {
+    res->getTimestamp(1);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::SQLDataException&) {
+  }
+  res->afterLast();
+  try {
+    res->getTimestamp(1);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::SQLDataException&) {
+  }
+  res->first();
+  try {
+    res->getTimestamp(0);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::InvalidArgumentException&) {
+  }
+  try {
+    res->getTimestamp(3);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::InvalidArgumentException&) {
+  }
+  sql::Timestamp expected(it->value);
+  sql::Timestamp returned= res->getTimestamp(1);
+  msg.str(it->sqldef);
+  msg << "... \tExpected date: '" << expected.toString() << "'";
+  msg << ", Got date: '" << returned.toString() << "'";
+  logMsg(msg.str());
+  ASSERT(returned.equals(expected));
+  ASSERT(returned.equals(res->getTimestamp(id)));
+}
+
+
+void resultset::checkGetTime(sql::ResultSet* res, std::vector<columndefinition>::iterator& it) {
+  std::ostringstream msg;
+  res->beforeFirst();
+  try {
+    res->getTime(1);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::SQLDataException&) {
+  }
+  res->afterLast();
+  try {
+    res->getTime(1);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::SQLDataException&) {
+  }
+  res->first();
+  try {
+    res->getTime(0);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::InvalidArgumentException&) {
+  }
+  try {
+    res->getTime(3);
+    FAIL("Invalid argument not detected");
+  }
+  catch (sql::InvalidArgumentException&) {
+  }
+  sql::Time expected(it->value);
+  sql::Time returned= res->getTime(1);
+  ASSERT(returned.equals(expected));
+  ASSERT(returned.equals(res->getTime(id)));
+}
+
 
 void resultset::getInt()
 {
@@ -230,16 +347,17 @@ void resultset::getTypes()
         fail(e.what(), __FILE__, __LINE__);
       }
 
-      res.reset(stmt->executeQuery("SELECT id, NULL FROM test"));
+      res.reset(stmt->setResultSetType( sql::ResultSet::TYPE_SCROLL_INSENSITIVE)
+        ->executeQuery("SELECT id, NULL FROM test"));
       checkResultSetScrolling(res);
       ASSERT(res->next());
 
       pstmt.reset(con->prepareStatement("SELECT id, NULL FROM test"));
       pstmt->clearParameters();
+      pstmt->setResultSetType(sql::ResultSet::TYPE_SCROLL_INSENSITIVE);
       pres.reset(pstmt->executeQuery());
       checkResultSetScrolling(pres);
       ASSERT(pres->next());
-
 
       if (it->check_as_string)
       {
@@ -252,86 +370,66 @@ void resultset::getTypes()
           got_warning = true;
         }
       }
-
       ASSERT(res->getString(id).compare(res->getString(1)) == 0);
-
-      try
-      {
+      try {
         res->getString(0);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException&)
-      {
+      catch (sql::InvalidArgumentException&) {
       }
-
-      try
-      {
+      try {
         res->getString(3);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException&)
-      {
+      catch (sql::InvalidArgumentException&) {
       }
-
       if (res->getType() == sql::ResultSet::TYPE_FORWARD_ONLY) {
         // We can't do beforeFirst and other cursor operation on forward only cursor
+        logMsg("Forward Only -> continuing");
         continue;
       }
       res->beforeFirst();
-      try
-      {
+      try {
         res->getString(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::SQLDataException&)
-      {
+      catch (sql::SQLDataException&) {
       }
       res->afterLast();
-      try
-      {
+      try {
         res->getString(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::SQLDataException&)
-      {
+      catch (sql::SQLDataException&) {
       }
       res->first();
       ASSERT_EQUALS(res->getBoolean(id), res->getBoolean(1));
-      try
-      {
+      try {
         res->getBoolean(0);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException&)
-      {
+      catch (sql::InvalidArgumentException&) {
       }
 
-      try
-      {
+      try {
         res->getBoolean(3);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException&)
-      {
+      catch (sql::InvalidArgumentException&) {
       }
-
       res->beforeFirst();
-      try
-      {
+      try {
         res->getBoolean(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::SQLDataException&)
-      {
+      catch (sql::SQLDataException&) {
       }
       res->afterLast();
-      try
-      {
+      try {
         res->getBoolean(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::SQLDataException&)
-      {
+      catch (sql::SQLDataException&) {
       }
 
       res->first();
@@ -363,13 +461,10 @@ void resultset::getTypes()
           }
         }
       }
-
-      try
-      {
+      try {
         ASSERT_EQUALS(res->getDouble(id), res->getDouble(1));
       }
-      catch (sql::SQLException & e)
-      {
+      catch (sql::SQLException & e) {
         if ((it->name.compare("DATE") != 0 && it->name.compare("DATETIME") != 0 && it->name.compare("TIMESTAMP") != 0 && it->name.compare("TIME") != 0 &&
              it->name.compare("CHAR") != 0 && it->name.compare("BINARY") != 0 && it->name.compare("VARCHAR") != 0 && it->name.compare("VARBINARY") != 0 &&
              it->name.compare("TINYBLOB") != 0 && it->name.compare("TINYTEXT") != 0 && it->name.compare("TEXT") != 0 && it->name.compare("BLOB") != 0 &&
@@ -380,134 +475,138 @@ void resultset::getTypes()
           throw e;
         }
         if (it->name.compare("TINYBLOB") != 0 && it->name.compare("BLOB") != 0 && it->name.compare("MEDIUMBLOB") != 0 &&
-          it->name.compare("LONGBLOB") != 0)
-        {
-          try
-          {
+          it->name.compare("LONGBLOB") != 0) {
+          try {
             res->getInt(id);
             FAIL("getInt shouldn't be available for this type");
           }
-          catch (sql::SQLException&)
-          {
+          catch (sql::SQLException&) {
           }
-          try
-          {
+          try {
             pres->getUInt(id);
             FAIL("getUInt shouldn't be available for this type");
           }
-          catch (sql::SQLException&)
-          {
+          catch (sql::SQLException&) {
           }
+        }
+        
+        switch (it->ctype) {
+        case sql::DataType::DATE:
+        {
+          checkGetDate(res.get(), it);
+          checkGetDate(pres.get(), it);
+          break;
+        }
+        case sql::DataType::TIMESTAMP:
+        {
+          checkGetTimestamp(res.get(), it);
+          checkGetTimestamp(pres.get(), it);
+          break;
+        }
+        case sql::DataType::TIME:
+        {
+          checkGetTime(res.get(), it);
+          checkGetTime(pres.get(), it);
+          break;
+        }
+        default:
+          1;
         }
         // There is not sense to continue for this type further
         continue;
       }
-      try
-      {
+      try {
         res->getDouble(0);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException&)
-      {
+      catch (sql::InvalidArgumentException&) {
       }
 
-      try
-      {
+      try {
         res->getDouble(3);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException&)
-      {
+      catch (sql::InvalidArgumentException&) {
       }
 
       res->beforeFirst();
-      try
-      {
+      try {
         res->getDouble(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::SQLDataException&)
-      {
+      catch (sql::SQLDataException&) {
       }
       res->afterLast();
-      try
-      {
+      try {
         res->getDouble(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::SQLDataException&)
-      {
+      catch (sql::SQLDataException&) {
       }
       res->first();
 
       int64_t intValue= 0;
       bool isNumber= true, inIntRange= true, inUintRange= !it->is_negative, inInt64Range= true;
-      try
-      {
+      try {
         if (it->ctype == sql::DataType::BINARY || it->ctype == sql::DataType::VARBINARY ||
-          it->ctype == sql::DataType::LONGVARBINARY)
-        {
+          it->ctype == sql::DataType::LONGVARBINARY) {
           std::size_t len= it->precision;
-          if (it->ctype != sql::DataType::BINARY)
-          {
+          if (it->ctype != sql::DataType::BINARY) {
             len= it->value.length();
           }
 
-          if ( len > sizeof(int32_t))
-          {
+          if ( len > sizeof(int32_t)) {
             inIntRange= false;
             inUintRange= false;
           }
-          if (len > sizeof(int64_t))
-          {
+          if (len > sizeof(int64_t)) {
             inInt64Range= false;
           }
         }
         else
         {
-          if (it->is_negative)
-          {
+          if (it->is_negative) {
             intValue= std::stoll(it->value.c_str());
           }
-          else
-          {
+          else {
             intValue= static_cast<int64_t>(std::stoull(it->value.c_str()));
           }
         }
       }
-      catch (...)
-      {
+      catch (...) {
         isNumber= false;
       }
 
       if ((!it->is_negative && intValue < 0) || intValue < INT32_MIN || intValue > INT32_MAX)
       {
         inIntRange= false;
-        try
-        {
+        try {
           res->getInt(1);
-          FAIL("Overflow of int value is not detected");
+          msg.str("");
+          msg << "Overflow of int value is not detected for " << it->sqldef << " with value " <<
+            it->value << '(' << it->as_string << ')';
+          FAIL(msg.str().c_str());
         }
-        catch (sql::SQLException & e)
-        {
+        catch (sql::SQLException & e) {
           //All is good
           ASSERT_EQUALS(1264, e.getErrorCode());
           ASSERT_EQUALS("22003", e.getSQLState());
         }
 
-        if (intValue >= 0 && intValue <= UINT32_MAX)
-        {
+        if (intValue >= 0 && intValue <= UINT32_MAX) {
           ASSERT_EQUALS(res->getUInt(1), res->getUInt(id));
         }
-        else
-        {
+        else {
           inUintRange= false;
           if (!it->is_negative && intValue < 0)// i.e. value is in fact uint64_t
           {
             try
             {
               res->getLong(1); //getInt64 is the same
-              FAIL("Overflow of int64 value is not detected");
+              msg.str("");
+              msg << "Overflow of int64 value is not detected for " << it->sqldef << " with value " <<
+                it->value << '(' << it->as_string << ')';
+              FAIL(msg.str().c_str());
             }
             catch (sql::SQLException & e)
             {
@@ -524,21 +623,14 @@ void resultset::getTypes()
       }
       else
       {
-        try
-        {
+        try {
           ASSERT_EQUALS(res->getInt(1), res->getInt(id));
         }
-        catch (sql::SQLException & e)
-        {
- //         if (!isNumber)
+        catch (sql::SQLException & e) {
           {
             ASSERT_EQUALS(1264, e.getErrorCode());
             ASSERT_EQUALS("22003", e.getSQLState());
           }
-         /* else
-          {
-            throw e;
-          }*/
         }
       }
 
@@ -547,49 +639,38 @@ void resultset::getTypes()
         res->getInt(0);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException&)
-      {
+      catch (sql::InvalidArgumentException&) {
       }
-
-      try
-      {
+      try {
         res->getInt(3);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException&)
-      {
+      catch (sql::InvalidArgumentException&) {
       }
-
       res->beforeFirst();
-      try
-      {
+      try {
         res->getInt(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::SQLDataException&)
-      {
+      catch (sql::SQLDataException&) {
       }
       res->afterLast();
-      try
-      {
+      try {
         res->getInt(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::SQLDataException&)
-      {
+      catch (sql::SQLDataException&) {
       }
+
       res->first();
-
-      if (!isNumber || it->is_negative || !inUintRange)
+      if ((!isNumber /*&& it->ctype != sql::DataType::CHAR &&
+        it->ctype != sql::DataType::VARCHAR*/) || it->is_negative || !inUintRange)
       {
-        try
-        {
+        try {
           ASSERT_EQUALS(res->getUInt(1), res->getUInt(id));
-
           FAIL("Range error(negative value) has not been detected");
         }
-        catch (sql::SQLException & e)
-        {
+        catch (sql::SQLException & e) {
           ASSERT_EQUALS(1264, e.getErrorCode());
           ASSERT_EQUALS("22003", e.getSQLState());
         }
@@ -607,28 +688,22 @@ void resultset::getTypes()
       catch (sql::InvalidArgumentException &)
       {
       }
-
       try
       {
         res->getUInt(3);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::InvalidArgumentException &)
-      {
+      catch (sql::InvalidArgumentException &) {
       }
-
       res->beforeFirst();
-      try
-      {
+      try {
         res->getUInt(1);
         FAIL("Invalid argument not detected");
       }
-      catch (sql::SQLDataException&)
-      {
+      catch (sql::SQLDataException&) {
       }
       res->afterLast();
-      try
-      {
+      try {
         res->getUInt(1);
         FAIL("Invalid argument not detected");
       }
@@ -807,7 +882,6 @@ void resultset::getTypes()
       // ASSERT_EQUALS(pres->getUInt64(id), res->getUInt64(id));
 
       ASSERT_EQUALS(pres->getBoolean(id), res->getBoolean(1));
-
     }
     if (got_warning)
       FAIL("See warnings!");

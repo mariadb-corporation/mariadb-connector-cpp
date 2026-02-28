@@ -66,8 +66,8 @@ public:
     TEST_CASE(bug19938873_pstmt);
     TEST_CASE(bug19938873_stmt);
     TEST_CASE(bug68523);
-    //TEST_CASE(bug66235);
-    //TEST_CASE(bug14520822);
+    TEST_CASE(bug66235);
+    TEST_CASE(bug14520822);
     TEST_CASE(bug17218692);
     TEST_CASE(bug21053335);
     TEST_CASE(bug21067193);

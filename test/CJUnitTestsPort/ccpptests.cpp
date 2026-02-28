@@ -40,7 +40,8 @@
 
 int main(int argc, char** argv)
 {
-  const String::value_type * unnamedStartParams[]= { "dbUrl"
+  const String::value_type *unnamedStartParams[]= {
+      "dbUrl"
     , "dbUser"
     , "dbPasswd"
     , "dbSchema"
@@ -56,11 +57,11 @@ int main(int argc, char** argv)
 
   std::map<String, bool> defaultBoolValues;
 
-  defaultBoolValues["useTls"]= USETLS_ENV_OR_DEFAULT;
+  defaultBoolValues["useTls"]=  USETLS_ENV_OR_DEFAULT;
   defaultBoolValues["verbose"]= VERBOSE_ENV_OR_DEFAULT;
 
-  testsuite::StartOptions options( unnamedStartParams, & defaultStringValues
-    , & defaultBoolValues );
+  testsuite::StartOptions options( unnamedStartParams, &defaultStringValues
+    , &defaultBoolValues );
 
   options.parseParams( argc, argv );
 
@@ -68,7 +69,7 @@ int main(int argc, char** argv)
 
   testsuite::TestsRunner & testsRunner=testsuite::TestsRunner::theInstance();
 
-  testsRunner.setStartOptions ( & options );
+  testsRunner.setStartOptions ( &options );
   testsRunner.setTestsFilter  ( filter    );
 
   return testsRunner.runTests() ? EXIT_SUCCESS : EXIT_FAILURE;

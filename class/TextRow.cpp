@@ -433,8 +433,11 @@ namespace mariadb
      case MYSQL_TYPE_LONG:
      case MYSQL_TYPE_INT24:
      case MYSQL_TYPE_LONGLONG:
-       return safer_strtoll(fieldBuf.arr + pos, length);
-         //std::stoll(std::string(fieldBuf.arr + pos, length));
+       auto result= safer_strtoll(fieldBuf.arr + pos, length);
+       // Technically we can only detect here if it's signed on usigned value. then it's an overflow
+       // then maybe it's safer to if (add result < 0 && !columnInfo->isSigned()) here
+       rangeCheck("int64_t", INT64_MIN, INT64_MAX, result, columnInfo);
+       return result;
      case MYSQL_TYPE_TIMESTAMP:
      case MYSQL_TYPE_DATETIME:
      case MYSQL_TYPE_TIME:
@@ -443,6 +446,15 @@ namespace mariadb
          "Conversion to integer not available for data field type "
          + std::to_string(columnInfo->getColumnType()));
      default:
+       try {
+           safer_strtoll(fieldBuf.arr + pos, length);
+         }
+         catch (int64_t) {
+           throw SQLException(
+             "Out of range value for column '" + columnInfo->getName() + "' : could not convert to a number" + SQLString(fieldBuf.arr, length),
+             "22003",
+             1264);
+         }
        return safer_strtoll(fieldBuf.arr + pos, length);
          //std::stoll(std::string(fieldBuf.arr + pos, length));
      }

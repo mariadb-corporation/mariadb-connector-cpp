@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2025 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -48,19 +49,19 @@ private:
 
   typedef std::map<String, bool>  BoolParamsType;
 
-  TestList                    unnamedParams;
+  TestList        unnamedParams;
 
-  BoolParamsType              defBoolValues;
-  TestProperties              defStringValues;
+  BoolParamsType  defBoolValues;
+  TestProperties  defStringValues;
 
-  BoolParamsType		          bOptions;
-  TestProperties              sOptions;
+  BoolParamsType  bOptions;
+  TestProperties  sOptions;
 
 protected:
 
           bool    paramAsBool       ( const ciString  & param ) const;
           bool    defaultBoolValue  ( const String    & name  ) const;
-  const String &  defaultStringValue( const String    & name  ) const;
+  const String&   defaultStringValue( const String    & name  ) const;
 
 public:
 
@@ -75,12 +76,13 @@ public:
               , const TestProperties          * defStrVals  = NULL
               , const std::map<String, bool>  * defBoolVals = NULL );
 
-        bool      parseParams(int paramsNumber, char** paramsValues);
+        bool    parseParams(int paramsNumber, char** paramsValues);
 
-        bool      getBool    ( const String & name ) const;
-  const String &  getString  ( const String & param) const;
+        bool    getBool    ( const String& name ) const;
+  const String& getString  ( const String& param) const;
 
-        int       getInt     ( const String & param) const;
+        int     getInt     ( const String& param) const;
+        void    usage      ( const char*   name ) const;
 
 };
 

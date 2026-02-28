@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2023 MariaDB Corporation AB
+ *               2023, 2025 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -69,7 +69,7 @@ namespace testsuite
 
   /* Last orderedParams array member must be NULL */
   StartOptions::StartOptions( const String::value_type    * orderedParams[]
-                            , const TestProperties            * defStrVals
+                            , const TestProperties        * defStrVals
                             , const std::map<String, bool>* defBoolVals )
   {
     while ( *orderedParams != NULL )
@@ -86,8 +86,8 @@ namespace testsuite
   }
 
 
-  StartOptions::StartOptions( const TestList                  & orderedParams
-                            , const TestProperties            * defStrVals
+  StartOptions::StartOptions( const TestList              & orderedParams
+                            , const TestProperties        * defStrVals
                             , const std::map<String, bool>* defBoolVals )
   {
     for (TestList::const_iterator cit= orderedParams.begin();
@@ -121,6 +121,7 @@ namespace testsuite
   bool StartOptions::parseParams(int paramsNumber, char** paramsValues)
   {
     TestList paramPair;
+    const char *testName= *paramsValues;
 
     if (paramsNumber > 1)
     {
@@ -152,12 +153,19 @@ namespace testsuite
           }
           else
           {
+            if (paramPair[0].compare("help") == 0)
+            {
+              // usage() exits execution
+              usage(testName);
+            }
             BoolParamsType::const_iterator cit= defBoolValues.find( paramPair[0] );
 
             if ( cit != defBoolValues.end() )
               bOptions[paramPair[0]]= cit->second;
             else
-              bOptions[paramPair[0]]= true;
+            {
+              bOptions[paramPair[0]] = true;
+            }
           }
         }
         else if ( curParam != unnamedParams.end() )
@@ -221,6 +229,65 @@ namespace testsuite
   int StartOptions::getInt( const String & param) const
   {
     return StringUtils::toInt( getString( param ) );
+  }
+
+  bool inList(const TestList& list, const String& val)
+  {
+    for (auto& cit : list)
+    {
+      if (cit.compare(val) == 0)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void StartOptions::usage(const char* name) const
+  {
+    std::cerr << name << " [options]" << std::endl;
+    std::cerr << "where <options> -> " << std::endl;
+    std::cerr << "\t";
+
+    for (auto i = 0; i < unnamedParams.size(); ++i)
+    {
+      std::cerr << "[" << unnamedParams[i] << "] ";
+      if (i < unnamedParams.size() - 1)
+      {
+        std::cerr << "[";
+      }
+    }
+    for (auto i = 1; i < unnamedParams.size(); ++i) std::cerr << "]";
+    std::cerr << " [<named options>]" << std::endl;// << "Defaults:" << std::endl;
+    /*for (auto& cit : unnamedParams)
+    {
+      const auto def= defStringValues.find(cit);
+      if (def != defStringValues.end())
+      {
+        std::cerr << "\t" << def->first << "=" << def->second << std::endl;
+      }
+    }*/
+    //std::cerr << " [<named options>]" << std::endl
+    std::cerr << "where <named options> -> --<name>[=<value>] [...]" << std::endl;
+    std::cerr << "Possible names are:" << std::endl << "\t--help - prints this info" << std::endl;
+
+    for (auto& cit : defStringValues)
+    {
+      //if (!inList(unnamedParams, cit.first))
+      {
+        std::cerr << "\t--" << cit.first << "(default: " << cit.second << ")" << std::endl;
+      }
+    }
+
+    for (auto& cit : defBoolValues)
+    {
+      if (!inList(unnamedParams, cit.first))
+      {
+        std::cerr << "\t--" << cit.first << "(default: " << (cit.second ? "true" : "false") << ")" << std::endl;
+      }
+    }
+
+    exit(0);
   }
 } // namespace testsuite
 

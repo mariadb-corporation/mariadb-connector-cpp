@@ -89,6 +89,9 @@ class Protocol
   SQLString txIsolationVarName;
   bool     mustReset= false;
   bool     ansiQuotes= false;
+  // We need to have list of active prepared statements to be able to re-prepare them in case of reconnection.
+  std::vector<ServerPrepareResult*> activePsList;
+  std::mutex psListLock;
 
   // ----- private methods -----
   void unblockConnection();
@@ -145,7 +148,9 @@ public:
   bool mustBeMasterConnection();
   void commit();
   void rollback();
-  const SQLString& getDatabase() const;
+  inline const SQLString& getDatabase() const {
+    return database;
+  }
   const SQLString& getUsername() const;
   bool ping();
   bool isValid(int32_t timeout);
@@ -230,6 +235,7 @@ public:
 
 private:
   void commitReturnAutocommit(bool justReadMultiSendResults=false);
+  void registerPs(ServerPrepareResult* ps);
 
 public:
   void safeRealQuery(const SQLString& sql);
@@ -246,6 +252,11 @@ public:
   inline bool sessionStateChanged() { return (serverStatus & SERVER_SESSION_STATE_CHANGED) != 0; }
   void deferredReset() { mustReset= true; }
   inline bool getAnsiQuotes() const { return serverMariaDb ? serverStatus & SERVER_STATUS_ANSI_QUOTES : ansiQuotes; }
+  void reprepare(ServerPrepareResult* serverPrepareResult);
+  // ServerPrepareResult destructor calls it
+  void forgetPs(ServerPrepareResult* ps);
+  // This is called from reconnect event callback.
+  void processReconnect();
   };
 
 }
