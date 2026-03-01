@@ -466,7 +466,6 @@ namespace capi
     if (options->autoReconnect) {
       mysql_optionsv(conn, MYSQL_OPT_RECONNECT, &OptionSelected);
       mysql_optionsv(conn, MARIADB_OPT_STATUS_CALLBACK, takeCareOfReconnect, static_cast<void*>(this));
-
     }
     mysql_optionsv(conn, MYSQL_REPORT_DATA_TRUNCATION, &uintOptionSelected);
     mysql_optionsv(conn, MYSQL_OPT_LOCAL_INFILE, (options->allowLocalInfile ? &uintOptionSelected : &uintOptionNotSelected));
@@ -1534,6 +1533,9 @@ namespace capi
   {
     // We don't need to acquire main protocol lock to avoid the deadlock - C/C detects reconnect and calls the callback when the main
     // lock is already acquired - when we run any command requring connection.
+    if (activeStreamingResult) {
+      activeStreamingResult->close();
+    }
     std::lock_guard<std::mutex> localScopeLisyLock(psListLock);
     for (auto ps : activePsList) {
       ps->reprepare();
