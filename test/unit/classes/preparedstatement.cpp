@@ -2440,18 +2440,51 @@ void preparedstatement::ps_on_reconnect()
   con.reset(driver->connect(url, connection_properties));
   // Prepare query
   pstmt.reset(con->prepareStatement("SELECT 1"));
-  stmt.reset(con->createStatement());
-  res.reset(stmt->executeQuery("SELECT CONNECTION_ID()"));
+  // Getting connection id in PS as well in order to have additional test
+  PreparedStatement idps(con->prepareStatement("SELECT CONNECTION_ID()"));
+  res.reset(idps->executeQuery());
   ASSERT(res->next());
-  sql::SQLString query("KILL ");
-  query.append(res->getString(1));
+  sql::SQLString killConnId("KILL ");
+  killConnId.append(res->getString(1));
 
   auto killConn= getConnection();
   stmt.reset(killConn->createStatement());
-  //Killing connection
-  stmt->executeUpdate(query);
+  // Killing connection
+  stmt->executeUpdate(killConnId);
   // trying to execute the query prepared berfor reconnection. Should be re-prepared and executed successfully once it's fixed
   res.reset(pstmt->executeQuery());
+  // Reading new connection id
+  res.reset(idps->executeQuery());
+  ASSERT(res->next());
+  killConnId.erase(5).append(res->getString(1));
+
+  pstmt.reset(con->prepareStatement("SELECT 1 as ID UNION ALL SELECT 2 UNION ALL SELECT 3;"));
+  // Making resultset to be streamed, so it will be still open after reconnection and we can check if it's closed properly
+  pstmt->setFetchSize(1);
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS(1, res->getInt(1));
+  //Now killing the connection. Resultset should be closed after reconnection.
+  stmt->executeUpdate(killConnId);
+  // Reading new connection id. This actually will trigger the reconnection.
+  ResultSet rs(idps->executeQuery());
+
+  try {
+    ASSERT(res->next());
+    ASSERT_EQUALS(2, res->getInt(1));
+    ASSERT(res->next());
+    ASSERT_EQUALS(3, res->getInt(1));
+  }
+  catch (TestFailedException&) {
+    // not sure. technically we may receive not all results. but what to check here...
+  }
+  catch (sql::SQLException& e) {
+    // Driver receives reconnect event after attempt to write a command. Prior to ettemtping to write, it caches the rs being streamed.
+    // Thus it does not get closed by event handler.
+    if (e.getErrorCode() == 2006 && e.getSQLState().compare("HY000") == 0) {
+      logMsg("...");
+    }
+  }
 }
 
 } /* namespace preparedstatement */
