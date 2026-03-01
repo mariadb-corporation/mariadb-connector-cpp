@@ -94,6 +94,9 @@ public:
   MARIADB_EXPORTED SQLString& ltrim();
   MARIADB_EXPORTED SQLString& rtrim();
   MARIADB_EXPORTED SQLString& trim();
+  MARIADB_EXPORTED SQLString& erase(std::size_t pos= 0, std::size_t count= npos);
+  MARIADB_EXPORTED void resize(std::size_t newSize);
+
 };
 
 MARIADB_EXPORTED SQLString operator+(const SQLString& str1, const SQLString & str2);

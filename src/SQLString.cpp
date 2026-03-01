@@ -281,6 +281,20 @@ namespace sql
     return compare(other) < 0;
   }
 
+
+  SQLString& SQLString::erase(std::size_t pos, std::size_t count)
+  {
+    (*theString)->erase(pos, count);
+    return *this;
+  }
+
+
+  void SQLString::resize(std::size_t newSize)
+  {
+    (*theString)->resize(newSize);
+  }
+
+
   /* SQLString utilities not belonging to the class */
    SQLString operator+(const SQLString & str1, const SQLString & str2)
   {
