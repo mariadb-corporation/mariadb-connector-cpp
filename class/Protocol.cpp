@@ -2339,6 +2339,9 @@ namespace mariadb
   {
     // We don't need to acquire main protocol lock to avoid the deadlock - C/C detects reconnect and calls the callback when the main
     // lock is already acquired - when we run any command requring connection.
+    if (activeStreamingResult) {
+      activeStreamingResult->close();
+    }
     std::lock_guard<std::mutex> localScopeLisyLock(psListLock);
     for (auto ps : activePsList) {
       ps->reprepare();
