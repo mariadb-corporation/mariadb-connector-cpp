@@ -6,6 +6,8 @@
 #include "Protocol.h"
 #include "ResultSetMetaData.h"
 
+#include <cstring>
+
 #define EXPECTED_MAX_INDEX_COLUMNS_COUNT 4ULL
 #define AVG_FIELD_VALUE_ESTIMATION 10
 
@@ -80,7 +82,7 @@ namespace mariadb
         if (!schemaName) {
           schemaName= field->db;
         }
-        else if (strcmp(schemaName, field->db)) {
+        else if (std::strcmp(schemaName, field->db)) {
           throw SQLException("Couldn't identify unique schema name", "HY000");
         }
       }
@@ -88,7 +90,7 @@ namespace mariadb
         if (!tableName) {
           tableName= field->org_table;
         }
-        else if (strcmp(tableName, field->org_table)) {
+        else if (std::strcmp(tableName, field->org_table)) {
           throw SQLException("Couldn't identify unique table name", "HY000");
         }
       }
@@ -110,7 +112,7 @@ namespace mariadb
         if (!schemaName) {
           schemaName= field->db;
         }
-        else if (strcmp(schemaName, field->db)) {
+        else if (std::strcmp(schemaName, field->db)) {
           throw SQLException("Couldn't identify unique schema name", "HY000");
         }
       }
@@ -118,7 +120,7 @@ namespace mariadb
         if (!tableName) {
           tableName= field->org_table;
         }
-        else if (strcmp(tableName, field->org_table)) {
+        else if (std::strcmp(tableName, field->org_table)) {
           throw SQLException("Couldn't identify unique table name", "HY000");
         }
       }
