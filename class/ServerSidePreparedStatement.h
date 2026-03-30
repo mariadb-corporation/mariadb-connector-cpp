@@ -31,15 +31,15 @@ namespace mariadb
 extern "C"
 {
   // C/C's callback running param column callbacks 
-  my_bool* defaultParamCallback(void* data, MYSQL_BIND* bind, uint32_t row_nr);
+  my_bool* defaultParamCallback(void* data, MYSQL_BIND* bind, unsigned int row_nr);
   // C/C's callback running callback for the row, and then indivivual param column callbacks
-  my_bool* withRowCheckCallback(void* data, MYSQL_BIND* bind, uint32_t row_nr);
+  my_bool* withRowCheckCallback(void* data, MYSQL_BIND* bind, unsigned int row_nr);
 }
 
 class ServerSidePreparedStatement : public PreparedStatement
 {
-  friend my_bool* withRowCheckCallback(void* data, MYSQL_BIND* bind, uint32_t row_nr);
-  friend my_bool* defaultParamCallback(void* data, MYSQL_BIND* binds, uint32_t row_nr);
+  friend my_bool* withRowCheckCallback(void* data, MYSQL_BIND* bind, unsigned int row_nr);
+  friend my_bool* defaultParamCallback(void* data, MYSQL_BIND* binds, unsigned int row_nr);
 
 protected:
   ServerPrepareResult* serverPrepareResult= nullptr;

@@ -330,7 +330,7 @@ namespace mariadb
 
   const my_bool error= '\1';
 
-  my_bool* defaultParamCallback(void* data, MYSQL_BIND* bind, uint32_t row_nr)
+  my_bool* defaultParamCallback(void* data, MYSQL_BIND* bind, unsigned int row_nr)
   {
     // Assuming paramset skip is set in the indicator of 1st column
     if (bind->u.indicator && *bind->u.indicator == STMT_INDICATOR_IGNORE_ROW) {
@@ -370,7 +370,7 @@ namespace mariadb
   }
 
 
-  my_bool* withRowCheckCallback(void* data, MYSQL_BIND* bind, uint32_t row_nr)
+  my_bool* withRowCheckCallback(void* data, MYSQL_BIND* bind, unsigned int row_nr)
   {
     // We can't let the callback to throw - we have to intercept, as otherwise we are guaranteed to have
     // the protocol broken
