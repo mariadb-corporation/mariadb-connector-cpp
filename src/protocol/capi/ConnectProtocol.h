@@ -57,12 +57,12 @@ namespace capi
     static Shared::Logger logger;
 
   protected:
-    std::unique_ptr<MYSQL, decltype(&mysql_close)> connection;
+    MYSQL* connection;
     Shared::mutex lock;
     std::shared_ptr<UrlParser> urlParser;
     Shared::Options options;
     Shared::ExceptionFactory exceptionFactory;
-    virtual ~ConnectProtocol() {}
+    virtual ~ConnectProtocol();
 
   private:
     const SQLString username;
@@ -76,7 +76,7 @@ namespace capi
     uint32_t serverStatus= 0;
 
   protected:
-    int32_t autoIncrementIncrement;
+    int32_t autoIncrementIncrement= 1;
 
     bool readOnly= false;
     FailoverProxy* proxy= nullptr;

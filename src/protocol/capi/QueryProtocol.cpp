@@ -77,7 +77,7 @@ namespace capi
     cmdPrologue();
     try {
 
-      if (mysql_reset_connection(connection.get()))
+      if (mysql_reset_connection(connection))
       {
         throw SQLException("Connection reset failed");
       }
@@ -512,7 +512,7 @@ namespace capi
     }
     for (std::size_t i= 0; i < parametersList.size(); ++i) {
       // We don't need exception on error here
-      capi::mysql_read_query_result(connection.get());
+      capi::mysql_read_query_result(connection);
       getResult(results.get());
     }
     if (autoCommit) {
@@ -672,7 +672,7 @@ namespace capi
     }
     for (auto& query : queries) {
       //we don't need exception in case of error, thus calling capi directly
-      capi::mysql_read_query_result(connection.get());
+      capi::mysql_read_query_result(connection);
       getResult(results.get());
     }
     if (autoCommit) {
@@ -692,11 +692,11 @@ namespace capi
       }
     }
 
-    capi::MYSQL_STMT* stmtId = capi::mysql_stmt_init(connection.get());
+    capi::MYSQL_STMT* stmtId = capi::mysql_stmt_init(connection);
 
     if (stmtId == nullptr)
     {
-      throw SQLException(capi::mysql_error(connection.get()), capi::mysql_sqlstate(connection.get()), capi::mysql_errno(connection.get()));
+      throw SQLException(capi::mysql_error(connection), capi::mysql_sqlstate(connection), capi::mysql_errno(connection));
     }
 
     static const my_bool updateMaxLength= 1;
@@ -1184,7 +1184,7 @@ namespace capi
     std::lock_guard<std::mutex> localScopeLock(*lock);
     try {
 
-      return mysql_ping(connection.get()) == 0;
+      return mysql_ping(connection) == 0;
 
     }catch (std::runtime_error& e){
       connected= false;
@@ -1279,20 +1279,20 @@ namespace capi
 
     std::unique_lock<std::mutex> localScopeLock(*lock);
 
-    if (capi::mysql_select_db(connection.get(), _database.c_str()) != 0) {
+    if (capi::mysql_select_db(connection, _database.c_str()) != 0) {
       // TODO: realQuery should throw. Here we could catch and change message
-      if (mysql_get_socket(connection.get()) == MARIADB_INVALID_SOCKET) {
+      if (mysql_get_socket(connection) == MARIADB_INVALID_SOCKET) {
         std::string msg("Connection lost: ");
-        msg.append(mysql_error(connection.get()));
+        msg.append(mysql_error(connection));
         std::runtime_error e(msg.c_str());
         localScopeLock.unlock();
         throw logQuery->exceptionWithQuery("COM_INIT_DB", *handleIoException(e, false).getException(), false);
       }
       else {
         throw SQLException(
-          "Could not select database '" + _database + "' : " + mysql_error(connection.get()),
-          mysql_sqlstate(connection.get()),
-          mysql_errno(connection.get()));
+          "Could not select database '" + _database + "' : " + mysql_error(connection),
+          mysql_sqlstate(connection),
+          mysql_errno(connection));
       }
     }
     this->database= _database;
@@ -1444,7 +1444,7 @@ namespace capi
       res= capi::mysql_stmt_next_result(spr->getStatementId());
     }
     else {
-      res= capi::mysql_next_result(connection.get());
+      res= capi::mysql_next_result(connection);
     }
 
     if (res != 0) {
@@ -1501,11 +1501,11 @@ namespace capi
    */
   void QueryProtocol::readOkPacket(Results* results, ServerPrepareResult *pr)
   {
-    const int64_t updateCount= (pr == nullptr ? capi::mysql_affected_rows(connection.get()) : capi::mysql_stmt_affected_rows(pr->getStatementId()));
-    const int64_t insertId= (pr == nullptr ? capi::mysql_insert_id(connection.get()) : capi::mysql_stmt_insert_id(pr->getStatementId()));
+    const int64_t updateCount= (pr == nullptr ? capi::mysql_affected_rows(connection) : capi::mysql_stmt_affected_rows(pr->getStatementId()));
+    const int64_t insertId= (pr == nullptr ? capi::mysql_insert_id(connection) : capi::mysql_stmt_insert_id(pr->getStatementId()));
 
-    capi::mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
-    hasWarningsFlag= capi::mysql_warning_count(connection.get()) > 0;
+    capi::mariadb_get_infov(connection, MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
+    hasWarningsFlag= capi::mysql_warning_count(connection) > 0;
 
     if ((serverStatus & ServerStatus::SERVER_SESSION_STATE_CHANGED_)!=0) {
       handleStateChange(results);
@@ -1522,7 +1522,7 @@ namespace capi
 
     for (int32_t type=SESSION_TRACK_BEGIN; type < SESSION_TRACK_END; ++type)
     {
-      if (mysql_session_track_get_first(connection.get(), static_cast<enum capi::enum_session_state_type>(type), &value, &len) == 0)
+      if (mysql_session_track_get_first(connection, static_cast<enum capi::enum_session_state_type>(type), &value, &len) == 0)
       {
         std::string str(value, len);
 
@@ -1554,7 +1554,7 @@ namespace capi
       return capi::mysql_stmt_errno(pr->getStatementId());
     }
     else {
-      return capi::mysql_errno(connection.get());
+      return capi::mysql_errno(connection);
     }
   }
 
@@ -1566,7 +1566,7 @@ namespace capi
     }
     else
     {
-      return capi::mysql_field_count(connection.get());
+      return capi::mysql_field_count(connection);
     }
   }
 
@@ -1617,8 +1617,8 @@ namespace capi
       sqlState= capi::mysql_stmt_sqlstate(pr->getStatementId());
     }
     else {
-      message= capi::mysql_error(connection.get());
-      sqlState= mysql_sqlstate(connection.get());
+      message= capi::mysql_error(connection);
+      sqlState= mysql_sqlstate(connection);
     }
 
     results->addStatsError(false);
@@ -1751,12 +1751,12 @@ namespace capi
 
       SelectResultSet* selectResultSet;
 
-      capi::mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
+      capi::mariadb_get_infov(connection, MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
       bool callableResult= (serverStatus & ServerStatus::PS_OUT_PARAMETERS)!=0;
 
       if (pr == nullptr)
       {
-        selectResultSet= SelectResultSet::create(results, this, connection.get(), eofDeprecated);
+        selectResultSet= SelectResultSet::create(results, this, connection, eofDeprecated);
       }
       else {
         pr->reReadColumnInfo();
@@ -2057,7 +2057,7 @@ namespace capi
   {
     if (hasMoreResults()) {
       //std::lock_guard<std::mutex> localScopeLock(lock);
-      auto conn= connection.get();
+      auto conn= connection;
       MYSQL_RES *res= nullptr;
       while (mysql_more_results(conn) && mysql_next_result(conn) == 0) {
         res= mysql_use_result(conn);

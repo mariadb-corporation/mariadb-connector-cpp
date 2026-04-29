@@ -41,38 +41,43 @@ namespace capi
  */
   TextRowProtocolCapi::TextRowProtocolCapi(int32_t maxFieldSize, Shared::Options options, MYSQL_RES* capiTextResults)
     : RowProtocol(maxFieldSize, options)
-    , capiResults(capiTextResults, &mysql_free_result)
+    , capiResults(capiTextResults)
     , rowData(nullptr)
     , lengthArr(nullptr)
- {
- }
+  {
+  }
 
- /**
-  * Set length and pos indicator to asked index.
-  *
-  * @param newIndex index (0 is first).
-  */
- void TextRowProtocolCapi::setPosition(int32_t newIndex)
- {
-   index= newIndex;
+  TextRowProtocolCapi::~TextRowProtocolCapi()
+  {
+    mysql_free_result(capiResults);
+  }
 
-   pos= 0;
+  /**
+   * Set length and pos indicator to asked index.
+   *
+   * @param newIndex index (0 is first).
+   */
+  void TextRowProtocolCapi::setPosition(int32_t newIndex)
+  {
+    index= newIndex;
 
-   if (buf != nullptr) {
-     fieldBuf.wrap((*buf)[index], (*buf)[index].size());
-     this->lastValueNull= fieldBuf ? BIT_LAST_FIELD_NOT_NULL : BIT_LAST_FIELD_NULL;
-     length= static_cast<uint32_t>(fieldBuf.size());
-   }
-   else if (rowData) {
-     this->lastValueNull= (rowData[index] == nullptr ? BIT_LAST_FIELD_NULL : BIT_LAST_FIELD_NOT_NULL);
-     length= lengthArr[newIndex];
-     fieldBuf.wrap(rowData[index], length);
-   }
-   else {
-     // TODO: we need some good assert above instead of this
-     throw std::runtime_error("Internal error in the TextRow class - data buffers are NULLs");
-   }
- }
+    pos= 0;
+
+    if (buf != nullptr) {
+      fieldBuf.wrap((*buf)[index], (*buf)[index].size());
+      this->lastValueNull= fieldBuf ? BIT_LAST_FIELD_NOT_NULL : BIT_LAST_FIELD_NULL;
+      length= static_cast<uint32_t>(fieldBuf.size());
+    }
+    else if (rowData) {
+      this->lastValueNull= (rowData[index] == nullptr ? BIT_LAST_FIELD_NULL : BIT_LAST_FIELD_NOT_NULL);
+      length= lengthArr[newIndex];
+      fieldBuf.wrap(rowData[index], length);
+    }
+    else {
+      // TODO: we need some good assert above instead of this
+      throw std::runtime_error("Internal error in the TextRow class - data buffers are NULLs");
+    }
+  }
 
  /**
  * Get String from raw text format.
@@ -1063,8 +1068,8 @@ namespace capi
  int32_t TextRowProtocolCapi::fetchNext()
  {
    //Assuming it is called only for the case of the data from server, and not constructed text results
-   rowData= mysql_fetch_row(capiResults.get());
-   lengthArr= mysql_fetch_lengths(capiResults.get());
+   rowData= mysql_fetch_row(capiResults);
+   lengthArr= mysql_fetch_lengths(capiResults);
 
    return (rowData == nullptr ? MYSQL_NO_DATA : 0);
  }
@@ -1072,7 +1077,7 @@ namespace capi
 
  void TextRowProtocolCapi::installCursorAtPosition(int32_t rowPtr)
  {
-   mysql_data_seek(capiResults.get(), static_cast<unsigned long long>(rowPtr));
+   mysql_data_seek(capiResults, static_cast<unsigned long long>(rowPtr));
  }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED

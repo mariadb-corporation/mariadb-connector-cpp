@@ -25,6 +25,10 @@
 
 #include "com/RowProtocol.h"
 
+// Need this to hopefully silence UBSAN errors about wrong function pointer
+// type in unique_ptr destructor
+struct MYSQL_RES;
+
 namespace sql
 {
 namespace mariadb
@@ -35,13 +39,13 @@ namespace capi
 
 class TextRowProtocolCapi  : public RowProtocol {
 
-  std::unique_ptr<MYSQL_RES, decltype(&mysql_free_result)> capiResults;
+  MYSQL_RES* capiResults;
   MYSQL_ROW  rowData;
   unsigned long* lengthArr;
 
 public:
   TextRowProtocolCapi(int32_t maxFieldSize, Shared::Options options, MYSQL_RES* capiTextResults);
-  ~TextRowProtocolCapi() {}
+  ~TextRowProtocolCapi();
 
   void setPosition(int32_t newIndex);
 
