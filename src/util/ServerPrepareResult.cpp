@@ -31,6 +31,24 @@ namespace sql
 {
 namespace mariadb
 {
+  void paramRowUpdate(void* data, sql::mariadb::capi::MYSQL_BIND* bind, uint32_t row_nr);
+}
+}
+struct st_mysql_bind;
+
+extern "C"
+{
+  /*my_bool*/char paramRowUpdateCallback(void* data, struct st_mysql_bind* bind, unsigned int row_nr)
+  {
+    sql::mariadb::paramRowUpdate(data, reinterpret_cast<sql::mariadb::capi::MYSQL_BIND*>(bind), row_nr);
+    return '\0';
+  }
+}
+
+namespace sql
+{
+namespace mariadb
+{
   ServerPrepareResult::~ServerPrepareResult()
   {
     if (metadata) {
@@ -296,6 +314,8 @@ namespace mariadb
 
   void paramRowUpdate(void *data, capi::MYSQL_BIND* bind, uint32_t row_nr)
   {
+    // Need this to silence ubsan cuz MYSQL_BIND and capi::MYSQL_BIND are different types for the compiler 
+    //capi::MYSQL_BIND* bind= reinterpret_cast<capi::MYSQL_BIND*>(ccBind);
     static char indicator[]{'\0', capi::STMT_INDICATOR_NULL};
     std::vector<Shared::ParameterHolder>& paramSet= (*static_cast<std::vector<std::vector<Shared::ParameterHolder>>*>(data))[row_nr];
     std::size_t i= 0;
@@ -316,16 +336,6 @@ namespace mariadb
       ++i;
     }
   }
-
-extern "C"
-{
-  char* paramRowUpdateCallback(void* data, capi::MYSQL_BIND* bind, uint32_t row_nr)
-  {
-    paramRowUpdate(data, bind, row_nr);
-    return NULL;
-  }
-}
-
 
   void ServerPrepareResult::bindParameters(std::vector<std::vector<Shared::ParameterHolder>>& paramValue, const int16_t *type)
   {
