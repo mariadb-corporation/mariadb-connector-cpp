@@ -1,7 +1,7 @@
 MariaDB Connector/C++ 1.0 GA
 -------------------------------
 
-# Test trigger builders
+# Trigger CI
 
 This is a GA release of the MariaDB Connector/C++.
 MariaDB Connector/C++ is released under version 2.1 of the
