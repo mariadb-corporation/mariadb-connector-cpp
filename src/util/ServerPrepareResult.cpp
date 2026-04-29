@@ -33,6 +33,9 @@ namespace mariadb
 {
   ServerPrepareResult::~ServerPrepareResult()
   {
+    if (metadata) {
+      capi::mysql_free_result(metadata);
+    }
     if (statementId) {
       // if connection has been already destroyed before - we are busted
       // Dirty hack - mysql is cleared in stmt handlers when conneciton is being closed. if that did not happen yet -
@@ -69,7 +72,7 @@ namespace mariadb
     , sql(_sql)
     , inCache(false)
     , statementId(_statementId)
-    , metadata(mysql_stmt_result_metadata(statementId), &capi::mysql_free_result)
+    , metadata(mysql_stmt_result_metadata(statementId))
     , unProxiedProtocol(_unProxiedProtocol)
   {
   }
@@ -90,13 +93,13 @@ namespace mariadb
     : sql(_sql)
     , inCache(false)
     , statementId(_statementId)
-    , metadata(mysql_stmt_result_metadata(statementId), &capi::mysql_free_result)
+    , metadata(mysql_stmt_result_metadata(statementId))
     , unProxiedProtocol(_unProxiedProtocol)
   {
     columns.reserve(mysql_stmt_field_count(statementId));
 
     for (uint32_t i= 0; i < mysql_stmt_field_count(statementId); ++i) {
-      columns.emplace_back(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata.get(), i)));
+      columns.emplace_back(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata, i)));
     }
     parameters.reserve(mysql_stmt_param_count(statementId));
 
@@ -108,10 +111,13 @@ namespace mariadb
 
   void ServerPrepareResult::reReadColumnInfo()
   {
-    metadata.reset(mysql_stmt_result_metadata(statementId));
+    if (metadata) {
+      capi::mysql_free_result(metadata);
+    }
+    metadata= mysql_stmt_result_metadata(statementId);
     columns.clear();
     for (uint32_t i= 0; i < mysql_stmt_field_count(statementId); ++i) {
-      columns.emplace_back(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata.get(), i)));
+      columns.emplace_back(new capi::ColumnDefinitionCapi(capi::mysql_fetch_field_direct(metadata, i)));
     }
   }
 

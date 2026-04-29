@@ -48,7 +48,7 @@ class ServerPrepareResult  : public PrepareResult {
   const SQLString sql;
   std::atomic_bool inCache;
   capi::MYSQL_STMT* statementId;
-  std::unique_ptr<capi::MYSQL_RES, decltype(&capi::mysql_free_result)> metadata;
+  capi::MYSQL_RES* metadata;
   std::vector<capi::MYSQL_BIND> paramBind;
   Protocol* unProxiedProtocol= nullptr;
   std::atomic<int32_t> shareCounter{1};
