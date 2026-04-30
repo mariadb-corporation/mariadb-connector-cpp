@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2023 MariaDB Corporation plc
+   Copyright (C) 2020, 2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -31,8 +31,29 @@ namespace sql
 {
 namespace mariadb
 {
+  void paramRowUpdate(void* data, sql::mariadb::capi::MYSQL_BIND* bind, uint32_t row_nr);
+}
+}
+struct st_mysql_bind;
+
+extern "C"
+{
+  /*my_bool*/char paramRowUpdateCallback(void* data, struct st_mysql_bind* bind, unsigned int row_nr)
+  {
+    sql::mariadb::paramRowUpdate(data, reinterpret_cast<sql::mariadb::capi::MYSQL_BIND*>(bind), row_nr);
+    return '\0';
+  }
+}
+
+namespace sql
+{
+namespace mariadb
+{
   ServerPrepareResult::~ServerPrepareResult()
   {
+    if (metadata) {
+      capi::mysql_free_result(metadata);
+    }
     if (statementId) {
       // if connection has been already destroyed before - we are busted
       // Dirty hack - mysql is cleared in stmt handlers when conneciton is being closed. if that did not happen yet -
@@ -69,7 +90,7 @@ namespace mariadb
     , sql(_sql)
     , inCache(false)
     , statementId(_statementId)
-    , metadata(mysql_stmt_result_metadata(statementId), &capi::mysql_free_result)
+    , metadata(mysql_stmt_result_metadata(statementId))
     , unProxiedProtocol(_unProxiedProtocol)
   {
   }*/
@@ -89,12 +110,12 @@ namespace mariadb
     Protocol* _unProxiedProtocol)
     : sql(_sql)
     , statementId(_statementId)
-    , metadata(mysql_stmt_result_metadata(statementId), &capi::mysql_free_result)
+    , metadata(mysql_stmt_result_metadata(statementId))
     , unProxiedProtocol(_unProxiedProtocol)
   {
     columns.reserve(mysql_stmt_field_count(statementId));
     for (uint32_t i= 0; i < mysql_stmt_field_count(statementId); ++i) {
-      columns.emplace_back(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata.get(), i)));
+      columns.emplace_back(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata, i)));
     }
 
     parameters.reserve(mysql_stmt_param_count(statementId));
@@ -106,10 +127,13 @@ namespace mariadb
 
   void ServerPrepareResult::reReadColumnInfo()
   {
-    metadata.reset(mysql_stmt_result_metadata(statementId));
+    if (metadata) {
+      capi::mysql_free_result(metadata);
+    }
+    metadata= mysql_stmt_result_metadata(statementId);
     columns.clear();
     for (uint32_t i= 0; i < mysql_stmt_field_count(statementId); ++i) {
-      columns.emplace_back(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata.get(), i)));
+      columns.emplace_back(new capi::ColumnDefinitionCapi(capi::mysql_fetch_field_direct(metadata, i)));
     }
   }
 
@@ -285,6 +309,8 @@ namespace mariadb
 
   void paramRowUpdate(void *data, capi::MYSQL_BIND* bind, uint32_t row_nr)
   {
+    // Need this to silence ubsan cuz MYSQL_BIND and capi::MYSQL_BIND are different types for the compiler 
+    //capi::MYSQL_BIND* bind= reinterpret_cast<capi::MYSQL_BIND*>(ccBind);
     static char indicator[]{'\0', capi::STMT_INDICATOR_NULL};
     ServerPrepareResult::ParamsetType& paramSet= (*static_cast<ServerPrepareResult::ParamsetArrType*>(data))[row_nr];
     std::size_t i= 0;
@@ -305,15 +331,6 @@ namespace mariadb
       ++i;
     }
   }
-
-extern "C"
-{
-  char* paramRowUpdateCallback(void* data, capi::MYSQL_BIND* bind, uint32_t row_nr)
-  {
-    paramRowUpdate(data, bind, row_nr);
-    return NULL;
-  }
-}
 
 
   void ServerPrepareResult::bindParameters(ServerPrepareResult::ParamsetArrType& paramValue, const int16_t *type)
