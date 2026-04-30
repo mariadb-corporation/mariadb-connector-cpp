@@ -41,22 +41,25 @@ namespace capi
  */
   TextRowProtocolCapi::TextRowProtocolCapi(int32_t maxFieldSize, Shared::Options options, MYSQL_RES* capiTextResults)
     : RowProtocol(maxFieldSize, options)
-    , capiResults(capiTextResults, &mysql_free_result)
+    , capiResults(capiTextResults)
     , rowData(nullptr)
     , lengthArr(nullptr)
- {
- }
+  {
+  }
 
- /**
-  * Set length and pos indicator to asked index.
-  *
-  * @param newIndex index (0 is first).
-  */
- void TextRowProtocolCapi::setPosition(int32_t newIndex)
- {
-   index= newIndex;
+  TextRowProtocolCapi::~TextRowProtocolCapi()
+  {
+    mysql_free_result(capiResults);
+  }
 
-   pos= 0;
+  /**
+   * Set length and pos indicator to asked index.
+   *
+   * @param newIndex index (0 is first).
+   */
+  void TextRowProtocolCapi::setPosition(int32_t newIndex)
+  {
+    index= newIndex;
 
    if (buf != nullptr)
    {
@@ -1046,8 +1049,8 @@ namespace capi
  int32_t TextRowProtocolCapi::fetchNext()
  {
    //Assuming it is called only for the case of the data from server, and not constructed text results
-   rowData= mysql_fetch_row(capiResults.get());
-   lengthArr= mysql_fetch_lengths(capiResults.get());
+   rowData= mysql_fetch_row(capiResults);
+   lengthArr= mysql_fetch_lengths(capiResults);
 
    return (rowData == nullptr ? 1 : 0);
  }
@@ -1055,7 +1058,7 @@ namespace capi
 
  void TextRowProtocolCapi::installCursorAtPosition(int32_t rowPtr)
  {
-   mysql_data_seek(capiResults.get(), static_cast<unsigned long long>(rowPtr));
+   mysql_data_seek(capiResults, static_cast<unsigned long long>(rowPtr));
  }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED

@@ -21,10 +21,13 @@ IF(APPLE)
   # productbuild packaging stuff 
   CMAKE_MINIMUM_REQUIRED(VERSION 3.23)
 ELSE()
-  CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
+  CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 ENDIF()
 CMAKE_POLICY(SET CMP0048 NEW)
-
+IF (WITH_MSAN)
+  # MSAN fails with this policy set to NEW
+  CMAKE_POLICY(SET CMP0056 OLD)
+ENDIF()
 PROJECT(mariadb_connector_cpp
         VERSION 1.1.8
 #        DESCRIPTION "MariaDB Connector/C++"
@@ -405,6 +408,7 @@ ENDIF()
 
 IF (WITH_MSAN)
   MY_CHECK_AND_SET_COMPILER_FLAG("-fsanitize=memory -fsanitize-memory-track-origins -U_FORTIFY_SOURCE" DEBUG RELWITHDEBINFO)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 ENDIF()
 
 # This has to be before C/C's cmake run, or it will build with /MD
