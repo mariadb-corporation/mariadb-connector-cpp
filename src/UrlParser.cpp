@@ -395,12 +395,12 @@ namespace mariadb
   }
 
 
-  int64_t UrlParser::hashCode() const
+  uint64_t UrlParser::hashCode() const
   {
-    int64_t result= !options->password.empty() ? options->password.hashCode() : 0;
-    result= 31*result + (!options->user.empty() ? options->user.hashCode() : 0);
-    result= 31*result + initialUrl.hashCode();
-    result= 31*result + database.hashCode();
+    uint64_t result= !options->password.empty() ? static_cast<uint64_t>(options->password.hashCode()) : 0;
+    result= 31*result + (!options->user.empty() ? static_cast<uint64_t>(options->user.hashCode()) : 0);
+    result= 31*result + static_cast<uint64_t>(initialUrl.hashCode());
+    result= 31*result + static_cast<uint64_t>(database.hashCode());
     //result+= options->hashCode();
 
     return result;
@@ -409,9 +409,9 @@ namespace mariadb
 
   void UrlParser::loadMultiMasterValue()
   {
-    if (haMode ==HaMode::SEQUENTIAL
-      ||haMode ==REPLICATION
-      ||haMode ==LOADBALANCE) {
+    if (haMode == HaMode::SEQUENTIAL
+      || haMode == HaMode::REPLICATION
+      || haMode == HaMode::LOADBALANCE) {
       bool firstMaster= false;
       for (HostAddress host : addresses) {
         if (host.type.compare(ParameterConstant::TYPE_MASTER) == 0) {

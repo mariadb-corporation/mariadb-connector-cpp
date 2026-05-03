@@ -123,18 +123,18 @@ namespace mariadb
   }
 
 
-  uint64_t stoull(const SQLString& str, std::size_t* pos)
+  uint64_t stoull(const std::string& str, std::size_t* pos)
   {
     bool negative= false;
     std::string::const_iterator ci= str.begin();
     while (std::isblank(*ci) &&  ci < str.end()) ++ci;
 
-    if (*str == '-')
+    if (*ci == '-')
     {
       negative= true;
     }
 
-    uint64_t result= std::stoull(StringImp::get(str), pos);
+    uint64_t result= std::stoull(str, pos);
 
     if (negative && result != 0)
     {
@@ -147,7 +147,8 @@ namespace mariadb
   uint64_t stoull(const char* str, std::size_t len, std::size_t* pos)
   {
     len= len == static_cast<std::size_t>(-1) ? std::strlen(str) : len;
-    return stoull(sql::SQLString(str, len), pos);
+    std::string asString(str, len);
+    return sql::mariadb::stoull(asString, pos);
   }
 }
 }

@@ -46,7 +46,7 @@ namespace mariadb
 
   bool equalsIgnoreCase(const SQLString& str1, const SQLString& str2);
 
-  uint64_t stoull(const SQLString& str, std::size_t* pos= nullptr);
+  uint64_t stoull(const std::string& str, std::size_t* pos= nullptr);
   uint64_t stoull(const char* str, std::size_t len= -1, std::size_t* pos = nullptr);
 }
 }
