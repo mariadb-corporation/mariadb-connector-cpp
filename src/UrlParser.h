@@ -82,7 +82,7 @@ protected:
   public:  const SQLString& getInitialUrl() const;
   public:  enum HaMode getHaMode() const;
   public:  bool equals(UrlParser* parser);
-  public:  int64_t hashCode() const;
+  public:  uint64_t hashCode() const;
   private: void loadMultiMasterValue();
   public:  bool isMultiMaster();
   public:  UrlParser* clone();

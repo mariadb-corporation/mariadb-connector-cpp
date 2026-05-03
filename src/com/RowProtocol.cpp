@@ -188,9 +188,9 @@ namespace mariadb
 
 
   //
-  int64_t core_strtoll(const char* str, uint32_t len) {
+  uint64_t core_strtoll(const char* str, uint32_t len) {
 
-    int64_t result=0, digit= 0;
+    uint64_t result=0, digit= 0;
     const char* end= str + len;
 
     while (str < end) {
@@ -249,8 +249,16 @@ namespace mariadb
       ++str;
       --len;
     }
-
-    return core_strtoll(str, len) * sign;
+    int64_t translated= static_cast<int64_t>(core_strtoll(str, len));
+    if (translated < 0) {
+      if (sign == -1 && translated == INT64_MIN) {
+        return translated;
+      }
+      else {
+        throw std::out_of_range("String represents number beyond int64_t range");
+      }
+    }
+    return translated*sign;
   }
 
 

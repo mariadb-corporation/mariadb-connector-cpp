@@ -815,7 +815,7 @@ namespace capi
      case MYSQL_TYPE_LONG:
      case MYSQL_TYPE_INT24:
      case MYSQL_TYPE_LONGLONG:
-       value= sql::mariadb::stoull(fieldBuf.arr);
+       value= sql::mariadb::stoull(fieldBuf.arr, length);
        break;
      case MYSQL_TYPE_TIMESTAMP:
      case MYSQL_TYPE_DATETIME:
