@@ -276,7 +276,8 @@ static void test_connection_0(std::unique_ptr<sql::Connection> & conn)
   try {
     char buff[64];
     if (std::getenv("MAXSCALE_TEST_DISABLE") != nullptr ||
-      std::getenv("srv") != nullptr && strcmp(std::getenv("srv"), "maxscale") == 0) {
+      std::getenv("srv") != nullptr && strcmp(std::getenv("srv"), "maxscale") == 0 ||
+      (std::getenv("MAXSCALE_TAG") != nullptr && strcmp(std::getenv("MAXSCALE_TAG"), "") != 0)) {
         LEAVE_FUNCTION();
         return void();
     }

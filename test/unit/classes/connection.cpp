@@ -375,6 +375,10 @@ void connection::invalidCredentials()
     logMsg("skip because TLS is needed");
     return void();
   }
+  if (isMaxScale()) {
+    logMsg("skip because MaxScale blocks hosts after too many auth failures");
+    return void();
+  }
 
   logMsg("connection::invalidCredentials() - MySQL_Connection connect");
   std::string myurl("tcp://");
@@ -2786,6 +2790,10 @@ void connection::setAuthDir()
 void connection::setDefaultAuth()
 {
   logMsg("connection::setDefaultAuth - MYSQL_DEFAULT_AUTH");
+  if (isMaxScale()) {
+    logMsg("skip because connecting with an unknown auth plugin causes an auth failure counted by MaxScale");
+    return void();
+  }
   int serverVersion=getServerVersion(con);
   if ( serverVersion < 507003 )
   {
