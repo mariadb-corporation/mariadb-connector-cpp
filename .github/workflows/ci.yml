@@ -34,7 +34,7 @@ jobs:
         name: build matrix
         uses: mariadb-corporation/connector-ci-build-matrix@main
         with:
-          additional-matrix: '[]'
+          additional-matrix: '[{"name": "Ubuntu C/C 3.3-latest", "os": "ubuntu-latest", "db-type": "community", "db-tag": "11.4", "libmariadb-branch": "3.3", "continue-on-error": true}]'
 
   ci:
     name: ${{ matrix.name }}
@@ -62,6 +62,17 @@ jobs:
           registry-password: ${{ matrix.db-type == 'enterprise' && secrets.ENTERPRISE_TOKEN || secrets.DOCKER_TOKEN }}
           os: ${{ matrix.os }}
           maxscale-tag: ${{ matrix.maxscale-tag || ''}}
+
+      - name: Override libmariadb to latest of branch
+        if: ${{ matrix.libmariadb-branch != '' && matrix.libmariadb-branch != null }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Pulling latest libmariadb from branch '${{ matrix.libmariadb-branch }}'"
+          git submodule update --init libmariadb
+          git -C libmariadb fetch origin "${{ matrix.libmariadb-branch }}"
+          git -C libmariadb checkout "origin/${{ matrix.libmariadb-branch }}"
+          git -C libmariadb log -1 --oneline
 
       - name: make ubuntu
         if: ${{ startsWith(matrix.os, 'ubuntu') }}
