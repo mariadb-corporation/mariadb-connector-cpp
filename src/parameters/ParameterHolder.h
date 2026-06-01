@@ -28,6 +28,10 @@ namespace sql
 {
 namespace mariadb
 {
+namespace capi
+{
+#include <mysql.h>
+}
 
 class ParameterHolder
 {
@@ -39,7 +43,9 @@ public:
   virtual ~ParameterHolder();
 
   virtual void writeTo(PacketOutputStream& os)=0;
-  virtual void writeTo(SQLString& str)=0;
+  // MYSQL handle is needed as charset incapsulator. Maybe better to introduce the separate class
+  // or make SQLString to contain that info.
+  virtual void writeTo(SQLString& str, capi::MYSQL* conn)=0;
   virtual void writeBinary(PacketOutputStream& pos)=0;
   virtual uint32_t writeBinary(sql::bytes& buffer)=0;
   virtual int64_t getApproximateTextProtocolLength()=0;

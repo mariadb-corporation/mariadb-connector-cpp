@@ -38,7 +38,7 @@ class ByteParameter  : public ParameterHolder {
 public:
   ByteParameter(int8_t value);
   void writeTo(PacketOutputStream& os);
-  void writeTo(SQLString& os);
+  void writeTo(SQLString& os, capi::MYSQL*);
   int64_t getApproximateTextProtocolLength();
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);

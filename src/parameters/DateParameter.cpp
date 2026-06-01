@@ -51,7 +51,7 @@ namespace mariadb
     os.write(QUOTE);
   }
 
-  void DateParameter::writeTo(SQLString& str)
+  void DateParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(QUOTE);
     str.append(dateByteFormat());

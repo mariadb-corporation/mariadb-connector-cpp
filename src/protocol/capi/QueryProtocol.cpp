@@ -172,6 +172,7 @@ namespace capi
     SQLString& out,
     ClientPrepareResult* clientPrepareResult,
     std::vector<Shared::ParameterHolder>& parameters,
+    capi::MYSQL* connection,
     int32_t queryTimeout)
   {
     addQueryTimeout(out, queryTimeout);
@@ -184,7 +185,7 @@ namespace capi
       out.append(queryPart[1]);
 
       for (uint32_t i = 0; i < clientPrepareResult->getParamCount(); i++) {
-        parameters[i]->writeTo(out);
+        parameters[i]->writeTo(out, connection);
         out.append(queryPart[i + 2]);
       }
       out.append(queryPart[clientPrepareResult->getParamCount() + 2]);
@@ -194,7 +195,7 @@ namespace capi
 
       out.append(queryPart.front());
       for (uint32_t i = 0; i < clientPrepareResult->getParamCount(); i++) {
-        parameters[i]->writeTo(out);
+        parameters[i]->writeTo(out, connection);
         out.append(queryPart[i + 1]);
       }
     }
@@ -239,7 +240,7 @@ namespace capi
       }
       else {
         /* Timeout has been added already, thus passing -1 for its value */
-        assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, -1);
+        assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, connection, -1);
         realQuery(sql);
       }
       getResult(results.get());
@@ -499,7 +500,7 @@ namespace capi
     {
       sql.clear();
 
-      assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, -1);
+      assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, connection, -1);
       sendQuery(sql);
     }
     if (autoCommit) {
@@ -834,6 +835,7 @@ namespace capi
     std::size_t currentIndex,
     std::size_t paramCount,
     std::vector<std::vector<Shared::ParameterHolder>> &parameterList,
+    capi::MYSQL* connection,
     bool rewriteValues)
 
   {
@@ -854,7 +856,7 @@ namespace capi
       }
 
       for (size_t i= 0; i < paramCount; i++) {
-        parameters[i]->writeTo(pos);
+        parameters[i]->writeTo(pos, connection);
         pos.append(queryParts[i +2]);
       }
       pos.append(queryParts[paramCount +2]);
@@ -883,7 +885,7 @@ namespace capi
             pos.append(firstPart);
             pos.append(secondPart);
             for (size_t i= 0; i <paramCount; i++) {
-              parameters[i]->writeTo(pos);
+              parameters[i]->writeTo(pos, connection);
               pos.append(queryParts[i + 2]);
             }
             pos.append(queryParts[paramCount +2]);
@@ -899,7 +901,7 @@ namespace capi
           pos.append(firstPart);
           pos.append(secondPart);
           for (size_t i= 0; i < paramCount; i++) {
-            parameters[i]->writeTo(pos);
+            parameters[i]->writeTo(pos, connection);
             pos.append(queryParts[i +2]);
           }
           pos.append(queryParts[paramCount +2]);
@@ -916,7 +918,7 @@ namespace capi
       size_t intermediatePartLength= queryParts[1].length();
 
       for (size_t i= 0; i <paramCount; i++) {
-        parameters[i]->writeTo(pos);
+        parameters[i]->writeTo(pos, connection);
         pos.append(queryParts[i +2]);
         intermediatePartLength +=queryParts[i +2].length();
       }
@@ -944,7 +946,7 @@ namespace capi
             pos.append(secondPart);
 
             for (size_t i= 0; i <paramCount; i++) {
-              parameters[i]->writeTo(pos);
+              parameters[i]->writeTo(pos, connection);
               pos.append(queryParts[i + 2]);
             }
             ++index;
@@ -958,7 +960,7 @@ namespace capi
           pos.append(secondPart);
 
           for (size_t i= 0; i <paramCount; i++) {
-            parameters[i]->writeTo(pos);
+            parameters[i]->writeTo(pos, connection);
             pos.append(queryParts[i +2]);
           }
           ++index;
@@ -996,7 +998,7 @@ namespace capi
       sql.reserve(1024); //No estimations. Just something for beginning. stringstream ?
       do {
         sql.clear();
-        currentIndex= rewriteQuery(sql, prepareResult->getQueryParts(), currentIndex, prepareResult->getParamCount(), parameterList, rewriteValues);
+        currentIndex= rewriteQuery(sql, prepareResult->getQueryParts(), currentIndex, prepareResult->getParamCount(), parameterList, connection, rewriteValues);
         realQuery(sql);
         getResult(results.get(), nullptr, !rewriteValues);
 

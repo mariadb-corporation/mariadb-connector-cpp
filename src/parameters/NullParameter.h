@@ -37,7 +37,7 @@ class NullParameter  : public ParameterHolder {
 public:
   NullParameter();
   NullParameter(const ColumnType& type);
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL*);
   void  writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength();
   void writeBinary(PacketOutputStream& pos);

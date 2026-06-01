@@ -48,7 +48,7 @@ namespace mariadb
   }
 
 
-  void StreamParameter::writeTo(SQLString& str)
+  void StreamParameter::writeTo(SQLString& str, capi::MYSQL* handle)
   {
     if (is.fail()) {
       str.append("NULL");
@@ -72,7 +72,7 @@ namespace mariadb
       if (readCount > 0)
       {
         readTotal-= static_cast<size_t>(readCount);
-        Utils::escapeData(buffer, static_cast<size_t>(readCount), noBackslashEscapes, str);
+        Utils::escapeData(handle, buffer, static_cast<size_t>(readCount), noBackslashEscapes, str);
       }
     } while (readTotal > 0 && readCount > 0);
 

@@ -37,7 +37,7 @@ class BigDecimalParameter  : public ParameterHolder {
 public:
   BigDecimalParameter(const BigDecimal& bigDecimal);
   void writeTo(PacketOutputStream& pos);
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL*);
   int64_t getApproximateTextProtocolLength();
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);

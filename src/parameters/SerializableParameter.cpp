@@ -20,6 +20,8 @@
 
 #include "SerializableParameter.h"
 
+#include "util/Utils.h"
+
 namespace sql
 {
 namespace mariadb

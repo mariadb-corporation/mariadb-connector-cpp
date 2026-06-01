@@ -38,7 +38,7 @@ namespace mariadb
   }
 
 
-  void NullParameter::writeTo(SQLString& str)
+  void NullParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(_NULL);
   }

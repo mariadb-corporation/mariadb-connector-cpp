@@ -36,7 +36,7 @@ namespace mariadb
   }
 
 
-  void BigDecimalParameter::writeTo(SQLString& str)
+  void BigDecimalParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(bigDecimal);
   }

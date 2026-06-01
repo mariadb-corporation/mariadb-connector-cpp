@@ -30,7 +30,7 @@ namespace mariadb
   {
   }
 
-  void FloatParameter::writeTo(SQLString& str)
+  void FloatParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(std::to_string(value));
   }

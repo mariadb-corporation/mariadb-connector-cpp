@@ -32,7 +32,7 @@ namespace mariadb
   }
 
 
-  void DoubleParameter::writeTo(SQLString& str)
+  void DoubleParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     //std::to_string is not precise enough. at least on windows it does just sprintf("%f")
     std::ostringstream doubleAsString("");

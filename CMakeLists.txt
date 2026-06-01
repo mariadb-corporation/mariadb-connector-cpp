@@ -28,6 +28,8 @@ IF (WITH_MSAN)
   # MSAN fails with this policy set to NEW
   CMAKE_POLICY(SET CMP0056 OLD)
 ENDIF()
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 PROJECT(mariadb_connector_cpp
         VERSION 1.0.7
 #        DESCRIPTION "MariaDB Connector/C++"

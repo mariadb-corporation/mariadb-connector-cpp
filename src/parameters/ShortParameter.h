@@ -35,7 +35,7 @@ class ShortParameter  : public ParameterHolder {
 
 public:
   ShortParameter(int16_t value);
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL*);
   void writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength();
   void writeBinary(PacketOutputStream& pos);

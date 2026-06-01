@@ -38,7 +38,7 @@ class ByteArrayParameter  : public ParameterHolder {
 
 public:
   ByteArrayParameter(const sql::bytes &bytes, bool noBackslashEscapes);
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL* conn) override;
   void  writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength();
   void writeBinary(PacketOutputStream& pos);
