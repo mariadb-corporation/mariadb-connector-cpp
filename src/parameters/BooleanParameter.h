@@ -37,7 +37,7 @@ class BooleanParameter : public ParameterHolder {
 public:
   BooleanParameter(bool value);
   void  writeTo(PacketOutputStream& os);
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL*);
   int64_t getApproximateTextProtocolLength();
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);

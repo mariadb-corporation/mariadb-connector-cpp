@@ -46,7 +46,7 @@ namespace mariadb
   }
 
   //
-  void ReaderParameter::writeTo(SQLString& str)
+  void ReaderParameter::writeTo(SQLString& str, capi::MYSQL* handle)
   {
     char buffer[8192];
     size_t readMax= sizeof(buffer), readTotal= static_cast<size_t>(length);
@@ -66,7 +66,7 @@ namespace mariadb
       if (readCount > 0)
       {
         readTotal-= static_cast<size_t>(readCount);
-        Utils::escapeData(buffer, static_cast<size_t>(readCount), noBackslashEscapes, str);
+        Utils::escapeData(handle, buffer, static_cast<size_t>(readCount), noBackslashEscapes, str);
       }
     } while (readTotal > 0 && readCount > 0);
 

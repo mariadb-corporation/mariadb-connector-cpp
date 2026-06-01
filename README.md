@@ -44,7 +44,7 @@ for conencting via DriverManager only "jdbc:mariadb://" type of URL can be used.
 
 ```script
 sql::SQLString url("jdbc:mariadb://localhost:3306/db");
-sql::Properties properties({{"user", "roor"}, {"password", "someSecretWord"}});
+sql::Properties properties({{"user", "root"}, {"password", "someSecretWord"}});
 std::unique_ptr<Connection> conn(DriverManager::getConnection(url, properties));
 // or
 sql::SQLString url2("jdbc:mariadb://localhost:3306/db?user=root&password=someSecretWord");

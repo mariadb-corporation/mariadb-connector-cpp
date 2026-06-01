@@ -80,31 +80,14 @@ namespace mariadb
     return replace(escaped, "\\", "\\\\");
   }
 
-  void Utils::escapeData(const char* in, size_t len, bool noBackslashEscapes, SQLString& out)
+  void Utils::escapeData(capi::MYSQL* conn, const char* in, size_t len, bool noBackslashEscapes, SQLString& out)
   {
     std::string &realOut= StringImp::get(out);
-    out.reserve(out.length() + len + 64);
+    auto offset= realOut.length();
+    realOut.resize(offset + len*2);
 
-    //TODO: can be easily optimized
-    if (noBackslashEscapes) {
-      for (size_t i = 0; i < len; i++) {
-        if (QUOTE == in[i]) {
-          realOut.push_back(QUOTE);
-        }
-        realOut.push_back(in[i]);
-      }
-    }
-    else {
-      for (size_t i = 0; i < len; i++) {
-        if (in[i] == QUOTE
-          || in[i] == BACKSLASH
-          || in[i] == DBL_QUOTE
-          || in[i] == ZERO_BYTE) {
-          realOut.push_back('\\');
-        }
-        realOut.push_back(in[i]);
-      }
-    }
+    realOut.resize(offset + capi::mysql_real_escape_string(conn,
+      const_cast<char*>(realOut.data() + offset), in, static_cast<unsigned long>(len)));
   }
 
 

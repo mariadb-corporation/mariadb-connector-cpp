@@ -127,14 +127,11 @@ namespace mariadb
           protocol->getAutoIncrementIncrement(),
           sqlQuery,
           parameters));
-      if (stmt->queryTimeout !=0 && stmt->canUseServerTimeout) {
 
-        protocol->executeQuery(
-          protocol->isMasterConnection(), stmt->getInternalResults(), prepareResult.get(), parameters, stmt->queryTimeout);
-      }
-      else {
-        protocol->executeQuery(protocol->isMasterConnection(), stmt->getInternalResults(), prepareResult.get(), parameters);
-      }
+      protocol->executeQuery(
+        protocol->isMasterConnection(), stmt->getInternalResults(), prepareResult.get(), parameters,
+        stmt->canUseServerTimeout ? stmt->queryTimeout : -1);
+
       stmt->getInternalResults()->commandEnd();
       stmt->executeEpilogue();
       return stmt->getInternalResults()->getResultSet();

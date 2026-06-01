@@ -38,7 +38,7 @@ class StreamParameter  : public ParameterHolder {
 public:
   StreamParameter(std::istream&is,int64_t length,bool noBackslashEscapes);
   StreamParameter(std::istream&is,bool noBackSlashEscapes);
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL*);
   void writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength();
   void writeBinary(PacketOutputStream& pos);

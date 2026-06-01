@@ -28,7 +28,7 @@ namespace mariadb
   static const int64_t defaultBytesLength= 7; /* or 8? */
 
 
-  void DefaultParameter::writeTo(SQLString& str)
+  void DefaultParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(defaultBytes);
   }

@@ -46,7 +46,8 @@ public:
   static Socket* standardSocket(Shared::Options& options, SQLString& host);
 
   static SQLString escapeString(const SQLString& value, bool noBackslashEscapes);
-  static void escapeData(const char* in, size_t len, bool noBackslashEscapes, SQLString& out);
+  // MYSQL handle is needed ans it encapsulates connection charset information we need to know for correct escaping
+  static void escapeData(capi::MYSQL* conn, const char* in, size_t len, bool noBackslashEscapes, SQLString& out);
 #ifdef THIS_FUNCTION_MAKES_SENSE
   static char* copyWithLength(char* orig,int32_t length);
   static char* copyRange(char* orig,int32_t from,int32_t to);

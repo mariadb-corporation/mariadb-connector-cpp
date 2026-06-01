@@ -18,8 +18,9 @@
 *************************************************************************************/
 
 
-#include <random>
 #include <chrono>
+#include <cstring>
+#include <random>
 
 #include "ConnectProtocol.h"
 
@@ -40,6 +41,7 @@ namespace capi
   static const char OptionSelected= '\1', OptionNotSelected= '\0';
   static const unsigned int uintOptionSelected= 1, uintOptionNotSelected= 0;
   const char * attrPairSeparators= ",";
+
 
   const SQLString ConnectProtocol::SESSION_QUERY("SELECT @@max_allowed_packet,"
     "@@system_time_zone,"
