@@ -34,10 +34,10 @@ namespace sql
   }
 
 
-  void ByteArrayParameter::writeTo(SQLString& str)
+  void ByteArrayParameter::writeTo(SQLString& str, capi::MYSQL* handle)
   {
     str.append(BINARY_INTRODUCER);
-    Utils::escapeData(bytes.arr, static_cast<size_t>(bytes.size()), noBackslashEscapes, str);
+    Utils::escapeData(handle, bytes.arr, static_cast<size_t>(bytes.size()), noBackslashEscapes, str);
     str.append(QUOTE);
   }
 

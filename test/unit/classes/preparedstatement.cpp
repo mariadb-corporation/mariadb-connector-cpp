@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2025 MariaDB Corporation plc
+ *               2020, 2026 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -2397,5 +2397,39 @@ void preparedstatement::concpp138_useRsAfterConClose()
   ASSERT(!rs->next());
   sspsCon.reset();
 }
+
+
+void preparedstatement::concpp153_mbCsParamEscaping()
+{
+  const std::list<sql::SQLString> cs= { "big5", "gbk", "sjis", "cp932"};
+  const std::string value("\xa1' + 10 -- ", 11);
+  Connection csCon;
+  sql::Properties props(commonProperties);
+  props["useServerPrepStmts"]= "false";
+
+  for (const auto& cit : cs)
+  {
+    props["useCharacterEncoding"]= cit;
+    csCon.reset(getConnection(&props));
+
+    pstmt.reset(csCon->prepareStatement("SELECT ?"));
+    sql::bytes binaryValue(value.c_str(), value.length());
+    pstmt->setBytes(1, &binaryValue);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    sql::SQLString fetchedValue= res->getString(1);
+    ASSERT_EQUALS(value, fetchedValue);
+    ASSERT(!res->next());
+
+    // Now try with setString
+    pstmt->setString(1, value);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    fetchedValue= res->getString(1);
+    ASSERT_EQUALS(value, fetchedValue);
+    ASSERT(!res->next());
+  }
+}
+
 } /* namespace preparedstatement */
 } /* namespace testsuite */

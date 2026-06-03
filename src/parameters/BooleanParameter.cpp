@@ -36,7 +36,7 @@ namespace mariadb
   }
 
   //TODO probably they could be one method writing to ostream. Or create implementation of PacketOutputStream writing to string(stream)
-  void BooleanParameter::writeTo(SQLString& str)
+  void BooleanParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(value ? '1' : '0');
   }

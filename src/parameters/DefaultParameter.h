@@ -34,7 +34,7 @@ class DefaultParameter  : public ParameterHolder {
   static const char* defaultBytes ; /*"DEFAULT"*/
 
 public:
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL*);
   void  writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);

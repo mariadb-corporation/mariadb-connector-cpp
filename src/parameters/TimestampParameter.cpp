@@ -40,7 +40,7 @@ namespace mariadb
   }
 
 
-  void TimestampParameter::writeTo(SQLString& str)
+  void TimestampParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(QUOTE);
     str.append(ts);

@@ -40,7 +40,7 @@ class DateParameter  : public ParameterHolder {
 public:
   DateParameter( const Date&date, TimeZone* timeZone, Shared::Options& options);
   void writeTo(PacketOutputStream& os);
-  void writeTo(SQLString& os);
+  void writeTo(SQLString& os, capi::MYSQL*);
 
 private:
   const char * dateByteFormat();

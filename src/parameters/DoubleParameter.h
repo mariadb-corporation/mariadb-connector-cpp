@@ -35,7 +35,7 @@ class DoubleParameter  : public ParameterHolder {
 
 public:
   DoubleParameter(long double value);
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL*);
   void  writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);

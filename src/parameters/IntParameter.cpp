@@ -31,7 +31,7 @@ namespace mariadb
   }
 
 
-  void IntParameter::writeTo(SQLString& str)
+  void IntParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(std::to_string(value));
   }

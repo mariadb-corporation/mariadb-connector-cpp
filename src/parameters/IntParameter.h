@@ -36,7 +36,7 @@ class IntParameter  : public ParameterHolder {
 
 public:
   IntParameter(int32_t value);
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL*);
   void  writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);

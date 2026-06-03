@@ -39,7 +39,7 @@ class TimeParameter  : public ParameterHolder {
 
 public:
   TimeParameter( const Time&time, const TimeZone* timeZone,bool fractionalSeconds);
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL*);
   void writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
