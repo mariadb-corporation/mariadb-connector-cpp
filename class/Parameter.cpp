@@ -26,7 +26,7 @@ namespace mariadb
 {
   const char BINARY_INTRODUCER[]= { '_','b','i','n','a','r','y',' ','\'','\0' };
   const char QUOTE= '\'';
-  void escapeData(const char* in, std::size_t len, bool noBackslashEscapes, SQLString& out);
+  void escapeData(MYSQL* conn, const char* in, std::size_t len, SQLString& out);
 
   long typeLen[MYSQL_TYPE_TIME2+1]= {0, 1, 2, 4, 4, 8, 0, sizeof(MYSQL_TIME), 8, 4
     , sizeof(MYSQL_TIME) /*MYSQL_TYPE_DATE*/
@@ -108,7 +108,7 @@ namespace mariadb
   }
 
 
-  SQLString& Parameter::toString(SQLString& query, void* value, enum enum_field_types type, unsigned long length, bool noBackslashEscapes)
+  SQLString& Parameter::toString(MYSQL* conn, SQLString& query, void* value, enum enum_field_types type, unsigned long length)
   {
     if (length > 0 && (type > MYSQL_TYPE_TIME2 || typeLen[type] < 0))
     {
@@ -119,12 +119,11 @@ namespace mariadb
       default:
         query.append(1, QUOTE);
       }
-      escapeData(static_cast<const char*>(value), static_cast<std::size_t>(length), noBackslashEscapes, query);
+      escapeData(conn, static_cast<const char*>(value), static_cast<std::size_t>(length), query);
       query.append(1, QUOTE);
     }
     else {
-      switch (type)
-      {
+      switch (type) {
       case MYSQL_TYPE_BIT:
       case MYSQL_TYPE_TINY:
         query.append(std::to_string(*static_cast<int8_t*>(value)));
@@ -186,9 +185,8 @@ namespace mariadb
       {
         const char* asString= static_cast<const char*>(value);
         query.append(1, QUOTE);
-        //escapeData(asString, length > 0 ? length : std::strlen(asString), noBackslashEscapes, query);
         if (length > 0) {
-          escapeData(asString, length, noBackslashEscapes, query);
+          escapeData(conn, asString, length, query);
         }
         query.append(1, QUOTE);
       }
@@ -198,13 +196,13 @@ namespace mariadb
   }
 
 
-  SQLString& Parameter::toString(SQLString& query, MYSQL_BIND& param, bool noBackslashEscapes)
+  SQLString& Parameter::toString(MYSQL* conn,SQLString& query, MYSQL_BIND& param)
   {
-    return toString(query, param.buffer, param.buffer_type, param.buffer_length, noBackslashEscapes);
+    return toString(conn, query, param.buffer, param.buffer_type, param.buffer_length);
   }
 
 
-  SQLString& Parameter::toString(SQLString& query, MYSQL_BIND& param, std::size_t row, bool noBackslashEscapes)
+  SQLString& Parameter::toString(MYSQL* conn, SQLString& query, MYSQL_BIND& param, std::size_t row)
   {
     if (param.u.indicator != nullptr) {
       switch (param.u.indicator[row]) {
@@ -214,7 +212,7 @@ namespace mariadb
         return query.append("DEFAULT");
       }
     }
-    return toString(query, getBuffer(param, row), param.buffer_type, getLength(param, row), noBackslashEscapes);
+    return toString(conn, query, getBuffer(param, row), param.buffer_type, getLength(param, row));
   }
 
 

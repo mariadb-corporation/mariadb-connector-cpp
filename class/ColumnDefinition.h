@@ -21,8 +21,7 @@
 #ifndef _COLUMNINFORMATION_H_
 #define _COLUMNINFORMATION_H_
 
-#include <memory>
-#include <map>
+
 #include <cstdint>
 
 #include "mysql.h"

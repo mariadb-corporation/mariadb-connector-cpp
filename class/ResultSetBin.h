@@ -37,9 +37,9 @@ struct memBuf;
 extern "C"
 {
   // C/C's callback running param column callbacks 
-  my_bool* defaultParamCallback(void* data, MYSQL_BIND* bind, unsigned int row_nr);
+  my_bool defaultParamCallback(void* data, MYSQL_BIND* bind, unsigned int row_nr);
   // C/C's callback running callback for the row, and then indivivual param column callbacks
-  my_bool* withRowCheckCallback(void* data, MYSQL_BIND* bind, unsigned int row_nr);
+  my_bool withRowCheckCallback(void* data, MYSQL_BIND* bind, unsigned int row_nr);
   // Result callback
   void defaultResultCallback(void* data, uint32_t column, unsigned char **row);
 }

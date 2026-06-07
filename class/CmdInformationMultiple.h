@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2022 MariaDB Corporation AB
+   Copyright (C) 2022,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -31,9 +31,9 @@ class CmdInformationMultiple  : public CmdInformation
 {
   std::vector<int64_t>updateCounts;
   std::size_t expectedSize;
-  uint32_t moreResultsIdx;
-  bool hasException;
-  bool rewritten;
+  uint32_t moreResultsIdx= 0;
+  bool hasException= false;
+  bool rewritten= false;
 
 public:
   CmdInformationMultiple(std::size_t expectedSize);
@@ -52,6 +52,5 @@ public:
   bool isCurrentUpdateCount();
   void setRewrite(bool rewritten);
 };
-
 }
 #endif

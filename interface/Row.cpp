@@ -24,9 +24,9 @@
 namespace mariadb
 {
   //
-  int64_t core_strtoll(const char* str, uint32_t len, const char **stopChar) {
+  uint64_t core_strtoll(const char* str, uint32_t len, const char **stopChar) {
 
-    int64_t result=0, digit= 0;
+    uint64_t result=0, digit= 0;
     const char* end= str + len;
 
     while (str < end) {
@@ -95,7 +95,16 @@ namespace mariadb
       --len;
     }
 
-    return core_strtoll(str, len, stopChar)*sign;
+    int64_t translated= static_cast<int64_t>(core_strtoll(str, len, stopChar));
+    if (translated < 0) {
+      if (sign == -1 && translated == INT64_MIN) {
+        return translated;
+      }
+      else {
+        throw std::out_of_range("String represents number beyond int64_t range");
+      }
+    }
+    return translated*sign;
   }
 
 
@@ -105,15 +114,16 @@ namespace mariadb
     std::string::const_iterator ci= str.begin();
     while (std::isblank(*ci) && ci < str.end()) ++ci;
 
-    if (*str.c_str() == '-')
-    {
+    if (ci == str.end()) {
+      throw std::invalid_argument("Cannot convert to integer - string is empty");
+    }
+    if (*ci == '-') {
       negative= true;
     }
 
     uint64_t result= std::stoull(str, pos);
 
-    if (negative && result != 0)
-    {
+    if (negative && result != 0) {
       throw std::out_of_range("String represents number beyond uint64_t range");
     }
     return result;

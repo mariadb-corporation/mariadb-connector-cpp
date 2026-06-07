@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2022 MariaDB Corporation AB
+   Copyright (C) 2022,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -35,9 +35,6 @@ namespace mariadb
     */
   CmdInformationMultiple::CmdInformationMultiple(std::size_t _expectedSize)
     : expectedSize(_expectedSize)
-    , moreResultsIdx(0)
-    , hasException(false)
-    , rewritten(false)
   {
     updateCounts.reserve(expectedSize > 4U ? expectedSize : 4U); // let's assume SP is RS, outparams and result code + 1 reserve is kinda normal
   }

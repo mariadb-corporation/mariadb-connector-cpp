@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2022, 2025 MariaDB Corporation plc
+   Copyright (C) 2022, 2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -28,11 +28,10 @@ namespace mariadb
 
 class CmdInformationBatch : public CmdInformation
 {
-
   std::vector<int64_t>updateCounts;
   std::size_t expectedSize;
   int32_t autoIncrement;
-  int64_t insertIdNumber ; /*0*/
+  int64_t insertIdNumber= 0;
   bool hasException= false;
   bool rewritten= false;
 

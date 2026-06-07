@@ -113,7 +113,7 @@ namespace mariadb
     sql.reserve(prepareResult->getSql().length() + (queryTimeout > 0 ? 42/* need const for this */ : 0) +
       prepareResult->getParamCount()*8/*and for this*/);
     addQueryTimeout(sql, queryTimeout);
-    prepareResult->assembleQuery(sql, param, longData);
+    prepareResult->assembleQuery(sql, param, longData, guard->getCHandle());
 
     try {
       //std::lock_guard<std::mutex> localScopeLock(guard->getLock());

@@ -20,8 +20,6 @@
 
 #include "CmdInformationSingle.h"
 
-#include "interface/ResultSet.h"
-
 
 namespace mariadb
 {

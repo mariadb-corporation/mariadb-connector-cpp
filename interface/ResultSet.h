@@ -23,6 +23,7 @@
 
 #include <exception>
 #include <vector>
+#include <map>
 
 #include "mysql.h"
 

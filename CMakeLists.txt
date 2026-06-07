@@ -21,9 +21,14 @@ IF(APPLE)
   # productbuild packaging stuff 
   CMAKE_MINIMUM_REQUIRED(VERSION 3.23)
 ELSE()
-  CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
+  CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 ENDIF()
 CMAKE_POLICY(SET CMP0048 NEW)
+IF (WITH_MSAN)
+  # MSAN fails with this policy set to NEW
+  CMAKE_POLICY(SET CMP0056 OLD)
+ENDIF()
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # not sure what to do here with versioning
 PROJECT(mariadb_connector_cpp
@@ -165,6 +170,7 @@ ENDIF()
 
 IF (WITH_MSAN)
   MY_CHECK_AND_SET_COMPILER_FLAG("-fsanitize=memory -fsanitize-memory-track-origins -U_FORTIFY_SOURCE" DEBUG RELWITHDEBINFO)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 ENDIF()
 
 # This has to be before C/C's cmake run, or it will build with /MD
@@ -274,7 +280,7 @@ IF(NOT USE_SYSTEM_INSTALLED_LIB)
       ENDIF()
     ENDFOREACH()
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/libmariadb/include)
-    INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/libmariadb/include)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/libmariadb/include)
   ELSE()
     SET(USE_SYSTEM_INSTALLED_LIB TRUE)
     IF (NOT WIN32)

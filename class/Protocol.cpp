@@ -1097,7 +1097,7 @@ namespace mariadb
 
     while (nextIndex < paramsetsCount) {
       SQLString sql("");
-      nextIndex= prepareResult->assembleBatchQuery(sql, parameterList, paramsetsCount, nextIndex);
+      nextIndex= prepareResult->assembleBatchQuery(sql, parameterList, paramsetsCount, nextIndex, getCHandle());
       // Or should it still go after the query?
       results->setRewritten(prepareResult->isQueryMultiValuesRewritable());
       realQuery(sql);
@@ -1132,7 +1132,7 @@ namespace mariadb
     {
       sql.clear();
       // Making it to create only from 1 paramset
-      clientPrepareResult->assembleBatchQuery(sql, parametersList, i+1, i);
+      clientPrepareResult->assembleBatchQuery(sql, parametersList, i+1, i, getCHandle());
       sendQuery(sql);
     }
     if (autoCommit) {

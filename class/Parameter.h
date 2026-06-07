@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2023 MariaDB Corporation AB
+   Copyright (C) 2023,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -34,12 +34,13 @@ namespace mariadb
   static unsigned long getLength(MYSQL_BIND& params, std::size_t row);
 
 public:
-  static SQLString& toString(SQLString& query, void* value, enum enum_field_types type, unsigned long length, bool noBackslashEscapes);
-  static SQLString& toString(SQLString& query, MYSQL_BIND& param,  bool noBackslashEscapes);
-  static SQLString& toString(SQLString& query, MYSQL_BIND& param, std::size_t row, bool noBackslashEscapes);
+  // These functions need to MYSQL handle as it contains info about connections charset and escaping
+  // cannot be done correctly w/out it. Also, it knows about "no backslash escapes" status, so we don't need to pass it.
+  static SQLString& toString(MYSQL* conn, SQLString& query, void* value, enum enum_field_types type, unsigned long length);
+  static SQLString& toString(MYSQL* conn, SQLString& query, MYSQL_BIND& param);
+  static SQLString& toString(MYSQL* conn, SQLString& query, MYSQL_BIND& param, std::size_t row);
 
   static std::size_t getApproximateStringLength(MYSQL_BIND& param, std::size_t row);
 };
-
 }
 #endif

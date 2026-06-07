@@ -22,6 +22,7 @@
 #define _CLIENTPREPARERESULT_H_
 
 #include <vector>
+#include <map>
 #include <memory>
 
 #include "PrepareResult.h"
@@ -69,8 +70,8 @@ public:
   bool isRewriteType() const;
   std::size_t getParamCount() const;
   ResultSetMetaData* getEarlyMetaData() { return nullptr; }
-  SQLString& assembleQuery(SQLString& sql, MYSQL_BIND* parameters, std::map<uint32_t, std::string> &longData) const;
-  std::size_t assembleBatchQuery(SQLString& sql, MYSQL_BIND* parameters, uint32_t arraySize, std::size_t curIndex) const;
+  SQLString& assembleQuery(SQLString& sql, MYSQL_BIND* parameters, std::map<uint32_t, std::string> &longData, MYSQL* conn) const;
+  std::size_t assembleBatchQuery(SQLString& sql, MYSQL_BIND* parameters, uint32_t arraySize, std::size_t curIndex, MYSQL* conn) const;
   };
 
 namespace Unique

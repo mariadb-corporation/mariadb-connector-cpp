@@ -47,6 +47,5 @@ public:
   void addSuccessStat(int64_t updateCount) override;
   void setRewrite(bool rewritten) override;
 };
-
 }
 #endif

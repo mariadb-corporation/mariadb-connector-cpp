@@ -764,7 +764,8 @@ bool unit_fixture::isSkySqlHA() const
 bool unit_fixture::isMaxScale() const
 {
   static bool MaxScaleOnTravis= (std::getenv("MAXSCALE_TEST_DISABLE") != nullptr ||
-    (std::getenv("srv") != nullptr && strcmp(std::getenv("srv"), "maxscale") == 0));
+    (std::getenv("srv") != nullptr && strcmp(std::getenv("srv"), "maxscale") == 0) ||
+    (std::getenv("MAXSCALE_TAG") != nullptr && strcmp(std::getenv("MAXSCALE_TAG"), "") != 0));
   return MaxScaleOnTravis;
 }
 

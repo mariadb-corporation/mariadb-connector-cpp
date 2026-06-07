@@ -1,4 +1,4 @@
-MariaDB Connector/C++ 1.0 GA
+MariaDB Connector/C++ 1.1 GA
 -------------------------------
 
 This is a GA release of the MariaDB Connector/C++.
@@ -35,7 +35,7 @@ and the connector throws exception, if connection could not be established for w
 for conencting via DriverManager only "jdbc:mariadb://" type of URL can be used.
 
 sql::SQLString url("jdbc:mariadb://localhost:3306/db");
-sql::Properties properties({{"user", "roor"}, {"password", "someSecretWord"}});
+sql::Properties properties({{"user", "root"}, {"password", "someSecretWord"}});
 std::unique_ptr<Connection> conn(DriverManager::getConnection(url, properties));
 // or
 sql::SQLString url2("jdbc:mariadb://localhost:3306/db?user=root&password=someSecretWord");

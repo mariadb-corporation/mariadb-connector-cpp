@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2023 MariaDB Corporation AB
+   Copyright (C) 2023,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -21,8 +21,6 @@
 #include "CmdInformationBatch.h"
 #include "ResultSet.h"
 #include "PreparedStatement.h"
-#include "ResultSetMetaData.h"
-#include "Results.h"
 
 namespace mariadb
 {
@@ -38,9 +36,6 @@ namespace mariadb
     */
   CmdInformationBatch::CmdInformationBatch(std::size_t _expectedSize)
     : expectedSize(_expectedSize)
-    , rewritten(false)
-    , insertIdNumber(0)
-    , hasException(false)
   {
   }
 
