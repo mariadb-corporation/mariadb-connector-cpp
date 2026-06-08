@@ -1231,7 +1231,8 @@ namespace capi
 
       return ping();
 
-    }catch (/*SocketException*/std::runtime_error& socketException){
+    }
+    catch (/*SocketException*/std::runtime_error& socketException){
       logger->trace(SQLString("Connection* is not valid").append(socketException.what()));
       connected= false;
       return false;
@@ -1253,7 +1254,6 @@ namespace capi
 
   SQLString QueryProtocol::getCatalog()
   {
-
     if ((serverCapabilities & MariaDbServerCapabilities::CLIENT_SESSION_TRACK)!=0){
 
       return database;
@@ -1263,7 +1263,7 @@ namespace capi
     std::lock_guard<std::mutex> localScopeLock(*lock);
 
     Shared::Results results(new Results());
-    executeQuery(isMasterConnection(), results, "select database()");
+    executeQuery(isMasterConnection(), results, "SELECT DATABASE()");
     results->commandEnd();
     ResultSet* rs= results->getResultSet();
     if (rs->next()){
@@ -1362,9 +1362,9 @@ namespace capi
   {
     if (maxRows != max){
       if (max == 0){
-        executeQuery("set @@SQL_SELECT_LIMIT=DEFAULT");
+        executeQuery("SET @@SQL_SELECT_LIMIT=DEFAULT");
       }else {
-        executeQuery("set @@SQL_SELECT_LIMIT=" + std::to_string(max));
+        executeQuery("SET @@SQL_SELECT_LIMIT=" + std::to_string(max));
       }
       maxRows= max;
     }
@@ -1584,7 +1584,7 @@ namespace capi
       std::lock_guard<std::mutex> localScopeLock(*lock);
       try {
         Shared::Results results(new Results());
-        executeQuery(true, results,"select @@auto_increment_increment");
+        executeQuery(true, results,"SELECT @@auto_increment_increment");
         results->commandEnd();
         ResultSet* rs= results->getResultSet();
         rs->next();
@@ -1886,7 +1886,7 @@ namespace capi
     }
 
     if (getAutocommit()!=autocommit){
-      executeQuery(SQLString("set autocommit=").append(autocommit ?"1":"0"));
+      executeQuery(SQLString("SET AUTOCOMMIT=").append(autocommit ?"1":"0"));
     }
   }
 
