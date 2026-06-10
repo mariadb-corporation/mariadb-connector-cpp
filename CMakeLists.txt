@@ -489,7 +489,7 @@ IF(NOT USE_SYSTEM_INSTALLED_LIB)
  	          COMPONENT ConnectorC)
     MESSAGE(STATUS "Configuring to install libmariadb to ${INSTALL_LIBDIR}")
 
-    SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password)
+    SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password parsec)
     IF (PLUGINS_DYNAMIC)
       # The list from CC is visible for us
       SET(PLUGINS_LIST ${PLUGINS_DYNAMIC})
