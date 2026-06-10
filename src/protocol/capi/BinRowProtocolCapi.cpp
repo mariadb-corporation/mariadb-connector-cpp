@@ -274,6 +274,8 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_TINY_BLOB:
       if (needsBinaryConversion(columnInfo)) {
         return parseBinaryAsInteger<int32_t>(columnInfo);
       }
@@ -401,6 +403,8 @@ namespace capi
       case MYSQL_TYPE_VAR_STRING:
       case MYSQL_TYPE_VARCHAR:
       case MYSQL_TYPE_STRING:
+      case MYSQL_TYPE_BLOB:
+      case MYSQL_TYPE_TINY_BLOB:
         if (needsBinaryConversion(columnInfo)) {
           return parseBinaryAsInteger<int64_t>(columnInfo);
         }
@@ -501,6 +505,8 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_TINY_BLOB:
       if (needsBinaryConversion(columnInfo)) {
         return parseBinaryAsInteger<uint64_t>(columnInfo);
       }
@@ -527,7 +533,7 @@ namespace capi
         + columnInfo->getColumnType().getCppTypeName());
     }
 
-    if ((columnInfo->isSigned() || needsBinaryConversion(columnInfo)) && value < 0) {
+    if (columnInfo->isSigned() && value < 0) {
       throw SQLException(
         "Out of range value for column '"
         + columnInfo->getName()
@@ -1055,6 +1061,8 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_TINY_BLOB:
       if (needsBinaryConversion(columnInfo)) {
         return parseBinaryAsInteger<int8_t>(columnInfo);
       }
@@ -1124,6 +1132,8 @@ namespace capi
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_TINY_BLOB:
       if (needsBinaryConversion(columnInfo)) {
         return parseBinaryAsInteger<int16_t>(columnInfo);
       }
