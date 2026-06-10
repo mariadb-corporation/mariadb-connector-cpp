@@ -45,20 +45,14 @@ namespace classes
 {
 void preparedstatement::setUp()
 {
-  sql::SQLString sspsOptionValue;
-  sql::Properties::iterator useServerPrepStmts= commonProperties.find("useServerPrepStmts");
-  bool hadOption= useServerPrepStmts != commonProperties.end();
-
-  if (hadOption) {
-    sspsOptionValue= useServerPrepStmts->second;
-  }
-
-  commonProperties["useServerPrepStmts"]= "false";
+  //commonProperties["useServerPrepStmts"]= "false";
   super::setUp();
 
   commonProperties["useServerPrepStmts"] = "true";
   try
   {
+    // We do not reset ssps to test that it can be safely destroyed after destroying (createdd in previous test) connection
+    // ssps.reset();
     sspsCon.reset(this->getConnection(&commonProperties));
   }
   catch (sql::SQLException& sqle)
