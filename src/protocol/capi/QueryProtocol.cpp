@@ -1273,7 +1273,7 @@ namespace capi
     Results results;
     executeQuery(isMasterConnection(), &results, "SELECT DATABASE()");
     results.commandEnd();
-    ResultSet* rs= results.getResultSet();
+    ResultSet *rs= results.getResultSet();
     if (rs->next()) {
       this->database= rs->getString(1);
       return database;
@@ -1375,9 +1375,9 @@ namespace capi
   {
     if (maxRows != max){
       if (max == 0){
-        executeQuery("set @@SQL_SELECT_LIMIT=DEFAULT");
+        executeQuery("SET @@SQL_SELECT_LIMIT=DEFAULT");
       }else {
-        executeQuery("set @@SQL_SELECT_LIMIT=" + std::to_string(max));
+        executeQuery("SET @@SQL_SELECT_LIMIT=" + std::to_string(max));
       }
       maxRows= max;
     }
@@ -1599,7 +1599,7 @@ namespace capi
         Results results;
         executeQuery(true, &results, "SELECT @@auto_increment_increment");
         results.commandEnd();
-        ResultSet* rs= results.getResultSet();
+        ResultSet *rs= results.getResultSet();
         rs->next();
         autoIncrementIncrement= rs->getInt(1);
       }
@@ -1898,7 +1898,7 @@ namespace capi
     }
 
     if (getAutocommit()!=autocommit){
-      executeQuery(SQLString("set autocommit=").append(autocommit ?"1":"0"));
+      executeQuery(SQLString("SET AUTOCOMMIT=").append(autocommit ?"1":"0"));
     }
   }
 

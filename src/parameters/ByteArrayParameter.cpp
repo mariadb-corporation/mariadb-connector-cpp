@@ -27,9 +27,8 @@ namespace sql
   namespace mariadb
 {
 
-  ByteArrayParameter::ByteArrayParameter(const sql::bytes& bytes, bool noBackslashEscapes)
+  ByteArrayParameter::ByteArrayParameter(const sql::bytes& bytes, bool /*noBackslashEscapes*/)
     : bytes(bytes)
-    , noBackslashEscapes(noBackslashEscapes)
   {
   }
 
@@ -37,7 +36,7 @@ namespace sql
   void ByteArrayParameter::writeTo(SQLString& str, capi::MYSQL* handle)
   {
     str.append(BINARY_INTRODUCER);
-    Utils::escapeData(handle, bytes.arr, static_cast<size_t>(bytes.size()), noBackslashEscapes, str);
+    Utils::escapeData(handle, bytes.arr, static_cast<size_t>(bytes.size()), false/* it's not used - should be removed */, str);
     str.append(QUOTE);
   }
 
@@ -50,7 +49,7 @@ namespace sql
   void ByteArrayParameter::writeTo(PacketOutputStream& pos)
   {
     pos.write(BINARY_INTRODUCER);
-    pos.writeBytesEscaped(bytes.arr, static_cast<int32_t>(bytes.size()), noBackslashEscapes);
+    pos.writeBytesEscaped(bytes.arr, static_cast<int32_t>(bytes.size()), false);
     pos.write(QUOTE);
   }
 
@@ -71,20 +70,20 @@ namespace sql
     pos.write(bytes.arr);
   }
 
-    uint32_t ByteArrayParameter::writeBinary(sql::bytes & buf)
+  uint32_t ByteArrayParameter::writeBinary(sql::bytes & buf)
+  {
+    /*if (buf.size() < getValueBinLen())
     {
-      /*if (buf.size() < getValueBinLen())
-      {
-        throw SQLException("Parameter buffer size is too small for ByteArray value");
-      }*/
+      throw SQLException("Parameter buffer size is too small for ByteArray value");
+    }*/
 
-      buf.wrap(bytes.arr, bytes.size());
-      return getValueBinLen();
-    }
+    buf.wrap(bytes.arr, bytes.size());
+    return getValueBinLen();
+  }
 
   const ColumnType& ByteArrayParameter::getColumnType() const
   {
-    return ColumnType::VARSTRING;
+    return ColumnType::BLOB;
   }
 
   SQLString ByteArrayParameter::toString()

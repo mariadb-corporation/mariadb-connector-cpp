@@ -45,13 +45,13 @@ namespace classes
 {
 void preparedstatement::setUp()
 {
-  commonProperties["useServerPrepStmts"]= "false";
+  //commonProperties["useServerPrepStmts"]= "false";
   super::setUp();
 
   commonProperties["useServerPrepStmts"] = "true";
   try
   {
-    // We do not reset ssps to test it can be safely destroyed after destroying (createdd in previous test) connection
+    // We do not reset ssps to test that it can be safely destroyed after destroying (createdd in previous test) connection
     // ssps.reset();
     sspsCon.reset(this->getConnection(&commonProperties));
   }

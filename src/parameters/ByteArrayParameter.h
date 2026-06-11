@@ -34,7 +34,6 @@ namespace mariadb
 class ByteArrayParameter  : public ParameterHolder {
 
   sql::bytes bytes;
-  bool noBackslashEscapes;
 
 public:
   ByteArrayParameter(const sql::bytes &bytes, bool noBackslashEscapes);

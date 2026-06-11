@@ -330,7 +330,8 @@ namespace mariadb
         "22003",
         1264);
     }
-    T result= 0;
+    // To avoid UD we need it to be unsigned
+    uint64_t result= 0;
     // If we have 1 byte 0x80, or it is first of 2, 4 or 8 bytes - we should get negative number -128, and if 2 bytes 0x0080 - positive 128
     /*if (len == signDesidingByte) {
       result= *ptr++;
@@ -340,7 +341,7 @@ namespace mariadb
       result<<= 8;
       result|= (0xFF & *ptr++);
     }
-    return result;
+    return static_cast<T>(result);
   }
 
   template int8_t   RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo);
