@@ -45,21 +45,16 @@ namespace mariadb
   static const SQLString MARIADB_RPL_HACK_PREFIX("5.5.5-");
 
   static const SQLString DefaultIsolationLevel("REPEATABLE READ");
-  static const std::map<std::string, enum IsolationLevel> Str2TxIsolationLevel{
+  
+
+  enum IsolationLevel mapStr2TxIsolation(const char* txIsolation, size_t len)
+  {
+    static const std::map<std::string, enum IsolationLevel> Str2TxIsolationLevel{
     {DefaultIsolationLevel,  TRANSACTION_REPEATABLE_READ},  {"REPEATABLE-READ",  TRANSACTION_REPEATABLE_READ},
     {"READ COMMITTED",   TRANSACTION_READ_COMMITTED},   {"READ-COMMITTED",   TRANSACTION_READ_COMMITTED},
     {"READ UNCOMMITTED", TRANSACTION_READ_UNCOMMITTED}, {"READ-UNCOMMITTED", TRANSACTION_READ_UNCOMMITTED},
     {"SERIALIZABLE",     TRANSACTION_SERIALIZABLE},
-  };
-  static const std::map<enum IsolationLevel, std::string> TxIsolationLevel2Name{
-    {TRANSACTION_REPEATABLE_READ,  DefaultIsolationLevel},
-    {TRANSACTION_READ_COMMITTED,   "READ COMMITTED"},
-    {TRANSACTION_READ_UNCOMMITTED, "READ UNCOMMITTED"},
-    {TRANSACTION_SERIALIZABLE,     "SERIALIZABLE"},
-  };
-
-  enum IsolationLevel mapStr2TxIsolation(const char* txIsolation, size_t len)
-  {
+    };
     const auto& cit= Str2TxIsolationLevel.find({txIsolation, len});
     if (cit != Str2TxIsolationLevel.end()) {
       return cit->second;
@@ -69,6 +64,12 @@ namespace mariadb
 
   SQLString& addTxIsolationName2Query(SQLString& query, enum IsolationLevel txIsolation)
   {
+    static const std::map<enum IsolationLevel, std::string> TxIsolationLevel2Name{
+    {TRANSACTION_REPEATABLE_READ,  DefaultIsolationLevel},
+    {TRANSACTION_READ_COMMITTED,   "READ COMMITTED"},
+    {TRANSACTION_READ_UNCOMMITTED, "READ UNCOMMITTED"},
+    {TRANSACTION_SERIALIZABLE,     "SERIALIZABLE"},
+    };
     const auto& cit= TxIsolationLevel2Name.find(txIsolation);
     if (cit != TxIsolationLevel2Name.end()) {
       query.append(cit->second);

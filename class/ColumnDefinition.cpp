@@ -28,11 +28,21 @@ namespace mariadb
   long getTypeBinLength(enum_field_types type);
   extern const SQLString emptyStr;
 
-  std::map<enum_field_types, SQLString> typeName{{MYSQL_TYPE_LONG, "INT"}, {MYSQL_TYPE_LONGLONG, "BIGINT"}, {MYSQL_TYPE_SHORT, "SMALLINT"},
-    {MYSQL_TYPE_INT24, "MEDIUMINT"}, {MYSQL_TYPE_BLOB, "BLOB"}, {MYSQL_TYPE_TINY_BLOB, "TINYBLOB"}, {MYSQL_TYPE_MEDIUM_BLOB, "MEDIUMBLOB"},
-    {MYSQL_TYPE_LONG_BLOB, "LONGBLOB"}, {MYSQL_TYPE_DATE, "DATE"}, {MYSQL_TYPE_TIME, "TIME"}, {MYSQL_TYPE_DATETIME, "DATETIME"},
-    {MYSQL_TYPE_YEAR, "YEAR"}, {MYSQL_TYPE_NEWDATE, "DATE"}, {MYSQL_TYPE_TIMESTAMP, "TIMESTAMP"}, {MYSQL_TYPE_NEWDECIMAL, "DECIMAL"},
-    {MYSQL_TYPE_JSON, "JSON"}, {MYSQL_TYPE_GEOMETRY, "GEOMETRY"}, {MYSQL_TYPE_ENUM, "ENUM"}, {MYSQL_TYPE_SET, "SET"}};
+  static const SQLString& getTypeName(enum enum_field_types type)
+  {
+    static std::map<enum_field_types, SQLString> typeName{{MYSQL_TYPE_LONG, "INT"}, {MYSQL_TYPE_LONGLONG, "BIGINT"}, {MYSQL_TYPE_SHORT, "SMALLINT"},
+        {MYSQL_TYPE_INT24, "MEDIUMINT"}, {MYSQL_TYPE_BLOB, "BLOB"}, {MYSQL_TYPE_TINY_BLOB, "TINYBLOB"}, {MYSQL_TYPE_MEDIUM_BLOB, "MEDIUMBLOB"},
+        {MYSQL_TYPE_LONG_BLOB, "LONGBLOB"}, {MYSQL_TYPE_DATE, "DATE"}, {MYSQL_TYPE_TIME, "TIME"}, {MYSQL_TYPE_DATETIME, "DATETIME"},
+        {MYSQL_TYPE_YEAR, "YEAR"}, {MYSQL_TYPE_NEWDATE, "DATE"}, {MYSQL_TYPE_TIMESTAMP, "TIMESTAMP"}, {MYSQL_TYPE_NEWDECIMAL, "DECIMAL"},
+        {MYSQL_TYPE_JSON, "JSON"}, {MYSQL_TYPE_GEOMETRY, "GEOMETRY"}, {MYSQL_TYPE_ENUM, "ENUM"}, {MYSQL_TYPE_SET, "SET"}};
+    auto it= typeName.find(type);
+    if (it != typeName.end()) {
+      return it->second;
+    }
+    else {
+      return emptyStr;
+    }
+  }
 
   bool isIntegerType(enum enum_field_types type)
   {
@@ -60,11 +70,9 @@ namespace mariadb
     if (isIntegerType(type))
     {
       if (!_signed) {
-        return typeName[type] + " UNSIGNED";
+        return getTypeName(type) + " UNSIGNED";
       }
-      else {
-        return typeName[type];
-      }
+      return getTypeName(type);
     }
     else if (type == MYSQL_TYPE_BLOB)
     {
@@ -103,9 +111,7 @@ namespace mariadb
       else if (charLen <= MAX_MEDIUM_BLOB) {
         return "MEDIUMTEXT";
       }
-      else {
-        return "LONGTEXT";
-      }
+      return "LONGTEXT";
     }
     else if (type == MYSQL_TYPE_STRING)
     {
@@ -114,10 +120,7 @@ namespace mariadb
       }
       return "CHAR";
     }
-    else
-    {
-      return typeName[type];
-    }
+    return getTypeName(type);
   }
 
   SQLString ColumnDefinition::getColumnTypeName() const

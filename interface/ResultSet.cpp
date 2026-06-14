@@ -34,7 +34,10 @@ namespace mariadb
   const MYSQL_FIELD FIELDSHORT {0,0,0,0,0,0,0, 6,  0,0,0,0,0,0,0,0,0,0,0, MYSQL_TYPE_SHORT, 0};
   const MYSQL_FIELD FIELDINT   {0,0,0,0,0,0,0, 11, 0,0,0,0,0,0,0,0,0,0,0, MYSQL_TYPE_LONG, 0};
 
-  static std::vector<ColumnDefinition> INSERT_ID_COLUMNS{{"insert_id", &FIELDBIGINT}};
+  static std::vector<ColumnDefinition>& getInsertIdColumns() {
+    static std::vector<ColumnDefinition> INSERT_ID_COLUMNS{{"insert_id", &FIELDBIGINT}};
+    return INSERT_ID_COLUMNS;
+  }
 
   int32_t ResultSet::TINYINT1_IS_BIT= 1;
   int32_t ResultSet::YEAR_IS_DATE_TYPE= 2;
@@ -171,20 +174,20 @@ namespace mariadb
       }
     }
     if (findColumnReturnsOne) {
-      return create(INSERT_ID_COLUMNS[0].getColumnRawData(), rows, nullptr, TYPE_SCROLL_SENSITIVE);
+      return create(getInsertIdColumns()[0].getColumnRawData(), rows, nullptr, TYPE_SCROLL_SENSITIVE);
       /*int32_t ResultSet::findColumn(const SQLString& name) {
         return 1;
       }*/
     }
 
-    return new ResultSetText(INSERT_ID_COLUMNS, rows, nullptr, TYPE_SCROLL_SENSITIVE);
+    return new ResultSetText(getInsertIdColumns(), rows, nullptr, TYPE_SCROLL_SENSITIVE);
   }
 
 
   ResultSet* ResultSet::createEmptyResultSet() {
     static std::vector<std::vector<mariadb::bytes_view>> emptyRs;
 
-    return create(INSERT_ID_COLUMNS[0].getColumnRawData(), emptyRs, nullptr, TYPE_SCROLL_SENSITIVE);
+    return create(getInsertIdColumns()[0].getColumnRawData(), emptyRs, nullptr, TYPE_SCROLL_SENSITIVE);
   }
 
 
