@@ -119,7 +119,7 @@ public:
   static bool checkRemainingSize(int64_t newQueryLen);
 
   ~Protocol() {}
-  Protocol(MYSQL *connectedHandle, const SQLString& defaultDb, Cache<std::string,
+  Protocol(MYSQL* connectedHandle, const char*  defaultDb, Cache<std::string,
     ServerPrepareResult> *psCache= nullptr, /* Temporary before move things here */const char *trIsolVarName= nullptr,
     enum IsolationLevel txIsolation= TRANSACTION_REPEATABLE_READ);
 

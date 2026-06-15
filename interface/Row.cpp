@@ -221,8 +221,8 @@ namespace mariadb
     return mariadb::stoull(SQLString(str, len), pos);
   }
 
-  Date nullDate("0000-00-00");
-  const SQLString emptyStr("");
+  Date nullDate({'0','0','0','0','-','0','0','-','0','0','\0'});
+  const SQLString emptyStr({});
 
   /*int32_t Row::BIT_LAST_FIELD_NOT_NULL= 0b000000;
   int32_t Row::BIT_LAST_FIELD_NULL= 0b000001;

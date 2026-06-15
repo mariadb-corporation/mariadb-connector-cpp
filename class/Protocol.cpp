@@ -129,16 +129,18 @@ namespace mariadb
  * @param 
  * @param 
  */
-  Protocol::Protocol(MYSQL* connectedHandle, const SQLString& defaultDb, Cache<std::string, ServerPrepareResult> *psCache, const char *trIsolVarName,
+  Protocol::Protocol(MYSQL* connectedHandle, const char* defaultDb, Cache<std::string, ServerPrepareResult> *psCache, const char *trIsolVarName,
     enum IsolationLevel txIsolation )
     : connection(connectedHandle, &mysql_close)
     , transactionIsolationLevel(txIsolation)
-    , database(defaultDb)
     , connected(true)
     , serverVersion(mysql_get_server_info(connectedHandle))
     , serverPrepareStatementCache(psCache)
     , txIsolationVarName(trIsolVarName ? trIsolVarName : "")
   {
+    if (defaultDb) {
+      database.assign(defaultDb);
+    }
     parseVersion(serverVersion);
 
     if (serverVersion.compare(0, MARIADB_RPL_HACK_PREFIX.length(),
@@ -169,7 +171,9 @@ namespace mariadb
       trIsolVarName= DEFAULT_TRX_ISOL_VARNAME;
     }
 
-    SQLString sessionOption("SET session_track_schema=1,session_track_system_variables='auto_increment_increment,");
+    SQLString sessionOption;
+    sessionOption.reserve(96); // max we need 95 bytes here
+    sessionOption.append("SET session_track_schema=1,session_track_system_variables='auto_increment_increment,");
 
     sessionOption.append(trIsolVarName);
     // MySQL does not have ansi_quotes in status, need to track it
