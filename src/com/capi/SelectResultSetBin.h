@@ -26,7 +26,6 @@
 
 // Should go before Consts. But probably smth is wrong about this.
 #include "com/capi/ColumnDefinitionCapi.h"
-
 #include "Consts.h"
 
 #include "SelectResultSet.h"
@@ -36,7 +35,8 @@
 #include "ResultSet.hpp"
 #include "ColumnType.h"
 #include "com/ColumnNameMap.h"
-#include "io/StandardPacketInputStream.h"
+
+//#include "protocol/capi/BinRowProtocolCapi.h"
 
 #include "jdbccompat.hpp"
 
@@ -53,38 +53,44 @@ namespace capi
 {
 #include "mysql.h"
 
-class SelectResultSetBin : public SelectResultSet
+class BinRowProtocolCapi;
+
+class SelectResultSetBin final : public SelectResultSet
 {
-  TimeZone* timeZone= nullptr;
-  Shared::Options options;
   std::vector<Shared::ColumnDefinition> columnsInformation;
-  int32_t columnInformationLength;
-  bool noBackslashEscapes;
   // we don't create buffers for all columns without call. Thus has to be mutable while getters are const
   mutable std::map<int32_t, std::unique_ptr<memBuf>> blobBuffer;
-
-  Protocol* protocol;
-  bool isEof= false;
-  bool callableResult;
-  MariaDbStatement* statement;
-  mutable Unique::RowProtocol row;
-
-  MYSQL_STMT *capiStmtHandle;
-
-  /*std::unique_ptr<*/
+  Shared::Options options;
+  Protocol* protocol; // should got before datatSize
+  MYSQL_STMT* capiStmtHandle;
   std::vector<std::vector<sql::bytes>> data;
-  std::size_t dataSize; //Should go after data
-
+  mutable int32_t lastRowPointer= -1;
   int32_t resultSetScrollType;
-  int32_t rowPointer= -1;
+  bool isEof= false; // should got before datatSize
+  bool isClosedFlag= false; // These 5 bools just to feel the gap and make object smaller.
+  bool forceAlias= false;   // 2
+  bool callableResult;      // 3
+  bool noBackslashEscapes;  // 4
+  bool eofDeprecated;       // 5
 
+  std::size_t dataSize; //Should go after data and since it's initializer calls mysql_stmt_store_result - before row.
+  mutable std::unique_ptr<BinRowProtocolCapi> row;
+
+  //TimeZone* timeZone= nullptr;
+  MariaDbStatement* statement;
+  std::mutex *const lock;
   std::unique_ptr<ColumnNameMap> columnNameMap;
 
-  mutable int32_t lastRowPointer= -1;
-  bool isClosedFlag= false;
-  bool eofDeprecated;
-  std::mutex *const lock;
-  bool forceAlias;
+  int32_t columnInformationLength;
+  int32_t rowPointer= -1;
+
+  
+
+  SelectResultSetBin(const SelectResultSetBin& other) = delete;
+  SelectResultSetBin& operator=(const SelectResultSetBin& other) = delete;
+  // This method is dataSize initializer, but the idea is that it stores result if needed and that should go before row initialization
+  // so row's constructor knows max_length for each column. This is needed for more optimal buffer allocation for each column
+  std::size_t decideStreaming(Results* results);
 
 public:
 

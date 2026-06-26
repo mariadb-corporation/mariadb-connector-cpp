@@ -26,16 +26,13 @@
 #include "util/LogQueryTool.h"
 #include "util/ClientPrepareResult.h"
 #include "util/ServerPrepareResult.h"
-#include "util/ServerPrepareStatementCache.h"
 #include "util/StateChange.h"
 #include "util/Utils.h"
 #include "protocol/MasterProtocol.h"
 #include "SqlStates.h"
-#include "com/capi/ColumnDefinitionCapi.h"
 #include "ExceptionFactory.h"
 #include "util/ServerStatus.h"
-//I guess eventually it should go from here
-#include "com/Packet.h"
+
 
 namespace sql
 {
@@ -113,12 +110,15 @@ namespace capi
       realQuery(sql);
       getResult(results);
 
-    }catch (SQLException& sqlException){
+    }
+    catch (SQLException& sqlException) {
+
       if (sqlException.getSQLState().compare("70100") == 0 && 1927 == sqlException.getErrorCode()){
         throw sqlException;
       }
       throw logQuery->exceptionWithQuery(sql, sqlException, explicitClosed);
-    }catch (std::runtime_error& e){
+    }
+    catch (std::runtime_error& e) {
       handleIoException(e).Throw();
     }
   }

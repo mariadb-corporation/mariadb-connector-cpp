@@ -124,6 +124,8 @@ public:
   BigInteger getInternalBigInteger(ColumnDefinition* columnInfo)=0;
   void rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo);
 #endif
+
+#ifdef _WE_NEED_HERE_POLYMORPHISM_AGAIN
   virtual int32_t fetchNext()=0;
   virtual void installCursorAtPosition(int32_t rowPtr)=0;
 
@@ -145,6 +147,7 @@ public:
 
   virtual bool isBinaryEncoded()=0;
   virtual void cacheCurrentRow(std::vector<sql::bytes>& rowData, std::size_t columnCount)=0;
+#endif
   bool lastValueWasNull();
 
 protected:

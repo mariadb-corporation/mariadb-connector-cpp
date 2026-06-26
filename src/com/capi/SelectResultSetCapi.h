@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2024 MariaDB Corporation plc
+   Copyright (C) 2020, 2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -26,6 +26,7 @@
 
 // Should go before Consts
 #include "com/capi/ColumnDefinitionCapi.h"
+#include "protocol/capi/TextRowProtocolCapi.h"
 
 #include "Consts.h"
 
@@ -36,7 +37,6 @@
 #include "ResultSet.hpp"
 #include "ColumnType.h"
 #include "com/ColumnNameMap.h"
-#include "io/StandardPacketInputStream.h"
 
 #include "jdbccompat.hpp"
 
@@ -53,28 +53,24 @@ namespace capi
 {
 #include "mysql.h"
 
-class SelectResultSetCapi : public SelectResultSet
+class SelectResultSetCapi final: public SelectResultSet
 {
   //TimeZone* timeZone= nullptr;
   Shared::Options options;
-  std::vector<Shared::ColumnDefinition> columnsInformation;
-  int32_t columnInformationLength;
   bool noBackslashEscapes;
-  // we don't create buffers for all columns without call. Thus has to be mutable while getters are const
-  mutable std::map<int32_t, std::unique_ptr<memBuf>> blobBuffer;
 
   Protocol* protocol;
+  MYSQL *capiConnHandle;
   bool isEof= false;
-  bool callableResult;
+  bool callableResult=false;
   /* Shared? */
   MariaDbStatement* statement;
-  mutable Unique::RowProtocol row;
-
-  MYSQL *capiConnHandle;
-
-  /*std::unique_ptr<*/
+  // data and columnsInformation should exist before row is created.
   std::vector<std::vector<sql::bytes>> data;
-  std::size_t dataSize; //Should go after data
+  std::size_t dataSize= 0; //Should go after data and before row
+  std::vector<Shared::ColumnDefinition> columnsInformation;
+  mutable capi::TextRowProtocolCapi row;
+  int32_t columnInformationLength;
 
   int32_t resultSetScrollType;
   int32_t rowPointer= -1;
@@ -86,9 +82,15 @@ class SelectResultSetCapi : public SelectResultSet
   bool eofDeprecated;
   std::mutex *const lock;
   bool forceAlias;
+  // we don't create buffers for all columns without call. Thus has to be mutable while getters are const
+  mutable std::map<int32_t, std::unique_ptr<memBuf>> blobBuffer;
+
+  // Takes care of whether we should stream the RS, i.e. use or store. Needed to initialize the row.
+  // Plus it intitializes related fields. Results are needed so we can set it as active streaming result
+  // if we are gonna stream.
+  MYSQL_RES* initResultRelated(Results* results);
 
 public:
-
   SelectResultSetCapi(
     Results* results,
     Protocol* protocol,
@@ -363,7 +365,6 @@ public:
   void updateNCharacterStream(const SQLString& columnLabel,std::istringstream& reader);
 #endif
 
-      //public:  bool isWrapperFor();
   void setForceTableAlias();
 private:
   void rangeCheck(const SQLString& className,int64_t minValue,int64_t maxValue,int64_t value, ColumnDefinition* columnInfo);

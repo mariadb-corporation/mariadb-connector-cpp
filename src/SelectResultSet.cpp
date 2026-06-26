@@ -112,7 +112,7 @@ namespace mariadb
     */
   ResultSet* SelectResultSet::createGeneratedData(std::vector<int64_t>& data, Protocol* protocol, bool findColumnReturnsOne)
   {
-    std::vector<Shared::ColumnDefinition> columns{capi::ColumnDefinitionCapi::create("insert_id", ColumnType::BIGINT)};
+    std::vector<Shared::ColumnDefinition> columns{ Shared::ColumnDefinition(capi::ColumnDefinitionCapi::create("insert_id", ColumnType::BIGINT))};
     std::vector<std::vector<sql::bytes>> rows;
     std::string idAsStr;
 
@@ -135,7 +135,7 @@ namespace mariadb
   }
 
   bool SelectResultSet::InitIdColumns() {
-    SelectResultSet::INSERT_ID_COLUMNS.push_back(capi::ColumnDefinitionCapi::create("insert_id", ColumnType::BIGINT));
+    SelectResultSet::INSERT_ID_COLUMNS.emplace_back(capi::ColumnDefinitionCapi::create("insert_id", ColumnType::BIGINT));
     return true;
   }
 

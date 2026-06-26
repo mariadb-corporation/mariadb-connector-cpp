@@ -37,7 +37,7 @@ namespace capi
 {
 #include "mysql.h"
 
-class TextRowProtocolCapi  : public RowProtocol {
+class TextRowProtocolCapi final : public RowProtocol {
 
   MYSQL_RES* capiResults;
   MYSQL_ROW  rowData;
@@ -77,7 +77,7 @@ public:
   SQLString getInternalTimeString(ColumnDefinition* columnInfo);
 
   bool isBinaryEncoded();
-  void cacheCurrentRow(std::vector<sql::bytes>& rowData, std::size_t columnCount) override;
+  void cacheCurrentRow(std::vector<sql::bytes>& rowData, std::size_t columnCount)/* override*/;
   };
 
 }

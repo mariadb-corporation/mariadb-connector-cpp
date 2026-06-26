@@ -35,7 +35,7 @@ namespace mariadb
   * @param type column type
   * @return Shared::ColumnDefinition
   */
-  Shared::ColumnDefinition ColumnDefinition::create(const SQLString& name, const ColumnType& _type)
+  /*Shared::*/ColumnDefinition* ColumnDefinition::create(const SQLString& name, const ColumnType& _type)
   {
     capi::MYSQL_FIELD* md= new capi::MYSQL_FIELD;
 
@@ -64,7 +64,7 @@ namespace mariadb
 
     md->type= static_cast<capi::enum_field_types>(ColumnType::toServer(_type.getSqlType()).getType());
 
-    return Shared::ColumnDefinition(new capi::ColumnDefinitionCapi(md, true));
+    return /*Shared::ColumnDefinition(*/new capi::ColumnDefinitionCapi(md, true);
   }
 }
 }

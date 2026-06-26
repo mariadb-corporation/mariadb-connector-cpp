@@ -76,33 +76,33 @@ void bugs::net_write_timeout39878()
     rows = tmp;
 
 
-  pstmt.reset(con->prepareStatement("set net_write_timeout=?"));
+  pstmt.reset(con->prepareStatement("SET net_write_timeout=?"));
   pstmt->setInt(1, timeout);
   pstmt->execute();
 
-  res.reset(stmt->executeQuery("show variables like \"net_write_timeout\""));
+  res.reset(stmt->executeQuery("SHOW VARIABLES LIKE \"net_write_timeout\""));
 
   res->next();
 
   TestsListener::messagesLog() << "We've set net_write_timeout to " << res->getString(2) << std::endl;
 
 
-  stmt->executeUpdate("drop table if exists bug39878");
-  stmt->executeUpdate("create table bug39878 (id int unsigned not null)");
+  stmt->executeUpdate("DROP TABLE IF EXISTS bug39878");
+  stmt->executeUpdate("CREATE TABLE bug39878 (id INT UNSIGNED NOT NULL)");
 
-  stmt->execute("lock table bug39878 write");
+  stmt->execute("LOCK TABLE bug39878 WRITE");
 
-  pstmt.reset(con->prepareStatement("insert into bug39878 ( id ) values( ? )"));
+  pstmt.reset(con->prepareStatement("INSERT INTO bug39878 ( id ) VALUES( ? )"));
 
   for (int i = 1; i <= rows; ++i) {
     pstmt->setInt(1, i);
     pstmt->execute();
   }
 
-  stmt->execute("unlock tables");
+  stmt->execute("UNLOCK TABLES");
 
 
-  res.reset(stmt->executeQuery("select count(*) from bug39878"));
+  res.reset(stmt->executeQuery("SELECT COUNT(*) FROM bug39878"));
 
   res->next();
 
@@ -113,7 +113,7 @@ void bugs::net_write_timeout39878()
   // Must set ResultSet Type  to TYPE_FORWARD_ONLY
   stmt->setResultSetType(sql::ResultSet::TYPE_FORWARD_ONLY);
 
-  res.reset(stmt->executeQuery("select * from bug39878"));
+  res.reset(stmt->executeQuery("SELECT * FROM bug39878"));
 
   TestsListener::messagesLog() << "ResultSetType: " << stmt->getResultSetType() << std::endl;
 
@@ -140,15 +140,16 @@ void bugs::net_write_timeout39878()
   TestsListener::messagesLog() << "We've fetched " << rowsRead << " rows." << std::endl;
 
   try {
-    stmt->execute("drop table if exists bug39878");
-  } catch (sql::SQLException& e) {
+    stmt->execute("DROP TABLE IF EXISTS bug39878");
+  }
+  catch (sql::SQLException& e) {
     // Expected, that Server has gone away
     logMsg(e.what());
 
     // Lazy way to reconnect
     setUp();
 
-    stmt->execute("drop table if exists bug39878");
+    stmt->execute("DROP TABLE IF EXISTs bug39878");
   }
 
   ASSERT_EQUALS(rowsCount, rowsRead);
@@ -182,7 +183,7 @@ void bugs::store_result_error_51562()
 
   logMsg("Checking prepared statements");
   try {
-    pstmt.reset(con->prepareStatement("select 1, (select 'def' union all select 'abc')"));
+    pstmt.reset(con->prepareStatement("SELECT 1, (SELECT 'def' UNION ALL SELECT 'abc')"));
     /* Running a SELECT and storing the returned result set in this->res */
     res.reset(pstmt->executeQuery());
 
@@ -797,13 +798,12 @@ void bugs::bug21066575()
   try
   {
 
-
     stmt.reset(con->createStatement());
     stmt->execute("DROP TABLE IF EXISTS bug21066575");
     stmt->execute("CREATE TABLE bug21066575(txt text)");
     stmt->execute("INSERT INTO bug21066575(txt) VALUES('abc')");
 
-    pstmt.reset(con->prepareStatement("select * from bug21066575"));
+    pstmt.reset(con->prepareStatement("SELECT * FROM bug21066575"));
 
     res.reset();
 
@@ -822,23 +822,23 @@ void bugs::bug21066575()
                   PRIMARY KEY (`id`)\
                   ) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=latin1");
 
-    stmt->execute("insert into bug21066575_2(f1) values(repeat('f',1024000)),"
+    stmt->execute("INSERT INTO bug21066575_2(f1) VALUES(repeat('f',1024000)),"
                   "(repeat('f',1024000)),"
                   "(repeat('f',1024000)),"
                   "(repeat('f',1024000))");
 
 
+    pstmt.reset(con->prepareStatement("SELECT id, f1 FROM bug21066575_2"));
     for(int i= 0; i < 100; i++)
     {
-      pstmt.reset(con->prepareStatement("select id, f1 from bug21066575_2"));
-
+      // I don't think there is a sense for the test to re-prepare the statement each time
       //pstmt->setInt(1, i);
       res.reset(pstmt->executeQuery());
       while (res->next()) {
         std::stringstream ss;
         ss << "id = " << res->getInt(1);
         ss << std::endl;
-        std::string out(res->getString(2));
+        auto out= res->getString(2);
         ASSERT_EQUALS(1024000UL, static_cast<uint64_t>(out.length()));
         ss << "f1 = " << out;
         logMsg(ss.str().substr(0, 32).c_str());

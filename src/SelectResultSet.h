@@ -64,10 +64,10 @@ protected:
 
   static int32_t TINYINT1_IS_BIT; /*1*/
   static int32_t YEAR_IS_DATE_TYPE; /*2*/
-  bool released=  false;
   int32_t dataFetchTime= 0;
-  bool streaming= false;
   int32_t fetchSize;
+  bool released=  false;
+  bool streaming= false;
 
   SelectResultSet(int32_t _fetchSize) :
     fetchSize(_fetchSize) 

@@ -357,7 +357,7 @@ namespace mariadb
       }
     }
     
-    if (haveResultInWire){
+    if (haveResultInWire) {
       if (skip) {
         protocol->skipAllResults();
         return;
@@ -381,17 +381,14 @@ namespace mariadb
    */
   void Results::abort()
   {
-    if (fetchSize != 0){
+    if (fetchSize != 0) {
       fetchSize= 0;
-      if (resultSet)
-      {
+      if (resultSet) {
         resultSet->abort();
       }
-      else
-      {
+      else {
         auto firstResult= executionResults.begin();
-        if (firstResult != executionResults.end())
-        {
+        if (firstResult != executionResults.end()) {
           (*firstResult)->abort();
         }
       }

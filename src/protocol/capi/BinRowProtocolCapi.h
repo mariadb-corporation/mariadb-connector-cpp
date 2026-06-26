@@ -35,14 +35,14 @@ namespace capi
 {
 #include "mysql.h"
 
-class BinRowProtocolCapi : public RowProtocol {
+class BinRowProtocolCapi final : public RowProtocol {
 
   const std::vector<Shared::ColumnDefinition>& columnInformation;
-  int32_t columnInformationLength;
-  MYSQL_STMT* stmt;
   std::vector<MYSQL_BIND> bind;
+  MYSQL_STMT* stmt;
+  int32_t columnInformationLength;
 
-  SQLString convertToString(const char* asChar, ColumnDefinition* columnInfo);
+  SQLString convertToString(ColumnDefinition* columnInfo);
 public:
 
   BinRowProtocolCapi(
@@ -67,7 +67,7 @@ public:
   int32_t fetchNext();
   void installCursorAtPosition(int32_t rowPtr);
 
-  SQLString getInternalString(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
+  SQLString getInternalString(ColumnDefinition* columnInfo);
   Date getInternalDate(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
   Time getInternalTime(ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
   Timestamp getInternalTimestamp( ColumnDefinition* columnInfo, Calendar* cal=nullptr, TimeZone* timeZone=nullptr);
@@ -85,7 +85,7 @@ public:
   SQLString getInternalTimeString(ColumnDefinition* columnInfo);
 
   bool isBinaryEncoded();
-  void cacheCurrentRow(std::vector<sql::bytes>& rowDataCache, std::size_t columnCount) override;
+  void cacheCurrentRow(std::vector<sql::bytes>& rowDataCache, std::size_t columnCount)/* override*/;
   };
 
 }

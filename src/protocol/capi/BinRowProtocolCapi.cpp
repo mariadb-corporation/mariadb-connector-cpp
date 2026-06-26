@@ -47,8 +47,8 @@ namespace capi
     MYSQL_STMT* capiStmtHandle)
      : RowProtocol(_maxFieldSize, options)
      , columnInformation(_columnInformation)
-     , columnInformationLength(_columnInformationLength)
      , stmt(capiStmtHandle)
+     , columnInformationLength(_columnInformationLength)
   {
      bind.reserve(mysql_stmt_field_count(stmt));
 
@@ -78,10 +78,9 @@ namespace capi
   }
 
 
-   BinRowProtocolCapi::~BinRowProtocolCapi()
-   {
-     for (auto& columnBind : bind)
-     {
+   BinRowProtocolCapi::~BinRowProtocolCapi() {
+
+     for (auto& columnBind : bind) {
        delete[] (uint8_t*)columnBind.buffer;
      }
    }
@@ -104,7 +103,7 @@ namespace capi
       length = static_cast<uint32_t>(fieldBuf.size());
     }
     else {
-      length = bind[index].length_value;
+      length = bind[index].length_value ? bind[index].length_value : bind[index].buffer_length;
       fieldBuf.wrap(static_cast<char*>(bind[index].buffer), length);
       this->lastValueNull = bind[index].is_null_value ? BIT_LAST_FIELD_NULL : BIT_LAST_FIELD_NOT_NULL;
     }
@@ -123,20 +122,14 @@ namespace capi
   }
 
 
-  SQLString BinRowProtocolCapi::convertToString(const char* asChar, ColumnDefinition* columnInfo)
+  SQLString BinRowProtocolCapi::convertToString(ColumnDefinition* columnInfo)
   {
     if ((lastValueNull & BIT_LAST_FIELD_NULL)!=0) {
       return emptyStr;
     }
-
     switch (columnInfo->getColumnType().getType()) {
     case MYSQL_TYPE_STRING:
-      if (getLengthMaxFieldSize() > 0) {
-        return SQLString(asChar, getLengthMaxFieldSize());
-        /*buf, pos, std::min(getMaxFieldSize()*3, length), UTF_8)
-        .substr(0, std::min(getMaxFieldSize(), length));*/
-      }
-      return SQLString(asChar);//  UTF_8);
+        return SQLString(fieldBuf.arr, fieldBuf.size());
 
     case MYSQL_TYPE_BIT:
       return SQLString(std::to_string(parseBit()));
@@ -190,14 +183,11 @@ namespace capi
     case MYSQL_TYPE_NEWDECIMAL:
     case MYSQL_TYPE_DECIMAL:
     case MYSQL_TYPE_GEOMETRY:
-      return SQLString(asChar, getLengthMaxFieldSize());
+      return SQLString(fieldBuf.arr, fieldBuf.size());
     case MYSQL_TYPE_NULL:
       return nullptr;
     default:
-      if (getLengthMaxFieldSize() > 0) {
-        return SQLString(asChar, getLengthMaxFieldSize());
-      }
-      return SQLString(asChar);
+      return SQLString(fieldBuf.arr, fieldBuf.size());
     }
   }
 
@@ -210,9 +200,9 @@ namespace capi
     * @return String value of raw bytes
     * @throws SQLException if conversion failed
     */
-  SQLString BinRowProtocolCapi::getInternalString(ColumnDefinition* columnInfo, Calendar* /*cal*/, TimeZone* /*timeZone*/)
+  SQLString BinRowProtocolCapi::getInternalString(ColumnDefinition* columnInfo)
   {
-    return std::move(convertToString(fieldBuf.arr, columnInfo));
+    return std::move(convertToString(columnInfo));
   }
 
   /**

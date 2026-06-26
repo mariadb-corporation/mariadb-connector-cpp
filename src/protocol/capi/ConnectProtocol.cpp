@@ -890,7 +890,8 @@ namespace capi
     try {
       sendRequestSessionVariables();
       readRequestSessionVariables(serverData);
-    }catch (SQLException& ){
+    }
+    catch (SQLException& ) {
       requestSessionDataWithShow(serverData);
     }
 

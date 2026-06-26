@@ -19,7 +19,6 @@
 
 
 #include <vector>
-#include <array>
 #include <sstream>
 
 #include "SelectResultSetBin.h"
@@ -31,10 +30,8 @@
 #include "ColumnDefinitionCapi.h"
 #include "ExceptionFactory.h"
 #include "SqlStates.h"
-#include "com/RowProtocol.h"
-#include "protocol/capi/BinRowProtocolCapi.h"
-#include "protocol/capi/TextRowProtocolCapi.h"
 #include "util/ServerPrepareResult.h"
+#include "protocol/capi/BinRowProtocolCapi.h"
 
 namespace sql
 {
@@ -42,6 +39,24 @@ namespace mariadb
 {
 namespace capi
 {
+  std::size_t SelectResultSetBin::decideStreaming(Results* results) {
+    if (fetchSize == 0 || callableResult) {
+      data.reserve(10);
+      if (mysql_stmt_store_result(capiStmtHandle)) {
+        throwStmtError(capiStmtHandle);
+      }
+      streaming= false;
+      resetVariables();
+      return static_cast<std::size_t>(mysql_stmt_num_rows(capiStmtHandle));
+    }
+    else {
+      protocol->setActiveStreamingResult(results);
+      protocol->removeHasMoreResults();// TODO: do we actually needed here and at all?
+      data.reserve(std::max(10, fetchSize)); // Same
+      streaming= true;
+    }
+    return 0;
+  }
   /**
     * Create Streaming resultSet.
     *
@@ -57,41 +72,24 @@ namespace capi
                                          bool callableResult,
                                          bool eofDeprecated)
     : SelectResultSet(results->getFetchSize()),
-      options(protocol->getOptions()),
       columnsInformation(spr->getColumns()),
-      columnInformationLength(static_cast<int32_t>(columnsInformation.size())),
-      noBackslashEscapes(protocol->noBackslashEscapes()),
+      options(protocol->getOptions()),
       protocol(protocol),
-      callableResult(callableResult),
-      statement(results->getStatement()),
       capiStmtHandle(spr->getStatementId()),
-      dataSize(0),
       resultSetScrollType(results->getResultSetScrollType()),
-      columnNameMap(new ColumnNameMap(columnsInformation)),
-      isClosedFlag(false),
+      callableResult(callableResult),
+      noBackslashEscapes(protocol->noBackslashEscapes()),
       eofDeprecated(eofDeprecated),
+      dataSize(decideStreaming(results)),
+      row(new BinRowProtocolCapi(columnsInformation, static_cast<int32_t>(columnsInformation.size()),
+        results->getMaxFieldSize(), options, capiStmtHandle)),
+      statement(results->getStatement()),
       lock(protocol->getLock()),
-      forceAlias(false)
+      columnNameMap(new ColumnNameMap(columnsInformation)),
+      columnInformationLength(static_cast<int32_t>(columnsInformation.size()))
   {
-    if (fetchSize == 0 || callableResult) {
-      data.reserve(10);//= new char[10]; // This has to be array of arrays. Need to decide what to use for its representation
-      if (mysql_stmt_store_result(capiStmtHandle)) {
-        throwStmtError(capiStmtHandle);
-      }
-      dataSize= static_cast<std::size_t>(mysql_stmt_num_rows(capiStmtHandle));
-      streaming= false;
-      resetVariables();
-      row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
-    }
-    else {
-      
-      protocol->setActiveStreamingResult(results);
-
-      protocol->removeHasMoreResults();
-      data.reserve(std::max(10, fetchSize)); // Same
-      row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
+    if (streaming) {
       nextStreamingValue();
-      streaming= true;
     }
   }
 
@@ -154,16 +152,16 @@ namespace capi
   void SelectResultSetBin::fetchRemaining() {
     if (!isEof) {
       try {
-        lastRowPointer = -1;
+        lastRowPointer= -1;
         if (!isEof && dataSize > 0 && fetchSize == 1) {
           // We need to grow the array till current size. Its main purpose is to create room for newly fetched
           // fetched row, so it grows till dataSize + 1. But we need to space for already fetched(from server)
-          // row. Thus fooling growDataArray by decrementing dataSize
+          // row-> Thus fooling growDataArray by decrementing dataSize
           --dataSize;
           growDataArray();
           // Since index of the last row is smaller from dataSize by 1, we have correct index
           row->cacheCurrentRow(data[dataSize], columnsInformation.size());
-          rowPointer = 0;
+          rowPointer= 0;
           resetRow();
           ++dataSize;
         }
@@ -208,7 +206,6 @@ namespace capi
     if (resultSetScrollType == TYPE_FORWARD_ONLY) {
       dataSize= 0;
     }
-
     addStreamingValue(fetchSize > 1);
   }
 
@@ -400,8 +397,8 @@ namespace capi
     isClosedFlag= true;
     resetVariables();
 
-    for (auto& row : data) {
-      row.clear();
+    for (auto& cachedrow : data) {
+      cachedrow.clear();
     }
 
     if (statement != nullptr) {
@@ -575,7 +572,7 @@ namespace capi
         std::lock_guard<std::mutex> localScopeLock(*lock);
         try {
           // this time, fetch is added even for streaming forward type only to keep current pointer
-          // row.
+          // row->
           if (!isEof) {
             addStreamingValue();
           }
@@ -999,7 +996,7 @@ namespace capi
   /** {inheritDoc}. */
   Date SelectResultSetBin::getDate(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalDate(columnsInformation[columnIndex - 1].get(), nullptr, timeZone);
+    return row->getInternalDate(columnsInformation[columnIndex - 1].get(), nullptr, nullptr);
   }
 
   /** {inheritDoc}. */
@@ -1010,7 +1007,7 @@ namespace capi
   /** {inheritDoc}. */
   Time SelectResultSetBin::getTime(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalTime(columnsInformation[columnIndex - 1].get(), nullptr, timeZone);
+    return row->getInternalTime(columnsInformation[columnIndex - 1].get(), nullptr, nullptr);
   }
 
   /** {inheritDoc}. */  Time SelectResultSetBin::getTime(const SQLString& columnLabel) const {
@@ -1025,7 +1022,7 @@ namespace capi
   /** {inheritDoc}. */
   Timestamp SelectResultSetBin::getTimestamp(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalTimestamp(columnsInformation[columnIndex - 1].get(), nullptr, timeZone);
+    return row->getInternalTimestamp(columnsInformation[columnIndex - 1].get(), nullptr, nullptr);
   }
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   /** {inheritDoc}. */

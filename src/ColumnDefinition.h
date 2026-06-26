@@ -36,7 +36,7 @@ protected:
   ColumnDefinition()=default;
 public:
 
-  static Shared::ColumnDefinition create(const SQLString& name, const ColumnType& _type);
+  static /*Shared::*/ColumnDefinition* create(const SQLString& name, const ColumnType& _type);
 
   virtual ~ColumnDefinition()=default;
 
