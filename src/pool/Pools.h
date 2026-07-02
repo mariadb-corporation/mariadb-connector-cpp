@@ -38,11 +38,11 @@ class Pool;
 
 template <class HASHABLEKEY, class VT> class HashMap
 {
-  std::map<int64_t, VT> realMap;
+  std::map<uint64_t, VT> realMap;
 
 public:
-  typedef typename std::map<int64_t, VT>::iterator iterator;
-  typedef typename std::map<int64_t, VT>::const_iterator const_iterator;
+  typedef typename std::map<uint64_t, VT>::iterator iterator;
+  typedef typename std::map<uint64_t, VT>::const_iterator const_iterator;
 
   void put(HASHABLEKEY& hashableObj, VT& valueObj)
   {
@@ -68,32 +68,32 @@ public:
   {
     return realMap.empty();
   }
-  typename std::map<int64_t, VT>::iterator find(const HASHABLEKEY& hashableObj)
+  typename std::map<uint64_t, VT>::iterator find(const HASHABLEKEY& hashableObj)
   {
     return realMap.find(hashableObj.hashCode());
   }
 
-  typename std::map<int64_t, VT>::iterator begin()
+  typename std::map<uint64_t, VT>::iterator begin()
   {
     return realMap.begin();
   }
 
-  typename std::map<int64_t, VT>::iterator end()
+  typename std::map<uint64_t, VT>::iterator end()
   {
     return realMap.end();
   }
 
-  typename std::map<int64_t, VT>::const_iterator find(const HASHABLEKEY& hashableObj) const
+  typename std::map<uint64_t, VT>::const_iterator find(const HASHABLEKEY& hashableObj) const
   {
     return realMap.find(hashableObj.hashCode());
   }
 
-  typename std::map<int64_t, VT>::const_iterator cbegin() const
+  typename std::map<uint64_t, VT>::const_iterator cbegin() const
   {
     return realMap.cbegin();
   }
 
-  typename std::map<int64_t, VT>::const_iterator cend() const
+  typename std::map<uint64_t, VT>::const_iterator cend() const
   {
     return realMap.cend();
   }

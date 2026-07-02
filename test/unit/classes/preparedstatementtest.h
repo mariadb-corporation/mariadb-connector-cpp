@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2025 MariaDB Corporation plc
+ *               2020, 2026 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -83,6 +83,7 @@ public:
     TEST_CASE(bytesArrParam);
     TEST_CASE(concpp138_useRsAfterConClose);
     TEST_CASE(concpp128_batchWithGeneratedKeys);
+    TEST_CASE(concpp153_mbCsParamEscaping);
   }
 
   /**
@@ -192,6 +193,8 @@ public:
   void concpp138_useRsAfterConClose();
 
   void concpp128_batchWithGeneratedKeys();
+
+  void concpp153_mbCsParamEscaping();
 
   /* unit_fixture methods overriding */
   void setUp();

@@ -44,10 +44,10 @@ namespace mariadb
   }
 
 
-  void StringParameter::writeTo(SQLString& str)
+  void StringParameter::writeTo(SQLString& str, capi::MYSQL* handle)
   {
     str.append(QUOTE);
-    Utils::escapeData(stringValue.c_str(), stringValue.length(), noBackslashEscapes, str);
+    Utils::escapeData(handle, stringValue.c_str(), stringValue.length(), noBackslashEscapes, str);
     str.append(QUOTE);
   }
 

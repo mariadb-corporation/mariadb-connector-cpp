@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2025 MariaDB Corporation plc
+   Copyright (C) 2020,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -78,7 +78,7 @@ namespace capi
     cmdPrologue();
     try {
 
-      if (mysql_reset_connection(connection.get()))
+      if (mysql_reset_connection(connection))
       {
         throw SQLException("Connection reset failed");
       }
@@ -187,6 +187,7 @@ namespace capi
     SQLString& out,
     ClientPrepareResult* clientPrepareResult,
     std::vector<Unique::ParameterHolder>& parameters,
+    capi::MYSQL* connection,
     int32_t queryTimeout)
   {
     addQueryTimeout(out, queryTimeout);
@@ -203,7 +204,7 @@ namespace capi
       out.append(queryPart[1]);
 
       for (uint32_t i = 0; i < clientPrepareResult->getParamCount(); i++) {
-        parameters[i]->writeTo(out);
+        parameters[i]->writeTo(out, connection);
         out.append(queryPart[i + 2]);
       }
       out.append(queryPart[clientPrepareResult->getParamCount() + 2]);
@@ -211,7 +212,7 @@ namespace capi
     else {
       out.append(queryPart.front());
       for (uint32_t i = 0; i < clientPrepareResult->getParamCount(); i++) {
-        parameters[i]->writeTo(out);
+        parameters[i]->writeTo(out, connection);
         out.append(queryPart[i + 1]);
       }
     }
@@ -255,7 +256,7 @@ namespace capi
       }
       else {
         /* Timeout has been added already, thus passing -1 for its value */
-        assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, -1);
+        assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, connection, -1);
         realQuery(sql);
       }
       getResult(results);
@@ -515,7 +516,7 @@ namespace capi
     {
       sql.clear();
 
-      assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, -1);
+      assemblePreparedQueryForExec(sql, clientPrepareResult, parameters, connection, -1);
       sendQuery(sql);
     }
     if (autoCommit) {
@@ -528,7 +529,7 @@ namespace capi
     }
     for (std::size_t i= 0; i < parametersList.size(); ++i) {
       // We don't need exception on error here
-      capi::mysql_read_query_result(connection.get());
+      capi::mysql_read_query_result(connection);
       getResult(results);
     }
     if (autoCommit) {
@@ -688,7 +689,7 @@ namespace capi
     }
     for (auto& query : queries) {
       //we don't need exception in case of error, thus calling capi directly
-      capi::mysql_read_query_result(connection.get());
+      capi::mysql_read_query_result(connection);
       getResult(results);
     }
     if (autoCommit) {
@@ -706,11 +707,11 @@ namespace capi
        return pr;
     }
 
-    capi::MYSQL_STMT* stmtId = capi::mysql_stmt_init(connection.get());
+    capi::MYSQL_STMT* stmtId = capi::mysql_stmt_init(connection);
 
     if (stmtId == nullptr)
     {
-      throw SQLException(capi::mysql_error(connection.get()), capi::mysql_sqlstate(connection.get()), capi::mysql_errno(connection.get()));
+      throw SQLException(capi::mysql_error(connection), capi::mysql_sqlstate(connection), capi::mysql_errno(connection));
     }
 
     static const my_bool updateMaxLength= 1;
@@ -846,6 +847,7 @@ namespace capi
     std::size_t currentIndex,
     std::size_t paramCount,
     std::vector<std::vector<Unique::ParameterHolder>>& parameterList,
+    capi::MYSQL* connection,
     bool rewriteValues)
   {
     std::size_t index= currentIndex, capacity= StringImp::get(pos).capacity(), estimatedLength;
@@ -865,7 +867,7 @@ namespace capi
       }
 
       for (size_t i= 0; i < paramCount; i++) {
-        parameters[i]->writeTo(pos);
+        parameters[i]->writeTo(pos, connection);
         pos.append(queryParts[i + 2]);
       }
       pos.append(queryParts[paramCount + 2]);
@@ -896,7 +898,7 @@ namespace capi
             pos.append(firstPart);
             pos.append(secondPart);
             for (size_t i= 0; i <paramCount; i++) {
-              parameters[i]->writeTo(pos);
+              parameters[i]->writeTo(pos, connection);
               pos.append(queryParts[i + 2]);
             }
             pos.append(queryParts[paramCount + 2]);
@@ -912,7 +914,7 @@ namespace capi
           pos.append(firstPart);
           pos.append(secondPart);
           for (size_t i= 0; i < paramCount; i++) {
-            parameters[i]->writeTo(pos);
+            parameters[i]->writeTo(pos, connection);
             pos.append(queryParts[i +2]);
           }
           pos.append(queryParts[paramCount + 2]);
@@ -929,7 +931,7 @@ namespace capi
       size_t intermediatePartLength= queryParts[1].length();
 
       for (size_t i= 0; i <paramCount; i++) {
-        parameters[i]->writeTo(pos);
+        parameters[i]->writeTo(pos, connection);
         pos.append(queryParts[i +2]);
         intermediatePartLength +=queryParts[i +2].length();
       }
@@ -955,7 +957,7 @@ namespace capi
             pos.append(secondPart);
 
             for (size_t i= 0; i <paramCount; i++) {
-              parameters[i]->writeTo(pos);
+              parameters[i]->writeTo(pos, connection);
               pos.append(queryParts[i + 2]);
             }
             ++index;
@@ -969,7 +971,7 @@ namespace capi
           pos.append(secondPart);
 
           for (size_t i= 0; i <paramCount; i++) {
-            parameters[i]->writeTo(pos);
+            parameters[i]->writeTo(pos, connection);
             pos.append(queryParts[i +2]);
           }
           ++index;
@@ -1007,7 +1009,7 @@ namespace capi
       sql.reserve(1024);
       do {
         sql.clear();
-        currentIndex= rewriteQuery(sql, prepareResult->getQueryParts(), currentIndex, prepareResult->getParamCount(), parameterList, rewriteValues);
+        currentIndex= rewriteQuery(sql, prepareResult->getQueryParts(), currentIndex, prepareResult->getParamCount(), parameterList, connection, rewriteValues);
         realQuery(sql);
         getResult(results, nullptr, !rewriteValues);
 
@@ -1195,7 +1197,7 @@ namespace capi
     std::lock_guard<std::mutex> localScopeLock(lock);
     try {
 
-      return mysql_ping(connection.get()) == 0;
+      return mysql_ping(connection) == 0;
 
     }catch (std::runtime_error& e){
       connected= false;
@@ -1272,7 +1274,7 @@ namespace capi
     Results results;
     executeQuery(isMasterConnection(), &results, "SELECT DATABASE()");
     results.commandEnd();
-    ResultSet* rs= results.getResultSet();
+    ResultSet *rs= results.getResultSet();
     if (rs->next()) {
       this->database= rs->getString(1);
       return database;
@@ -1288,20 +1290,20 @@ namespace capi
 
     std::unique_lock<std::mutex> localScopeLock(lock);
 
-    if (capi::mysql_select_db(connection.get(), _database.c_str()) != 0) {
+    if (capi::mysql_select_db(connection, _database.c_str()) != 0) {
       // TODO: realQuery should throw. Here we could catch and change message
-      if (mysql_get_socket(connection.get()) == MARIADB_INVALID_SOCKET) {
+      if (mysql_get_socket(connection) == MARIADB_INVALID_SOCKET) {
         std::string msg("Connection lost: ");
-        msg.append(mysql_error(connection.get()));
+        msg.append(mysql_error(connection));
         std::runtime_error e(msg.c_str());
         localScopeLock.unlock();
         throw logQuery->exceptionWithQuery("COM_INIT_DB", *handleIoException(e, false).getException(), false);
       }
       else {
         throw SQLException(
-          "Could not select database '" + _database + "' : " + mysql_error(connection.get()),
-          mysql_sqlstate(connection.get()),
-          mysql_errno(connection.get()));
+          "Could not select database '" + _database + "' : " + mysql_error(connection),
+          mysql_sqlstate(connection),
+          mysql_errno(connection));
       }
     }
     this->database= _database;
@@ -1374,9 +1376,9 @@ namespace capi
   {
     if (maxRows != max){
       if (max == 0){
-        executeQuery("set @@SQL_SELECT_LIMIT=DEFAULT");
+        executeQuery("SET @@SQL_SELECT_LIMIT=DEFAULT");
       }else {
-        executeQuery("set @@SQL_SELECT_LIMIT=" + std::to_string(max));
+        executeQuery("SET @@SQL_SELECT_LIMIT=" + std::to_string(max));
       }
       maxRows= max;
     }
@@ -1458,7 +1460,7 @@ namespace capi
       res= capi::mysql_stmt_next_result(spr->getStatementId());
     }
     else {
-      res= capi::mysql_next_result(connection.get());
+      res= capi::mysql_next_result(connection);
     }
 
     if (res != 0) {
@@ -1515,11 +1517,11 @@ namespace capi
    */
   void QueryProtocol::readOkPacket(Results* results, ServerPrepareResult *pr)
   {
-    const int64_t updateCount= (pr == nullptr ? capi::mysql_affected_rows(connection.get()) : capi::mysql_stmt_affected_rows(pr->getStatementId()));
-    const int64_t insertId= (pr == nullptr ? capi::mysql_insert_id(connection.get()) : capi::mysql_stmt_insert_id(pr->getStatementId()));
+    const int64_t updateCount= (pr == nullptr ? capi::mysql_affected_rows(connection) : capi::mysql_stmt_affected_rows(pr->getStatementId()));
+    const int64_t insertId= (pr == nullptr ? capi::mysql_insert_id(connection) : capi::mysql_stmt_insert_id(pr->getStatementId()));
 
-    capi::mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
-    hasWarningsFlag= capi::mysql_warning_count(connection.get()) > 0;
+    capi::mariadb_get_infov(connection, MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
+    hasWarningsFlag= capi::mysql_warning_count(connection) > 0;
 
     if ((serverStatus & ServerStatus::SERVER_SESSION_STATE_CHANGED_)!=0) {
       handleStateChange(results);
@@ -1536,7 +1538,7 @@ namespace capi
 
     for (int32_t type=SESSION_TRACK_BEGIN; type < SESSION_TRACK_END; ++type)
     {
-      if (mysql_session_track_get_first(connection.get(), static_cast<enum capi::enum_session_state_type>(type), &value, &len) == 0)
+      if (mysql_session_track_get_first(connection, static_cast<enum capi::enum_session_state_type>(type), &value, &len) == 0)
       {
         std::string str(value, len);
 
@@ -1568,7 +1570,7 @@ namespace capi
       return capi::mysql_stmt_errno(pr->getStatementId());
     }
     else {
-      return capi::mysql_errno(connection.get());
+      return capi::mysql_errno(connection);
     }
   }
 
@@ -1580,7 +1582,7 @@ namespace capi
     }
     else
     {
-      return capi::mysql_field_count(connection.get());
+      return capi::mysql_field_count(connection);
     }
   }
 
@@ -1598,7 +1600,7 @@ namespace capi
         Results results;
         executeQuery(true, &results, "SELECT @@auto_increment_increment");
         results.commandEnd();
-        ResultSet* rs= results.getResultSet();
+        ResultSet *rs= results.getResultSet();
         rs->next();
         autoIncrementIncrement= rs->getInt(1);
       }
@@ -1632,8 +1634,8 @@ namespace capi
       sqlState= capi::mysql_stmt_sqlstate(pr->getStatementId());
     }
     else {
-      message= capi::mysql_error(connection.get());
-      sqlState= mysql_sqlstate(connection.get());
+      message= capi::mysql_error(connection);
+      sqlState= mysql_sqlstate(connection);
     }
 
     results->addStatsError(false);
@@ -1766,12 +1768,12 @@ namespace capi
 
       SelectResultSet* selectResultSet;
 
-      capi::mariadb_get_infov(connection.get(), MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
+      capi::mariadb_get_infov(connection, MARIADB_CONNECTION_SERVER_STATUS, (void*)&this->serverStatus);
       bool callableResult= (serverStatus & ServerStatus::PS_OUT_PARAMETERS)!=0;
 
       if (pr == nullptr)
       {
-        selectResultSet= SelectResultSet::create(results, this, connection.get(), eofDeprecated);
+        selectResultSet= SelectResultSet::create(results, this, connection, eofDeprecated);
       }
       else {
         pr->reReadColumnInfo();
@@ -1897,7 +1899,7 @@ namespace capi
     }
 
     if (getAutocommit()!=autocommit){
-      executeQuery(SQLString("set autocommit=").append(autocommit ?"1":"0"));
+      executeQuery(SQLString("SET AUTOCOMMIT=").append(autocommit ?"1":"0"));
     }
   }
 
@@ -2070,7 +2072,7 @@ namespace capi
   {
     if (hasMoreResults()) {
       //std::lock_guard<std::mutex> localScopeLock(lock);
-      auto conn= connection.get();
+      auto conn= connection;
       MYSQL_RES *res= nullptr;
       while (mysql_more_results(conn) && mysql_next_result(conn) == 0) {
         res= mysql_use_result(conn);

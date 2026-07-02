@@ -34,11 +34,10 @@ namespace mariadb
 class ByteArrayParameter  : public ParameterHolder {
 
   sql::bytes bytes;
-  bool noBackslashEscapes;
 
 public:
   ByteArrayParameter(const sql::bytes &bytes, bool noBackslashEscapes);
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL* conn) override;
   void  writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);

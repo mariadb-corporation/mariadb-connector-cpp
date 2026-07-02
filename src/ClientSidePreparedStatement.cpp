@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2024 MariaDB Corporation AB
+   Copyright (C) 2020, 2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -120,13 +120,9 @@ namespace mariadb
           sqlQuery,
           &parameters));
 
-      if (stmt->queryTimeout !=0 && stmt->canUseServerTimeout) {
-        protocol->executeQuery(
-          protocol->isMasterConnection(), stmt->getInternalResults().get(), prepareResult.get(), parameters, stmt->queryTimeout);
-      }
-      else {
-        protocol->executeQuery(protocol->isMasterConnection(), stmt->getInternalResults().get(), prepareResult.get(), parameters);
-      }
+      protocol->executeQuery(
+        protocol->isMasterConnection(), stmt->getInternalResults().get(), prepareResult.get(), parameters, stmt->canUseServerTimeout ? stmt->queryTimeout : -1);
+
       stmt->getInternalResults()->commandEnd();
       stmt->executeEpilogue();
       return stmt->getInternalResults()->getResultSet();

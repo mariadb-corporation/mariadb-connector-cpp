@@ -45,13 +45,13 @@ namespace classes
 {
 void preparedstatement::setUp()
 {
-  commonProperties["useServerPrepStmts"]= "false";
+  //commonProperties["useServerPrepStmts"]= "false";
   super::setUp();
 
   commonProperties["useServerPrepStmts"] = "true";
   try
   {
-    // We do not reset ssps to test it can be safely destroyed after destroying (createdd in previous test) connection
+    // We do not reset ssps to test that it can be safely destroyed after destroying (createdd in previous test) connection
     // ssps.reset();
     sspsCon.reset(this->getConnection(&commonProperties));
   }
@@ -2399,6 +2399,7 @@ void preparedstatement::concpp138_useRsAfterConClose()
   sspsCon.reset();
 }
 
+
 void preparedstatement::concpp128_batchWithGeneratedKeys()
 {
     sql::ConnectOptionsMap connection_properties{ {"userName", user}, {"password", passwd},
@@ -2429,6 +2430,39 @@ void preparedstatement::concpp128_batchWithGeneratedKeys()
     ASSERT_EQUALS(1, batchRes[1]);
     ASSERT(!res->next());
     con.reset();
+}
+
+
+void preparedstatement::concpp153_mbCsParamEscaping()
+{
+  const std::list<sql::SQLString> cs= { "big5", "gbk", "sjis", "cp932"};
+  const std::string value("\xa1' + 10 -- ", 11);
+  Connection csCon;
+  sql::Properties props(commonProperties);
+  props["useServerPrepStmts"]= "false";
+
+  for (const auto& cit : cs)
+  {
+    props["useCharacterEncoding"]= cit;
+    csCon.reset(getConnection(&props));
+
+    pstmt.reset(csCon->prepareStatement("SELECT ?"));
+    sql::bytes binaryValue(value.c_str(), value.length());
+    pstmt->setBytes(1, &binaryValue);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    sql::SQLString fetchedValue= res->getString(1);
+    ASSERT_EQUALS(value, fetchedValue);
+    ASSERT(!res->next());
+
+    // Now try with setString
+    pstmt->setString(1, value);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    fetchedValue= res->getString(1);
+    ASSERT_EQUALS(value, fetchedValue);
+    ASSERT(!res->next());
+  }
 }
 
 } /* namespace preparedstatement */

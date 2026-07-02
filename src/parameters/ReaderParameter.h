@@ -38,7 +38,7 @@ class ReaderParameter  : public ParameterHolder {
 public:
   ReaderParameter(std::istream& reader,int64_t length,bool noBackslashEscapes);
   ReaderParameter(std::istream& reader,bool noBackslashEscapes);
-  void writeTo(SQLString& str);
+  void writeTo(SQLString& str, capi::MYSQL*);
   void  writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength() const;
   uint32_t writeBinary(sql::bytes& buffer);

@@ -478,13 +478,13 @@ void resultset::getTypes()
           it->name.compare("LONGBLOB") != 0) {
           try {
             res->getInt(id);
-            FAIL("getInt shouldn't be available for this type");
+            FAIL(("getInt shouldn't be available for this type:" + it->name).c_str());
           }
           catch (sql::SQLException&) {
           }
           try {
             pres->getUInt(id);
-            FAIL("getUInt shouldn't be available for this type");
+            FAIL(("getUInt shouldn't be available for this type:" + it->name).c_str());
           }
           catch (sql::SQLException&) {
           }

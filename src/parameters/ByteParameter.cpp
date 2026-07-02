@@ -45,7 +45,7 @@ namespace mariadb
     os.write(hexArray[value & 0x0F]);
   }
 
-  void ByteParameter::writeTo(SQLString& os)
+  void ByteParameter::writeTo(SQLString& os, capi::MYSQL*)
   {
     os.append("0x");
     os.append(hexArray[(value & 0xF0) >> 4]);

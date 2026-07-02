@@ -21,9 +21,14 @@ IF(APPLE)
   # productbuild packaging stuff 
   CMAKE_MINIMUM_REQUIRED(VERSION 3.23)
 ELSE()
-  CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
+  CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 ENDIF()
 CMAKE_POLICY(SET CMP0048 NEW)
+IF (WITH_MSAN)
+  # MSAN fails with this policy set to NEW
+  CMAKE_POLICY(SET CMP0056 OLD)
+ENDIF()
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 PROJECT(mariadb_connector_cpp
         VERSION 1.2.0
@@ -413,6 +418,7 @@ ENDIF()
 
 IF (WITH_MSAN)
   MY_CHECK_AND_SET_COMPILER_FLAG("-fsanitize=memory -fsanitize-memory-track-origins -U_FORTIFY_SOURCE" DEBUG RELWITHDEBINFO)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 ENDIF()
 
 # This has to be before C/C's cmake run, or it will build with /MD
@@ -491,7 +497,7 @@ IF(NOT USE_SYSTEM_INSTALLED_LIB)
  	          COMPONENT ConnectorC)
     MESSAGE(STATUS "Configuring to install libmariadb to ${INSTALL_LIBDIR}")
 
-    SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password)
+    SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password parsec)
     IF (PLUGINS_DYNAMIC)
       # The list from CC is visible for us
       SET(PLUGINS_LIST ${PLUGINS_DYNAMIC})

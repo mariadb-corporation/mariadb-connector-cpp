@@ -37,6 +37,7 @@ class SerializableParameter  : public ParameterHolder {
 
 public:
   SerializableParameter( const sql::Object&object,bool noBackslashEscapes);
+  void writeTo(SQLString& str, capi::MYSQL*);
   void writeTo(PacketOutputStream& pos);
 
 private:

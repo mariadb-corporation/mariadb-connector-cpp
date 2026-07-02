@@ -66,14 +66,20 @@ template <class T> CArray<T>::CArray(T _arr[], size_t len) : arr(_arr), length(0
 template <class T> CArray<T>::CArray(const T _arr[], size_t len)
   : CArray(len)
 {
-  std::memcpy(arr, _arr, len*sizeof(T));
+  if (_arr) {
+    std::memcpy(arr, _arr, len * sizeof(T));
+  }
+  else if (len) {
+    // If _arr is nullptr but len != 0, we making sure that this CArray is still seen as nullptr
+    delete[] arr;
+    arr= nullptr;
+  }
 }
 
 
 template <class T> CArray<T>::~CArray()
 {
-  if (arr != nullptr && length > 0)
-  {
+  if (arr != nullptr && length > 0) {
     delete[] arr;
   }
 }
