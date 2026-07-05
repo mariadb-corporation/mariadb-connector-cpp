@@ -36,7 +36,7 @@
 #include "ColumnType.h"
 #include "com/ColumnNameMap.h"
 
-//#include "protocol/capi/BinRowProtocolCapi.h"
+#include "protocol/capi/BinRowProtocolCapi.h"
 
 #include "jdbccompat.hpp"
 
@@ -53,7 +53,7 @@ namespace capi
 {
 #include "mysql.h"
 
-class BinRowProtocolCapi;
+//class BinRowProtocolCapi;
 
 class SelectResultSetBin final : public SelectResultSet
 {
@@ -74,7 +74,7 @@ class SelectResultSetBin final : public SelectResultSet
   bool eofDeprecated;       // 5
 
   std::size_t dataSize; //Should go after data and since it's initializer calls mysql_stmt_store_result - before row.
-  mutable std::unique_ptr<BinRowProtocolCapi> row;
+  mutable /*std::unique_ptr<*/BinRowProtocolCapi row;
 
   //TimeZone* timeZone= nullptr;
   MariaDbStatement* statement;

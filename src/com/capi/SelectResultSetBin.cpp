@@ -81,8 +81,8 @@ namespace capi
       noBackslashEscapes(protocol->noBackslashEscapes()),
       eofDeprecated(eofDeprecated),
       dataSize(decideStreaming(results)),
-      row(new BinRowProtocolCapi(columnsInformation, static_cast<int32_t>(columnsInformation.size()),
-        results->getMaxFieldSize(), options, capiStmtHandle)),
+      row(/*new BinRowProtocolCapi(*/columnsInformation, static_cast<int32_t>(columnsInformation.size()),
+        results->getMaxFieldSize(), options, capiStmtHandle),
       statement(results->getStatement()),
       lock(protocol->getLock()),
       columnNameMap(new ColumnNameMap(columnsInformation)),
@@ -156,11 +156,11 @@ namespace capi
         if (!isEof && dataSize > 0 && fetchSize == 1) {
           // We need to grow the array till current size. Its main purpose is to create room for newly fetched
           // fetched row, so it grows till dataSize + 1. But we need to space for already fetched(from server)
-          // row-> Thus fooling growDataArray by decrementing dataSize
+          // row. Thus fooling growDataArray by decrementing dataSize
           --dataSize;
           growDataArray();
           // Since index of the last row is smaller from dataSize by 1, we have correct index
-          row->cacheCurrentRow(data[dataSize], columnsInformation.size());
+          row.cacheCurrentRow(data[dataSize], columnsInformation.size());
           rowPointer= 0;
           resetRow();
           ++dataSize;
@@ -219,7 +219,7 @@ namespace capi
     */
   bool SelectResultSetBin::readNextValue(bool cacheLocally)
   {
-    switch (row->fetchNext()) {
+    switch (row.fetchNext()) {
     case 1: {
       SQLString err("Internal error: most probably fetch on not yet executed statment handle. ");
       unsigned int nativeErrno = getErrNo();
@@ -285,7 +285,7 @@ namespace capi
       if (dataSize + 1 >= data.size()) {
         growDataArray();
       }
-      row->cacheCurrentRow(data[dataSize], columnsInformation.size());
+      row.cacheCurrentRow(data[dataSize], columnsInformation.size());
     }
     ++dataSize;
     return true;
@@ -309,11 +309,11 @@ namespace capi
   void SelectResultSetBin::updateRowData(std::vector<sql::bytes>& rawData)
   {
     data[rowPointer]= rawData;
-    row->resetRow(data[rowPointer]);
+    row.resetRow(data[rowPointer]);
   }
 
   /**
-    * Delete current data. Position cursor to the previous row->
+    * Delete current data. Position cursor to the previous row.
     *
     * @throws SQLException if previous() fail.
     */
@@ -449,10 +449,10 @@ namespace capi
   {
     ++rowPointer;
     if (data.size() > 0) {
-      row->resetRow(data[rowPointer]);
+      row.resetRow(data[rowPointer]);
     }
     else {
-      if (row->fetchNext() == MYSQL_NO_DATA) {
+      if (row.fetchNext() == MYSQL_NO_DATA) {
         return false;
       }
     }
@@ -501,14 +501,14 @@ namespace capi
   void SelectResultSetBin::resetRow() const
   {
     if (data.size() > rowPointer) {
-      row->resetRow(const_cast<std::vector<sql::bytes> &>(data[rowPointer]));
+      row.resetRow(const_cast<std::vector<sql::bytes> &>(data[rowPointer]));
     }
     else {
       if (rowPointer != lastRowPointer + 1) {
-        row->installCursorAtPosition(rowPointer);
+        row.installCursorAtPosition(rowPointer);
       }
       if (!streaming) {
-        row->fetchNext();
+        row.fetchNext();
       }
     }
     lastRowPointer= rowPointer;
@@ -534,7 +534,7 @@ namespace capi
     if (lastRowPointer != rowPointer) {
       resetRow();
     }
-    row->setPosition(position - 1);
+    row.setPosition(position - 1);
   }
 
 
@@ -572,7 +572,7 @@ namespace capi
         std::lock_guard<std::mutex> localScopeLock(*lock);
         try {
           // this time, fetch is added even for streaming forward type only to keep current pointer
-          // row->
+          // row.
           if (!isEof) {
             addStreamingValue();
           }
@@ -809,13 +809,13 @@ namespace capi
 
   /** {inheritDoc}. */
   bool SelectResultSetBin::wasNull() const {
-    return row->wasNull();
+    return row.wasNull();
   }
 
   bool SelectResultSetBin::isNull(int32_t columnIndex) const
   {
     checkObjectRange(columnIndex);
-    return row->lastValueWasNull();
+    return row.lastValueWasNull();
   }
 
   bool SelectResultSetBin::isNull(const SQLString & columnLabel) const
@@ -832,11 +832,11 @@ namespace capi
   /** {inheritDoc}. */
   std::istream* SelectResultSetBin::getAsciiStream(int32_t columnIndex) {
     checkObjectRange(columnIndex);
-    if (row->lastValueWasNull()) {
+    if (row.lastValueWasNull()) {
       return nullptr;
     }
     return new ByteArrayInputStream(
-      new SQLString(row->buf, row->pos, row->getLengthMaxFieldSize()).c_str());/*, StandardCharsets.UTF_8*/
+      new SQLString(row.buf, row.pos, row.getLengthMaxFieldSize()).c_str());/*, StandardCharsets.UTF_8*/
   }
 #endif
 
@@ -845,7 +845,7 @@ namespace capi
   {
     checkObjectRange(columnIndex);
 
-    return std::move(row->getInternalString(columnsInformation[columnIndex - 1].get()));
+    return row.getInternalString(columnsInformation[columnIndex - 1].get());
   }
 
   /** {inheritDoc}. */
@@ -870,10 +870,10 @@ namespace capi
   /** {inheritDoc}. */
   std::istream* SelectResultSetBin::getBinaryStream(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    if (row->lastValueWasNull()) {
+    if (row.lastValueWasNull()) {
       return nullptr;
     }
-    blobBuffer[columnIndex].reset(new memBuf(row->fieldBuf.arr + row->pos, row->fieldBuf.arr + row->pos + row->getLengthMaxFieldSize()));
+    blobBuffer[columnIndex].reset(new memBuf(row.fieldBuf.arr + row.pos, row.fieldBuf.arr + row.pos + row.getLengthMaxFieldSize()));
     return new std::istream(blobBuffer[columnIndex].get());
   }
 
@@ -885,7 +885,7 @@ namespace capi
   /** {inheritDoc}. */
   int32_t SelectResultSetBin::getInt(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalInt(columnsInformation[columnIndex -1].get());
+    return row.getInternalInt(columnsInformation[columnIndex -1].get());
   }
 
   /** {inheritDoc}. */  int32_t SelectResultSetBin::getInt(const SQLString& columnLabel) const {
@@ -900,7 +900,7 @@ namespace capi
   /** {inheritDoc}. */
   int64_t SelectResultSetBin::getLong(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalLong(columnsInformation[columnIndex -1].get());
+    return row.getInternalLong(columnsInformation[columnIndex -1].get());
   }
 
 
@@ -911,7 +911,7 @@ namespace capi
 
   uint64_t SelectResultSetBin::getUInt64(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return static_cast<uint64_t>(row->getInternalULong(columnsInformation[columnIndex -1].get()));
+    return static_cast<uint64_t>(row.getInternalULong(columnsInformation[columnIndex -1].get()));
   }
 
 
@@ -924,9 +924,9 @@ namespace capi
     checkObjectRange(columnIndex);
 
     ColumnDefinition* columnInfo= columnsInformation[columnIndex - 1].get();
-    int64_t value= row->getInternalLong(columnInfo);
+    int64_t value= row.getInternalLong(columnInfo);
 
-    row->rangeCheck("uint32_t", 0, UINT32_MAX, value, columnInfo);
+    row.rangeCheck("uint32_t", 0, UINT32_MAX, value, columnInfo);
 
     return static_cast<uint32_t>(value);
   }
@@ -940,7 +940,7 @@ namespace capi
   /** {inheritDoc}. */
   float SelectResultSetBin::getFloat(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalFloat(columnsInformation[columnIndex - 1].get());
+    return row.getInternalFloat(columnsInformation[columnIndex - 1].get());
   }
 
   /** {inheritDoc}. */
@@ -951,7 +951,7 @@ namespace capi
   /** {inheritDoc}. */
   long double SelectResultSetBin::getDouble(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalDouble(columnsInformation[columnIndex - 1].get());
+    return row.getInternalDouble(columnsInformation[columnIndex - 1].get());
   }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
@@ -963,13 +963,13 @@ namespace capi
   /** {inheritDoc}. */
   BigDecimal SelectResultSetBin::getBigDecimal(int32_t columnIndex, int32_t scale) {
     checkObjectRange(columnIndex);
-    return row->getInternalBigDecimal(columnsInformation[columnIndex -1]);
+    return row.getInternalBigDecimal(columnsInformation[columnIndex -1]);
   }
 
   /** {inheritDoc}. */
   BigDecimal SelectResultSetBin::getBigDecimal(int32_t columnIndex) {
     checkObjectRange(columnIndex);
-    return row->getInternalBigDecimal(columnsInformation[columnIndex -1]);
+    return row.getInternalBigDecimal(columnsInformation[columnIndex -1]);
   }
 
   /** {inheritDoc}. */
@@ -985,18 +985,18 @@ namespace capi
   /** {inheritDoc}. */
   SQLString SelectResultSetBin::getBytes(int32_t columnIndex) {
     checkObjectRange(columnIndex);
-    if (row->lastValueWasNull()) {
+    if (row.lastValueWasNull()) {
       return nullptr;
     }
-    char* data= new char[row->getLengthMaxFieldSize()];
-    System.arraycopy(row->buf, row->pos, data, 0, row->getLengthMaxFieldSize());
+    char* data= new char[row.getLengthMaxFieldSize()];
+    System.arraycopy(row.buf, row.pos, data, 0, row.getLengthMaxFieldSize());
     return data;
   }
 #endif
   /** {inheritDoc}. */
   Date SelectResultSetBin::getDate(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalDate(columnsInformation[columnIndex - 1].get(), nullptr, nullptr);
+    return row.getInternalDate(columnsInformation[columnIndex - 1].get(), nullptr, nullptr);
   }
 
   /** {inheritDoc}. */
@@ -1007,7 +1007,7 @@ namespace capi
   /** {inheritDoc}. */
   Time SelectResultSetBin::getTime(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalTime(columnsInformation[columnIndex - 1].get(), nullptr, nullptr);
+    return row.getInternalTime(columnsInformation[columnIndex - 1].get(), nullptr, nullptr);
   }
 
   /** {inheritDoc}. */  Time SelectResultSetBin::getTime(const SQLString& columnLabel) const {
@@ -1022,13 +1022,13 @@ namespace capi
   /** {inheritDoc}. */
   Timestamp SelectResultSetBin::getTimestamp(int32_t columnIndex) const {
     checkObjectRange(columnIndex);
-    return row->getInternalTimestamp(columnsInformation[columnIndex - 1].get(), nullptr, nullptr);
+    return row.getInternalTimestamp(columnsInformation[columnIndex - 1].get(), nullptr, nullptr);
   }
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
   /** {inheritDoc}. */
   Date* SelectResultSetBin::getDate(int32_t columnIndex, Calendar& cal) {
     checkObjectRange(columnIndex);
-    return row->getInternalDate(columnsInformation[columnIndex -1], cal, timeZone);
+    return row.getInternalDate(columnsInformation[columnIndex -1], cal, timeZone);
   }
 
   /** {inheritDoc}. */
@@ -1039,7 +1039,7 @@ namespace capi
   /** {inheritDoc}. */
   Time* SelectResultSetBin::getTime(int32_t columnIndex, Calendar& cal) {
     checkObjectRange(columnIndex);
-    return row->getInternalTime(columnsInformation[columnIndex -1], cal, timeZone);
+    return row.getInternalTime(columnsInformation[columnIndex -1], cal, timeZone);
   }
 
   /** {inheritDoc}. */
@@ -1050,7 +1050,7 @@ namespace capi
   /** {inheritDoc}. */
   Timestamp* SelectResultSetBin::getTimestamp(int32_t columnIndex, Calendar& cal) {
     checkObjectRange(columnIndex);
-    return row->getInternalTimestamp(columnsInformation[columnIndex -1], cal, timeZone);
+    return row.getInternalTimestamp(columnsInformation[columnIndex -1], cal, timeZone);
   }
 
   /** {inheritDoc}. */
@@ -1079,7 +1079,7 @@ namespace capi
   /** {inheritDoc}. */
   sql::Object* SelectResultSetBin::getObject(int32_t columnIndex) {
     checkObjectRange(columnIndex);
-    return row->getInternalObject(columnsInformation[columnIndex -1], timeZone);
+    return row.getInternalObject(columnsInformation[columnIndex -1], timeZone);
   }
 
   /** {inheritDoc}. */
@@ -1092,64 +1092,64 @@ namespace capi
       throw SQLException("Class type cannot be NULL");
     }
     checkObjectRange(columnIndex);
-    if (row->lastValueWasNull()) {
+    if (row.lastValueWasNull()) {
       return nullptr;
     }
     ColumnDefinition col= columnsInformation[columnIndex -1];
 
     if ((type.compare(SQLString.class) == 0)) {
-      return (T)row->getInternalString(col, nullptr, timeZone);
+      return (T)row.getInternalString(col, nullptr, timeZone);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)static_cast<int32_t>(row->getInternalInt(col));
+      return (T)static_cast<int32_t>(row.getInternalInt(col));
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)static_cast<int64_t>(row->getInternalLong(col));
+      return (T)static_cast<int64_t>(row.getInternalLong(col));
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)(Short)row->getInternalShort(col);
+      return (T)(Short)row.getInternalShort(col);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)(Double)row->getInternalDouble(col);
+      return (T)(Double)row.getInternalDouble(col);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)(Float)row->getInternalFloat(col);
+      return (T)(Float)row.getInternalFloat(col);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)(Byte)row->getInternalByte(col);
+      return (T)(Byte)row.getInternalByte(col);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      char* data= new char[row->getLengthMaxFieldSize()];
-      System.arraycopy(row->buf, row->pos, data, 0, row->getLengthMaxFieldSize());
+      char* data= new char[row.getLengthMaxFieldSize()];
+      System.arraycopy(row.buf, row.pos, data, 0, row.getLengthMaxFieldSize());
       return (T)data;
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)row->getInternalDate(col, nullptr, timeZone);
+      return (T)row.getInternalDate(col, nullptr, timeZone);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)row->getInternalTime(col, nullptr, timeZone);
+      return (T)row.getInternalTime(col, nullptr, timeZone);
 
     }
     else if ((type.compare(SQLString.class) == 0)||((type.compare(SQLString.class) == 0)) {
-      return (T)row->getInternalTimestamp(col, nullptr, timeZone);
+      return (T)row.getInternalTimestamp(col, nullptr, timeZone);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)(Boolean)row->getInternalBoolean(col);
+      return (T)(Boolean)row.getInternalBoolean(col);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
       calendar=  .getInstance(timeZone);
-      Timestamp timestamp= row->getInternalTimestamp(col, nullptr, timeZone);
+      Timestamp timestamp= row.getInternalTimestamp(col, nullptr, timeZone);
       if (timestamp.empty() == true) {
         return nullptr;
       }
@@ -1158,15 +1158,15 @@ namespace capi
 
     }
     else if ((type.compare(SQLString.class) == 0)||((type.compare(SQLString.class) == 0)) {
-      return (T)new MariaDbClob(row->buf, row->pos, row->getLengthMaxFieldSize());
+      return (T)new MariaDbClob(row.buf, row.pos, row.getLengthMaxFieldSize());
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)new ByteArrayInputStream(row->buf, row->pos, row->getLengthMaxFieldSize());
+      return (T)new ByteArrayInputStream(row.buf, row.pos, row.getLengthMaxFieldSize());
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      SQLString value= row->getInternalString(col, nullptr, timeZone);
+      SQLString value= row.getInternalString(col, nullptr, timeZone);
       if (value.empty() == true) {
         return nullptr;
       }
@@ -1174,19 +1174,19 @@ namespace capi
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)row->getInternalBigDecimal(col);
+      return (T)row.getInternalBigDecimal(col);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)row->getInternalBigInteger(col);
+      return (T)row.getInternalBigInteger(col);
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      return (T)row->getInternalBigDecimal(col);
+      return (T)row.getInternalBigDecimal(col);
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
       ZonedDateTime zonedDateTime =
-        row->getInternalZonedDateTime(col, LocalDateTime.class, timeZone);
+        row.getInternalZonedDateTime(col, LocalDateTime.class, timeZone);
       return zonedDateTime.empty() == true
         ? nullptr
         : type.cast(zonedDateTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime());
@@ -1194,21 +1194,21 @@ namespace capi
     }
     else if ((type.compare(SQLString.class) == 0)) {
       ZonedDateTime zonedDateTime =
-        row->getInternalZonedDateTime(col, ZonedDateTime.class, timeZone);
+        row.getInternalZonedDateTime(col, ZonedDateTime.class, timeZone);
       if (zonedDateTime.empty() == true) {
         return nullptr;
       }
-      return type.cast(row->getInternalZonedDateTime(col, ZonedDateTime.class, timeZone));
+      return type.cast(row.getInternalZonedDateTime(col, ZonedDateTime.class, timeZone));
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
       ZonedDateTime tmpZonedDateTime =
-        row->getInternalZonedDateTime(col, OffsetDateTime.class, timeZone);
+        row.getInternalZonedDateTime(col, OffsetDateTime.class, timeZone);
       return tmpZonedDateTime.empty() == true ? nullptr : type.cast(tmpZonedDateTime.toOffsetDateTime());
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      LocalDate localDate= row->getInternalLocalDate(col, timeZone);
+      LocalDate localDate= row.getInternalLocalDate(col, timeZone);
       if (localDate.empty() == true) {
         return nullptr;
       }
@@ -1216,7 +1216,7 @@ namespace capi
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      LocalDate localDate= row->getInternalLocalDate(col, timeZone);
+      LocalDate localDate= row.getInternalLocalDate(col, timeZone);
       if (localDate.empty() == true) {
         return nullptr;
       }
@@ -1224,7 +1224,7 @@ namespace capi
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      LocalTime localTime= row->getInternalLocalTime(col, timeZone);
+      LocalTime localTime= row.getInternalLocalTime(col, timeZone);
       if (localTime.empty() == true) {
         return nullptr;
       }
@@ -1232,7 +1232,7 @@ namespace capi
 
     }
     else if ((type.compare(SQLString.class) == 0)) {
-      OffsetTime offsetTime= row->getInternalOffsetTime(col, timeZone);
+      OffsetTime offsetTime= row.getInternalOffsetTime(col, timeZone);
       if (offsetTime.empty() == true) {
         return nullptr;
       }
@@ -1250,7 +1250,7 @@ namespace capi
   /** {inheritDoc}. */
   std::istringstream* SelectResultSetBin::getCharacterStream(int32_t columnIndex) {
     checkObjectRange(columnIndex);
-    SQLString value= row->getInternalString(columnsInformation[columnIndex -1], nullptr, timeZone);
+    SQLString value= row.getInternalString(columnsInformation[columnIndex -1], nullptr, timeZone);
     if (value.empty() == true) {
       return nullptr;
     }
@@ -1281,10 +1281,10 @@ namespace capi
   /** {inheritDoc}. */
   Clob* SelectResultSetBin::getClob(int32_t columnIndex) {
     checkObjectRange(columnIndex);
-    if (row->lastValueWasNull()) {
+    if (row.lastValueWasNull()) {
       return nullptr;
     }
-    return new MariaDbClob(row->buf, row->pos, row->length);
+    return new MariaDbClob(row.buf, row.pos, row.length);
   }
 
   /** {inheritDoc}. */
@@ -1306,11 +1306,11 @@ namespace capi
   URL* SelectResultSetBin::getURL(int32_t columnIndex)
   {
     checkObjectRange(columnIndex);
-    if (row->lastValueWasNull()) {
+    if (row.lastValueWasNull()) {
       return nullptr;
     }
     try {
-      return new URL(row->getInternalString(columnsInformation[columnIndex -1], nullptr, timeZone));
+      return new URL(row.getInternalString(columnsInformation[columnIndex -1], nullptr, timeZone));
     }
     catch (MalformedURLException& e) {
       throw ExceptionMapper::getSqlException("Could not parse as URL");
@@ -1325,10 +1325,10 @@ namespace capi
   /** {inheritDoc}. */
   NClob* SelectResultSetBin::getNClob(int32_t columnIndex) {
     checkObjectRange(columnIndex);
-    if (row->lastValueWasNull()) {
+    if (row.lastValueWasNull()) {
       return nullptr;
     }
-    return new MariaDbClob(row->buf, row->pos, row->length);
+    return new MariaDbClob(row.buf, row.pos, row.length);
   }
 
   /** {inheritDoc}. */
@@ -1377,7 +1377,7 @@ namespace capi
   /** {inheritDoc}. */
   bool SelectResultSetBin::getBoolean(int32_t index) const {
     checkObjectRange(index);
-    return row->getInternalBoolean(columnsInformation[static_cast<std::size_t>(index) -1].get());
+    return row.getInternalBoolean(columnsInformation[static_cast<std::size_t>(index) -1].get());
   }
 
   /** {inheritDoc}. */
@@ -1388,7 +1388,7 @@ namespace capi
   /** {inheritDoc}. */
   int8_t SelectResultSetBin::getByte(int32_t index) const {
     checkObjectRange(index);
-    return row->getInternalByte(columnsInformation[static_cast<std::size_t>(index) - 1].get());
+    return row.getInternalByte(columnsInformation[static_cast<std::size_t>(index) - 1].get());
   }
 
   /** {inheritDoc}. */
@@ -1399,7 +1399,7 @@ namespace capi
   /** {inheritDoc}. */
   short SelectResultSetBin::getShort(int32_t index) const {
     checkObjectRange(index);
-    return row->getInternalShort(columnsInformation[static_cast<std::size_t>(index) - 1].get());
+    return row.getInternalShort(columnsInformation[static_cast<std::size_t>(index) - 1].get());
   }
 
   /** {inheritDoc}. */
@@ -1874,7 +1874,7 @@ namespace capi
 
 
   bool SelectResultSetBin::isBinaryEncoded() {
-    return row->isBinaryEncoded();
+    return row.isBinaryEncoded();
   }
 
 
@@ -1935,14 +1935,14 @@ namespace capi
     else {
       if (rowPointer > -1) {
         beforeFirst();
-        row->installCursorAtPosition(rowPointer > -1 ? rowPointer : 0);
+        row.installCursorAtPosition(rowPointer > -1 ? rowPointer : 0);
         lastRowPointer= -1;
       }
       growDataArray(true);
 
       for (std::size_t rowNum= 0; rowNum < dataSize; ++rowNum) {
-        row->fetchNext();
-        row->cacheCurrentRow(data[rowNum], columnInformationLength);
+        row.fetchNext();
+        row.cacheCurrentRow(data[rowNum], columnInformationLength);
       }
       for (auto& colInfo : columnsInformation) {
         colInfo->makeLocalCopy();
