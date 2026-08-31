@@ -545,12 +545,13 @@ SQLString MariaDbDatabaseMetaData::catalogCond(const SQLString& columnName, cons
 {
   if (catalog.empty()) {
 
-    if (connection->nullCatalogMeansCurrent){
-      return "(ISNULL(database()) OR ("+columnName +" = database()))";
+    if (connection->nullCatalogMeansCurrent) {
+      return "(ISNULL(database()) OR (" + columnName +" = database()))";
     }
     return "(1 = 1)";
   }
-  // TODO the upper if is for NULL value. Have to decide if we can have NULL value here, i.e. should catalog and other names be passed by ptr to the connector
+  // TODO the upper if is for NULL value. Have to decide if we can have NULL value here,
+  // i.e. should catalog and other names be passed by ptr to the connector
   /*if (catalog.empty()){
     return "(ISNULL(database()) OR ("+columnName +" = database()))";
   }*/
@@ -564,17 +565,17 @@ SQLString MariaDbDatabaseMetaData::patternCond(const SQLString& columnName, cons
   if (tableName.empty()){
     return "(1 = 1)";
   }
-  SQLString predicate =
+  SQLString predicate=
     (tableName.find_first_of('%') == std::string::npos && tableName.find_first_of('_') == std::string::npos) ? "=" : "LIKE";
 
-  return "("+columnName +" "+predicate +" '" + Utils::escapeString(tableName,true)+"')";
+  return "("+columnName +" "+predicate +" '" + Utils::escapeString(tableName, true)+"')";
 }
 
 
 /* We can't pass NULL, "" should mean "no schema" */
 SQLString schemaPatternCond(const SQLString& columnName, const SQLString& schemaName)
 {
-  SQLString predicate =
+  SQLString predicate=
     (schemaName.find_first_of('%') == std::string::npos && schemaName.find_first_of('_') == std::string::npos) ? "=" : "LIKE";
 
   return "(" + columnName + " " + predicate + " '" + Utils::escapeString(schemaName, true) + "')";
