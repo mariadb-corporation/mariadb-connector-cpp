@@ -90,7 +90,7 @@ namespace sql
         int32_t(0)}},
       {
         "interactiveClient", {"interactiveClient",
-        "0.9.1",
+        "1.0.8",
         "Session timeout is defined by the wait_timeout "
         "server variable. Setting interactiveClient to true will tell the server to use the interactive_timeout "
         "server variable.",
@@ -155,7 +155,7 @@ namespace sql
         false}},
       {
         "allowMultiQueries", {"allowMultiQueries",
-        "0.9.1",
+        "1.0.8",
         "permit multi-queries like insert into ab (i) "
         "values (1); insert into ab (i) values (2).",
         false,
@@ -641,13 +641,13 @@ namespace sql
         false}},
       {
         "useAffectedRows", {"useAffectedRows",
-        "0.9.1",
-        "If false (default), use \"found rows\" for the row "
-        "count of statements. This corresponds to the JDBC standard.\n"
-        "If true, use \"affected rows\" for the row count.\n"
+        "1.0.8",
+        "If true (default), use \"affected rows\" for the row "
+        "count of statements.\n"
+        "If false, use \"found rows\" for the row count. This corresponds to the JDBC standard.\n"
         "This changes the behavior of, for example, UPDATE... ON DUPLICATE KEY statements.",
         false,
-        false}},
+        true}},
       {
         "includeInnodbStatusInDeadlockExceptions", {"includeInnodbStatusInDeadlockExceptions",
         "0.9.1",

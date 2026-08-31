@@ -782,16 +782,21 @@ void statement::concpp107_setFetchSizeExeption()
 /* CONCPP-132 getMoreResults highjacks other statement's pending result */
 void statement::otherstmts_result()
 {
-  res.reset(stmt->executeQuery("SELECT 100"));
-  ASSERT(res->next());
-  ASSERT(!res->next());
+  /* Multi-queries are not allowed by default(CONCPP-163) */
+  sql::ConnectOptionsMap opts{{"allowMultiQueries", "true"}};
+  Connection c1(getConnection(&opts));
+  Statement stmt0(c1->createStatement());
 
-  Statement stmt1(con->createStatement());
+  ResultSet res0(stmt0->executeQuery("SELECT 100"));
+  ASSERT(res0->next());
+  ASSERT(!res0->next());
+
+  Statement stmt1(c1->createStatement());
   ResultSet res1(stmt1->executeQuery("SELECT 3;SELECT 2 UNION SELECT 4"));
   ASSERT(res1->next());
   ASSERT(!res1->next());
-  ASSERT(!stmt->getMoreResults());
-  ASSERT(stmt->getUpdateCount() == -1);
+  ASSERT(!stmt0->getMoreResults());
+  ASSERT(stmt0->getUpdateCount() == -1);
   ASSERT(stmt1->getMoreResults());
   res1.reset(stmt1->getResultSet());
   ASSERT(res1->next());
@@ -805,11 +810,16 @@ void statement::otherstmts_result()
 /* CONCPP-133  */
 void statement::multirs_caching()
 {
-  Statement stmt1(con->createStatement());
+  /* Multi-queries are not allowed by default(CONCPP-163) */
+  sql::ConnectOptionsMap opts{{"allowMultiQueries", "true"}};
+  Connection c1(getConnection(&opts));
+  Statement stmt0(c1->createStatement());
+
+  Statement stmt1(c1->createStatement());
   ResultSet res1(stmt1->executeQuery("SELECT 2 UNION SELECT 4;SELECT 3;SELECT 1"));
   ASSERT(res1->next()); // next() does not read the record - only increments internal cursor position
   /* Executing another query - stmt1 has to cache pending results */
-  res.reset(stmt->executeQuery("SELECT 100"));
+  ResultSet res0(stmt0->executeQuery("SELECT 100"));
   /* Making sure we are at same position after caching */
   ASSERT_EQUALS(2, res1->getInt(1));
   ASSERT(res1->next());
@@ -821,11 +831,11 @@ void statement::multirs_caching()
   ASSERT_EQUALS(3, res1->getInt(1));
   ASSERT(!res1->next());
   /* Now reading 2nd query result*/
-  ASSERT(res->next());
-  ASSERT_EQUALS(100, res->getInt(1));
-  ASSERT(!res->next());
-  ASSERT(!stmt->getMoreResults());
-  ASSERT(stmt->getUpdateCount() == -1);
+  ASSERT(res0->next());
+  ASSERT_EQUALS(100, res0->getInt(1));
+  ASSERT(!res0->next());
+  ASSERT(!stmt0->getMoreResults());
+  ASSERT(stmt0->getUpdateCount() == -1);
   /* Getting back to 1st query */
   ASSERT(stmt1->getMoreResults());
   res1.reset(stmt1->getResultSet());

@@ -94,6 +94,7 @@ public:
     TEST_CASE(concpp94_loadLocalInfile);
     TEST_CASE(concpp105_conn_concurrency);
     TEST_CASE(concpp112_connection_attributes);
+    TEST_CASE(concpp163);
   }
 
   /**
@@ -288,6 +289,9 @@ public:
 
   /* Setting of connection attributes for perfschema */
   void concpp112_connection_attributes();
+
+  /* allowMultiQueries option, and other client capabilities controlled by connection options */
+  void concpp163();
 
   void setUp();
 };
