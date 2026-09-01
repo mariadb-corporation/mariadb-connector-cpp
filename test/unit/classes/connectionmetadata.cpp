@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2023 MariaDB Corporation AB
+ *               2020, 2026 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -2569,6 +2569,56 @@ void connectionmetadata::bugCpp25()
   }
 #endif // !_WIN32
 
+}
+
+/* CONCPP-161, CONCPP-162 Escaping of the name patterns in the DatabaseMetaData methods assumed the server to
+   always run with the NO_BACKSLASH_ESCAPES sql_mode, i.e. the backslash was left as it is. With the
+   default sql_mode that made the server to treat the backslash in the name as the escape character,
+   and the resulting query was broken. Besides that the function used to escape the parameters had a bug
+   and multiplicate quots and/or backslashes in the query */
+void connectionmetadata::concpp161()
+{
+  /* The name contains a backslash and a quote, and no LIKE wildcard, so the connector uses
+     the '=' predicate for it */
+  const sql::SQLString tableName("concpp161tbl\\'a");
+  /* The backslash is not an escape character inside the backticks, thus the name is created as is */
+  const String quotedName(String("`") + tableName.c_str() + "`");
+  const sql::SQLString initialSqlMode(getVariableValue("sql_mode"));
+
+  createSchemaObject("TABLE", quotedName, "(id INT)");
+
+  /* Making sure the table name is stored by the server exactly as the test expects it, i.e. that
+     the backslash is a part of the name */
+  pstmt.reset(con->prepareStatement("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES "
+                                    "WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?"));
+  pstmt->setString(1, tableName);
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS(1, res->getInt(1));
+  res.reset();
+  pstmt.reset();
+
+  DatabaseMetaData dbmeta(con->getMetaData());
+  /* The name has to be found in either sql_mode - the connector has to escape it according to the
+     mode the server is currently in. Before the fix the first of the modes ended with the parse
+     error, as the closing quote of the name in the query was consumed as the escaped one */
+  const char* newSqlMode[]{"REPLACE(@@sql_mode, 'NO_BACKSLASH_ESCAPES', '')",
+                           "CONCAT(@@sql_mode, ',NO_BACKSLASH_ESCAPES')"};
+
+  for (auto mode : newSqlMode) {
+    stmt->execute(sql::SQLString("SET SESSION sql_mode=") + mode);
+
+    res.reset(dbmeta->getColumns(con->getCatalog(), con->getSchema(), tableName, "%"));
+    /* Restoring the mode before the assertions - the connection is shared with other tests */
+    stmt->execute("SET SESSION sql_mode='" + initialSqlMode + "'");
+
+    ASSERT(res->next());
+    ASSERT_EQUALS(tableName, res->getString("TABLE_NAME"));
+    ASSERT_EQUALS("id", res->getString("COLUMN_NAME"));
+    /* The name was matched with '=', and thus can't match any other table */
+    ASSERT(!res->next());
+    res.reset();
+  }
 }
 
 } /* namespace connectionmetadata */

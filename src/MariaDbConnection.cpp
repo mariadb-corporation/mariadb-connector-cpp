@@ -1094,7 +1094,7 @@ namespace mariadb
     Savepoint* savepoint= new MariaDbSavepoint(name, savepointCount++);
     std::unique_ptr<Statement> st(createStatement());
 
-    st->execute("SAVEPOINT "+savepoint->toString());
+    st->execute("SAVEPOINT " + savepoint->toString());
 
     return savepoint;
   }

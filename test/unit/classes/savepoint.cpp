@@ -48,7 +48,6 @@ namespace classes
 void savepoint::getSavepointId()
 {
   logMsg("savepoint::getSavepointId() - MySQL_Savepoint::getSavepointId()");
-
   try
   {
     con->setAutoCommit(true);

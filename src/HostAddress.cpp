@@ -179,8 +179,7 @@ namespace sql
         SQLString key((*token)[0].toLowerCase());
         SQLString value((*token)[1].toLowerCase());
 
-        if ((key.compare("host") == 0))
-        {
+        if ((key.compare("host") == 0)) {
           replaceAny(result.host, "[]", "");
         }
         else if ((key.compare("port") == 0)) {
