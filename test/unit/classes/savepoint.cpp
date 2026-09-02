@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2026 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -48,6 +49,8 @@ namespace classes
 void savepoint::getSavepointId()
 {
   logMsg("savepoint::getSavepointId() - MySQL_Savepoint::getSavepointId()");
+  SKIP("Currently in this version savepoint can be set "
+    "in autoCommit mode. This will be fixed in next version series.");
   try
   {
     con->setAutoCommit(true);
@@ -57,7 +60,6 @@ void savepoint::getSavepointId()
   catch (sql::SQLException &)
   {
   }
-
   try
   {
     con->setAutoCommit(false);
@@ -65,7 +67,7 @@ void savepoint::getSavepointId()
     try
     {
       sp->getSavepointId();
-      FAIL("Anonymous savepoints are not supported");
+      FAIL("Savepoint is not anonymous - getSavepointId() should throw");
     }
     catch (sql::InvalidArgumentException &)
     {
@@ -98,5 +100,49 @@ void savepoint::getSavepointName()
   }
 }
 
+/**/
+void savepoint::concpp164()
+{
+  logMsg("savepoint::concpp164() - MariaDbSavepoint::getSavepointName()");
+  try
+  {
+    const sql::SQLString savepointName("evil`savepoint");
+
+    createTable("concpp164", "(id INT)");
+
+    con->setAutoCommit(false);
+    std::unique_ptr< sql::Savepoint > sp(con->setSavepoint(savepointName));
+    ASSERT_EQUALS(savepointName, sp->getSavepointName());
+    // Verifying that the created savepoint has the requested name.
+    // Execution should not fail if the connector created savepoint with the correct name.
+    sql::SQLString releaseQuery("RELEASE SAVEPOINT `evil``savepoint`");
+    stmt->execute(releaseQuery);
+    // Creating it again to test releaseSavepoint() method of the connection.
+    sp.reset(con->setSavepoint(savepointName));
+    con->releaseSavepoint(sp.get());
+
+    // Now testing that the savepoint is not only created and released, but is also usable
+    stmt->executeUpdate("INSERT INTO concpp164 VALUES(1)");
+    sp.reset(con->setSavepoint(savepointName));
+    stmt->executeUpdate("INSERT INTO concpp164 VALUES(2)");
+    con->rollback(sp.get());
+    con->commit();
+
+    // Only the row inserted before the savepoint has to survive the rollback to it
+    res.reset(stmt->executeQuery("SELECT id FROM concpp164"));
+    ASSERT(res->next());
+    ASSERT_EQUALS(1, res->getInt(1));
+    ASSERT(!res->next());
+    res.reset();
+
+    con->setAutoCommit(true);
+  }
+  catch (sql::SQLException& e)
+  {
+    logErr(e.what());
+    logErr("SQLState: " + std::string(e.getSQLState()));
+    fail(e.what(), __FILE__, __LINE__);
+  }
+}
 } /* namespace savepoint */
 } /* namespace testsuite */

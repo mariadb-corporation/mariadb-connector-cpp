@@ -30,14 +30,17 @@ namespace mariadb
 
 class MariaDbSavepoint  : public Savepoint {
 
-  int32_t savepointId;
+  int32_t savepointId= 0;
   const SQLString name;
+  std::string quotedEscapedName;
 
 public:
-  MariaDbSavepoint(const SQLString& name,int32_t savepointId);
+  MariaDbSavepoint(const SQLString& name);
+  MariaDbSavepoint(int32_t savepointId);
   int32_t getSavepointId() const;
   const SQLString& getSavepointName() const;
   SQLString toString() const;
+  const std::string& getQuotedEscapedName() const;
 };
 
 }

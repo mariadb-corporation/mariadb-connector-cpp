@@ -767,10 +767,16 @@ namespace mariadb
     */
   void MariaDbConnection::rollback(const Savepoint* savepoint)
   {
-    std::unique_lock<std::mutex> localScopeLock(*lock);
     Unique::Statement st(createStatement());
-    localScopeLock.unlock();
-    st->execute("ROLLBACK TO SAVEPOINT " + savepoint->toString());
+    auto mariaDbSavepoint = dynamic_cast<const MariaDbSavepoint*>(savepoint);
+    if (mariaDbSavepoint) {
+      st->execute("ROLLBACK TO SAVEPOINT " + mariaDbSavepoint->getQuotedEscapedName());
+    }
+    else {
+      // TODO: in next verion we should throw an exception
+      // because this is not a valid savepoint for this connection
+      st->execute("ROLLBACK TO SAVEPOINT " + savepoint->toString());
+    }
   }
 
   /**
@@ -1073,7 +1079,10 @@ namespace mariadb
     * @since 1.4
     */
   Savepoint* MariaDbConnection::setSavepoint() {
-    return setSavepoint("unnamed");
+    MariaDbSavepoint* savepoint= new MariaDbSavepoint(++savepointCount);
+    std::unique_ptr<Statement> st(createStatement());
+    st->execute("SAVEPOINT " + savepoint->getQuotedEscapedName());
+    return savepoint;
   }
 
   /**
@@ -1091,11 +1100,9 @@ namespace mariadb
     */
   Savepoint* MariaDbConnection::setSavepoint(const SQLString& name)
   {
-    Savepoint* savepoint= new MariaDbSavepoint(name, savepointCount++);
+    MariaDbSavepoint* savepoint= new MariaDbSavepoint(name);
     std::unique_ptr<Statement> st(createStatement());
-
-    st->execute("SAVEPOINT " + savepoint->toString());
-
+    st->execute("SAVEPOINT " + savepoint->getQuotedEscapedName());
     return savepoint;
   }
 
@@ -1111,8 +1118,16 @@ namespace mariadb
     */
   void MariaDbConnection::releaseSavepoint(const Savepoint* savepoint)
   {
+    auto mariaDbSavepoint= dynamic_cast<const MariaDbSavepoint*>(savepoint);
     std::unique_ptr<Statement> st(createStatement());
-    st->execute("RELEASE SAVEPOINT " + savepoint->toString());
+    if (mariaDbSavepoint) {
+      st->execute("RELEASE SAVEPOINT " + mariaDbSavepoint->getQuotedEscapedName());
+    }
+    else {
+      // TODO: in next verion we should throw an exception
+      // because this is not a valid savepoint for this connection
+      st->execute("RELEASE SAVEPOINT " + savepoint->toString());
+    }
   }
 
 
