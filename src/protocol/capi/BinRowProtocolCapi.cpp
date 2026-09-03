@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2021 MariaDB Corporation AB
+   Copyright (C) 2020,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -1712,8 +1712,11 @@ namespace capi
         rowDataCache.emplace_back(0);
       }
       else {
-        // C/C resets length for fixed size types, so we need to use buffer_lenght in such case as it should be equal to the that fixed size.
-        rowDataCache.emplace_back(static_cast<const char*>(b.buffer), b.length_value ? b.length_value : b.buffer_length);
+        // C/C resets length for fixed size types, so we need to use buffer_lenght in such case as it
+        // should be equal to the that fixed size. Also, we need to keep in mind evil servers that can
+        // forge metadata and send as lenght that is greater than buffer_length.
+        rowDataCache.emplace_back(static_cast<const char*>(b.buffer),
+          b.length_value && b.length_value < b.buffer_length ? b.length_value : b.buffer_length);
       }
     }
   }
