@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2026 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -1402,6 +1403,34 @@ void resultsetmetadata::getColumnCollation()
   }
 }
 
+/**
+  * Technically it does not cover the case - we can't check the value we are interested in via
+  * resultsetmetadata. Not sure if it's needed, but hopefully it's not a waste.
+  */
+void resultsetmetadata::concpp160()
+{
+  createSchemaObject("TABLE", "concpp160", "(col1 VARCHAR(255) NOT NULL)");
+  stmt->executeUpdate("INSERT INTO concpp160(col1) VALUES('test1234561234567890')");
+
+  /* The metadata of the server side prepared statement's resultset is the one the server sends,
+     and that is what has to be tested here. Thus the dedicated connection with the server side
+     prepared statements enabled */
+  sql::ConnectOptionsMap opts{{"useServerPrepStmts", "true"},
+                              // Making sure we know which precision to expect.
+                              {"useCharacterEncoding", "utf8mb4"}};
+  Connection sspsCon(getConnection(&opts));
+  sspsCon->setSchema(db);
+
+  PreparedStatement ssps(sspsCon->prepareStatement("SELECT col1 FROM concpp160"));
+  ResultSet rs(ssps->executeQuery());
+  ResultSetMetaData meta(rs->getMetaData());
+  ASSERT_EQUALS(255U*4, meta->getPrecision(1));
+  ASSERT_EQUALS(255U, meta->getColumnDisplaySize(1));
+  ASSERT(rs->next());
+  auto val= rs->getString(1);
+  ASSERT_EQUALS("test1234561234567890", val);
+  ASSERT_EQUALS(20ULL, val.length());
+}
 
 void resultsetmetadata::doGetColumnCollation(bool is_ps)
 {

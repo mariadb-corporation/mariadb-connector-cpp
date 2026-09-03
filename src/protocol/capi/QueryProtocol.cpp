@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2025 MariaDB Corporation plc
+   Copyright (C) 2020,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -1761,7 +1761,6 @@ namespace capi
         selectResultSet= SelectResultSet::create(results, this, connection, eofDeprecated);
       }
       else {
-        pr->reReadColumnInfo();
         if (results->getResultSetConcurrency() == ResultSet::CONCUR_READ_ONLY) {
           selectResultSet= SelectResultSet::create(results, this, pr, callableResult, eofDeprecated);
         }
