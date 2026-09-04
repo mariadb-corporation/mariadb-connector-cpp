@@ -189,7 +189,12 @@ void resultsetmetadata::doGetColumnDisplaySize(bool is_ps)
   ASSERT_EQUALS((unsigned int) 1, meta->getColumnDisplaySize(4));
 
   if( !isMySQL() ) {
-    ASSERT_EQUALS((unsigned int) 3, meta->getColumnDisplaySize(5));
+    /* The 5th column is the integer literal 123. Depending on the server version and on the
+       protocol, the server sends either the length of the actual value(3), or the display width
+       of the column type(11 for INT - that is what MySQL sends in either case) */
+    uint32_t intDisplaySize= meta->getColumnDisplaySize(5);
+    ASSERT_MESSAGE(intDisplaySize == 3 || intDisplaySize == 11,
+                   "Unexpected display size of the integer column: " + std::to_string(intDisplaySize));
   }
 
   try
