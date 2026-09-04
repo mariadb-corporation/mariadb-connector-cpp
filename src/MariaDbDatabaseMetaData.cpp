@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2022 MariaDB Corporation AB
+   Copyright (C) 2020, 2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -520,7 +520,7 @@ namespace sql
 
 
   SQLString MariaDbDatabaseMetaData::escapeQuote(const SQLString& value){
-    if (value.empty() == true){
+    if (value.empty()) {
       return "NULL";
     }
     return "'" + Utils::escapeString(value, connection->getProtocol()->noBackslashEscapes()) + "'";
@@ -545,12 +545,13 @@ SQLString MariaDbDatabaseMetaData::catalogCond(const SQLString& columnName, cons
 {
   if (catalog.empty()) {
 
-    if (connection->nullCatalogMeansCurrent){
-      return "(ISNULL(database()) OR ("+columnName +" = database()))";
+    if (connection->nullCatalogMeansCurrent) {
+      return "(ISNULL(database()) OR (" + columnName +" = database()))";
     }
     return "(1 = 1)";
   }
-  // TODO the upper if is for NULL value. Have to decide if we can have NULL value here, i.e. should catalog and other names be passed by ptr to the connector
+  // TODO the upper if is for NULL value. Have to decide if we can have NULL value here,
+  // i.e. should catalog and other names be passed by ptr to the connector
   /*if (catalog.empty()){
     return "(ISNULL(database()) OR ("+columnName +" = database()))";
   }*/
@@ -564,20 +565,20 @@ SQLString MariaDbDatabaseMetaData::patternCond(const SQLString& columnName, cons
   if (tableName.empty()){
     return "(1 = 1)";
   }
-  SQLString predicate =
+  SQLString predicate=
     (tableName.find_first_of('%') == std::string::npos && tableName.find_first_of('_') == std::string::npos) ? "=" : "LIKE";
 
-  return "("+columnName +" "+predicate +" '" + Utils::escapeString(tableName,true)+"')";
+  return "("+columnName +" "+predicate +" '" + Utils::escapeString(tableName, connection->getProtocol()->noBackslashEscapes())+"')";
 }
 
 
 /* We can't pass NULL, "" should mean "no schema" */
-SQLString schemaPatternCond(const SQLString& columnName, const SQLString& schemaName)
+SQLString schemaPatternCond(const SQLString& columnName, const SQLString& schemaName, bool noBackslashEscapes)
 {
-  SQLString predicate =
+  SQLString predicate=
     (schemaName.find_first_of('%') == std::string::npos && schemaName.find_first_of('_') == std::string::npos) ? "=" : "LIKE";
 
-  return "(" + columnName + " " + predicate + " '" + Utils::escapeString(schemaName, true) + "')";
+  return "(" + columnName + " " + predicate + " '" + Utils::escapeString(schemaName, noBackslashEscapes) + "')";
 }
 
 
@@ -616,7 +617,7 @@ ResultSet* MariaDbDatabaseMetaData::getPrimaryKeys(const SQLString& /*catalog*/,
     " FROM INFORMATION_SCHEMA.COLUMNS A, INFORMATION_SCHEMA.STATISTICS B"
     " WHERE A.COLUMN_KEY in ('PRI','pri') AND B.INDEX_NAME='PRIMARY' "
     " AND "
-    + schemaPatternCond("A.TABLE_SCHEMA", schema) //We don't need all schemas on empty schema, that catCond will do
+    + schemaPatternCond("A.TABLE_SCHEMA", schema, connection->getProtocol()->noBackslashEscapes()) //We don't need all schemas on empty schema, that catCond will do
     + " AND B.TABLE_SCHEMA=A.TABLE_SCHEMA"
       " AND "
     + patternCond("A.TABLE_NAME", table)
@@ -675,7 +676,7 @@ ResultSet* MariaDbDatabaseMetaData::getTables(const SQLString& /*catalog*/, cons
       " NULL REF_GENERATION"
       " FROM INFORMATION_SCHEMA.TABLES "
       " WHERE "
-      + schemaPatternCond("TABLE_SCHEMA", schemaPattern)
+      + schemaPatternCond("TABLE_SCHEMA", schemaPattern, connection->getProtocol()->noBackslashEscapes())
       +" AND "
       +patternCond("TABLE_NAME", tableNamePattern));
 

@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020, 2024 MariaDB Corporation plc
+   Copyright (C) 2020, 2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -58,8 +58,6 @@ namespace capi
                                          bool eofDeprecated)
     : SelectResultSet(results->getFetchSize()),
       options(protocol->getOptions()),
-      columnsInformation(spr->getColumns()),
-      columnInformationLength(static_cast<int32_t>(columnsInformation.size())),
       noBackslashEscapes(protocol->noBackslashEscapes()),
       protocol(protocol),
       callableResult(callableResult),
@@ -78,13 +76,19 @@ namespace capi
       if (mysql_stmt_store_result(capiStmtHandle)) {
         throwStmtError(capiStmtHandle);
       }
+      // This has to be run after the call to mysql_stmt_store_result, otherwise we don't get max length
+      // info we requested from C/C.
+      spr->reReadColumnInfo();
+      columnsInformation= spr->getColumns();
+      columnInformationLength= static_cast<int32_t>(columnsInformation.size());
       dataSize= static_cast<std::size_t>(mysql_stmt_num_rows(capiStmtHandle));
       streaming= false;
       resetVariables();
       row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
     }
     else {
-      
+      columnsInformation= spr->getColumns();
+      columnInformationLength= static_cast<int32_t>(columnsInformation.size());
       protocol->setActiveStreamingResult(results);
 
       protocol->removeHasMoreResults();

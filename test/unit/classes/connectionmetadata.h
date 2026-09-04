@@ -106,6 +106,7 @@ public:
   TEST_CASE(getTableCharset);
   TEST_CASE(getTables);
   TEST_CASE(bugCpp25);
+  TEST_CASE(concpp161);
   }
 
   /**
@@ -391,6 +392,11 @@ public:
    * Test of server version
    */
   void bugCpp25();
+
+  /**
+   * Escaping of the object names containing a backslash in the DatabaseMetaData methods
+   */
+  void concpp161();
 };
 
 REGISTER_FIXTURE(connectionmetadata);

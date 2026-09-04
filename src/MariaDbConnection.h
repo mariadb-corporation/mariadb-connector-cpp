@@ -81,7 +81,7 @@ private:
   bool sessionStateAware;
   int32_t stateFlag= 0 ;
   int32_t defaultTransactionIsolation= 0;
-  int32_t savepointCount= 0;
+  std::atomic<int32_t> savepointCount{0};
   bool warningsCleared= true;
   bool returnedToPool= false;
 

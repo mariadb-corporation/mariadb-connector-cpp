@@ -70,7 +70,9 @@ namespace mariadb
     while ((pos= real.find(substr, prev)) != std::string::npos)
     {
       real.replace(pos, substr.length(), realSub);
-      prev+= realSub.length();
+      /* Continuing past the substitution - otherwise the substitution containing the substring
+         (e.g. the escaping of ' with '', or of \ with \\) is scanned again and again */
+      prev= pos + realSub.length();
     }
     return str;
   }
@@ -102,7 +104,7 @@ namespace mariadb
     while ((pos= real.find_first_of(substr.c_str(), prev)) != std::string::npos)
     {
       real.replace(pos, 1, realSub);
-      prev+= realSub.length();
+      prev= pos + realSub.length();
     }
     return str;
   }

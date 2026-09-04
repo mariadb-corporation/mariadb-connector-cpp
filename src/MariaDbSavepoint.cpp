@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -24,10 +24,29 @@ namespace sql
 {
   namespace mariadb
   {
-
-    MariaDbSavepoint::MariaDbSavepoint(const SQLString& _name,int32_t _savepointId) :
-      savepointId(_savepointId), name(_name)
+    static const sql::SQLString unnamedPrefix("_sp_");
+    MariaDbSavepoint::MariaDbSavepoint(const SQLString& _name) :
+      name(_name)
     {
+      quotedEscapedName.reserve(name.length() * 2 + 2);
+      quotedEscapedName.push_back('`');
+      for (char c : name) {
+        if (c == '`') {
+          quotedEscapedName.push_back('`');
+        }
+        quotedEscapedName.push_back(c);
+      }
+      quotedEscapedName.push_back('`');
+    }
+
+    MariaDbSavepoint::MariaDbSavepoint(int32_t _savepointId) :
+      savepointId(_savepointId), name(nullptr)
+    {
+      quotedEscapedName.reserve(16);
+      quotedEscapedName.push_back('`');
+      quotedEscapedName.append(unnamedPrefix);
+      quotedEscapedName.append(std::to_string(savepointId));
+      quotedEscapedName.push_back('`');
     }
 
     /**
@@ -38,6 +57,10 @@ namespace sql
      * @since 1.4
      */
     int32_t MariaDbSavepoint::getSavepointId() const {
+      if (!savepointId) {
+        // TODO: We did not throw here and to late to start - next version will throw.
+        //throw SQLException("Cannot retrieve savepoint id of a named savepoint");
+      }
       return savepointId;
     }
 
@@ -48,15 +71,22 @@ namespace sql
      * @since 1.4
      */
     const SQLString& MariaDbSavepoint::getSavepointName() const {
+      if (savepointId) {
+        // TODO: We did not throw here and to late to start - next version will throw.
+        //throw SQLException("Cannot retrieve savepoint name of an unnamed savepoint");
+      }
       return name;
     }
 
-    SQLString MariaDbSavepoint::toString() const
-    {
-      SQLString res(name);
-      return res.append(std::to_string(savepointId));
+    SQLString MariaDbSavepoint::toString() const {
+      if (savepointId) {
+        return unnamedPrefix + std::to_string(savepointId);
+      }
+      return name;
     }
 
-
+    const std::string& MariaDbSavepoint::getQuotedEscapedName() const {
+      return quotedEscapedName;
+    }
   }
 }

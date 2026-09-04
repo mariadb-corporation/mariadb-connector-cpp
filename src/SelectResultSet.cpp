@@ -66,7 +66,7 @@ namespace mariadb
     return nullptr;// new SelectResultSetPacket(columnInformation, results, protocol, reader, callableResult, eofDeprecated);
   }
 
-  SelectResultSet* SelectResultSet::create(Results * results, Protocol * protocol, ServerPrepareResult * spr, bool callableResult, bool eofDeprecated)
+  SelectResultSet* SelectResultSet::create(Results* results, Protocol* protocol, ServerPrepareResult* spr, bool callableResult, bool eofDeprecated)
   {
     return new capi::SelectResultSetBin(results, protocol, spr, callableResult, eofDeprecated);
   }

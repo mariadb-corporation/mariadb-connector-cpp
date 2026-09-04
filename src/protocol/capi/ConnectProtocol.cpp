@@ -53,6 +53,19 @@ namespace capi
   Logger* ConnectProtocol::logger= LoggerFactory::getLogger(typeid(ConnectProtocol));
   static const SQLString MARIADB_RPL_HACK_PREFIX("5.5.5-");
 
+  /* Subset of the capabilities calculated by initializeClientCapabilities(), that has to be passed to the
+     C/C as the client_flag parameter of mysql_real_connect(). The rest of the calculated capabilities is
+     either communicated to the C/C by other means(TLS and compression are turned on with connection
+     options), or is entirely managed by the C/C itself(e.g. CLIENT_CONNECT_WITH_DB, or CLIENT_DEPRECATE_EOF,
+     that is not even in the list of client flags the C/C accepts - passing it would make the connect fail) */
+  static const int64_t CLIENT_FLAG_MASK=
+      MariaDbServerCapabilities::FOUND_ROWS
+    | MariaDbServerCapabilities::LOCAL_FILES
+    | MariaDbServerCapabilities::CLIENT_INTERACTIVE_
+    | MariaDbServerCapabilities::MULTI_STATEMENTS
+    | MariaDbServerCapabilities::MULTI_RESULTS
+    | MariaDbServerCapabilities::PS_MULTI_RESULTS;
+
   ConnectProtocol::~ConnectProtocol()
   {
     if (connection) {
@@ -416,10 +429,12 @@ namespace capi
 
     assignStream(options);
 
+    int64_t clientCapabilities= 0;
+
     try {
 
       int8_t  exchangeCharset= decideLanguage(/*greetingPacket.getServerLanguage()*/224 & 0xFF);
-      int64_t clientCapabilities= initializeClientCapabilities(options, serverCapabilities, database);
+      clientCapabilities= initializeClientCapabilities(options, serverCapabilities, database);
       exceptionFactory.reset(ExceptionFactory::of(serverThreadId, options));
 
       sslWrapper(
@@ -482,7 +497,9 @@ namespace capi
       mysql_optionsv(connection, MARIADB_OPT_RESTRICTED_AUTH, options.get()->restrictedAuth.c_str());
     }
 
-    if (mysql_real_connect(connection, NULL, NULL, NULL, NULL, 0, NULL, CLIENT_MULTI_STATEMENTS) == nullptr) {
+    if (mysql_real_connect(connection, NULL, NULL, NULL, NULL, 0, NULL,
+                           static_cast<unsigned long>(clientCapabilities & CLIENT_FLAG_MASK)) == nullptr)
+    {
       throw SQLException(mysql_error(connection), mysql_sqlstate(connection), mysql_errno(connection));
     }
 
