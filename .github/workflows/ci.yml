@@ -34,7 +34,7 @@ jobs:
         name: build matrix
         uses: mariadb-corporation/connector-ci-build-matrix@main
         with:
-          additional-matrix: '[{"name": "Ubuntu C/C 3.3-latest", "os": "ubuntu-latest", "db-type": "community", "db-tag": "11.4", "libmariadb-branch": "3.3", "continue-on-error": true}]'
+          additional-matrix: '[{"name": "Ubuntu C/C 3.4-latest", "os": "ubuntu-latest", "db-type": "community", "db-tag": "11.4", "libmariadb-branch": "3.4", "continue-on-error": true}]'
 
   ci:
     name: ${{ matrix.name }}

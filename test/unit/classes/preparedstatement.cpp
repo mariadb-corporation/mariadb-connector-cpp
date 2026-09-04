@@ -2353,29 +2353,47 @@ void preparedstatement::moreResultsAfterPrepare()
 /* if sql::bytes wrapped C array, setBytes would crash the application */
 void preparedstatement::bytesArrParam()
 {
-  pstmt.reset(con->prepareStatement("SELECT ?"));
-  char charArray[3]= {'\1', '\0', '\1'};
-  sql::bytes sqlBytes(charArray, 3), b2{'\1', '\0', '\2'};
-  b2[2]= '\0';
-  // sqlBytes has internally a negative length, i.e. it does not own the array. let's see if it throws
-  pstmt->setBytes(1, &sqlBytes);
-  res.reset(pstmt->executeQuery());
-  ASSERT(res->next());
-  ASSERT_EQUALS(65537, res->getInt(1));
-  
-  // b2 owns the array and internal length is positive - checking it's also alright
-  pstmt->setBytes(1, &b2);
-  res.reset(pstmt->executeQuery());
-  ASSERT(res->next());
-  ASSERT_EQUALS(65536, res->getInt(1));
+  sql::Properties props(commonProperties);
+  props["useServerPrepStmts"]= "false";
+  Connection cspsCon(getConnection(&props));
+  std::vector<sql::Connection*> cons{cspsCon.get()};
 
-  sqlBytes[0]= '\0';
-  // Just to show, that original array has been changed
-  ASSERT_EQUALS('\0', charArray[0]);
-  pstmt->setBytes(1, &sqlBytes);
-  res.reset(pstmt->executeQuery());
-  ASSERT(res->next());
-  ASSERT_EQUALS(1, res->getInt(1));
+  /* The value is only converted to int if the server reports the "SELECT ?" column as binary.
+     MySQL decides the type of that column at the prepare time, and does not mark it binary, thus
+     it makes sense to test the binary protocol against MariaDB only */
+  if (!isMySQL()) {
+    cons.push_back(sspsCon.get());
+  }
+
+  for (auto c : cons) {
+    pstmt.reset(c->prepareStatement("SELECT ?"));
+    char charArray[3]= {'\1', '\0', '\1'};
+    sql::bytes sqlBytes(charArray, 3), b2{'\1', '\0', '\2'};
+    b2[2]= '\0';
+    // sqlBytes has internally a negative length, i.e. it does not own the array. let's see if it throws
+    pstmt->setBytes(1, &sqlBytes);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT_EQUALS(65537, res->getInt(1));
+
+    // b2 owns the array and internal length is positive - checking it's also alright
+    pstmt->setBytes(1, &b2);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT_EQUALS(65536, res->getInt(1));
+
+    sqlBytes[0]= '\0';
+    // Just to show, that original array has been changed
+    ASSERT_EQUALS('\0', charArray[0]);
+    pstmt->setBytes(1, &sqlBytes);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT_EQUALS(1, res->getInt(1));
+
+    // Not to leave them pointing into the local connection
+    res.reset();
+    pstmt.reset();
+  }
 }
 
 /* CONCPP-138 application crashes if binary resultset used after closing the connection */
