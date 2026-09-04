@@ -1532,6 +1532,8 @@ namespace capi
         case StateChange::SESSION_TRACK_SYSTEM_VARIABLES:
           if (str.compare("auto_increment_increment") == 0)
           {
+            mysql_session_track_get_next(connection, static_cast<enum capi::enum_session_state_type>(type), &value, &len);
+            str.assign(value, len);
             autoIncrementIncrement= std::stoi(str);
             results->setAutoIncrement(autoIncrementIncrement);
           }

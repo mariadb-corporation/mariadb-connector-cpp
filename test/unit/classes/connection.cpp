@@ -3553,6 +3553,29 @@ void connection::concpp163()
 }
 
 
+/* CONCPP-167 Changing of the session's auto_increment_increment causes unhandled exception */
+void connection::concpp167()
+{
+  sql::ConnectOptionsMap opts;
+
+  /* The connector asks the server to track the changes of the auto_increment_increment system
+     variable if the rewriteBatchedStatements option is on. Thus testing both kinds of connections */
+  for (auto rewriteBatchedStatements : {"false", "true"}) {
+    opts["rewriteBatchedStatements"]= rewriteBatchedStatements;
+
+    Connection c(getConnection(&opts));
+    Statement s(c->createStatement());
+
+    s->execute("SET SESSION auto_increment_increment=3");
+
+    /* The connection has to be usable, and the new value in effect */
+    ResultSet r(s->executeQuery("SELECT @@session.auto_increment_increment"));
+    ASSERT(r->next());
+    ASSERT_EQUALS(3, r->getInt(1));
+  }
+}
+
+
 void connection::setUp()
 {
   super::setUp();

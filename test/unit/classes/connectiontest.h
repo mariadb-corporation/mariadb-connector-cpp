@@ -95,6 +95,7 @@ public:
     TEST_CASE(concpp105_conn_concurrency);
     TEST_CASE(concpp112_connection_attributes);
     TEST_CASE(concpp163);
+    TEST_CASE(concpp167);
   }
 
   /**
@@ -292,6 +293,9 @@ public:
 
   /* allowMultiQueries option, and other client capabilities controlled by connection options */
   void concpp163();
+
+  /* Changing of the session's auto_increment_increment */
+  void concpp167();
 
   void setUp();
 };
