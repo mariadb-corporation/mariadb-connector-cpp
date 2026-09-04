@@ -189,7 +189,9 @@ void resultsetmetadata::doGetColumnDisplaySize(bool is_ps)
   ASSERT_EQUALS((unsigned int) 1, meta->getColumnDisplaySize(4));
 
   if( !isMySQL() ) {
-    ASSERT_EQUALS((unsigned int) 3, meta->getColumnDisplaySize(5));
+    /* Since MariaDB 12.3, server reports the default INT display size (11)
+       for integer literals instead of the actual value's width */
+    ASSERT_EQUALS(getServerVersion(con) >= 1203000 ? (unsigned int) 11 : (unsigned int) 3, meta->getColumnDisplaySize(5));
   }
 
   try
