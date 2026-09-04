@@ -170,7 +170,7 @@ namespace capi
     {
       if (options->yearIsDateType) {
         Date dateInter = getInternalDate(columnInfo);//, cal, timeZone);
-        return (dateInter.empty() || dateInter.compare(nullDate)) == 0 ? nullptr : new SQLString(dateInter);
+        return (dateInter.empty() || dateInter.compare(nullDate) == 0) ? nullptr : new SQLString(dateInter);
       }
       int32_t year= getInternalSmallInt(columnInfo);
       SQLString *result;

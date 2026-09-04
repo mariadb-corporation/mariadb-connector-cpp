@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020,2023 MariaDB Corporation AB
+   Copyright (C) 2020,2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -19,6 +19,7 @@
 
 
 #include <sstream>
+#include <array>
 
 #include "TextRowProtocolCapi.h"
 
@@ -171,21 +172,28 @@ namespace capi
    switch (columnInfo->getColumnType().getType()) {
    case MYSQL_TYPE_DATE:
    {
-     std::vector<int32_t> datePart{ 0, 0, 0 };
-     int32_t partIdx= 0;
-     for (uint32_t begin= pos; begin < pos + length; begin++) {
+     std::array<int32_t, 3> datePart{ 0, 0, 0 };
+     uint32_t partIdx= 0, begin= pos;
+     for (; begin < pos + length; ++begin) {
        int8_t b= fieldBuf[begin];
        if (b == '-') {
-         partIdx++;
+         ++partIdx;
+         if (partIdx >= datePart.size()) {
+           // For date type this can be with evil server only. 
+           throw SQLException(
+             "cannot parse data in date string '"
+             + SQLString(fieldBuf, length)
+             + "'");
+         }
          continue;
        }
-       if (b <'0'|| b >'9') {
+       if (b < '0' || b > '9') {
          throw SQLException(
            "cannot parse data in date string '"
            + SQLString(fieldBuf, length)
            + "'");
        }
-       datePart[partIdx]= datePart[partIdx] *10 + b - 48;
+       datePart[partIdx]= datePart[partIdx]*10 + b - 48;
      }
 
      if (datePart[0] == 0 && datePart[1] ==0 && datePart[2] == 0) {
@@ -327,22 +335,24 @@ namespace capi
      const std::size_t nanosIdx= 6;
      int32_t nanoBegin= -1;
      std::string nanosStr("");
-     std::vector<int32_t> timestampsPart{ 0,0,0,0,0,0,0 };
-     int32_t partIdx= 0;
+     std::array<int32_t, 7> timestampsPart{ 0,0,0,0,0,0,0 };
+     uint32_t partIdx= 0;
 
-     for (uint32_t begin= pos; begin < pos + length; begin++) {
+     for (uint32_t begin= pos; begin < pos + length; ++begin) {
        int8_t b= fieldBuf[begin];
        if (b == '-'|| b == ' ' || b == ':') {
-         partIdx++;
+         ++partIdx;
          continue;
        }
        if (b == '.') {
-         partIdx++;
+         ++partIdx;
          nanoBegin= begin;
          nanosStr.reserve(length - (nanoBegin - pos) - 1/*dot itself*/);
          continue;
        }
-       if (b < '0' || b > '9') {
+       // PartIdx can be >= 7 only in case of evil server and worng metadata atm as this method is not used for
+       // not datetime field types, i.e. not for varchar types.
+       if (b < '0' || b > '9' || partIdx >= timestampsPart.size()) {
          throw SQLException(
            "cannot parse data in timestamp string '"
            + SQLString(fieldBuf.arr + pos, length)
@@ -457,7 +467,7 @@ namespace capi
    case MYSQL_TYPE_STRING:
      if (columnInfo->isBinary()) {
        int8_t[] data= new int8_t[getLengthMaxFieldSize()];
-       memcpy(dataBit + 0, fieldBuf.arr + pos, length));
+       memcpy(data + 0, fieldBuf.arr + pos, length);
        return data;
      }
      return getInternalString(columnInfo, nullptr, timeZone);
@@ -473,7 +483,7 @@ namespace capi
    case MYSQL_TYPE_MEDIUM_BLOB:
    case MYSQL_TYPE_TINY_BLOB:
      int8_t[] dataBlob= new int8_t[getLengthMaxFieldSize()];
-     memcpy(dataBit + 0, fieldBuf.arr + pos, length));
+     memcpy(dataBlob + 0, fieldBuf.arr + pos, length);
      return dataBlob;
    case MYSQL_TYPE_NULL:
      return nullptr;
@@ -494,7 +504,7 @@ namespace capi
      return getInternalString(columnInfo, nullptr, timeZone);
    case MYSQL_TYPE_GEOMETRY:
      int8_t[] data= new int8_t[length];
-     memcpy(dataBit + 0, fieldBuf.arr + pos, length);
+     memcpy(data + 0, fieldBuf.arr + pos, length);
      return data;
    case MYSQL_TYPE_ENUM:
      break;
