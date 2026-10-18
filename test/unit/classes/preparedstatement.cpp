@@ -2291,5 +2291,68 @@ void preparedstatement::concpp153_mbCsParamEscaping()
   }
 }
 
-} /* namespace preparedstatement */
+
+/* Helper for concpp172_failedBatch - runs test on given connection properties */
+void preparedstatement::concpp172_failedBatchOnProperties(sql::ConnectOptionsMap& connection_properties,
+  int32_t expectedRowCount)
+{
+  con.reset(driver->connect(url, connection_properties));
+  stmt.reset(con->createStatement());
+  createSchemaObject("TABLE", "concpp172", "(id INT NOT NULL PRIMARY KEY, val VARCHAR(32) NOT NULL)");
+  stmt->executeUpdate("INSERT INTO concpp172(id, val) VALUES(1, 'The key we will later duplicate')");
+
+  const sql::SQLString query("INSERT INTO concpp172 (id, val) VALUES (?, ?)");
+  const int32_t id[]{ 2, 1, 3 };
+  const char* val[]{ "a", "b", "c" };
+
+  pstmt.reset(con->prepareStatement(query));
+  for (std::size_t row= 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    pstmt->setInt(1, id[row]);
+    pstmt->setString(2, val[row]);
+    pstmt->addBatch();
+  }
+  try {
+    pstmt->executeBatch();
+    // Exception is exepected
+    ASSERT(false);
+  }
+  catch (sql::SQLException&) {
+    // Expected
+  }
+
+  // Closing the PS puts the underlying server PS into the cache
+  pstmt.reset();
+
+  // The same query is prepared again - the PS is taken from the cache
+  pstmt.reset(con->prepareStatement(query));
+  pstmt->setInt(1, 5);
+  pstmt->setString(2, "other key");
+  ASSERT_EQUALS(1, pstmt->executeUpdate());
+  pstmt.reset();
+
+  res.reset(stmt->executeQuery("SELECT COUNT(*) FROM concpp172 WHERE id IN (1, 2, 3, 5)"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(expectedRowCount, res->getInt(1));
+  dropSchemaObject("TABLE", "concpp172");
+  res.reset();
+}
+
+void preparedstatement::concpp172_failedBatch()
+{
+  sql::ConnectOptionsMap connection_properties{ {"userName", user},
+                                               {"password", passwd},
+                                               {"useServerPrepStmts", "true"},
+                                               {"useBulkStmts", "false"},
+                                               {"useTls", useTls ? "true" : "false"} };
+  // contiueBatchOnError is not supported(openly - it's not documented) and it's default is true.
+  // thus the batch is continued on the first error and at the end all 4 keys should be present.
+  // That actually assumes that auto_commit is on, which is the default.
+  concpp172_failedBatchOnProperties(connection_properties, 4);
+  connection_properties["useBulkStmts"] = "true";
+  // With bulk execution batch none of rows are inserted in case of error. Thus we will have 2
+  // at the end - keys inserted before and after the batch run.
+  concpp172_failedBatchOnProperties(connection_properties, 2);
+}
+
+} /* namespace classes */
 } /* namespace testsuite */

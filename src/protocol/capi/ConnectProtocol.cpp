@@ -1328,7 +1328,6 @@ namespace capi
    */
   bool ConnectProtocol::isConnected()
   {
-    std::lock_guard<std::mutex> localScopeLock(*lock);
     return connected;
   }
 
