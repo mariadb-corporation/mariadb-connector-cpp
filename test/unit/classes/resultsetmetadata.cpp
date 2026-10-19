@@ -188,9 +188,8 @@ void resultsetmetadata::doGetColumnDisplaySize(bool is_ps)
   ASSERT_EQUALS((unsigned int) 5, meta->getColumnDisplaySize(3));
   ASSERT_EQUALS((unsigned int) 1, meta->getColumnDisplaySize(4));
 
-  if( !isMySQL() ) {
-    ASSERT_EQUALS((unsigned int) 3, meta->getColumnDisplaySize(5));
-  }
+  // It can be int field length in case of MySQL or latest MariaDBs(maybe in certain SQL modes)
+  ASSERT(3 == meta->getColumnDisplaySize(5) || 11 == meta->getColumnDisplaySize(5));
 
   try
   {

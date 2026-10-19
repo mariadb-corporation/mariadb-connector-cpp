@@ -83,6 +83,7 @@ public:
     TEST_CASE(concpp138_useRsAfterConClose);
     TEST_CASE(concpp153_mbCsParamEscaping);
     TEST_CASE(concpp172_failedBatch);
+    TEST_CASE(concpp172_executeAfterFailedBatch);
   }
 
   /**
@@ -183,7 +184,11 @@ public:
 
   void concpp153_mbCsParamEscaping();
 
+  /* CONCPP-172 Failure of the executeBatch marks the connection as closed */
   void concpp172_failedBatch();
+
+  /* CONCPP-172 extension for the case of the execution right after a failed batch */
+  void concpp172_executeAfterFailedBatch();
   /* unit_fixture methods overriding */
   void setUp();
 
