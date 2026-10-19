@@ -284,7 +284,7 @@ namespace sql
             && protocol->isConnected()
             && !protocol->isInterrupted())
           {
-            if (exceptionSet) {
+            if (!exceptionSet) {
               exception= queryException;
               exceptionSet= true;
             }

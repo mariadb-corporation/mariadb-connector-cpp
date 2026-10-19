@@ -83,6 +83,7 @@ public:
     TEST_CASE(bytesArrParam);
     TEST_CASE(concpp138_useRsAfterConClose);
     TEST_CASE(concpp153_mbCsParamEscaping);
+    TEST_CASE(concpp172_failedBatch);
   }
 
   /**
@@ -193,8 +194,12 @@ public:
 
   void concpp153_mbCsParamEscaping();
 
+  void concpp172_failedBatch();
   /* unit_fixture methods overriding */
   void setUp();
+
+private:
+  void concpp172_failedBatchOnProperties(sql::ConnectOptionsMap& connection_properties, int32_t expectedRowCount);
 };
 
 REGISTER_FIXTURE(preparedstatement);
