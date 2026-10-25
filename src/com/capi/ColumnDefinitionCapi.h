@@ -46,7 +46,7 @@ struct FieldNames
 
 class ColumnDefinitionCapi : public sql::mariadb::ColumnDefinition
 {
-  static uint8_t maxCharlen[];
+  static uint8_t maxCharlen(uint32_t charsetNr);
   MYSQL_FIELD* metadata;
   /** Fow "hand-made" RS we need to take care of freeing memory, while for "natural" MYSQL_FIELD
     we have to use pointer to C/C structures(to automatically get max_length when it's calculated -

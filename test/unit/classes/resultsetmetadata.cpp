@@ -188,8 +188,20 @@ void resultsetmetadata::doGetColumnDisplaySize(bool is_ps)
   ASSERT_EQUALS((unsigned int) 5, meta->getColumnDisplaySize(3));
   ASSERT_EQUALS((unsigned int) 1, meta->getColumnDisplaySize(4));
 
-  // It can be int field length in case of MySQL or latest MariaDBs(maybe in certain SQL modes)
-  ASSERT(3 == meta->getColumnDisplaySize(5) || 11 == meta->getColumnDisplaySize(5));
+  // Text protocol give 3, binary 11, MySQL gives 4(3 + sign), and 9.7 gives 20(bigint) on binary protocol it seems.
+  if (isMySQL())
+  {
+    ASSERT_ONEOF(meta->getColumnDisplaySize(5), 4, 20);
+  }
+  else if (is_ps)
+  {
+    // SSPS can be not used, then we still get 3. With binary protocol we get 11
+    ASSERT_ONEOF(meta->getColumnDisplaySize(5), 11, 3);
+  }
+  else
+  {
+    ASSERT_EQUALS(3U, meta->getColumnDisplaySize(5));
+  }
 
   try
   {
