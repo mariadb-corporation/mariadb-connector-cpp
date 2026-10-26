@@ -2357,6 +2357,29 @@ void preparedstatement::bytesArrParam()
   props["useServerPrepStmts"]= "false";
   Connection cspsCon(getConnection(&props));
   std::vector<sql::Connection*> cons{cspsCon.get()};
+  pstmt.reset(con->prepareStatement("SELECT ?"));
+  char charArray[3]= {'\1', '\0', '\1'};
+  sql::bytes sqlBytes(charArray, 3), b2{'\1', '\0', '\2'};
+  b2[2]= '\0';
+  // sqlBytes has internally a negative length, i.e. it does not own the array. let's see if it throws
+  pstmt->setBytes(1, &sqlBytes);
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  if (isMySQL()) {
+    // TODO: the test has to be adapted for MySQL. But basically this is the test for setBytes and testing against
+    // MariaDB kinda enough.
+    SKIP("The test won't work with MySQL as the field is not binary in MySQL");
+  }
+  else {
+    ASSERT_EQUALS(65537, res->getInt(1));
+  }
+
+  
+  // b2 owns the array and internal length is positive - checking it's also alright
+  pstmt->setBytes(1, &b2);
+  res.reset(pstmt->executeQuery());
+  ASSERT(res->next());
+  ASSERT_EQUALS(65536, res->getInt(1));
 
   /* The value is only converted to int if the server reports the "SELECT ?" column as binary.
      MySQL decides the type of that column at the prepare time, and does not mark it binary, thus
@@ -2506,6 +2529,10 @@ void preparedstatement::concpp172_failedBatch()
   // thus the batch is continued on the first error and at the end all 4 keys should be present.
   // That actually assumes that auto_commit is on, which is the default.
   concpp172_failedBatchOnProperties(connection_properties, 4);
+  if (isMySQL()) {
+    // No bulk execution for MySQL
+    return;
+  }
   connection_properties["useBulkStmts"] = "true";
   // With bulk execution batch none of rows are inserted in case of error. Thus we will have 2
   // at the end - keys inserted before and after the batch run.
@@ -2515,6 +2542,9 @@ void preparedstatement::concpp172_failedBatch()
 
 void preparedstatement::concpp172_executeAfterFailedBatch()
 {
+  if (isMySQL()) {
+    SKIP("No bulk execution for MySQL");
+  }
   sql::ConnectOptionsMap connection_properties{ {"userName", user},
                                                {"password", passwd},
                                                {"useServerPrepStmts", "true"},

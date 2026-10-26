@@ -27,40 +27,14 @@ namespace mariadb
 namespace capi
 {
   // where character_sets.character_set_name = collations.character_set_name order by id"
-  uint8_t ColumnDefinitionCapi::maxCharlen[]={
-  0,2,1,1,1,1,1,1,
-  1,1,1,1,3,2,1,1,
-  1,0,1,2,1,1,1,1,
-  2,1,1,1,2,1,1,1,
-  1,3,1,2,1,1,1,1,
-  1,1,1,1,1,4,4,1,
-  1,1,1,1,1,1,4,4,
-  0,1,1,1,4,4,0,1,
-  1,1,1,1,1,1,1,1,
-  1,1,1,1,0,1,1,1,
-  1,1,1,3,2,2,2,2,
-  2,1,2,3,1,1,1,2,
-  2,3,3,1,0,4,4,4,
-  4,4,4,4,4,4,4,4,
-  4,4,4,4,4,4,4,4,
-  4,0,0,0,0,0,0,0,
-  2,2,2,2,2,2,2,2,
-  2,2,2,2,2,2,2,2,
-  2,2,2,2,0,2,0,0,
-  0,0,0,0,0,0,0,2,
-  4,4,4,4,4,4,4,4,
-  4,4,4,4,4,4,4,4,
-  4,4,4,4,0,0,0,0,
-  0,0,0,0,0,0,0,0,
-  3,3,3,3,3,3,3,3,
-  3,3,3,3,3,3,3,3,
-  3,3,3,3,0,3,4,4,
-  0,0,0,0,0,0,0,3,
-  4,4,4,4,4,4,4,4,
-  4,4,4,4,4,4,4,4,
-  4,4,4,4,0,4,0,0,
-  0,0,0,0,0,0,0,0
-  };
+  uint8_t ColumnDefinitionCapi::maxCharlen(uint32_t charsetNr)
+  {
+    auto cs= capi::mariadb_get_charset_by_nr(charsetNr);
+    if (cs && cs->char_maxlen > 0) {
+      return cs->char_maxlen;
+    }
+    return 1;
+  }
 
   /**
     * Constructor for extent.
@@ -201,12 +175,7 @@ namespace capi
   uint32_t ColumnDefinitionCapi::getDisplaySize() const {
     int32_t vtype= type.getSqlType();
     if (vtype == Types::VARCHAR || vtype == Types::CHAR) {
-      uint8_t maxWidth= maxCharlen[metadata->charsetnr & 0xff];
-      if (maxWidth == 0) {
-        maxWidth= 1;
-      }
-
-      return length / maxWidth;
+      return length / maxCharlen(metadata->charsetnr);
     }
     return length;
   }

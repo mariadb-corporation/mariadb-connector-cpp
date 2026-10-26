@@ -188,12 +188,21 @@ void resultsetmetadata::doGetColumnDisplaySize(bool is_ps)
   ASSERT_EQUALS((unsigned int) 5, meta->getColumnDisplaySize(3));
   ASSERT_EQUALS((unsigned int) 1, meta->getColumnDisplaySize(4));
 
-  /* The 5th column is the integer literal 123. Depending on the server version and on the
-      protocol, the server sends either the length of the actual value(3), or the display width
-      of the column type(11 for INT - that is what MySQL sends in either case) */
-  uint32_t intDisplaySize= meta->getColumnDisplaySize(5);
-  ASSERT_MESSAGE(intDisplaySize == 3 || intDisplaySize == 11,
-                  "Unexpected display size of the integer column: " + std::to_string(intDisplaySize));
+  // Text protocol give 3, binary 11, MySQL gives 4(3 + sign), and 9.7 gives 20(bigint) on binary protocol it seems.
+  if (isMySQL())
+  {
+    ASSERT_ONEOF(meta->getColumnDisplaySize(5), 4, 20);
+  }
+  else if (is_ps)
+  {
+    // SSPS can be not used, then we still get 3. With binary protocol we get 11
+    ASSERT_ONEOF(meta->getColumnDisplaySize(5), 11, 3);
+  }
+  else
+  {
+    ASSERT_EQUALS(3U, meta->getColumnDisplaySize(5));
+  }
+
   try
   {
     meta->getColumnDisplaySize(0);

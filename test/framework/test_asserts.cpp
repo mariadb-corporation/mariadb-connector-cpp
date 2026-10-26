@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
+ *               2020, 2026 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -29,17 +29,10 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-
-
 #include "test_asserts.h"
-#include "test_listener.h"
-#include "math.h"
-#include <sstream>
-
 
 namespace testsuite
 {
-
 void assertTrue(const String & msg, bool expression,
                 const char * file, int line)
 {
@@ -77,7 +70,7 @@ void assertEquals(const char * expected, const char * result,
 }
 
 void assertEquals(bool expected, bool result,
-                  const char * file, int line)
+  const char* file, int line)
 {
   if (expected != result)
   {
@@ -86,63 +79,7 @@ void assertEquals(bool expected, bool result,
     errmsg << "assertEquals(boolean) failed in " << file << ", line #" << line;
     TestsListener::testHasFailed(errmsg.str());
   }
-
 }
-
-
-void assertEquals(int32_t expected, int32_t result
-                  , const char * file, int line)
-{
-  assertEquals(static_cast<int64_t>(expected), static_cast<int64_t>(result), file, line);
-}
-
-void assertEquals(int32_t expected, uint32_t result
-                  , const char * file, int line)
-{
-  if (expected < 0 || static_cast<uint32_t>(expected) != result)
-  {
-    std::stringstream errmsg;
-    errmsg.str("");
-    errmsg << "assertEquals(boolean) failed in " << file << ", line #" << line;
-    TestsListener::testHasFailed(errmsg.str());
-  }
-}
-
-
-void assertEquals(uint32_t expected, uint32_t result
-                  , const char * file, int line)
-{
-  assertEquals(static_cast<uint64_t>(expected), static_cast<uint64_t>(result), file, line);
-}
-
-
-void assertEquals(int64_t expected, int64_t result
-                  , const char * file, int line)
-{
-  if (expected != result)
-  {
-    std::stringstream errmsg;
-    errmsg.str("");
-    errmsg << "assertEquals(int64_t) failed in " << file << ", line #" << line;
-    errmsg << " expecting '" << expected << "' got '" << result << "'";
-    TestsListener::testHasFailed(errmsg.str());
-  }
-}
-
-
-void assertEquals(uint64_t expected, uint64_t result
-                  , const char * file, int line)
-{
-  if (expected != result)
-  {
-    std::stringstream errmsg;
-    errmsg.str("");
-    errmsg << "assertEquals(uint64_t) failed in " << file << ", line #" << line;
-    errmsg << " expecting '" << expected << "' got '" << result << "'";
-    TestsListener::testHasFailed(errmsg.str());
-  }
-}
-
 
 bool isNaN(double smth)
 {
@@ -154,14 +91,14 @@ bool isNaN(double smth)
 
 double scaledEpsilon(const double & expected, const double & fuzzyEpsilon)
 {
-  const double aa=fabs(expected) + 1;
+  const double aa= fabs(expected) + 1;
 
   return ( true) ? fuzzyEpsilon : fuzzyEpsilon * aa;
 }
 
 double scaledEpsilon(const long double & expected, const long double & fuzzyEpsilon)
 {
-  const long double aa=fabs(expected) + 1;
+  const long double aa= fabs(expected) + 1;
 
   return ( true) ? fuzzyEpsilon : fuzzyEpsilon * aa;
 }
@@ -179,42 +116,8 @@ bool fuzzyEquals(long double expected, long double result, long double fuzzyEpsi
 }
 
 
-void assertEquals(const long double & expected, const long double & result,
-                  const char * file, int line)
-{
-  const long double fuzzyEpsilon=0.000001;
-
-  assertEqualsEpsilon(expected, result, fuzzyEpsilon, file, line);
-}
-
-
-void assertEquals(const double & expected, const long double & result,
-                  const char * file, int line)
-{
-  const long double fuzzyEpsilon=0.000001;
-
-  assertEqualsEpsilon(static_cast<long double>(expected), result, fuzzyEpsilon, file, line);
-}
-
-
-void assertEquals(const double & expected, const double & result,
-                  const char * file, int line)
-{
-  const double fuzzyEpsilon=0.000001;
-
-  assertEqualsEpsilon(expected, result, fuzzyEpsilon, file, line);
-}
-
-void assertEquals(const float & expected, const float & result,
-                  const char * file, int line)
-{
-  assertEquals(static_cast<double> (expected), static_cast<double> (result)
-               , file, line);
-}
-
-
-void assertEqualsEpsilon(const long double & expected, const long double & result
-                         , const long double & epsilon, const char * file, int line)
+void assertEqualsEpsilon(const long double expected, const long double result
+                         , const long double epsilon, const char* file, int line)
 {
   if ( ( isNaN(expected) && isNaN(result) )
       ||
@@ -232,23 +135,23 @@ void assertEqualsEpsilon(const long double & expected, const long double & resul
 }
 
 
-void assertEqualsEpsilon(const double & expected, const double & result
-                         , const double & epsilon, const char * file, int line)
-{
-  if ( ( isNaN(expected) && isNaN(result) )
-      ||
-      ( !isNaN(expected) && !isNaN(result)
-      && fuzzyEquals( expected, result, epsilon ) ) )
-  {
-    return;
-  }
-
-  std::stringstream errmsg;
-  errmsg.str("");
-  errmsg << "assertEquals(double) failed in " << file << ", line #" << line;
-  errmsg << " expecting '" << std::setprecision(9) << expected << "' got '" << result << "'";
-  TestsListener::testHasFailed(errmsg.str());
-}
+//void assertEqualsEpsilon(const double expected, const double result
+//                         , const double epsilon, const char * file, int line)
+//{
+//  if ( ( isNaN(expected) && isNaN(result) )
+//      ||
+//      ( !isNaN(expected) && !isNaN(result)
+//      && fuzzyEquals( expected, result, epsilon ) ) )
+//  {
+//    return;
+//  }
+//
+//  std::stringstream errmsg;
+//  errmsg.str("");
+//  errmsg << "assertEquals(double) failed in " << file << ", line #" << line;
+//  errmsg << " expecting '" << std::setprecision(9) << expected << "' got '" << result << "'";
+//  TestsListener::testHasFailed(errmsg.str());
+//}
 
 void assertEquals(const String & expected, const String & result
                   , const char * file, int line)
