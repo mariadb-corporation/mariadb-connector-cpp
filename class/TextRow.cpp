@@ -151,7 +151,7 @@ namespace mariadb
            // For date type this can be with evil server only.
            throw SQLException(
              "cannot parse data in date string '"
-             + SQLString(fieldBuf, length)
+             + SQLString(fieldBuf.arr, length)
              + "'");
          }
          continue;
