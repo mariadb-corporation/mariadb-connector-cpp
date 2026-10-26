@@ -45,13 +45,13 @@ namespace classes
 {
 void preparedstatement::setUp()
 {
-  commonProperties["useServerPrepStmts"]= "false";
+  //commonProperties["useServerPrepStmts"]= "false";
   super::setUp();
 
   commonProperties["useServerPrepStmts"] = "true";
   try
   {
-    // We do not reset ssps to test it can be safely destroyed after destroying (createdd in previous test) connection
+    // We do not reset ssps to test that it can be safely destroyed after destroying (createdd in previous test) connection
     // ssps.reset();
     sspsCon.reset(this->getConnection(&commonProperties));
   }
@@ -2353,6 +2353,10 @@ void preparedstatement::moreResultsAfterPrepare()
 /* if sql::bytes wrapped C array, setBytes would crash the application */
 void preparedstatement::bytesArrParam()
 {
+  sql::Properties props(commonProperties);
+  props["useServerPrepStmts"]= "false";
+  Connection cspsCon(getConnection(&props));
+  std::vector<sql::Connection*> cons{cspsCon.get()};
   pstmt.reset(con->prepareStatement("SELECT ?"));
   char charArray[3]= {'\1', '\0', '\1'};
   sql::bytes sqlBytes(charArray, 3), b2{'\1', '\0', '\2'};
@@ -2361,7 +2365,15 @@ void preparedstatement::bytesArrParam()
   pstmt->setBytes(1, &sqlBytes);
   res.reset(pstmt->executeQuery());
   ASSERT(res->next());
-  ASSERT_EQUALS(65537, res->getInt(1));
+  if (isMySQL()) {
+    // TODO: the test has to be adapted for MySQL. But basically this is the test for setBytes and testing against
+    // MariaDB kinda enough.
+    SKIP("The test won't work with MySQL as the field is not binary in MySQL");
+  }
+  else {
+    ASSERT_EQUALS(65537, res->getInt(1));
+  }
+
   
   // b2 owns the array and internal length is positive - checking it's also alright
   pstmt->setBytes(1, &b2);
@@ -2369,13 +2381,42 @@ void preparedstatement::bytesArrParam()
   ASSERT(res->next());
   ASSERT_EQUALS(65536, res->getInt(1));
 
-  sqlBytes[0]= '\0';
-  // Just to show, that original array has been changed
-  ASSERT_EQUALS('\0', charArray[0]);
-  pstmt->setBytes(1, &sqlBytes);
-  res.reset(pstmt->executeQuery());
-  ASSERT(res->next());
-  ASSERT_EQUALS(1, res->getInt(1));
+  /* The value is only converted to int if the server reports the "SELECT ?" column as binary.
+     MySQL decides the type of that column at the prepare time, and does not mark it binary, thus
+     it makes sense to test the binary protocol against MariaDB only */
+  if (!isMySQL()) {
+    cons.push_back(sspsCon.get());
+  }
+
+  for (auto c : cons) {
+    pstmt.reset(c->prepareStatement("SELECT ?"));
+    char charArray[3]= {'\1', '\0', '\1'};
+    sql::bytes sqlBytes(charArray, 3), b2{'\1', '\0', '\2'};
+    b2[2]= '\0';
+    // sqlBytes has internally a negative length, i.e. it does not own the array. let's see if it throws
+    pstmt->setBytes(1, &sqlBytes);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT_EQUALS(65537, res->getInt(1));
+
+    // b2 owns the array and internal length is positive - checking it's also alright
+    pstmt->setBytes(1, &b2);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT_EQUALS(65536, res->getInt(1));
+
+    sqlBytes[0]= '\0';
+    // Just to show, that original array has been changed
+    ASSERT_EQUALS('\0', charArray[0]);
+    pstmt->setBytes(1, &sqlBytes);
+    res.reset(pstmt->executeQuery());
+    ASSERT(res->next());
+    ASSERT_EQUALS(1, res->getInt(1));
+
+    // Not to leave them pointing into the local connection
+    res.reset();
+    pstmt.reset();
+  }
 }
 
 /* CONCPP-138 application crashes if binary resultset used after closing the connection */
@@ -2431,5 +2472,136 @@ void preparedstatement::concpp153_mbCsParamEscaping()
   }
 }
 
-} /* namespace preparedstatement */
+
+/* Helper for concpp172_failedBatch - runs test on given connection properties */
+void preparedstatement::concpp172_failedBatchOnProperties(sql::ConnectOptionsMap& connection_properties,
+  int32_t expectedRowCount)
+{
+  con.reset(driver->connect(url, connection_properties));
+  stmt.reset(con->createStatement());
+  createSchemaObject("TABLE", "concpp172", "(id INT NOT NULL PRIMARY KEY, val VARCHAR(32) NOT NULL)");
+  stmt->executeUpdate("INSERT INTO concpp172(id, val) VALUES(1, 'The key we will later duplicate')");
+
+  const sql::SQLString query("INSERT INTO concpp172 (id, val) VALUES (?, ?)");
+  const int32_t id[]{ 2, 1, 3 };
+  const char* val[]{ "b", "a", "c" };
+
+  pstmt.reset(con->prepareStatement(query));
+  for (std::size_t row= 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    pstmt->setInt(1, id[row]);
+    pstmt->setString(2, val[row]);
+    pstmt->addBatch();
+  }
+  try {
+    pstmt->executeBatch();
+    // Exception is exepected
+    ASSERT(false);
+  }
+  catch (sql::SQLException&) {
+    // Expected
+  }
+  // Closing the PS puts the underlying server PS into the cache
+  pstmt.reset();
+  // The same query is prepared again - the PS is taken from the cache
+  pstmt.reset(con->prepareStatement(query));
+  pstmt->setInt(1, 5);
+  pstmt->setString(2, "other key");
+  ASSERT_EQUALS(1, pstmt->executeUpdate());
+
+  res.reset(stmt->executeQuery("SELECT COUNT(*) FROM concpp172 WHERE id IN (1, 2, 3, 5)"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(expectedRowCount, res->getInt(1));
+  dropSchemaObject("TABLE", "concpp172");
+}
+
+/* CONCPP-172 Failure in batch marks connection as closed */
+void preparedstatement::concpp172_failedBatch()
+{
+  sql::ConnectOptionsMap connection_properties{ {"userName", user},
+                                               {"password", passwd},
+                                               {"cachePrepStmts", "true"},
+                                               {"prepStmtCacheSize", "250"},
+                                               {"prepStmtCacheSqlLimit", "2048"},
+                                               {"useServerPrepStmts", "true"},
+                                               {"useBulkStmts", "false"},
+                                               {"useTls", useTls ? "true" : "false"} };
+  // contiueBatchOnError is not supported(openly - it's not documented) and it's default is true.
+  // thus the batch is continued on the first error and at the end all 4 keys should be present.
+  // That actually assumes that auto_commit is on, which is the default.
+  concpp172_failedBatchOnProperties(connection_properties, 4);
+  if (isMySQL()) {
+    // No bulk execution for MySQL
+    return;
+  }
+  connection_properties["useBulkStmts"] = "true";
+  // With bulk execution batch none of rows are inserted in case of error. Thus we will have 2
+  // at the end - keys inserted before and after the batch run.
+  concpp172_failedBatchOnProperties(connection_properties, 2);
+}
+
+
+void preparedstatement::concpp172_executeAfterFailedBatch()
+{
+  if (isMySQL()) {
+    SKIP("No bulk execution for MySQL");
+  }
+  sql::ConnectOptionsMap connection_properties{ {"userName", user},
+                                               {"password", passwd},
+                                               {"useServerPrepStmts", "true"},
+                                               {"useBulkStmts", "true"},
+                                               {"useTls", useTls ? "true" : "false"} };
+  con.reset(driver->connect(url, connection_properties));
+  stmt.reset(con->createStatement());
+  createSchemaObject("TABLE", "concpp172", "(id INT NOT NULL PRIMARY KEY, val VARCHAR(32) NOT NULL)");
+  stmt->executeUpdate("INSERT INTO concpp172(id, val) VALUES(1, 'The key we will later duplicate')");
+
+  const sql::SQLString query("INSERT INTO concpp172 (id, val) VALUES (?, ?)");
+  const int32_t id[]{ 2, 1, 3 };
+  const char* val[]{ "b", "a", "c" };
+
+  pstmt.reset(con->prepareStatement(query));
+  for (std::size_t row= 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    pstmt->setInt(1, id[row]);
+    pstmt->setString(2, val[row]);
+    pstmt->addBatch();
+  }
+  try {
+    pstmt->executeBatch();
+    // Exception is exepected
+    ASSERT(false);
+  }
+  catch (sql::SQLException&) {
+    // Expected
+  }
+  // This supposed to execute w/ the last bound parameters
+  ASSERT_EQUALS(1, pstmt->executeUpdate());
+
+  res.reset(stmt->executeQuery("SELECT id FROM concpp172 ORDER BY id"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(1, res->getInt(1));
+  ASSERT(res->next());
+  ASSERT_EQUALS(3, res->getInt(1));
+  ASSERT(!res->next());
+
+  //Now let's try the same w/ successful batch - at least to have it covered.
+  // Now we don't need primary key constraint, but using same name to re-use the query.
+  dropSchemaObject("TABLE", "concpp172");
+  createSchemaObject("TABLE", "concpp172", "(id INT NOT NULL, val VARCHAR(32) NOT NULL)");
+  pstmt.reset(con->prepareStatement(query));
+  for (std::size_t row= 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    pstmt->setInt(1, id[row]);
+    pstmt->setString(2, val[row]);
+    pstmt->addBatch();
+  }
+  auto& batchResults= pstmt->executeBatch();
+  ASSERT_EQUALS(sizeof(id) / sizeof(id[0]), batchResults.size());
+  // This supposed to execute w/ the last bound parameters
+  ASSERT_EQUALS(1, pstmt->executeUpdate());
+  // We supposed to have 2 rows w/ id=3 - one from the batch and one from the last executeUpdate
+  res.reset(stmt->executeQuery("SELECT count(*) FROM concpp172 WHERE id=3"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(2, res->getInt(1));
+  ASSERT(!res->next());
+}
+} /* namespace classes */
 } /* namespace testsuite */

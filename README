@@ -136,10 +136,10 @@ useResetConnection       Makes Connection::reset() method to issue conenction re
                          command at the server. This option existed from first version,
                          but was not documented. Since 1.1.1 its default changed to
                          true                                                         bool
-allowLocalInfile         Permits loading data from local file(on the client) with
-                         LOAD DATA LOCAL INFILE statement(false)                      bool
-useResetConnection       Makes Connection::reset() method to issue conenction reset
-                         command at the server. Its default is false                  bool
+allowMultiQueries        Permits sending of multiple statements in a single query,
+            separated by a semicolon, e.g. insert into ab (i) values (1);
+            insert into ab (i) values (2). Is also implicitly enabled by the
+            rewriteBatchedStatements option. Default false                            bool  CLIENT_MULTI_STATEMENTS
 rewriteBatchedStatements For insert queries, rewrites batchedStatement to execute in
             a single executeQuery. Example: insert into ab (i) values (?) with first
             batch values = 1, second = 2 will be rewritten as
@@ -154,6 +154,13 @@ rewriteBatchedStatements For insert queries, rewrites batchedStatement to execut
 useBulkStmts             Use dedicated COM_STMT_BULK_EXECUTE protocol for
             executeBatch if possible. Can be significanlty faster.
             (works only with server MariaDB >= 10.2.7). Default false                 bool
+useAffectedRows          If true(default), use "affected rows" for the row count of
+            statements. If false, use "found rows", which corresponds to the JDBC
+            standard. This changes the behavior of, for example,
+            UPDATE... ON DUPLICATE KEY statements                                     bool  CLIENT_FOUND_ROWS
+interactiveClient        Session timeout is defined by the wait_timeout server
+            variable. Setting interactiveClient to true will tell the server to use
+            the interactive_timeout server variable. Default false                    bool  CLIENT_INTERACTIVE
 cachePrepStmts           Enable/disable Server Side Prepared Statement cache.
                          (default false)                                              bool
 prepStmtCacheSize        This sets the number of prepared statements that the driver

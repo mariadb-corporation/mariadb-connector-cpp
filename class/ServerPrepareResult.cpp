@@ -202,6 +202,15 @@ namespace mariadb
     return static_cast<int32_t>(shareCounter);
   }
 
+
+  // Resetting C stmt handle for safe reuse. Atm the known issue is not resetting array size after bulk execution
+  // failure.
+  void ServerPrepareResult::softReset()
+  {
+    static unsigned int resetArrSize= 0;
+    mysql_stmt_attr_set(statementId, STMT_ATTR_ARRAY_SIZE, (const void*)&resetArrSize);
+  }
+
   /*void initBindStruct(MYSQL_BIND& bind, const MYSQL_BIND* paramInfo)
   {
     std::memset(&bind, 0, sizeof(bind));

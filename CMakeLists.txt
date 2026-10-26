@@ -21,7 +21,7 @@ IF(APPLE)
   # productbuild packaging stuff 
   CMAKE_MINIMUM_REQUIRED(VERSION 3.23)
 ELSE()
-  CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+  CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 ENDIF()
 CMAKE_POLICY(SET CMP0048 NEW)
 IF (WITH_MSAN)
@@ -32,7 +32,7 @@ SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # not sure what to do here with versioning
 PROJECT(mariadb_connector_cpp
-        VERSION 1.1.8
+        VERSION 1.1.10
 #        DESCRIPTION "MariaDB Connector/C++"
         LANGUAGES CXX C)
 
@@ -41,7 +41,7 @@ IF(CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
 ENDIF()
 
 SET(MACPP_VERSION_QUALITY "ga") #Empty also means GA
-SET(MACPP_VERSION "1.01.0008")
+SET(MACPP_VERSION "1.01.0010")
 SET(MARIADB_DEFAULT_PLUGINS_SUBDIR "plugin")
 
 # For C/C
@@ -249,7 +249,7 @@ IF(NOT USE_SYSTEM_INSTALLED_LIB)
  	          COMPONENT ConnectorC)
     MESSAGE(STATUS "Configuring to install libmariadb to ${INSTALL_LIBDIR}")
 
-    SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password)
+    SET(OWN_PLUGINS_LIST mysql_clear_password dialog client_ed25519 sha256_password caching_sha2_password parsec)
     IF (PLUGINS_DYNAMIC)
       # The list from CC is visible for us
       SET(PLUGINS_LIST ${PLUGINS_DYNAMIC})

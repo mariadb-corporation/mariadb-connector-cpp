@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2022, 2025 MariaDB Corporation plc
+   Copyright (C) 2022, 2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -181,6 +181,8 @@ namespace mariadb
       mysql_stmt_bind_param(serverPrepareResult->getStatementId(), param);
     }
     int32_t rc= mysql_stmt_execute(serverPrepareResult->getStatementId());
+    serverPrepareResult->softReset();
+    clearBatch();
     if ( rc == 0)
     {
       getResult();
@@ -194,7 +196,6 @@ namespace mariadb
     {
       throw rc;
     }
-    clearBatch();
   }
 
 

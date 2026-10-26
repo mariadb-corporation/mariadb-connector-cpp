@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2026 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -105,6 +106,7 @@ public:
     TEST_CASE(isWritable);
     TEST_CASE(getColumnCharset);
     TEST_CASE(getColumnCollation);
+    TEST_CASE(concpp160);
   }
 
   /**
@@ -274,6 +276,13 @@ public:
    * JDBC compliance tests should take care that it does what its supposed to do
    */
   void getColumnCollation();
+  /**
+   * Test for ResultSetMetaData::odbc160
+   *
+   * Technically it does not cover the case - we can't check the value we are interested in via
+   * resultsetmetadata.
+   */
+  void concpp160();
 
 };
 

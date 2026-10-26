@@ -508,7 +508,15 @@ namespace mariadb
       }
       return true;
 
-    } catch (std::runtime_error& e) {
+    }
+    catch (SQLException& sqle) {
+      // if we catch SQLException here - we just send it further as it was processed and
+      // tmpServerPrepareResult destroyed if needed. Just preventing it to be caught as
+      // runtime_error and reprocessed in catch below. Perhaps it shouldn't be runtime_error
+      // at all, in first turn.
+      throw sqle;
+    }
+    catch (std::runtime_error& e) {
       if (!serverPrepareResult && tmpServerPrepareResult) {
         releasePrepareStatement(tmpServerPrepareResult);
       }

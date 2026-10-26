@@ -240,7 +240,6 @@ void resultset::getTypes()
       checkResultSetScrolling(pres);
       ASSERT(pres->next());
 
-
       if (it->check_as_string)
       {
         logMsg("... checking string value");
@@ -385,7 +384,7 @@ void resultset::getTypes()
           try
           {
             res->getInt(id);
-            FAIL("getInt shouldn't be available for this type");
+            FAIL(("getInt shouldn't be available for this type:" + it->name).c_str());
           }
           catch (sql::SQLException&)
           {
@@ -393,7 +392,7 @@ void resultset::getTypes()
           try
           {
             pres->getUInt(id);
-            FAIL("getUInt shouldn't be available for this type");
+            FAIL(("getUInt shouldn't be available for this type:" + it->name).c_str());
           }
           catch (sql::SQLException&)
           {

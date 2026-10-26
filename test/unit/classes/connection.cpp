@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2025 MariaDB Corporation plc
+ *               2020, 2026 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -3547,6 +3547,129 @@ void connection::concpp146_initSQL()
   ASSERT(res->next());
   ASSERT_EQUALS("YourVar", res->getString(1));
   ASSERT_EQUALS("YourVar2", res->getString(2));
+}
+
+
+/* CONCPP-163 allowMultiQueries option. Along the way testing other client capabilities,
+   that are controlled by the connection options */
+void connection::concpp163()
+{
+  /* 1) Multi-statements have to be off by default */
+  try {
+    res.reset(stmt->executeQuery("SELECT 1; SELECT 2"));
+    FAIL("Multi-statements are supposed to be disabled by default");
+  }
+  catch (sql::SQLException& e) {
+    /* Parse error */
+    ASSERT_EQUALS(1064, e.getErrorCode());
+  }
+  /* The connection has to be usable after that */
+  res.reset(stmt->executeQuery("SELECT 1"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(1, res->getInt(1));
+  res.reset();
+
+  /* 2) allowMultiQueries turns them on */
+  sql::ConnectOptionsMap opts{{"allowMultiQueries", "true"}};
+  {
+    Connection c1(getConnection(&opts));
+    Statement s1(c1->createStatement());
+    ResultSet r1(s1->executeQuery("SELECT 1; SELECT 2"));
+
+    ASSERT(r1->next());
+    ASSERT_EQUALS(1, r1->getInt(1));
+    ASSERT(!r1->next());
+    ASSERT(s1->getMoreResults());
+    r1.reset(s1->getResultSet());
+    ASSERT(r1->next());
+    ASSERT_EQUALS(2, r1->getInt(1));
+    ASSERT(!r1->next());
+    ASSERT(!s1->getMoreResults());
+  }
+
+  /* 3) rewriteBatchedStatements requires multi-statements, and thus turns them on as well */
+  opts["allowMultiQueries"]= "false";
+  opts["rewriteBatchedStatements"]= "true";
+  {
+    Connection c2(getConnection(&opts));
+    Statement s2(c2->createStatement());
+    ResultSet r2(s2->executeQuery("SELECT 3; SELECT 4"));
+
+    ASSERT(r2->next());
+    ASSERT_EQUALS(3, r2->getInt(1));
+    ASSERT(!r2->next());
+    ASSERT(s2->getMoreResults());
+    r2.reset(s2->getResultSet());
+    ASSERT(r2->next());
+    ASSERT_EQUALS(4, r2->getInt(1));
+    ASSERT(!r2->next());
+    ASSERT(!s2->getMoreResults());
+  }
+  opts.erase("allowMultiQueries");
+  opts.erase("rewriteBatchedStatements");
+
+  /* 4) useAffectedRows(CLIENT_FOUND_ROWS capability). By default(true) the row count of a
+        statement is the number of changed(affected) rows */
+  createTable("concpp163", "(id INT NOT NULL PRIMARY KEY, val INT)");
+  stmt->executeUpdate("INSERT INTO concpp163 VALUES(1, 1), (2, 2)");
+  /* The row is matched, but not changed */
+  ASSERT_EQUALS(0, stmt->executeUpdate("UPDATE concpp163 SET val=1 WHERE id=1"));
+  /* Making sure the row is matched, i.e. it's not the WHERE clause, that makes the difference */
+  ASSERT_EQUALS(1, stmt->executeUpdate("UPDATE concpp163 SET val=3 WHERE id=1"));
+
+  /* Turning the option off makes the connector to count found(matched) rows */
+  opts["useAffectedRows"]= "false";
+  {
+    Connection c3(getConnection(&opts));
+    Statement s3(c3->createStatement());
+    ASSERT_EQUALS(1, s3->executeUpdate("UPDATE concpp163 SET val=3 WHERE id=1"));
+  }
+  opts.erase("useAffectedRows");
+
+  /* 5) interactiveClient(CLIENT_INTERACTIVE capability) makes the server to use
+        interactive_timeout as the session's wait_timeout */
+  sql::SQLString waitTimeout(getVariableValue("wait_timeout", true));
+  sql::SQLString interactiveTimeout(getVariableValue("interactive_timeout", true));
+
+  if (waitTimeout.compare(interactiveTimeout) == 0) {
+    logMsg("Skipping interactiveClient part of the test - global wait_timeout and "
+           "interactive_timeout have the same value");
+  }
+  else {
+    /* Without the option the session's wait_timeout is the global wait_timeout */
+    ASSERT_EQUALS(waitTimeout, getVariableValue("wait_timeout"));
+
+    opts["interactiveClient"]= "true";
+    Connection c4(getConnection(&opts));
+    Statement s4(c4->createStatement());
+    ResultSet r4(s4->executeQuery("SELECT @@wait_timeout"));
+
+    ASSERT(r4->next());
+    ASSERT_EQUALS(interactiveTimeout, r4->getString(1));
+  }
+}
+
+
+/* CONCPP-167 Changing of the session's auto_increment_increment causes unhandled exception */
+void connection::concpp167()
+{
+  sql::ConnectOptionsMap opts;
+
+  /* The connector asks the server to track the changes of the auto_increment_increment system
+     variable if the rewriteBatchedStatements option is on. Thus testing both kinds of connections */
+  for (auto rewriteBatchedStatements : {"false", "true"}) {
+    opts["rewriteBatchedStatements"]= rewriteBatchedStatements;
+
+    Connection c(getConnection(&opts));
+    Statement s(c->createStatement());
+
+    s->execute("SET SESSION auto_increment_increment=3");
+
+    /* The connection has to be usable, and the new value in effect */
+    ResultSet r(s->executeQuery("SELECT @@session.auto_increment_increment"));
+    ASSERT(r->next());
+    ASSERT_EQUALS(3, r->getInt(1));
+  }
 }
 
 

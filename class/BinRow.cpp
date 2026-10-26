@@ -1109,8 +1109,7 @@ namespace mariadb
   void BinRow::cacheCurrentRow(std::vector<mariadb::bytes_view>& rowDataCache, std::size_t columnCount)
   {
     rowDataCache.clear();
-    for (std::size_t i= 0; i < columnCount; ++i) {
-      auto& b= bind[i];
+    for (auto& b : bind) {
       if (b.is_null_value != '\0') {
         rowDataCache.emplace_back();
       }
@@ -1118,7 +1117,7 @@ namespace mariadb
         // If we could guarantee, that "b.length && *b.length > 0 ? *b.length :" is for current row, we could use it
         rowDataCache.emplace_back(b.buffer_length);
         b.buffer= const_cast<char*>(rowDataCache.back().arr);
-        mysql_stmt_fetch_column(stmt, &b, static_cast<unsigned int>(i), 0);
+        mysql_stmt_fetch_column(stmt, &b, static_cast<unsigned int>(&b - &bind[0]), 0);
       }
     }
   }

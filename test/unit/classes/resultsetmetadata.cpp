@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ *               2026 MariaDB Corporation plc
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -187,8 +188,19 @@ void resultsetmetadata::doGetColumnDisplaySize(bool is_ps)
   ASSERT_EQUALS((unsigned int) 5, meta->getColumnDisplaySize(3));
   ASSERT_EQUALS((unsigned int) 1, meta->getColumnDisplaySize(4));
 
-  if( !isMySQL() ) {
-    ASSERT_EQUALS((unsigned int) 3, meta->getColumnDisplaySize(5));
+  // Text protocol give 3, binary 11, MySQL gives 4(3 + sign), and 9.7 gives 20(bigint) on binary protocol it seems.
+  if (isMySQL())
+  {
+    ASSERT_ONEOF(meta->getColumnDisplaySize(5), 4, 20);
+  }
+  else if (is_ps)
+  {
+    // SSPS can be not used, then we still get 3. With binary protocol we get 11
+    ASSERT_ONEOF(meta->getColumnDisplaySize(5), 11, 3);
+  }
+  else
+  {
+    ASSERT_EQUALS(3U, meta->getColumnDisplaySize(5));
   }
 
   try
@@ -1402,6 +1414,34 @@ void resultsetmetadata::getColumnCollation()
   }
 }
 
+/**
+  * Technically it does not cover the case - we can't check the value we are interested in via
+  * resultsetmetadata. Not sure if it's needed, but hopefully it's not a waste.
+  */
+void resultsetmetadata::concpp160()
+{
+  createSchemaObject("TABLE", "concpp160", "(col1 VARCHAR(255) NOT NULL)");
+  stmt->executeUpdate("INSERT INTO concpp160(col1) VALUES('test1234561234567890')");
+
+  /* The metadata of the server side prepared statement's resultset is the one the server sends,
+     and that is what has to be tested here. Thus the dedicated connection with the server side
+     prepared statements enabled */
+  sql::ConnectOptionsMap opts{{"useServerPrepStmts", "true"},
+                              // Making sure we know which precision to expect.
+                              {"useCharacterEncoding", "utf8mb4"}};
+  Connection sspsCon(getConnection(&opts));
+  sspsCon->setSchema(db);
+
+  PreparedStatement ssps(sspsCon->prepareStatement("SELECT col1 FROM concpp160"));
+  ResultSet rs(ssps->executeQuery());
+  ResultSetMetaData meta(rs->getMetaData());
+  ASSERT_EQUALS(255U*4, meta->getPrecision(1));
+  ASSERT_EQUALS(255U, meta->getColumnDisplaySize(1));
+  ASSERT(rs->next());
+  auto val= rs->getString(1);
+  ASSERT_EQUALS("test1234561234567890", val);
+  ASSERT_EQUALS(20ULL, val.length());
+}
 
 void resultsetmetadata::doGetColumnCollation(bool is_ps)
 {

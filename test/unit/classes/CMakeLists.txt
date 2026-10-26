@@ -1,5 +1,5 @@
 # Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
-#               2020, 2024 MariaDB Corporation plc
+#               2020, 2026 MariaDB Corporation plc
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -40,7 +40,7 @@ ENDIF(WIN32)
 ADD_EXECUTABLE(test_connection ${test_connection_sources})
 SET_TARGET_PROPERTIES(test_connection PROPERTIES
           OUTPUT_NAME "connection"
-	        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
           LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
 		  
@@ -169,7 +169,7 @@ ENDIF(WIN32)
 ADD_EXECUTABLE(test_savepoint ${test_savepoint_sources})
 SET_TARGET_PROPERTIES(test_savepoint PROPERTIES
           OUTPUT_NAME "savepoint"
-	        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
           LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
 TARGET_LINK_LIBRARIES(test_savepoint ${PLATFORM_DEPENDENCIES} test_framework ${LIBRARY_NAME} ${MY_GCOV_LINK_LIBRARIES})
@@ -189,7 +189,7 @@ ENDIF(WIN32)
 ADD_EXECUTABLE(test_preparedstatement ${test_preparedstatement_sources})
 SET_TARGET_PROPERTIES(test_preparedstatement PROPERTIES
           OUTPUT_NAME "preparedstatement"
-	        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
           LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
 
@@ -210,7 +210,7 @@ ENDIF(WIN32)
 ADD_EXECUTABLE(test_parametermetadata ${test_parametermetadata_sources})
 SET_TARGET_PROPERTIES(test_parametermetadata PROPERTIES
           OUTPUT_NAME "parametermetadata"
-	        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
           LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
 
@@ -252,25 +252,25 @@ ENDIF(WIN32)
 ADD_EXECUTABLE(test_statement ${test_statement_sources})
 SET_TARGET_PROPERTIES(test_statement PROPERTIES
           OUTPUT_NAME "statement"
-	        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
+	  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
           LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
 TARGET_LINK_LIBRARIES(test_statement ${PLATFORM_DEPENDENCIES} test_framework ${LIBRARY_NAME} ${MY_GCOV_LINK_LIBRARIES})
 
 MESSAGE(STATUS "Configuring unit tests - statement")
 
-SET(test_uri_sources
-  ${test_common_sources}
-  "${CMAKE_SOURCE_DIR}/driver/mysql_uri.cpp"
-  "${CMAKE_SOURCE_DIR}/driver/mysql_util.cpp"
-  uri.cpp)
+#SET(test_uri_sources
+#  ${test_common_sources}
+#  "${CMAKE_SOURCE_DIR}/driver/mysql_uri.cpp"
+#  "${CMAKE_SOURCE_DIR}/driver/mysql_util.cpp"
+#  uri.cpp)
 
-IF(WIN32)
-  SET(test_uri_sources
-        ${test_uri_sources}
-    "${CMAKE_SOURCE_DIR}/driver/mysql_uri.h"
-    uri.h)
-ENDIF(WIN32)
+#IF(WIN32)
+#  SET(test_uri_sources
+#        ${test_uri_sources}
+#    "${CMAKE_SOURCE_DIR}/driver/mysql_uri.h"
+#    uri.h)
+#ENDIF(WIN32)
 
 #ADD_EXECUTABLE(test_uri ${test_uri_sources})
 #SET_TARGET_PROPERTIES(test_uri PROPERTIES
@@ -281,22 +281,3 @@ ENDIF(WIN32)
 
 #MESSAGE(STATUS "Configuring unit tests - uri")
 
-
-SET(test_variant_sources
-  ${test_common_sources}
-  variant.cpp)
-
-IF(WIN32)
-  SET(test_variant_sources
-    ${test_variant_sources}
-    variant.h)
-ENDIF(WIN32)
-
-#ADD_EXECUTABLE(test_variant ${test_variant_sources})
-#SET_TARGET_PROPERTIES(test_variant PROPERTIES
-#          OUTPUT_NAME "variant"
-#          LINK_FLAGS "${MYSQLCPPCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
-#          COMPILE_FLAGS "${MYSQLCPPCONN_COMPILE_FLAGS_ENV}")
-#TARGET_LINK_LIBRARIES(test_variant ${LIBRARY_NAME} ${PLATFORM_DEPENDENCIES} test_framework ${MY_GCOV_LINK_LIBRARIES})
-#
-#MESSAGE(STATUS "Configuring unit tests - variant")
