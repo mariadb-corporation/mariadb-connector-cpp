@@ -89,6 +89,7 @@ public:
   const std::vector<capi::MYSQL_BIND>& getParameterTypeHeader() const;
   void bindParameters(ParamsetType& parameters);
   void bindParameters(ParamsetArrType& parameters, const int16_t *type= nullptr);
+  void softReset();
   };
 }
 }

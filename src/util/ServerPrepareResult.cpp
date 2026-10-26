@@ -351,5 +351,13 @@ namespace mariadb
     capi::mysql_stmt_attr_set(statementId, capi::STMT_ATTR_CB_PARAM, (const void*)&paramRowUpdateCallback);
     capi::mysql_stmt_bind_param(statementId, paramBind.data());
   }
+
+  // Resetting C stmt handle for safe reuse. Atm the known issue is not resetting array size after bulk execution
+  // failure. 
+  void ServerPrepareResult::softReset()
+  {
+    static unsigned int resetArrSize= 0;
+    capi::mysql_stmt_attr_set(statementId, capi::STMT_ATTR_ARRAY_SIZE, (const void*)&resetArrSize);
+  }
 }
 }

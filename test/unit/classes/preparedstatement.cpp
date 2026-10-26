@@ -2461,7 +2461,7 @@ void preparedstatement::concpp172_failedBatchOnProperties(sql::ConnectOptionsMap
 
   const sql::SQLString query("INSERT INTO concpp172 (id, val) VALUES (?, ?)");
   const int32_t id[]{ 2, 1, 3 };
-  const char* val[]{ "a", "b", "c" };
+  const char* val[]{ "b", "a", "c" };
 
   pstmt.reset(con->prepareStatement(query));
   for (std::size_t row= 0; row < sizeof(id) / sizeof(id[0]); ++row) {
@@ -2477,22 +2477,18 @@ void preparedstatement::concpp172_failedBatchOnProperties(sql::ConnectOptionsMap
   catch (sql::SQLException&) {
     // Expected
   }
-
   // Closing the PS puts the underlying server PS into the cache
   pstmt.reset();
-
   // The same query is prepared again - the PS is taken from the cache
   pstmt.reset(con->prepareStatement(query));
   pstmt->setInt(1, 5);
   pstmt->setString(2, "other key");
   ASSERT_EQUALS(1, pstmt->executeUpdate());
-  pstmt.reset();
 
   res.reset(stmt->executeQuery("SELECT COUNT(*) FROM concpp172 WHERE id IN (1, 2, 3, 5)"));
   ASSERT(res->next());
   ASSERT_EQUALS(expectedRowCount, res->getInt(1));
   dropSchemaObject("TABLE", "concpp172");
-  res.reset();
 }
 
 /* CONCPP-172 Failure in batch marks connection as closed */
@@ -2516,5 +2512,66 @@ void preparedstatement::concpp172_failedBatch()
   concpp172_failedBatchOnProperties(connection_properties, 2);
 }
 
+
+void preparedstatement::concpp172_executeAfterFailedBatch()
+{
+  sql::ConnectOptionsMap connection_properties{ {"userName", user},
+                                               {"password", passwd},
+                                               {"useServerPrepStmts", "true"},
+                                               {"useBulkStmts", "true"},
+                                               {"useTls", useTls ? "true" : "false"} };
+  con.reset(driver->connect(url, connection_properties));
+  stmt.reset(con->createStatement());
+  createSchemaObject("TABLE", "concpp172", "(id INT NOT NULL PRIMARY KEY, val VARCHAR(32) NOT NULL)");
+  stmt->executeUpdate("INSERT INTO concpp172(id, val) VALUES(1, 'The key we will later duplicate')");
+
+  const sql::SQLString query("INSERT INTO concpp172 (id, val) VALUES (?, ?)");
+  const int32_t id[]{ 2, 1, 3 };
+  const char* val[]{ "b", "a", "c" };
+
+  pstmt.reset(con->prepareStatement(query));
+  for (std::size_t row= 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    pstmt->setInt(1, id[row]);
+    pstmt->setString(2, val[row]);
+    pstmt->addBatch();
+  }
+  try {
+    pstmt->executeBatch();
+    // Exception is exepected
+    ASSERT(false);
+  }
+  catch (sql::SQLException&) {
+    // Expected
+  }
+  // This supposed to execute w/ the last bound parameters
+  ASSERT_EQUALS(1, pstmt->executeUpdate());
+
+  res.reset(stmt->executeQuery("SELECT id FROM concpp172 ORDER BY id"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(1, res->getInt(1));
+  ASSERT(res->next());
+  ASSERT_EQUALS(3, res->getInt(1));
+  ASSERT(!res->next());
+
+  //Now let's try the same w/ successful batch - at least to have it covered.
+  // Now we don't need primary key constraint, but using same name to re-use the query.
+  dropSchemaObject("TABLE", "concpp172");
+  createSchemaObject("TABLE", "concpp172", "(id INT NOT NULL, val VARCHAR(32) NOT NULL)");
+  pstmt.reset(con->prepareStatement(query));
+  for (std::size_t row= 0; row < sizeof(id) / sizeof(id[0]); ++row) {
+    pstmt->setInt(1, id[row]);
+    pstmt->setString(2, val[row]);
+    pstmt->addBatch();
+  }
+  auto& batchResults= pstmt->executeBatch();
+  ASSERT_EQUALS(sizeof(id) / sizeof(id[0]), batchResults.size());
+  // This supposed to execute w/ the last bound parameters
+  ASSERT_EQUALS(1, pstmt->executeUpdate());
+  // We supposed to have 2 rows w/ id=3 - one from the batch and one from the last executeUpdate
+  res.reset(stmt->executeQuery("SELECT count(*) FROM concpp172 WHERE id=3"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(2, res->getInt(1));
+  ASSERT(!res->next());
+}
 } /* namespace classes */
 } /* namespace testsuite */

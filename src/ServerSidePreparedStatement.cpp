@@ -249,71 +249,71 @@ namespace sql
                                           stmt->getInternalResults().get(),
                                           sql,
                                           parameterList,
-                                          hasLongData)))
-      {
+                                          hasLongData))) {
         if (!metadata) {
           setMetaFromResult();
         }
-        stmt->getInternalResults()->commandEnd();
-        return;
       }
+      else {
+        SQLException exception("");
+        bool exceptionSet= false;
+        bool autoCommit= protocol->getAutocommit();
+        bool queryTimeout= stmt->getQueryTimeout() > 0;
+        auto results= stmt->getInternalResults().get();
 
-      SQLException exception("");
-      bool exceptionSet= false;
-      bool autoCommit= protocol->getAutocommit();
-      bool queryTimeout= stmt->getQueryTimeout() > 0;
-      auto results= stmt->getInternalResults().get();
-
-      if (autoCommit) {
-        protocol->executeQuery("SET AUTOCOMMIT=0");
-      }
-      //protocol->executeQuery("LOCK TABLE <parse query for table name> WRITE")
-      for (int32_t counter= 0; counter < queryParameterSize; counter++)
-      {
-        // TODO: verify if paramsets are guaranteed to exist at this point for all queryParameterSize
-        std::vector<Unique::ParameterHolder>& parameterHolder= parameterList[counter];
-        try {
-          if (queryTimeout) {
-            protocol->stopIfInterrupted();
-          }
-          protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult, results, parameterHolder);
+        if (autoCommit) {
+          protocol->executeQuery("SET AUTOCOMMIT=0");
         }
-        catch (SQLException& queryException)
+        //protocol->executeQuery("LOCK TABLE <parse query for table name> WRITE")
+        for (int32_t counter= 0; counter < queryParameterSize; counter++)
         {
-          if (protocol->getOptions()->continueBatchOnError
-            && protocol->isConnected()
-            && !protocol->isInterrupted())
-          {
-            if (!exceptionSet) {
-              exception= queryException;
-              exceptionSet= true;
+          // TODO: verify if paramsets are guaranteed to exist at this point for all queryParameterSize
+          std::vector<Unique::ParameterHolder>& parameterHolder= parameterList[counter];
+          try {
+            if (queryTimeout) {
+              protocol->stopIfInterrupted();
             }
+            protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult, results, parameterHolder);
           }
-          else {
-            if (autoCommit) {
-              // If we had autocommit on, we have to commit everything up to the point. Otherwise that's up to the application
-              protocol->executeQuery("COMMIT");// connection->commit() tries to acquire lock, and our lock is not re-entrant;
-              protocol->executeQuery("SET AUTOCOMMIT=1");
+          catch (SQLException& queryException)
+          {
+            if (protocol->getOptions()->continueBatchOnError
+              && protocol->isConnected()
+              && !protocol->isInterrupted())
+            {
+              if (!exceptionSet) {
+                exception= queryException;
+                exceptionSet= true;
+              }
             }
-            throw queryException;
+            else {
+              if (autoCommit) {
+                // If we had autocommit on, we have to commit everything up to the point. Otherwise that's up to the application
+                protocol->executeQuery("COMMIT");// connection->commit() tries to acquire lock, and our lock is not re-entrant;
+                protocol->executeQuery("SET AUTOCOMMIT=1");
+              }
+              throw queryException;
+            }
           }
         }
+        if (autoCommit) {
+          // If we had autocommit on, we have to commit everything up to the point. Otherwise that's up to the application
+          protocol->executeQuery("COMMIT");
+          protocol->executeQuery("SET AUTOCOMMIT=1");
+        }
+        if (exceptionSet) {
+          throw exception;
+        }
       }
-      if (autoCommit) {
-        // If we had autocommit on, we have to commit everything up to the point. Otherwise that's up to the application
-        protocol->executeQuery("COMMIT");
-        protocol->executeQuery("SET AUTOCOMMIT=1");
-      }
-      if (exceptionSet) {
-        throw exception;
-      }
-
-      stmt->getInternalResults()->commandEnd();
     }
     catch (SQLException& initialSqlEx) {
       localScopeLock.unlock();
+      // It should be better put into executeBatchExceptionEpilogue, but Stmt class knows nothing about serverPrepareResult
+      serverPrepareResult->softReset();
       throw stmt->executeBatchExceptionEpilogue(initialSqlEx, queryParameterSize);
     }
+    stmt->getInternalResults()->commandEnd();
+    serverPrepareResult->softReset();
     stmt->executeBatchEpilogue();
   }
 
