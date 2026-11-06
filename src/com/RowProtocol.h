@@ -156,7 +156,7 @@ protected:
   bool convertStringToBoolean(const char* str, std::size_t len);
 
 public:
-  void rangeCheck(const sql::SQLString& className,int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo);
+  void rangeCheck(const char* className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo);
 
 protected:
   int32_t extractNanos(const SQLString& timestring);

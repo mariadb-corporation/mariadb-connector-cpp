@@ -459,7 +459,7 @@ namespace mariadb
 #endif
 
 
-  void RowProtocol::rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo)
+  void RowProtocol::rangeCheck(const char* className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo)
   {
     if ((value < 0 && !columnInfo->isSigned() && !columnInfo->isBinary()) || value < minValue || value > maxValue) {
       throw SQLException(
