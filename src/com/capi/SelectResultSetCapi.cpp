@@ -1883,20 +1883,6 @@ namespace capi
     this->forceAlias= true;
   }
 
-  void SelectResultSetCapi::rangeCheck(const SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo) {
-    if (value < minValue || value > maxValue) {
-      throw SQLException(
-        "Out of range value for column '"
-        +columnInfo->getName()
-        +"' : value "
-        + std::to_string(value)
-        +" is not in "
-        + className
-        +" range",
-        "22003",
-        1264);
-    }
-  }
 
   int32_t SelectResultSetCapi::getRowPointer() {
     return rowPointer;

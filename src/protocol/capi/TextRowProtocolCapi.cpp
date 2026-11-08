@@ -1006,7 +1006,7 @@ namespace capi
    }
    // else
    int64_t value= getInternalLong(columnInfo);
-   rangeCheck("Byte", INT8_MIN, INT8_MAX, value, columnInfo);
+   rangeCheck("int8_t", INT8_MIN, INT8_MAX, value, columnInfo);
    return static_cast<int8_t>(value);
  }
 

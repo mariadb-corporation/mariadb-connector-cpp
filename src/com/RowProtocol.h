@@ -119,7 +119,7 @@ public:
   LocalTime getInternalLocalTime(ColumnDefinition* columnInfo,TimeZone timeZone)=0;
   LocalDate getInternalLocalDate(ColumnDefinition* columnInfo,TimeZone timeZone)=0;
   BigInteger getInternalBigInteger(ColumnDefinition* columnInfo)=0;
-  void rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo);
+  void rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, BigDecimal value, ColumnDefinition* columnInfo);
 #endif
   virtual int32_t fetchNext()=0;
   virtual void installCursorAtPosition(int32_t rowPtr)=0;
@@ -156,7 +156,7 @@ protected:
   bool convertStringToBoolean(const char* str, std::size_t len);
 
 public:
-  void rangeCheck(const sql::SQLString& className,int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo);
+  void rangeCheck(const char* className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo);
 
 protected:
   int32_t extractNanos(const SQLString& timestring);

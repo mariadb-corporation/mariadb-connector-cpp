@@ -1,5 +1,5 @@
 /************************************************************************************
-   Copyright (C) 2020 MariaDB Corporation AB
+   Copyright (C) 2020, 2026 MariaDB Corporation plc
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -443,7 +443,7 @@ namespace mariadb
   void RowProtocol::rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, BigDecimal value, ColumnDefinition* columnInfo)
   {
     if (value.compareTo(BigDecimal.valueOf(minValue))<0
-      ||value.compareTo(BigDecimal.valueOf(maxValue))>0) {
+     || value.compareTo(BigDecimal.valueOf(maxValue))>0) {
       throw SQLException(
         "Out of range value for column '"
         +columnInfo->getName()
@@ -459,19 +459,13 @@ namespace mariadb
 #endif
 
 
-  void RowProtocol::rangeCheck(const sql::SQLString& className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo)
+  void RowProtocol::rangeCheck(const char* className, int64_t minValue, int64_t maxValue, int64_t value, ColumnDefinition* columnInfo)
   {
     if ((value < 0 && !columnInfo->isSigned() && !columnInfo->isBinary()) || value < minValue || value > maxValue) {
-      throw SQLException(
-        "Out of range value for column '"
-        + columnInfo->getName()
-        + "' : value "
-        + std::to_string(value)
-        + " is not in "
-        + className
-        + " range",
-        "22003",
-        1264);
+      SQLString msg("Out of range value for column '");
+      msg.append(columnInfo->getName()).append("' : value ", 10).append(std::to_string(value)).
+        append(" is not in ", 11).append(className).append(" range", 6);
+      throw SQLException(msg.c_str(), "22003", 1264);
     }
   }
 

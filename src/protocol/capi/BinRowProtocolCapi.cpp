@@ -235,12 +235,12 @@ namespace capi
       value= parseBit();
       break;
     case MYSQL_TYPE_TINY:
-      value= getInternalTinyInt(columnInfo);
-      break;
+      // No need to have range check - type is int8_t, so it will be in range of int32_t
+      return getInternalTinyInt(columnInfo);
     case MYSQL_TYPE_SHORT:
     case MYSQL_TYPE_YEAR:
-      value= getInternalSmallInt(columnInfo);
-      break;
+      // Same here as for tiny
+      return getInternalSmallInt(columnInfo);
     case MYSQL_TYPE_LONG:
     case MYSQL_TYPE_INT24:
       if (columnInfo->isSigned()) {
@@ -316,25 +316,19 @@ namespace capi
       case MYSQL_TYPE_BIT:
         return parseBit();
       case MYSQL_TYPE_TINY:
-        value = getInternalTinyInt(columnInfo);
-        break;
+        // No need to have range check - type is int8_t, so it will be in range of int64_t
+        return getInternalTinyInt(columnInfo);
       case MYSQL_TYPE_SHORT:
       case MYSQL_TYPE_YEAR:
-      {
-        value = getInternalSmallInt(columnInfo);
-
-        break;
-      }
+        // No need to have range check - type is int16_t, so it will be in range of int64_t
+        return getInternalSmallInt(columnInfo);
       case MYSQL_TYPE_LONG:
       case MYSQL_TYPE_INT24:
-      {
-        value = getInternalMediumInt(columnInfo);
-
-        break;
-      }
+        // No need to have range check - type is int32_t(or even 3byte int), so it will be in range of int64_t
+        return getInternalMediumInt(columnInfo);
       case MYSQL_TYPE_LONGLONG:
       {
-        value = *reinterpret_cast<uint64_t*>(fieldBuf.arr);
+        value= *reinterpret_cast<int64_t*>(fieldBuf.arr);
 
         if (columnInfo->isSigned()) {
           return value;
@@ -428,8 +422,9 @@ namespace capi
     switch (columnInfo->getColumnType().getType()) {
 
     case MYSQL_TYPE_BIT:
-      return static_cast<int64_t>(parseBit());
+      return static_cast<uint64_t>(parseBit());
     case MYSQL_TYPE_TINY:
+      // The value can be signed - still need to check range
       value= getInternalTinyInt(columnInfo);
       break;
     case MYSQL_TYPE_SHORT:
@@ -448,7 +443,7 @@ namespace capi
     }
     case MYSQL_TYPE_LONGLONG:
     {
-      value = *reinterpret_cast<int64_t*>(fieldBuf.arr);
+      value= *reinterpret_cast<int64_t*>(fieldBuf.arr);
 
       break;
     }
@@ -515,7 +510,7 @@ namespace capi
       }
     default:
       throw SQLException(
-        "getLong not available for data field type "
+        "getULong not available for data field type "
         + columnInfo->getColumnType().getCppTypeName());
     }
 
@@ -525,7 +520,7 @@ namespace capi
         + columnInfo->getName()
         + "' : value "
         + std::to_string(value)
-        + " is not in int64_t range",
+        + " is not in uint64_t range",
         "22003",
         1264);
     }
@@ -1077,7 +1072,7 @@ namespace capi
         "getByte not available for data field type "
         + columnInfo->getColumnType().getCppTypeName());
     }
-    rangeCheck("byte", INT8_MIN, INT8_MAX, value, columnInfo);
+    rangeCheck("int8_t", INT8_MIN, INT8_MAX, value, columnInfo);
     return static_cast<int8_t>(value);
   }
 
@@ -1100,8 +1095,8 @@ namespace capi
       value= parseBit();
       break;
     case MYSQL_TYPE_TINY:
-      value= getInternalTinyInt(columnInfo);
-      break;
+      // No need to have range check - type is int8_t, so it will be in range of int16_t
+      return getInternalTinyInt(columnInfo);
     case MYSQL_TYPE_SHORT:
     case MYSQL_TYPE_YEAR:
       return *reinterpret_cast<int16_t*>(fieldBuf.arr);
