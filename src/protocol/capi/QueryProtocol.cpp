@@ -167,20 +167,20 @@ namespace capi
   }
 
 
-  std::size_t estimatePreparedQuerySize(ClientPrepareResult* clientPrepareResult, const std::vector<std::string> &queryPart,
-      std::vector<Unique::ParameterHolder>& parameters)
+  std::size_t estimatePreparedQuerySize(ClientPrepareResult* clientPrepareResult, std::vector<Unique::ParameterHolder>& parameters)
   {
-    std::size_t estimate= queryPart.front().length() + 1/* for \0 */, offset = 0;
-    if (clientPrepareResult->isRewriteType()) {
-      estimate+= queryPart[1].length() + queryPart[clientPrepareResult->getParamCount() + 2].length();
-      offset= 1;
-    }
+    std::size_t estimate= clientPrepareResult->getSql().length() + 1/* for \0 */;
+
     for (uint32_t i = 0; i < clientPrepareResult->getParamCount(); ++i) {
       estimate+= (parameters)[i]->getApproximateTextProtocolLength();
-      estimate+= queryPart[i + 1 + offset].length();
     }
     estimate= ((estimate + 7) / 8) * 8;
     return estimate;
+  }
+
+  inline void appendPart(SQLString& out, const char* query, const QueryPart& part)
+  {
+    StringImp::get(out).append(query + part.first, part.second);
   }
 
   void assemblePreparedQueryForExec(
@@ -193,27 +193,27 @@ namespace capi
     addQueryTimeout(out, queryTimeout);
 
     auto &queryPart= clientPrepareResult->getQueryParts();
-    std::size_t estimate= estimatePreparedQuerySize(clientPrepareResult, queryPart, parameters);
+    const char* query= StringImp::get(clientPrepareResult->getSql()).data();
+    std::size_t estimate= estimatePreparedQuerySize(clientPrepareResult, parameters);
 
     if (estimate > StringImp::get(out).capacity() - out.length()) {
       out.reserve(out.length() + estimate);
     }
     if (clientPrepareResult->isRewriteType()) {
-
-      out.append(queryPart[0]);
-      out.append(queryPart[1]);
+      appendPart(out, query, queryPart[1]);
+      appendPart(out, query, queryPart[0]);
 
       for (uint32_t i = 0; i < clientPrepareResult->getParamCount(); i++) {
         parameters[i]->writeTo(out, connection);
-        out.append(queryPart[i + 2]);
+        appendPart(out, query, queryPart[i + 2]);
       }
-      out.append(queryPart[clientPrepareResult->getParamCount() + 2]);
+      appendPart(out, query, queryPart[clientPrepareResult->getParamCount() + 2]);
     }
     else {
-      out.append(queryPart.front());
+      appendPart(out, query, queryPart.front());
       for (uint32_t i = 0; i < clientPrepareResult->getParamCount(); i++) {
         parameters[i]->writeTo(out, connection);
-        out.append(queryPart[i + 1]);
+        appendPart(out, query, queryPart[i + 1]);
       }
     }
   }
@@ -242,17 +242,8 @@ namespace capi
       addQueryTimeout(sql, queryTimeout);
       if (clientPrepareResult->getParamCount() == 0
         && !clientPrepareResult->isQueryMultiValuesRewritable()) {
-        if (clientPrepareResult->getQueryParts().size() == 0) {
-          sql.append(clientPrepareResult->getSql());
-          realQuery(sql);
-        }
-        else {
-          for (const auto& query : clientPrepareResult->getQueryParts())
-          {
-            sql.append(query);
-          }
-          realQuery(sql);
-        }
+        sql.append(clientPrepareResult->getSql());
+        realQuery(sql);
       }
       else {
         /* Timeout has been added already, thus passing -1 for its value */
@@ -841,7 +832,7 @@ namespace capi
   * to max_allowed_packet)
   *
   * @param pos query string
-  * @param queryParts query parts
+  * @param prepareResult parsed query
   * @param currentIndex currentIndex
   * @param paramCount parameter pos
   * @param parameterList parameter list
@@ -850,7 +841,7 @@ namespace capi
   * @throws IOException if connection fail
   */
   std::size_t rewriteQuery(SQLString& pos,
-    const std::vector<std::string> &queryParts,
+    const ClientPrepareResult* prepareResult,
     std::size_t currentIndex,
     std::size_t paramCount,
     std::vector<std::vector<Unique::ParameterHolder>>& parameterList,
@@ -860,24 +851,26 @@ namespace capi
     std::size_t index= currentIndex, capacity= StringImp::get(pos).capacity(), estimatedLength;
     std::vector<Unique::ParameterHolder> &parameters= parameterList[index++];
 
-    const SQLString &firstPart= queryParts[1];
-    const SQLString &secondPart= queryParts.front();
+    const std::vector<QueryPart> &queryParts= prepareResult->getQueryParts();
+    const char* query= StringImp::get(prepareResult->getSql()).data();
+    const QueryPart &firstPart= queryParts[1];
+    const QueryPart &secondPart= queryParts.front();
 
     if (!rewriteValues) {
 
-      pos.append(firstPart);
-      pos.append(secondPart);
+      appendPart(pos, query, firstPart);
+      appendPart(pos, query, secondPart);
 
       std::size_t staticLength= 1;
       for (auto& queryPart : queryParts) {
-        staticLength+= queryPart.length();
+        staticLength+= queryPart.second;
       }
 
       for (size_t i= 0; i < paramCount; i++) {
         parameters[i]->writeTo(pos, connection);
-        pos.append(queryParts[i + 2]);
+        appendPart(pos, query, queryParts[i + 2]);
       }
-      pos.append(queryParts[paramCount + 2]);
+      appendPart(pos, query, queryParts[paramCount + 2]);
 
       estimatedLength= pos.length() * (parameterList.size() - currentIndex);
       if (estimatedLength > capacity) {
@@ -902,13 +895,13 @@ namespace capi
 
           if (checkRemainingSize(pos.length() + staticLength + parameterLength)) {
             pos.append(';');
-            pos.append(firstPart);
-            pos.append(secondPart);
+            appendPart(pos, query, firstPart);
+            appendPart(pos, query, secondPart);
             for (size_t i= 0; i <paramCount; i++) {
               parameters[i]->writeTo(pos, connection);
-              pos.append(queryParts[i + 2]);
+              appendPart(pos, query, queryParts[i + 2]);
             }
-            pos.append(queryParts[paramCount + 2]);
+            appendPart(pos, query, queryParts[paramCount + 2]);
             ++index;
           }
           else {
@@ -918,13 +911,13 @@ namespace capi
         else {
 
           pos.append(';');
-          pos.append(firstPart);
-          pos.append(secondPart);
+          appendPart(pos, query, firstPart);
+          appendPart(pos, query, secondPart);
           for (size_t i= 0; i < paramCount; i++) {
             parameters[i]->writeTo(pos, connection);
-            pos.append(queryParts[i +2]);
+            appendPart(pos, query, queryParts[i +2]);
           }
-          pos.append(queryParts[paramCount + 2]);
+          appendPart(pos, query, queryParts[paramCount + 2]);
           ++index;
           break;
         }
@@ -932,15 +925,15 @@ namespace capi
 
     }
     else {
-      pos.append(firstPart);
-      pos.append(secondPart);
-      size_t lastPartLength= queryParts[paramCount + 2].length();
-      size_t intermediatePartLength= queryParts[1].length();
+      appendPart(pos, query, firstPart);
+      appendPart(pos, query, secondPart);
+      size_t lastPartLength= queryParts[paramCount + 2].second;
+      size_t intermediatePartLength= queryParts[1].second;
 
       for (size_t i= 0; i <paramCount; i++) {
         parameters[i]->writeTo(pos, connection);
-        pos.append(queryParts[i +2]);
-        intermediatePartLength +=queryParts[i +2].length();
+        appendPart(pos, query, queryParts[i +2]);
+        intermediatePartLength +=queryParts[i +2].second;
       }
 
       while (index < parameterList.size()) {
@@ -961,11 +954,11 @@ namespace capi
 
           if (checkRemainingSize(pos.length() + 1 + parameterLength + intermediatePartLength + lastPartLength)) {
             pos.append(',');
-            pos.append(secondPart);
+            appendPart(pos, query, secondPart);
 
             for (size_t i= 0; i <paramCount; i++) {
               parameters[i]->writeTo(pos, connection);
-              pos.append(queryParts[i + 2]);
+              appendPart(pos, query, queryParts[i + 2]);
             }
             ++index;
           }
@@ -975,17 +968,17 @@ namespace capi
         }
         else {
           pos.append(',');
-          pos.append(secondPart);
+          appendPart(pos, query, secondPart);
 
           for (size_t i= 0; i <paramCount; i++) {
             parameters[i]->writeTo(pos, connection);
-            pos.append(queryParts[i +2]);
+            appendPart(pos, query, queryParts[i +2]);
           }
           ++index;
           break;
         }
       }
-      pos.append(queryParts[paramCount + 2]);
+      appendPart(pos, query, queryParts[paramCount + 2]);
     }
 
     return index;
@@ -1016,7 +1009,7 @@ namespace capi
       sql.reserve(1024); //No estimations. Just something for beginning. stringstream ?
       do {
         sql.clear();
-        currentIndex= rewriteQuery(sql, prepareResult->getQueryParts(), currentIndex, prepareResult->getParamCount(), parameterList, connection, rewriteValues);
+        currentIndex= rewriteQuery(sql, prepareResult, currentIndex, prepareResult->getParamCount(), parameterList, connection, rewriteValues);
         realQuery(sql);
         getResult(results, nullptr, !rewriteValues);
 

@@ -32,11 +32,12 @@ namespace sql
 namespace mariadb
 {
 
+typedef std::pair<std::size_t, std::size_t> QueryPart;
+
 class ClientPrepareResult : public PrepareResult
 {
   const SQLString& sql;
-  //const std::vector<std::pair<std::size_t, std::size_t>> queryParts;
-  const std::vector<std::string> queryParts;
+  const std::vector<QueryPart> queryParts;
   bool rewriteType;
   uint32_t paramCount;
   bool isQueryMultiValuesRewritableFlag= true;
@@ -44,18 +45,22 @@ class ClientPrepareResult : public PrepareResult
 
  ClientPrepareResult(
    const SQLString& sql,
-   std::vector<std::string>& queryParts,
+   std::vector<QueryPart>&& queryParts,
    bool isQueryMultiValuesRewritable,
    bool isQueryMultipleRewritable,
    bool rewriteType);
 
 public:
+  ClientPrepareResult(const ClientPrepareResult& other, const SQLString& sql);
+
   static ClientPrepareResult* parameterParts(const SQLString& queryString, bool noBackslashEscapes);
   static bool canAggregateSemiColon(const SQLString& queryString,bool noBackslashEscapes);
   static ClientPrepareResult* rewritableParts(const SQLString& queryString, bool noBackslashEscapes);
 
   const SQLString& getSql() const;
-  const std::vector<std::string>& getQueryParts() const;
+  const std::vector<QueryPart>& getQueryParts() const;
+  std::size_t getPartLength(std::size_t index) const { return queryParts[index].second; }
+  SQLString& appendPart(SQLString& out, std::size_t index) const;
   bool isQueryMultiValuesRewritable() const;
   bool isQueryMultipleRewritable() const;
   bool isRewriteType() const;
