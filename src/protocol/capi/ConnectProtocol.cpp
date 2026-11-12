@@ -32,6 +32,7 @@
 #include "ExceptionFactory.h"
 #include "util/Utils.h"
 #include "util/LogQueryTool.h"
+#include "util/StoredResults.h"
 
 
 namespace sql
@@ -69,6 +70,7 @@ namespace capi
   ConnectProtocol::~ConnectProtocol()
   {
     if (connection) {
+      storedResults->cacheAll();
       mysql_close(connection);
     }
   }
@@ -93,6 +95,7 @@ namespace capi
     , serverPrepareStatementCache(nullptr)
     , currentHost(localhost, 3306)
   {
+    storedResults.reset(new StoredResults());
     urlParser->auroraPipelineQuirks();
     if (options->cachePrepStmts && options->useServerPrepStmts) {
       serverPrepareStatementCache.reset(new ServerPrepareStatementCache(options->prepStmtCacheSize, static_cast<std::size_t>(options->prepStmtCacheSqlLimit)));
@@ -106,6 +109,7 @@ namespace capi
   void ConnectProtocol::closeSocket()
   {
     try {
+      storedResults->cacheAll();
       mysql_close(connection);
       connection= nullptr;
     }catch (std::exception& ){
@@ -544,6 +548,7 @@ namespace capi
   void ConnectProtocol::destroySocket()
   {
     if (connection) {
+      storedResults->cacheAll();
       mysql_close(connection);
       connection= nullptr;
     }
@@ -1376,6 +1381,12 @@ namespace capi
     return activeStreamingResult;
   }
 
+
+  const std::shared_ptr<StoredResults>& ConnectProtocol::getStoredResults()
+  {
+    return storedResults;
+  }
+
   void ConnectProtocol::setActiveStreamingResult(Results* _activeStreamingResult)
   {
     this->activeStreamingResult= _activeStreamingResult;
@@ -1538,6 +1549,7 @@ namespace capi
     {
       mysql_optionsv(connection, MYSQL_OPT_RECONNECT, &OptionSelected);
     }
+    storedResults->cacheAll();
     if (capi::mariadb_reconnect(connection) != 0) {
       throw SQLException(capi::mysql_error(connection), capi::mysql_sqlstate(connection),
         capi::mysql_errno(connection));

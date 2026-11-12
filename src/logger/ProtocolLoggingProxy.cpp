@@ -730,6 +730,9 @@ namespace mariadb
 	void ProtocolLoggingProxy::skipAllResults() {
 		protocol->skipAllResults();
 	}
+	const std::shared_ptr<StoredResults>& ProtocolLoggingProxy::getStoredResults() {
+		return protocol->getStoredResults();
+	}
 	void ProtocolLoggingProxy::skipAllResults(ServerPrepareResult* spr) {
 		protocol->skipAllResults(spr);
 	}

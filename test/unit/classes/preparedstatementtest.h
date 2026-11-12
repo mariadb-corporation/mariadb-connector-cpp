@@ -82,6 +82,7 @@ public:
     TEST_CASE(moreResultsAfterPrepare);
     TEST_CASE(bytesArrParam);
     TEST_CASE(concpp138_useRsAfterConClose);
+    TEST_CASE(storedRsLazyCaching);
     TEST_CASE(concpp153_mbCsParamEscaping);
     TEST_CASE(concpp172_failedBatch);
     TEST_CASE(concpp172_executeAfterFailedBatch);
@@ -192,6 +193,7 @@ public:
   void bytesArrParam();
 
   void concpp138_useRsAfterConClose();
+  void storedRsLazyCaching();
 
   void concpp153_mbCsParamEscaping();
 

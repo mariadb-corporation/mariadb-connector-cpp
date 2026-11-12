@@ -35,6 +35,7 @@
 #include "protocol/capi/BinRowProtocolCapi.h"
 #include "protocol/capi/TextRowProtocolCapi.h"
 #include "util/ServerPrepareResult.h"
+#include "util/StoredResults.h"
 
 namespace sql
 {
@@ -85,6 +86,8 @@ namespace capi
       streaming= false;
       resetVariables();
       row.reset(new capi::BinRowProtocolCapi(columnsInformation, columnInformationLength, results->getMaxFieldSize(), options, capiStmtHandle));
+      storedResults= protocol->getStoredResults();
+      storedResults->add(capiStmtHandle, this);
     }
     else {
       columnsInformation= spr->getColumns();
@@ -102,6 +105,7 @@ namespace capi
 
   SelectResultSetBin::~SelectResultSetBin()
   {
+    forgetStoredResults();
     if (!isFullyLoaded()) {
       //close();
       fetchAllResults();
@@ -417,6 +421,7 @@ namespace capi
   /** Close resultSet. */
   void SelectResultSetBin::close() {
     isClosedFlag= true;
+    forgetStoredResults();
     if (!isEof) {
       std::unique_lock<std::mutex> localScopeLock(*lock);
       try {
@@ -1933,6 +1938,8 @@ namespace capi
 
   void SelectResultSetBin::cacheCompleteLocally() {
 
+    forgetStoredResults();
+
     if (data.size()) {
       // we have already it cached
       return;
@@ -1943,11 +1950,8 @@ namespace capi
       fetchRemaining();
     }
     else {
-      if (rowPointer > -1) {
-        beforeFirst();
-        row->installCursorAtPosition(rowPointer > -1 ? rowPointer : 0);
-        lastRowPointer= -1;
-      }
+      row->installCursorAtPosition(0);
+      lastRowPointer= -1;
       growDataArray(true);
 
       for (std::size_t rowNum= 0; rowNum < dataSize; ++rowNum) {
@@ -1960,6 +1964,15 @@ namespace capi
       rowPointer= preservedPosition;
     }
   // else it is already cached in case of Text protocol
+  }
+
+
+  void SelectResultSetBin::forgetStoredResults()
+  {
+    if (storedResults) {
+      storedResults->remove(capiStmtHandle, this);
+      storedResults.reset();
+    }
   }
 }
 }

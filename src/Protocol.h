@@ -50,6 +50,7 @@ class Charset;
 class TimeZone;
 class MariaDbStatement;
 class FutureTask;
+class StoredResults;
 
 class Protocol
 {
@@ -168,6 +169,8 @@ public:
   virtual void reconnect()=0;
   virtual void skipAllResults(ServerPrepareResult* spr)=0;
   virtual void skipAllResults()=0;
+  /* Registry of binary resultsets that did not copy their data from the C/C stmt handle yet */
+  virtual const std::shared_ptr<StoredResults>& getStoredResults()=0;
   /* I guess at some point we will need it */
   //virtual Protocol* clone();
   };
