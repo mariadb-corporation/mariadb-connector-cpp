@@ -308,11 +308,6 @@ namespace mariadb
   }
 
 
-  bool RowProtocol::lastValueWasNull()
-  {
-    return (lastValueNull & BIT_LAST_FIELD_NULL) != 0;
-  }
-
   template<typename T>
   T RowProtocol::parseBinaryAsInteger(ColumnDefinition* columnInfo)
   {

@@ -852,7 +852,7 @@ namespace capi
   {
     checkObjectRange(columnIndex);
 
-    return std::move(row->getInternalString(columnsInformation[columnIndex - 1].get()));
+    return row->getInternalString(columnsInformation[columnIndex - 1].get());
   }
 
   /** {inheritDoc}. */

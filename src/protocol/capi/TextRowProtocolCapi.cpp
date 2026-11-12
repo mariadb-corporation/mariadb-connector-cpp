@@ -719,7 +719,9 @@ namespace capi
    }
    // else
    int64_t value= getInternalLong(columnInfo);
-   rangeCheck("int32_t", INT32_MIN, INT32_MAX, value, columnInfo);
+   if (value < 0 || value > INT32_MAX) {
+     rangeCheck("int32_t", INT32_MIN, INT32_MAX, value, columnInfo);
+   }
    return static_cast<int32_t>(value);
  }
 
@@ -1027,7 +1029,9 @@ namespace capi
    }
    // else
    int64_t value= getInternalLong(columnInfo);
-   rangeCheck("int16_t", INT16_MIN, INT16_MAX, value, columnInfo);
+   if (value < 0 || value > INT16_MAX) {
+     rangeCheck("int16_t", INT16_MIN, INT16_MAX, value, columnInfo);
+   }
    return static_cast<int16_t>(value);
  }
 

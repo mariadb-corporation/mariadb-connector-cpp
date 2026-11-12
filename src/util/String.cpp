@@ -127,30 +127,49 @@ namespace mariadb
 
   uint64_t stoull(const std::string& str, std::size_t* pos)
   {
-    bool negative= false;
-    std::string::const_iterator ci= str.begin();
-    while (std::isblank(*ci) &&  ci < str.end()) ++ci;
-
-    if (*ci == '-')
-    {
-      negative= true;
-    }
-
-    uint64_t result= std::stoull(str, pos);
-
-    if (negative && result != 0)
-    {
-      throw std::out_of_range("String represents number beyond uint64_t range");
-    }
-    return result;
+    return sql::mariadb::stoull(str.c_str(), str.length(), pos);
   }
 
 
   uint64_t stoull(const char* str, std::size_t len, std::size_t* pos)
   {
     len= len == static_cast<std::size_t>(-1) ? std::strlen(str) : len;
-    std::string asString(str, len);
-    return sql::mariadb::stoull(asString, pos);
+
+    const char *cur= str, *end= str + len;
+    bool negative= false;
+    uint64_t result= 0;
+
+    while (cur < end && (*cur == ' ' || (*cur >= '\t' && *cur <= '\r'))) {
+      ++cur;
+    }
+    if (cur < end && (*cur == '-' || *cur == '+')) {
+      negative= (*cur == '-');
+      ++cur;
+    }
+    const char* firstDigit= cur;
+    // 19 digits always fit uint64_t
+    const char* fitEnd= end - cur > 19 ? cur + 19 : end;
+
+    for (; cur < fitEnd && *cur >= '0' && *cur <= '9'; ++cur) {
+      result= result * 10 + static_cast<uint64_t>(*cur - '0');
+    }
+    for (; cur < end && *cur >= '0' && *cur <= '9'; ++cur) {
+      uint64_t digit= static_cast<uint64_t>(*cur - '0');
+      if (result > (UINT64_MAX - digit) / 10) {
+        throw std::out_of_range("String represents number beyond uint64_t range");
+      }
+      result= result * 10 + digit;
+    }
+    if (cur == firstDigit) {
+      throw std::invalid_argument("String does not represent a number");
+    }
+    if (negative && result != 0) {
+      throw std::out_of_range("String represents number beyond uint64_t range");
+    }
+    if (pos != nullptr) {
+      *pos= static_cast<std::size_t>(cur - str);
+    }
+    return result;
   }
 }
 }
