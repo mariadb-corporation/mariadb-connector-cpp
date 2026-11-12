@@ -73,6 +73,7 @@ namespace capi
     /* This cannot be Shared as long as C/C stmt handle is owned by  statement(SSPS class in this case) object */
 
     Results* activeStreamingResult= nullptr;
+    std::shared_ptr<StoredResults> storedResults;
     uint32_t serverStatus= 0;
 
   protected:
@@ -234,6 +235,7 @@ namespace capi
     const Shared::Options& getOptions() const;
     void setHasWarnings(bool hasWarnings);
     Results* getActiveStreamingResult() override;
+    const std::shared_ptr<StoredResults>& getStoredResults() override;
     void setActiveStreamingResult(Results* activeStreamingResult) override;
     void removeActiveStreamingResult();
     std::mutex *const getLock();

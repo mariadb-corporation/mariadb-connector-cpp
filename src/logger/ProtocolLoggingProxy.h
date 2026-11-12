@@ -156,6 +156,7 @@ public:
   void reconnect();
   void skipAllResults() override;
   void skipAllResults(ServerPrepareResult* spr) override;
+  const std::shared_ptr<StoredResults>& getStoredResults() override;
   };
 
 }

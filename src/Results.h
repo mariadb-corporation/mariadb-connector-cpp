@@ -112,6 +112,7 @@ public:
   ResultSet* releaseResultSet();
   SelectResultSet* getCallableResultSet();
   void loadFully(bool skip, Protocol* protocol);
+  bool hasPendingResults() const { return haveResultInWire; }
   void abort();
   bool isFullyLoaded(Protocol* protocol);
   bool getMoreResults(int32_t current, Protocol* protocol);

@@ -2439,6 +2439,71 @@ void preparedstatement::concpp138_useRsAfterConClose()
   sspsCon.reset();
 }
 
+/* Binary resultset reads rows from the C/C stmt handle, and copies them only when the handle is about to become
+ * unusable - it is executed again, or the connection is closed. Testing that the resultset stays usable after that,
+ * wherever its cursor was at that moment
+ */
+void preparedstatement::storedRsLazyCaching()
+{
+  const sql::SQLString query("SELECT 1 AS id, 'one' AS val UNION ALL SELECT 2, 'two' UNION ALL SELECT 3, 'three' "
+                             "UNION ALL SELECT ?, 'param'");
+  const char* val[]= {"one", "two", "three", "param"};
+
+  // Statements with the same query share the stmt handle via the cache, if it is enabled
+  sql::ConnectOptionsMap connProps{{"useServerPrepStmts", "true"}, {"cachePrepStmts", "true"}};
+  sspsCon.reset(getConnection(&connProps));
+
+  pstmt.reset(sspsCon->prepareStatement(query));
+  ssps.reset(sspsCon->prepareStatement(query));
+
+  pstmt->setInt(1, 4);
+  ResultSet rs(pstmt->executeQuery());
+  ASSERT(rs->next());
+  ASSERT_EQUALS(1, rs->getInt(1));
+  ASSERT(rs->next());
+
+  // Executing other statement, while the first resultset is in the middle
+  ssps->setInt(1, 40);
+  res.reset(ssps->executeQuery());
+
+  // The current row has to be still readable
+  ASSERT_EQUALS(2, rs->getInt(1));
+  ASSERT_EQUALS(val[1], rs->getString(2));
+  ASSERT(rs->next());
+  ASSERT_EQUALS(3, rs->getInt(1));
+  ASSERT_EQUALS(val[2], rs->getString(2));
+  ASSERT(rs->next());
+  ASSERT_EQUALS(4, rs->getInt(1));
+  ASSERT_EQUALS(val[3], rs->getString(2));
+  ASSERT(!rs->next());
+
+  // Now other way around - the second resultset has not been read at all yet
+  pstmt->setInt(1, 5);
+  rs.reset(pstmt->executeQuery());
+
+  for (int32_t i= 0; i < 4; ++i) {
+    ASSERT(res->next());
+    ASSERT_EQUALS(i < 3 ? i + 1 : 40, res->getInt(1));
+    ASSERT_EQUALS(val[i], res->getString(2));
+  }
+  ASSERT(!res->next());
+
+  // The resultset has been read and scrolled back at the moment the connection is closed
+  ASSERT(rs->next());
+  ASSERT(rs->next());
+  ASSERT_EQUALS(2, rs->getInt(1));
+  rs->beforeFirst();
+  sspsCon->close();
+
+  for (int32_t i= 0; i < 4; ++i) {
+    ASSERT(rs->next());
+    ASSERT_EQUALS(i < 3 ? i + 1 : 5, rs->getInt(1));
+    ASSERT_EQUALS(val[i], rs->getString(2));
+  }
+  ASSERT(!rs->next());
+  sspsCon.reset();
+}
+
 
 void preparedstatement::concpp153_mbCsParamEscaping()
 {

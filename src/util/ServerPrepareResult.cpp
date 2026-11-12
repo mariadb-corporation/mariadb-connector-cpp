@@ -26,6 +26,7 @@
 #include "parameters/ParameterHolder.h"
 
 #include "com/capi/ColumnDefinitionCapi.h"
+#include "util/StoredResults.h"
 
 namespace sql
 {
@@ -51,6 +52,9 @@ namespace mariadb
 {
   ServerPrepareResult::~ServerPrepareResult()
   {
+    if (statementId && statementId->mysql != nullptr) {
+      unProxiedProtocol->getStoredResults()->cache(statementId);
+    }
     if (metadata) {
       capi::mysql_free_result(metadata);
     }

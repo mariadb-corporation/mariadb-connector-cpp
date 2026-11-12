@@ -47,6 +47,7 @@ namespace mariadb
 {
 class TimeZone;
 class ServerPrepareResult;
+class StoredResults;
 struct memBuf;
 
 namespace capi
@@ -70,6 +71,7 @@ class SelectResultSetBin : public SelectResultSet
   mutable Unique::RowProtocol row;
 
   MYSQL_STMT *capiStmtHandle;
+  std::shared_ptr<StoredResults> storedResults;
 
   /*std::unique_ptr<*/
   std::vector<std::vector<sql::bytes>> data;
@@ -366,6 +368,8 @@ public:
   bool isBinaryEncoded();
   void realClose(bool noLock= false);
   void cacheCompleteLocally();
+private:
+  void forgetStoredResults();
   };
 
 }

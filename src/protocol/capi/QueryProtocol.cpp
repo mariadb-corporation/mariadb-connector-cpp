@@ -28,6 +28,7 @@
 #include "util/ServerPrepareResult.h"
 #include "util/ServerPrepareStatementCache.h"
 #include "util/StateChange.h"
+#include "util/StoredResults.h"
 #include "util/Utils.h"
 #include "protocol/MasterProtocol.h"
 #include "SqlStates.h"
@@ -78,6 +79,7 @@ namespace capi
     cmdPrologue();
     try {
 
+      storedResults->cacheAll();
       if (mysql_reset_connection(connection))
       {
         throw SQLException("Connection reset failed");
@@ -429,6 +431,7 @@ namespace capi
       // **************************************************************************************
       // send BULK
       // **************************************************************************************
+      storedResults->cache(statementId);
       capi::mysql_stmt_execute(statementId);
 
       try {
@@ -1120,13 +1123,19 @@ namespace capi
         }
       }
 
+      storedResults->cache(serverPrepareResult->getStatementId());
+
       if (capi::mysql_stmt_execute(serverPrepareResult->getStatementId()) != 0) {
         throwStmtError(serverPrepareResult->getStatementId());
       }
       /*CURSOR_TYPE_NO_CURSOR);*/
       getResult(results, serverPrepareResult);
-      // We have to do this due to CONCPP-138, but only when we are not streaming
-      if (results->getFetchSize() == 0) {
+      // CONCPP-138 Resultset has to stay usable after its stmt handle or connection are gone. Normally the resultset
+      // is registered in storedResults, and copies its data only right before that happens. Doing it right away(if we
+      // are not streaming) only if
+      // - there are more results pending - they have to be read to free the connection
+      // - C/C may reconnect on its own - that invalidates stmt handles, and we do not get a chance to make the copy
+      if (results->getFetchSize() == 0 && (options->autoReconnect || results->hasPendingResults())) {
         results->loadFully(false, this);
       }
     }
@@ -1164,6 +1173,7 @@ namespace capi
   {
     // We need lock only if still connected. if we get disconnected after we read "connected" flag - still no big deal
     bool needLock= connected;
+    storedResults->cache(statementId);
     if (!needLock || lock.try_lock()) {
       // If connection is closed - we still need to call mysql_stmt_close to deallocate C/C stmt handle
       if (mysql_stmt_close(statementId))
@@ -1463,6 +1473,7 @@ namespace capi
   {
     int32_t res;
     if (spr != nullptr) {
+      storedResults->cache(spr->getStatementId());
       res= capi::mysql_stmt_next_result(spr->getStatementId());
     }
     else {
@@ -2099,6 +2110,7 @@ namespace capi
   {
     if (hasMoreResults()) {
       auto stmt= spr->getStatementId();
+      storedResults->cache(stmt);
       while (mysql_stmt_more_results(stmt)) mysql_stmt_next_result(stmt);
       // Server and session can be changed
       getServerStatus();
