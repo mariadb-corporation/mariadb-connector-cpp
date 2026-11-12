@@ -28,12 +28,12 @@ namespace mariadb
 
   ClientPrepareResult::ClientPrepareResult(
     const SQLString& _sql,
-    std::vector<std::string>& _queryParts,
+    std::vector<QueryPart>&& _queryParts,
     bool isQueryMultiValuesRewritable,
     bool isQueryMultipleRewritable,
     bool _rewriteType)
     : sql(_sql)
-    , queryParts(_queryParts)
+    , queryParts(std::move(_queryParts))
     , rewriteType(_rewriteType)
     , paramCount(queryParts.size() == 0 ? 0U : (static_cast<uint32_t>(queryParts.size()) - (_rewriteType ? 3 : 1)))
     , isQueryMultiValuesRewritableFlag(isQueryMultiValuesRewritable)
@@ -41,21 +41,92 @@ namespace mariadb
   {
   }
 
-  std::pair<std::size_t, std::size_t>& partAppend(std::pair<std::size_t, std::size_t>& part, std::size_t curPos, std::size_t len= 1) {
-    // First one should begin from 0
-    if (part.second == 0) {
-      part.first= curPos;
-    }
-    part.second+= len;
-    return part;
+
+  ClientPrepareResult::ClientPrepareResult(const ClientPrepareResult& other, const SQLString& _sql)
+    : sql(_sql)
+    , queryParts(other.queryParts)
+    , rewriteType(other.rewriteType)
+    , paramCount(other.paramCount)
+    , isQueryMultiValuesRewritableFlag(other.isQueryMultiValuesRewritableFlag)
+    , isQueryMultipleRewritableFlag(other.isQueryMultipleRewritableFlag)
+  {
   }
 
-  // Need evaluation for max vector size
-  template<class T>void smartPush(std::vector<T>& partList, const T& item) {
-    if (partList.capacity() <= partList.size() + 1 + 4/* max we might need later*/) {
-      partList.reserve(partList.size() * 2);
+
+  struct ParserTables
+  {
+    bool params[256];
+    bool rewritable[256];
+    bool paramsWatch[256];
+    bool rewritableWatch[256];
+
+    ParserTables()
+    {
+      for (std::size_t i= 0; i < 256; ++i) {
+        params[i]= rewritable[i]= false;
+        paramsWatch[i]= rewritableWatch[i]= (i >= 40 && i < 128 && i != '\\' && i != '/');
+      }
+      for (const char* c= "*/#-\"';?`"; *c != '\0'; ++c) {
+        params[static_cast<unsigned char>(*c)]= paramsWatch[static_cast<unsigned char>(*c)]= true;
+      }
+      for (const char* c= "*#-\"';?`sSvVlL()"; *c != '\0'; ++c) {
+        rewritable[static_cast<unsigned char>(*c)]= rewritableWatch[static_cast<unsigned char>(*c)]= true;
+      }
     }
-    partList.emplace_back(item);
+  };
+
+  static const ParserTables parserTables;
+
+  static inline std::size_t skipQuoted(const char* query, std::size_t queryLength, std::size_t i, char quote, bool backslashEscapes)
+  {
+    ++i;
+    if (backslashEscapes) {
+      while (i < queryLength && query[i] != quote) {
+        if (query[i] == '\\') {
+          ++i;
+        }
+        ++i;
+      }
+    }
+    else {
+      while (i < queryLength && query[i] != quote) {
+        ++i;
+      }
+    }
+    return i;
+  }
+
+  static inline std::size_t skipLine(const char* query, std::size_t queryLength, std::size_t i)
+  {
+    while (i < queryLength && query[i] != '\n') {
+      ++i;
+    }
+    return i;
+  }
+
+  static inline bool isDashComment(const char* query, std::size_t queryLength, std::size_t i, std::size_t lookBehindFrom)
+  {
+    return i >= lookBehindFrom && query[i - 1] == '-' &&
+      (i + 1 >= queryLength || static_cast<unsigned char>(query[i + 1]) <= ' ');
+  }
+
+  static inline std::size_t skipBlockComment(const char* query, std::size_t queryLength, std::size_t i)
+  {
+    ++i;
+    while (i < queryLength && !(query[i] == '/' && query[i - 1] == '*')) {
+      ++i;
+    }
+    return i;
+  }
+
+  static inline bool isKeyword(const char* query, const char* lcKeyword, std::size_t len)
+  {
+    for (std::size_t i= 0; i < len; ++i) {
+      if ((query[i] | 0x20) != lcKeyword[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -72,133 +143,101 @@ namespace mariadb
   ClientPrepareResult* ClientPrepareResult::parameterParts(const SQLString& _queryString, bool noBackslashEscapes)
   {
     auto& queryString= StringImp::get(_queryString);
-    bool multipleQueriesPrepare= true;
-    std::vector<std::string> partList;
-    LexState state= LexState::Normal;
-    char lastChar= '\0';
-    bool endingSemicolon= false;
-    bool singleQuotes= false;
-    std::size_t lastParameterPosition= 0;
-
+    const char* query= queryString.data();
     std::size_t queryLength= queryString.length();
+    bool multipleQueriesPrepare= true;
+    bool endingSemicolon= false;
+    std::vector<QueryPart> partList;
+    std::size_t lastParameterPosition= 0;
+    std::size_t lookBehindFrom= 1;
+    const bool* special= parserTables.params;
+    std::size_t i= 0;
+
     partList.reserve(std::max(std::size_t(10), queryLength / 64)); // TODO: consts with some meaningful names in appropriate place
 
-    for (std::size_t i= 0; i < queryLength; i++) {
-
-      char car= queryString[i];
-      if (state == LexState::Escape
-        && !((car == '\'' && singleQuotes) || (car == '"' && !singleQuotes))) {
-        state= LexState::SqlString;
-        lastChar= car;
-        continue;
+    for (;;) {
+      while (i < queryLength && !special[static_cast<unsigned char>(query[i])]) {
+        ++i;
       }
+      if (i >= queryLength) {
+        break;
+      }
+      char car= query[i];
+
       switch (car) {
+      case '?':
+        partList.emplace_back(lastParameterPosition, i - lastParameterPosition);
+        lastParameterPosition= i + 1;
+        break;
+
+      case '\'':
+      case '"':
+        i= skipQuoted(query, queryLength, i, car, !noBackslashEscapes);
+        break;
+
+      case '`':
+        i= skipQuoted(query, queryLength, i, car, false);
+        break;
+
       case '*':
-        if (state == LexState::Normal && lastChar == '/') {
-          state= LexState::SlashStarComment;
-        }
-        break;
-
-      case '/':
-        if (state == LexState::SlashStarComment && lastChar == '*') {
-          state= LexState::Normal;
-        }
-        else if (state == LexState::Normal && lastChar == '/') {
-          state= LexState::EOLComment;
-        }
-        break;
-
-      case '#':
-        if (state == LexState::Normal) {
-          state= LexState::EOLComment;
+        if (i >= lookBehindFrom && query[i - 1] == '/') {
+          i= skipBlockComment(query, queryLength, i);
+          lookBehindFrom= i + 2;
         }
         break;
 
       case '-':
-        if (state == LexState::Normal && lastChar == '-') {
-          state= LexState::EOLComment;
+        if (isDashComment(query, queryLength, i, lookBehindFrom)) {
           multipleQueriesPrepare= false;
+          i= skipLine(query, queryLength, i + 1);
+          if (i < queryLength) {
+            multipleQueriesPrepare= true;
+          }
         }
         break;
 
-      case '\n':
-        if (state == LexState::EOLComment) {
+      case '/':
+        if (i >= lookBehindFrom && query[i - 1] == '/') {
+          i= skipLine(query, queryLength, i + 1);
+          if (i < queryLength) {
+            multipleQueriesPrepare= true;
+          }
+        }
+        break;
+
+      case '#':
+        i= skipLine(query, queryLength, i + 1);
+        if (i < queryLength) {
           multipleQueriesPrepare= true;
-          state= LexState::Normal;
         }
         break;
 
-      case '"':
-        if (state == LexState::Normal) {
-          state= LexState::SqlString;
-          singleQuotes= false;
-        }
-        else if (state == LexState::SqlString && !singleQuotes) {
-          state= LexState::Normal;
-        }
-        else if (state == LexState::Escape && !singleQuotes) {
-          state= LexState::SqlString;
-        }
-        break;
-
-      case '\'':
-        if (state == LexState::Normal) {
-          state= LexState::SqlString;
-          singleQuotes= true;
-        }
-        else if (state == LexState::SqlString && singleQuotes) {
-          state= LexState::Normal;
-        }
-        else if (state == LexState::Escape && singleQuotes) {
-          state= LexState::SqlString;
-        }
-        break;
-
-      case '\\':
-        if (noBackslashEscapes) {
-          break;
-        }
-        if (state == LexState::SqlString) {
-          state= LexState::Escape;
-        }
-        break;
       case ';':
-        if (state == LexState::Normal) {
-          endingSemicolon= true;
-          multipleQueriesPrepare= false;
-        }
+        endingSemicolon= true;
+        multipleQueriesPrepare= false;
+        special= parserTables.paramsWatch;
         break;
-      case '?':
-        if (state == LexState::Normal) {
-          smartPush(partList, queryString.substr(lastParameterPosition, i - lastParameterPosition));
-          lastParameterPosition= i + 1;
-        }
-        break;
-      case '`':
-        if (state == LexState::Backtick) {
-          state= LexState::Normal;
-        }
-        else if (state == LexState::Normal) {
-          state= LexState::Backtick;
-        }
-        break;
-      default:
 
-        if (state == LexState::Normal && endingSemicolon && ((int8_t)car >= 40)) {
+      default:
+        if (endingSemicolon) {
           endingSemicolon= false;
           multipleQueriesPrepare= true;
         }
+        special= parserTables.params;
         break;
       }
-      lastChar= car;
+      ++i;
     }
 
-    if (lastParameterPosition) {
-      partList.emplace_back(queryString.begin() + lastParameterPosition, queryString.end());
+    if (partList.empty()) {
+      partList.emplace_back(0, queryLength);
+    }
+    else {
+      partList.emplace_back(lastParameterPosition, queryLength - lastParameterPosition);
     }
 
     return new ClientPrepareResult(
-      _queryString, partList, false, multipleQueriesPrepare, false);
+      _queryString, std::move(partList), false, multipleQueriesPrepare, false);
   }
 
   /**
@@ -358,159 +397,101 @@ namespace mariadb
     */
   ClientPrepareResult* ClientPrepareResult::rewritableParts(const SQLString& queryString, bool noBackslashEscapes)
   {
+    const char* query= queryString.c_str();
+    std::size_t queryLength= queryString.length();
     bool reWritablePrepare= true;
     bool multipleQueriesPrepare= true;
-    std::vector<std::string> partList;
-    LexState state= LexState::Normal;
-    char lastChar= '\0';
-
-    std::string sb("");
-    std::string preValuePart1;
-    std::string preValuePart2;
-    std::string postValuePart;
-
-    bool singleQuotes= false;
+    std::vector<QueryPart> partList(2, QueryPart(0, 0));
+    QueryPart preValuePart1(0, 0), preValuePart2(0, 0), postValuePart(0, 0);
+    bool preValuePart1Set= false, preValuePart2Set= false, postValuePartSet= false;
 
     int32_t isInParenthesis= 0;
-    bool skipChar= false;
     bool isFirstChar= true;
     bool isInsert= false;
+    bool valuesFound= false;
     bool semicolon= false;
     bool hasParam= false;
+    std::size_t partBegin= 0;
+    std::size_t lookBehindFrom= 1;
+    const bool* special= parserTables.rewritableWatch;
+    std::size_t i= 0;
 
-    const char* query= queryString.c_str();
-    size_t queryLength= queryString.length();
-    sb.reserve(64);
     partList.reserve(std::max(std::size_t(10), queryLength / 64)); // TODO: consts with some meaningful names in appropriate place
 
-    for (size_t i= 0; i < queryLength; i++) {
-
-      char car= query[i];
-      if (state == LexState::Escape
-        && !((car == '\'' && singleQuotes) || (car == '"' && !singleQuotes))) {
-        sb.append(1,car);
-        lastChar= car;
-        state= LexState::SqlString;
-        continue;
+    for (;;) {
+      while (i < queryLength && !special[static_cast<unsigned char>(query[i])]) {
+        ++i;
       }
+      if (i >= queryLength) {
+        break;
+      }
+      char car= query[i];
 
       switch (car) {
-      case '*':
-        if (state == LexState::Normal &&lastChar == '/') {
-          state= LexState::SlashStarComment;
+      case '?':
+        hasParam= true;
+        if (!preValuePart1Set) {
+          preValuePart1= QueryPart(partBegin, i - partBegin);
+          preValuePart1Set= true;
+          partBegin= i;
         }
-        break;
-      case '/':
-        if (state == LexState::SlashStarComment &&lastChar == '*') {
-          state= LexState::Normal;
+        if (!preValuePart2Set) {
+          preValuePart2= QueryPart(partBegin, i - partBegin);
+          preValuePart2Set= true;
         }
+        else {
+          if (postValuePartSet) {
+            reWritablePrepare= false;
+            partBegin= postValuePart.first;
+            postValuePart= QueryPart(0, 0);
+            postValuePartSet= false;
+          }
+          partList.emplace_back(partBegin, i - partBegin);
+        }
+        partBegin= i + 1;
         break;
 
-      case '#':
-        if (state == LexState::Normal) {
-          state= LexState::EOLComment;
+      case '\'':
+      case '"':
+        i= skipQuoted(query, queryLength, i, car, !noBackslashEscapes);
+        break;
+
+      case '`':
+        i= skipQuoted(query, queryLength, i, car, false);
+        break;
+
+      case '*':
+        if (i >= lookBehindFrom && query[i - 1] == '/') {
+          i= skipBlockComment(query, queryLength, i);
+          lookBehindFrom= i + 2;
         }
         break;
 
       case '-':
-        if (state == LexState::Normal &&lastChar == '-') {
-          state= LexState::EOLComment;
+        if (isDashComment(query, queryLength, i, lookBehindFrom)) {
           multipleQueriesPrepare= false;
+          if (semicolon) {
+            special= parserTables.rewritableWatch;
+          }
+          i= skipLine(query, queryLength, i + 1);
         }
         break;
 
-      case '\n':
-        if (state == LexState::EOLComment) {
-          state= LexState::Normal;
-        }
+      case '#':
+        i= skipLine(query, queryLength, i + 1);
         break;
 
-      case '"':
-        if (state == LexState::Normal) {
-          state= LexState::SqlString;
-          singleQuotes= false;
-        }
-        else if (state == LexState::SqlString &&!singleQuotes) {
-          state= LexState::Normal;
-        }
-        else if (state == LexState::Escape &&!singleQuotes) {
-          state= LexState::SqlString;
-        }
-        break;
       case ';':
-        if (state == LexState::Normal) {
-          semicolon= true;
-          multipleQueriesPrepare= false;
-        }
-        break;
-      case '\'':
-        if (state == LexState::Normal) {
-          state= LexState::SqlString;
-          singleQuotes= true;
-        }
-        else if (state == LexState::SqlString &&singleQuotes) {
-          state= LexState::Normal;
-        }
-        else if (state == LexState::Escape &&singleQuotes) {
-          state= LexState::SqlString;
-        }
-        break;
-
-      case '\\':
-        if (noBackslashEscapes) {
-          break;
-        }
-        if (state == LexState::SqlString) {
-          state= LexState::Escape;
-        }
-        break;
-
-      case '?':
-        if (state == LexState::Normal) {
-          hasParam= true;
-          if (preValuePart1.empty()) {
-            preValuePart1= sb;
-            sb.clear();
-          }
-          if (preValuePart2.empty()) {
-            preValuePart2= sb;
-            sb.clear();
-          }
-          else {
-            if (!postValuePart.empty()) {
-
-              reWritablePrepare= false;
-
-              sb= postValuePart.append(sb);
-              postValuePart.clear();
-            }
-            smartPush(partList, sb);
-            sb.clear();
-          }
-
-          skipChar= true;
-        }
-        break;
-      case '`':
-        if (state == LexState::Backtick) {
-          state= LexState::Normal;
-        }
-        else if (state == LexState::Normal) {
-          state= LexState::Backtick;
-        }
+        semicolon= true;
+        multipleQueriesPrepare= false;
+        special= parserTables.rewritableWatch;
         break;
 
       case 's':
       case 'S':
-        if (state == LexState::Normal
-          && postValuePart.empty()
+        if (!postValuePartSet
           && queryLength > i + 7
-          && (query[i + 1] == 'e' || query[i + 1] == 'E')
-          && (query[i + 2] == 'l' || query[i + 2] == 'L')
-          && (query[i + 3] == 'e' || query[i + 3] == 'E')
-          && (query[i + 4] == 'c' || query[i + 4] == 'C')
-          && (query[i + 5] == 't' || query[i + 5] == 'T')) {
-
+          && isKeyword(query + i + 1, "elect", 5)) {
 
           if (i > 0 && (query[i - 1] > ' ' && SpecChars.find_first_of(query[i - 1]) == std::string::npos)) {
             break;
@@ -518,127 +499,89 @@ namespace mariadb
           if (query[i + 6] > ' ' && SpecChars.find_first_of(query[i + 6]) == std::string::npos) {
             break;
           }
-
-
           reWritablePrepare= false;
         }
         break;
+
       case 'v':
       case 'V':
-        if (state == LexState::Normal
-          && preValuePart1.empty()
-          && (lastChar == ')' || ((int8_t)lastChar <= 40))
-          && queryLength >i +7
-          && (query[i + 1] == 'a' || query[i + 1] == 'A')
-          && (query[i + 2] == 'l' || query[i + 2] == 'L')
-          && (query[i + 3] == 'u' || query[i + 3] == 'U')
-          && (query[i + 4] == 'e' || query[i + 4] == 'E')
-          && (query[i + 5] == 's' || query[i + 5] == 'S')
+        if (!preValuePart1Set
+          && (i == 0 || query[i - 1] == ')' || ((int8_t)query[i - 1] <= 40))
+          && queryLength > i + 7
+          && isKeyword(query + i + 1, "alues", 5)
           && (query[i + 6] == '(' || ((int8_t)query[i + 6] <= 40))) {
-          sb.append(1, car);
-          sb.append(1, query[i + 1]);
-          sb.append(1, query[i + 2]);
-          sb.append(1, query[i + 3]);
-          sb.append(1, query[i + 4]);
-          sb.append(1, query[i + 5]);
-          i= i + 5;
-          preValuePart1= sb;
-          sb.clear();
-          skipChar= true;
+          i+= 5;
+          preValuePart1= QueryPart(partBegin, i + 1 - partBegin);
+          preValuePart1Set= true;
+          valuesFound= true;
+          partBegin= i + 1;
         }
         break;
+
       case 'l':
       case 'L':
-        if (state == LexState::Normal
-          && queryLength > i +14
-          && (query[i +1] == 'a' || query[i +1] == 'A')
-          && (query[i +2] == 's' || query[i +2] == 'S')
-          && (query[i +3] == 't' || query[i +3] == 'T')
+        if (queryLength > i + 14
+          && isKeyword(query + i + 1, "ast", 3)
           && query[i + 4] == '_'
-          && (query[i +5] == 'i' || query[i +5] == 'I')
-          && (query[i +6] == 'n'|| query[i +6] == 'N')
-          && (query[i +7] == 's'|| query[i +7] == 'S')
-          && (query[i +8] == 'e'|| query[i +8] == 'E')
-          && (query[i +9] == 'r'|| query[i +9] == 'R')
-          && (query[i +10] == 't'|| query[i +10] == 'T')
+          && isKeyword(query + i + 5, "insert", 6)
           && query[i + 11] == '_'
-          && (query[i +12] == 'i'|| query[i +12] == 'I')
-          && (query[i +13] == 'd'|| query[i +13] == 'D')
+          && isKeyword(query + i + 12, "id", 2)
           && query[i + 14] == '(') {
-          sb.append(1, car);
           reWritablePrepare= false;
-          skipChar= true;
         }
         break;
+
       case '(':
-        if (state == LexState::Normal) {
-          isInParenthesis++;
-        }
+        ++isInParenthesis;
         break;
+
       case ')':
-        if (state == LexState::Normal) {
-          --isInParenthesis;
-          if (isInParenthesis == 0 && !preValuePart2.empty() && postValuePart.empty()) {
-            sb.append(1, car);
-            postValuePart= sb;
-            sb.clear();
-            skipChar= true;
-          }
+        --isInParenthesis;
+        if (isInParenthesis == 0 && preValuePart2Set && !postValuePartSet) {
+          postValuePart= QueryPart(partBegin, i + 1 - partBegin);
+          postValuePartSet= true;
+          partBegin= i + 1;
         }
         break;
+
       default:
-        if (state == LexState::Normal && isFirstChar && ((int8_t)car >= 40)) {
-          if (car == 'I' || car == 'i') {
-            isInsert= true;
-          }
+        if (isFirstChar) {
+          isInsert= (car == 'I' || car == 'i');
           isFirstChar= false;
         }
-
-        if (state == LexState::Normal &&semicolon &&((int8_t)car >=40)) {
+        if (semicolon) {
           reWritablePrepare= false;
           multipleQueriesPrepare= true;
         }
+        special= parserTables.rewritable;
         break;
       }
-
-      lastChar= car;
-      if (skipChar) {
-        skipChar= false;
-      }
-      else {
-        sb.append(1, car);
-      }
+      ++i;
     }
 
-    partList.reserve(partList.size() + 3 + (hasParam ? 1 : 0));
     if (!hasParam) {
-
-      if (preValuePart1.empty()) {
-        partList.insert(partList.begin(), sb);
-        partList.insert(partList.begin(), "");
+      if (!preValuePart1Set) {
+        partList[1]= QueryPart(0, queryLength);
       }
       else {
-        partList.insert(partList.begin(), preValuePart1);
-        partList.insert(partList.begin(), sb);
+        partList[0]= QueryPart(partBegin, queryLength - partBegin);
+        partList[1]= preValuePart1;
       }
-      sb.clear();
+      partList.emplace_back(queryLength, 0);
     }
     else {
-      partList.insert(partList.begin(), preValuePart1);
-      partList.insert(partList.begin(), preValuePart2);
+      partList[0]= preValuePart2;
+      partList[1]= preValuePart1;
+      partList.push_back(postValuePartSet ? postValuePart : QueryPart(partBegin, 0));
+      partList.emplace_back(partBegin, queryLength - partBegin);
     }
 
-    if (!isInsert) {
+    if (!isInsert || !valuesFound) {
       reWritablePrepare= false;
     }
 
-    if (hasParam) {
-      partList.emplace_back(postValuePart);
-    }
-    partList.emplace_back(sb);
-
     return new ClientPrepareResult(
-      queryString, partList, reWritablePrepare, multipleQueriesPrepare, true);
+      queryString, std::move(partList), reWritablePrepare, multipleQueriesPrepare, true);
   }
 
   const SQLString& ClientPrepareResult::getSql() const
@@ -646,9 +589,17 @@ namespace mariadb
     return sql;
   }
 
-  const std::vector<std::string>& ClientPrepareResult::getQueryParts() const
+  const std::vector<QueryPart>& ClientPrepareResult::getQueryParts() const
   {
     return queryParts;
+  }
+
+
+  SQLString& ClientPrepareResult::appendPart(SQLString& out, std::size_t index) const
+  {
+    const QueryPart& part= queryParts[index];
+    StringImp::get(out).append(StringImp::get(sql).data() + part.first, part.second);
+    return out;
   }
 
   bool ClientPrepareResult::isQueryMultiValuesRewritable() const
