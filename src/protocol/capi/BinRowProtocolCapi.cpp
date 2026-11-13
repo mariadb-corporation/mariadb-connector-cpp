@@ -50,6 +50,8 @@ namespace capi
      , columnInformationLength(_columnInformationLength)
      , stmt(capiStmtHandle)
   {
+     std::size_t totalLength= 0;
+
      bind.reserve(mysql_stmt_field_count(stmt));
 
      for (auto& columnInfo : columnInformation)
@@ -66,10 +68,16 @@ namespace capi
        bind.back().buffer_length= static_cast<unsigned long>(columnInfo->getColumnType().binarySize() != 0 ?
                                                          columnInfo->getColumnType().binarySize() :
                                                          getLengthMaxFieldSize());
-       bind.back().buffer=        new uint8_t[bind.back().buffer_length];
        bind.back().length=        &bind.back().length_value;
        bind.back().is_null=       &bind.back().is_null_value;
        bind.back().error=         &bind.back().error_value;
+       totalLength+= (static_cast<std::size_t>(bind.back().buffer_length) + 7) & ~static_cast<std::size_t>(7);
+     }
+     bindBuffer.reset(new uint8_t[totalLength > 0 ? totalLength : 1]);
+     totalLength= 0;
+     for (auto& columnBind : bind) {
+       columnBind.buffer= bindBuffer.get() + totalLength;
+       totalLength+= (static_cast<std::size_t>(columnBind.buffer_length) + 7) & ~static_cast<std::size_t>(7);
      }
      maxFieldSize= 0;
      if (mysql_stmt_bind_result(stmt, bind.data())) {
@@ -80,10 +88,6 @@ namespace capi
 
    BinRowProtocolCapi::~BinRowProtocolCapi()
    {
-     for (auto& columnBind : bind)
-     {
-       delete[] (uint8_t*)columnBind.buffer;
-     }
    }
 
   /**

@@ -108,7 +108,7 @@ public:
 
   void resetRow(std::vector<sql::bytes>& buf);
   virtual void setPosition(int32_t position)=0;
-  uint32_t getLengthMaxFieldSize();
+  uint32_t getLengthMaxFieldSize() { return maxFieldSize != 0 && maxFieldSize < length ? maxFieldSize : length; }
   uint32_t getMaxFieldSize();
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
