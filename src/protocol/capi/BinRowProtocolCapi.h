@@ -41,6 +41,7 @@ class BinRowProtocolCapi : public RowProtocol {
   int32_t columnInformationLength;
   MYSQL_STMT* stmt;
   std::vector<MYSQL_BIND> bind;
+  std::unique_ptr<uint8_t[]> bindBuffer;
 
   SQLString convertToString(const char* asChar, ColumnDefinition* columnInfo);
 public:
