@@ -1635,6 +1635,21 @@ void bugs::change_request_9()
   ASSERT_EQUALS(2177LL, res->getLong(4));
 }
 
+
+void bugs::sqlstringMoveAssignment()
+{
+  sql::SQLString target("previous value"), source("the value, that is long enough not to be stored inside of the string object");
+  const char* buffer= source.c_str();
+
+  target= std::move(source);
+  ASSERT(target == "the value, that is long enough not to be stored inside of the string object");
+  ASSERT(buffer == target.c_str());
+
+  target= sql::SQLString("temporary");
+  ASSERT(target == "temporary");
+  ASSERT_EQUALS(static_cast<std::size_t>(9), target.length());
+}
+
 } /* namespace regression */
 } /* namespace testsuite */
 
