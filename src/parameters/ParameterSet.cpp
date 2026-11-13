@@ -59,7 +59,7 @@ namespace mariadb
     slot.reset(paramCount > 0 ? new ParamSlot[paramCount] : nullptr);
     count= paramCount;
     assigned= 0;
-    longData= false;
+    longDataCount= 0;
     bind.clear();
 
     if (binary && paramCount > 0) {
@@ -77,7 +77,7 @@ namespace mariadb
       slot[i].clear();
     }
     assigned= 0;
-    longData= false;
+    longDataCount= 0;
   }
 
 
@@ -99,6 +99,9 @@ namespace mariadb
   {
     ParamSlot& target= slot[i];
 
+    if (target && longDataCount > 0 && target->isLongData()) {
+      --longDataCount;
+    }
     if (!target && heapObject != nullptr) {
       ++assigned;
     }
@@ -109,7 +112,7 @@ namespace mariadb
 
     if (heapObject != nullptr) {
       if (heapObject->isLongData()) {
-        longData= true;
+        ++longDataCount;
       }
       if (!bind.empty()) {
         bindParameter(bind[i], *heapObject);

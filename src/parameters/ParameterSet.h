@@ -133,7 +133,7 @@ class ParamSet
   std::unique_ptr<ParamSlot[]> slot;
   std::size_t count= 0;
   std::size_t assigned= 0;
-  bool longData= false;
+  std::size_t longDataCount= 0;
   std::vector<capi::MYSQL_BIND> bind;
   uint64_t id= 0;
   uint64_t bindVersion= 0;
@@ -149,7 +149,7 @@ public:
 
   std::size_t size() const { return count; }
   bool complete() const { return assigned == count; }
-  bool hasLongData() const { return longData; }
+  bool hasLongData() const { return longDataCount > 0; }
   capi::MYSQL_BIND* getBind() { return bind.empty() ? nullptr : bind.data(); }
   /* Id is unique for each array of MYSQL_BIND, the version is changed with each change in that array */
   uint64_t getId() const { return id; }
@@ -169,11 +169,14 @@ public:
     if (!target) {
       ++assigned;
     }
+    else if (longDataCount > 0 && target->isLongData()) {
+      --longDataCount;
+    }
     uint16_t previous= target.getPlainValue();
     T* param= target.template emplace<T>(std::forward<Args>(args)...);
 
     if (param->T::isLongData()) {
-      longData= true;
+      ++longDataCount;
     }
     if (!bind.empty() && (previous == 0 || previous != target.getPlainValue())) {
       bindParameterOf<T>(bind[i], *param);
