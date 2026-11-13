@@ -113,9 +113,8 @@ namespace mariadb
     , metadata(mysql_stmt_result_metadata(statementId))
     , unProxiedProtocol(_unProxiedProtocol)
   {
-    columns.reserve(mysql_stmt_field_count(statementId));
-    for (uint32_t i= 0; i < mysql_stmt_field_count(statementId); ++i) {
-      columns.emplace_back(new capi::ColumnDefinitionCapi(mysql_fetch_field_direct(metadata, i)));
+    if (metadata) {
+      capi::ColumnDefinitionCapi::createAll(columns, capi::mysql_fetch_fields(metadata), mysql_stmt_field_count(statementId));
     }
 
     parameters.reserve(mysql_stmt_param_count(statementId));
@@ -132,8 +131,8 @@ namespace mariadb
     }
     metadata= mysql_stmt_result_metadata(statementId);
     columns.clear();
-    for (uint32_t i= 0; i < mysql_stmt_field_count(statementId); ++i) {
-      columns.emplace_back(new capi::ColumnDefinitionCapi(capi::mysql_fetch_field_direct(metadata, i)));
+    if (metadata) {
+      capi::ColumnDefinitionCapi::createAll(columns, capi::mysql_fetch_fields(metadata), mysql_stmt_field_count(statementId));
     }
   }
 

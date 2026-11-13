@@ -83,11 +83,7 @@ namespace capi
     }
     uint32_t fieldCnt= mysql_field_count(capiConnHandle);
 
-    columnsInformation.reserve(fieldCnt);
-
-    for (size_t i= 0; i < fieldCnt; ++i) {
-      columnsInformation.emplace_back(new ColumnDefinitionCapi(mysql_fetch_field(textNativeResults)));
-    }
+    ColumnDefinitionCapi::createAll(columnsInformation, mysql_fetch_fields(textNativeResults), fieldCnt);
     row.reset(new capi::TextRowProtocolCapi(results->getMaxFieldSize(), options, textNativeResults));
 
     //columnNameMap.init(columnsInformation);

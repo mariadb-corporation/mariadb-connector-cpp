@@ -63,6 +63,8 @@ public:
   ColumnDefinitionCapi(const ColumnDefinitionCapi& other);
   ColumnDefinitionCapi(capi::MYSQL_FIELD* metadata, bool ownshipPassed= false);
 
+  static void createAll(std::vector<Shared::ColumnDefinition>& columns, capi::MYSQL_FIELD* fields, std::size_t count);
+
 public:
   SQLString getDatabase() const;
   SQLString getTable() const;

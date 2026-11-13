@@ -65,6 +65,22 @@ namespace capi
   }
 
 
+  void ColumnDefinitionCapi::createAll(std::vector<Shared::ColumnDefinition>& columns, capi::MYSQL_FIELD* fields, std::size_t count)
+  {
+    if (count == 0 || fields == nullptr) {
+      return;
+    }
+    auto block= std::make_shared<std::vector<ColumnDefinitionCapi>>();
+
+    block->reserve(count);
+    columns.reserve(columns.size() + count);
+    for (std::size_t i= 0; i < count; ++i) {
+      block->emplace_back(&fields[i]);
+      columns.emplace_back(block, &block->back());
+    }
+  }
+
+
   SQLString ColumnDefinitionCapi::getDatabase() const {
     return std::string(metadata->db, metadata->db_length);
   }
