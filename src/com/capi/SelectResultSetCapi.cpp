@@ -888,7 +888,7 @@ namespace capi
   SQLString SelectResultSetCapi::getString(int32_t columnIndex) const
   {
     checkObjectRange(columnIndex);
-    return std::move(row->getInternalString(columnsInformation[columnIndex - 1].get()));
+    return row->getInternalString(columnsInformation[columnIndex - 1].get());
   }
 
   /** {inheritDoc}. */

@@ -63,6 +63,7 @@ public:
     TEST_CASE(getTypesMinorIssues);
     TEST_CASE(JSON_support);
     TEST_CASE(concpp72_rs_streaming);
+    TEST_CASE(concpp177_integerGetters);
 
 #ifdef INCLUDE_NOT_IMPLEMENTED_METHODS
     TEST_CASE(notImplemented);
@@ -125,6 +126,9 @@ public:
 
   /* Test of resultset streaming(aka "use result")*/
   void concpp72_rs_streaming();
+
+  /* Limits of integer types and out of range values read with integer getters */
+  void concpp177_integerGetters();
 };
 
 REGISTER_FIXTURE(resultset);

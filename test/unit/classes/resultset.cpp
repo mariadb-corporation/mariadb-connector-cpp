@@ -1345,6 +1345,60 @@ void resultset::JSON_support()
 }
 
 
+#define ASSERT_OUT_OF_RANGE(_getter) try { res->_getter; FAIL("Out of range error was expected for " #_getter); } catch (sql::SQLException&) {}
+
+void resultset::concpp177_integerGetters()
+{
+  stmt.reset(con->createStatement());
+  stmt->execute("DROP TABLE IF EXISTS concpp177");
+  stmt->execute("CREATE TABLE concpp177(i INT, iu INT UNSIGNED, b BIGINT, bu BIGINT UNSIGNED, s SMALLINT, v VARCHAR(30))");
+  stmt->execute("INSERT INTO concpp177 VALUES (2147483647, 4294967295, 9223372036854775807, 18446744073709551615, 32767, ' 42'),"
+    "(-2147483648, 0, -9223372036854775808, 0, -32768, '-0'), (7, 7, 7, 7, 7, '18446744073709551616')");
+  res.reset(stmt->executeQuery("SELECT i, iu, b, bu, s, v FROM concpp177"));
+
+  ASSERT(res->next());
+  ASSERT_EQUALS(INT32_MAX, res->getInt(1));
+  ASSERT_EQUALS(static_cast<int64_t>(INT32_MAX), res->getInt64(1));
+  ASSERT_EQUALS(static_cast<uint64_t>(INT32_MAX), res->getUInt64(1));
+  ASSERT_OUT_OF_RANGE(getShort(1));
+  ASSERT_OUT_OF_RANGE(getInt(2));
+  ASSERT_EQUALS(static_cast<int64_t>(UINT32_MAX), res->getInt64(2));
+  ASSERT_EQUALS(static_cast<uint64_t>(UINT32_MAX), res->getUInt64(2));
+  ASSERT_OUT_OF_RANGE(getInt(3));
+  ASSERT_EQUALS(INT64_MAX, res->getInt64(3));
+  ASSERT_EQUALS(static_cast<uint64_t>(INT64_MAX), res->getUInt64(3));
+  ASSERT_OUT_OF_RANGE(getInt64(4));
+  ASSERT_EQUALS(UINT64_MAX, res->getUInt64(4));
+  ASSERT_EQUALS(static_cast<int16_t>(INT16_MAX), res->getShort(5));
+  ASSERT_EQUALS(static_cast<int32_t>(INT16_MAX), res->getInt(5));
+  ASSERT_EQUALS(42, res->getInt(6));
+  ASSERT_EQUALS(static_cast<uint64_t>(42), res->getUInt64(6));
+
+  ASSERT(res->next());
+  ASSERT_EQUALS(INT32_MIN, res->getInt(1));
+  ASSERT_EQUALS(static_cast<int64_t>(INT32_MIN), res->getInt64(1));
+  ASSERT_OUT_OF_RANGE(getUInt64(1));
+  ASSERT_OUT_OF_RANGE(getShort(1));
+  ASSERT_EQUALS(0, res->getInt(2));
+  ASSERT_EQUALS(static_cast<uint64_t>(0), res->getUInt64(2));
+  ASSERT_OUT_OF_RANGE(getInt(3));
+  ASSERT_EQUALS(INT64_MIN, res->getInt64(3));
+  ASSERT_OUT_OF_RANGE(getUInt64(3));
+  ASSERT_EQUALS(static_cast<int16_t>(INT16_MIN), res->getShort(5));
+  ASSERT_EQUALS(static_cast<int32_t>(INT16_MIN), res->getInt(5));
+  ASSERT_EQUALS(static_cast<uint64_t>(0), res->getUInt64(6));
+
+  ASSERT(res->next());
+  ASSERT_EQUALS(7, res->getInt(1));
+  ASSERT_EQUALS(static_cast<int16_t>(7), res->getShort(2));
+  ASSERT_EQUALS(static_cast<uint64_t>(7), res->getUInt64(4));
+  ASSERT_OUT_OF_RANGE(getUInt64(6));
+  ASSERT(!res->next());
+
+  stmt->execute("DROP TABLE concpp177");
+}
+
+
 void resultset::concpp72_rs_streaming()
 {
   sql::Properties connection_properties;

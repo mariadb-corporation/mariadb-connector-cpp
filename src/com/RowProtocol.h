@@ -142,7 +142,7 @@ public:
 
   virtual bool isBinaryEncoded()=0;
   virtual void cacheCurrentRow(std::vector<sql::bytes>& rowData, std::size_t columnCount)=0;
-  bool lastValueWasNull();
+  bool lastValueWasNull() { return (lastValueNull & BIT_LAST_FIELD_NULL) != 0; }
 
 protected:
   template<typename T>

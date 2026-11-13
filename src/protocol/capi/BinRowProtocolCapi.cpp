@@ -212,7 +212,7 @@ namespace capi
     */
   SQLString BinRowProtocolCapi::getInternalString(ColumnDefinition* columnInfo, Calendar* /*cal*/, TimeZone* /*timeZone*/)
   {
-    return std::move(convertToString(fieldBuf.arr, columnInfo));
+    return convertToString(fieldBuf.arr, columnInfo);
   }
 
   /**

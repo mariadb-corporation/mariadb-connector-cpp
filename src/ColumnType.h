@@ -82,7 +82,7 @@ public:
   const SQLString& getClassName() const;
   int32_t getSqlType() const;
   const SQLString& getTypeName() const;
-  int16_t getType() const;
+  int16_t getType() const { return mariadbType; }
   const SQLString & getCppTypeName() const;
   std::size_t binarySize() const { return binSize; }
 };
