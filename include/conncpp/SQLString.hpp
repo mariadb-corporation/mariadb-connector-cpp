@@ -51,6 +51,7 @@ public:
   static constexpr std::size_t npos{static_cast<std::size_t>(-1)};
   MARIADB_EXPORTED const char * c_str() const;
   MARIADB_EXPORTED SQLString& operator=(const SQLString&);
+  SQLString& operator=(SQLString&& other) { StringImp* tmp= theString; theString= other.theString; other.theString= tmp; return *this; }
   MARIADB_EXPORTED operator const char* () const;
   MARIADB_EXPORTED SQLString& operator=(const char * right);
   MARIADB_EXPORTED bool operator <(const SQLString&) const;

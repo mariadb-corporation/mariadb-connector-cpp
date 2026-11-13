@@ -81,6 +81,7 @@ public:
     TEST_CASE(concpp62);
     TEST_CASE(concpp60);
     TEST_CASE(change_request_9);
+    TEST_CASE(sqlstringMoveAssignment);
   }
 
   /**
@@ -150,6 +151,8 @@ public:
   void concpp60();
 
   void change_request_9();
+
+  void sqlstringMoveAssignment();
 };
 
 REGISTER_FIXTURE(bugs);
