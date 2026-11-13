@@ -35,16 +35,16 @@ class StringParameter  : public ParameterHolder {
   bool noBackslashEscapes;
 
 public:
-  StringParameter(const SQLString& str,bool noBackslashEscapes);
+  StringParameter(const SQLString& str, bool noBackslashEscapes) : stringValue(str), noBackslashEscapes(noBackslashEscapes) {}
   void writeTo(SQLString& str, capi::MYSQL*);
   void writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
-  const ColumnType& getColumnType() const;
+  const ColumnType& getColumnType() const { return ColumnType::STRING; }
   SQLString toString();
-  bool isNullData() const;
-  bool isLongData();
+  bool isNullData() const { return false; }
+  bool isLongData() { return false; }
   void* getValuePtr() { return const_cast<void*>(static_cast<const void*>(stringValue.c_str())); }
   unsigned long getValueBinLen() const { return static_cast<unsigned long>(stringValue.length()); }
   ParameterHolder* clone() { return new StringParameter(*this); }

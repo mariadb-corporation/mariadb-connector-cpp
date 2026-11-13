@@ -27,17 +27,6 @@ namespace mariadb
 
   const char* NullParameter::_NULL= "NULL";//{ 'N','U','L','L' };
 
-  NullParameter::NullParameter() : type(ColumnType::_NULL)
-  {
-
-  }
-
-  NullParameter::NullParameter(const ColumnType& _type)
-    : type(_type)
-  {
-  }
-
-
   void NullParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(_NULL);
@@ -64,24 +53,9 @@ namespace mariadb
 
   }
 
-  const ColumnType& NullParameter::getColumnType() const
-  {
-    return type;
-  }
-
   SQLString NullParameter::toString()
   {
     return "<NULL>";
-  }
-
-  bool NullParameter::isNullData() const
-  {
-    return true;
-  }
-
-  bool NullParameter::isLongData()
-  {
-    return false;
   }
 }
 }

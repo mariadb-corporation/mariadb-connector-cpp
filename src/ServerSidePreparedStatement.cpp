@@ -133,7 +133,7 @@ namespace sql
   void ServerSidePreparedStatement::setMetaFromResult()
   {
     parameterCount= static_cast<int32_t>(serverPrepareResult->getParameters().size());
-    initParamset(parameterCount);
+    initParamset(parameterCount, true);
     metadata.reset(new MariaDbResultSetMetaData(serverPrepareResult->getColumns(), protocol->getUrlParser().getOptions(), false));
     // TODO: these transfer of the vector can be optimized for sure
     parameterMetaData.reset(new MariaDbParameterMetaData(serverPrepareResult->getParameters()));
@@ -143,7 +143,7 @@ namespace sql
   {
     // TODO: does it really has to be map? can be, actually
     if (parameterIndex > 0 && static_cast<std::size_t>(parameterIndex) < serverPrepareResult->getParamCount() + 1) {
-      parameters[parameterIndex - 1].reset(holder);
+      parameters.set(static_cast<std::size_t>(parameterIndex) - 1, holder);
     }
     else {
       SQLString error("Could not set parameter at position ");
@@ -268,7 +268,7 @@ namespace sql
         for (int32_t counter= 0; counter < queryParameterSize; counter++)
         {
           // TODO: verify if paramsets are guaranteed to exist at this point for all queryParameterSize
-          std::vector<Unique::ParameterHolder>& parameterHolder= parameterList[counter];
+          ParamSet& parameterHolder= parameterList[counter];
           try {
             if (queryTimeout) {
               protocol->stopIfInterrupted();
@@ -354,7 +354,6 @@ namespace sql
           sql,
           &parameters));
 
-      serverPrepareResult->resetParameterTypeHeader();
       protocol->executePreparedQuery(
         mustExecuteOnMaster, serverPrepareResult, stmt->getInternalResults().get(), parameters);
 

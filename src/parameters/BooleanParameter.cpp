@@ -25,11 +25,6 @@ namespace sql
 namespace mariadb
 {
 
-  BooleanParameter::BooleanParameter(bool value)
-    : value(value)
-  {
-  }
-
   void BooleanParameter:: writeTo(PacketOutputStream& os)
   {
     os.write(value ? '1' : '0');
@@ -64,30 +59,9 @@ namespace mariadb
     return 1;
   }
 
-  const ColumnType& BooleanParameter::getColumnType() const
-  {
-    return ColumnType::TINYINT;
-  }
-
   SQLString BooleanParameter::toString()
   {
     return std::to_string(value);
-  }
-
-  bool BooleanParameter::isNullData() const
-  {
-    return false;
-  }
-
-  bool BooleanParameter::isLongData()
-  {
-    return false;
-  }
-
-
-  void * BooleanParameter::getValuePtr()
-  {
-    return static_cast<void *>(&value);
   }
 }
 }

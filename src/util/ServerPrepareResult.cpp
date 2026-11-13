@@ -23,7 +23,7 @@
 #include "Protocol.h"
 #include "ColumnType.h"
 #include "ColumnDefinition.h"
-#include "parameters/ParameterHolder.h"
+#include "parameters/ParameterSet.h"
 
 #include "com/capi/ColumnDefinitionCapi.h"
 
@@ -157,6 +157,7 @@ namespace mariadb
   {
     this->statementId= statementId;
     this->unProxiedProtocol= unProxiedProtocol.get();
+    boundSetId= 0;
     resetParameterTypeHeader();
     this->shareCounter= 1;
     this->isBeingDeallocate= false;
@@ -270,38 +271,29 @@ namespace mariadb
   }
 
 
-  void bindParamValue(capi::MYSQL_BIND& bind, Unique::ParameterHolder& param)
-  {
-    bind.is_null_value= '\0';
-    bind.long_data_used= '\0';
-
-    if (param->isNullData()) {
-      bind.is_null_value= '\1';
-      return;
-    }
-
-    if (param->isLongData()) {
-      bind.long_data_used= '\1';
-      return;
-    }
-
-    if (param->isUnsigned()) {
-      bind.is_unsigned= '\1';
-    }
-
-    bind.buffer= param->getValuePtr();
-    bind.buffer_length=param->getValueBinLen();
-  }
-
-
   void ServerPrepareResult::bindParameters(ServerPrepareResult::ParamsetType& paramValue)
   {
+    capi::MYSQL_BIND* ready= paramValue.getBind();
+
+    if (ready != nullptr) {
+      if (paramValue.hasLongData() || boundSetId != paramValue.getId() || boundVersion != paramValue.getBindVersion()) {
+        capi::mysql_stmt_bind_param(statementId, ready);
+        boundSetId= paramValue.getId();
+        boundVersion= paramValue.getBindVersion();
+      }
+      return;
+    }
+    boundSetId= 0;
+    if (paramBind.size() != parameters.size()) {
+      paramBind.resize(parameters.size());
+    }
     for (size_t i= 0; i < parameters.size(); ++i)
     {
       auto& bind= paramBind[i];
 
-      initBindStruct(bind, *paramValue[i]);
-      bindParamValue(bind, paramValue[i]);
+      std::memset(&bind, 0, sizeof(bind));
+      bind.is_null= &bind.is_null_value;
+      bindParameter(bind, *paramValue[i]);
     }
     capi::mysql_stmt_bind_param(statementId, paramBind.data());
   }
@@ -336,6 +328,7 @@ namespace mariadb
   void ServerPrepareResult::bindParameters(ServerPrepareResult::ParamsetArrType& paramValue, const int16_t *type)
   {
     uint32_t i= 0;
+    boundSetId= 0;
     resetParameterTypeHeader();
     for (auto& bind : paramBind)
     {

@@ -285,7 +285,7 @@ namespace mariadb
 
 
   void ProtocolLoggingProxy::executeQuery(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* clientPrepareResult,
-    std::vector<Unique::ParameterHolder>& parameters)
+    ParamSet& parameters)
   {
     /* Add here logging if needed */
     protocol->executeQuery(mustExecuteOnMaster, results, clientPrepareResult, parameters);
@@ -293,7 +293,7 @@ namespace mariadb
 
 
   void ProtocolLoggingProxy::executeQuery(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* clientPrepareResult,
-    std::vector<Unique::ParameterHolder>& parameters, int32_t timeout)
+    ParamSet& parameters, int32_t timeout)
   {
     /* Add here logging if needed */
     protocol->executeQuery(mustExecuteOnMaster, results, clientPrepareResult, parameters, timeout);
@@ -301,7 +301,7 @@ namespace mariadb
 
 
   bool ProtocolLoggingProxy::executeBatchClient(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* prepareResult,
-    std::vector<std::vector<Unique::ParameterHolder>>& parametersList, bool hasLongData)
+    std::vector<ParamSet>& parametersList, bool hasLongData)
 	{
 		/* Add here logging if needed */
     return protocol->executeBatchClient(mustExecuteOnMaster, results, prepareResult, parametersList, hasLongData);
@@ -316,7 +316,7 @@ namespace mariadb
 
 
   void ProtocolLoggingProxy::executePreparedQuery(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Results* results,
-    std::vector<Unique::ParameterHolder>& parameters)
+    ParamSet& parameters)
   {
     /* Add here logging if needed */
     protocol->executePreparedQuery(mustExecuteOnMaster, serverPrepareResult, results, parameters);
@@ -324,7 +324,7 @@ namespace mariadb
 
 
   bool ProtocolLoggingProxy::executeBatchServer(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Results* results,
-    const SQLString& sql, std::vector<std::vector<Unique::ParameterHolder>>& parameterList, bool hasLongData)
+    const SQLString& sql, std::vector<ParamSet>& parameterList, bool hasLongData)
   {
     /* Add here logging if needed */
     return protocol->executeBatchServer(mustExecuteOnMaster, serverPrepareResult, results, sql, parameterList, hasLongData);

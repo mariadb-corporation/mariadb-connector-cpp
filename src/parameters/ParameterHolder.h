@@ -40,6 +40,11 @@ protected:
   static char QUOTE;
   ParameterHolder()= default;
 public:
+  /* Classes of fixed size values, that own nothing, redefine it with unique non-zero value. Objects of such
+     class can be dropped without the destructor call, and 2 objects with the same column type are bound to
+     the server side prepared statement identically */
+  enum { PlainValueId= 0 };
+
   virtual ~ParameterHolder();
 
   virtual void writeTo(PacketOutputStream& os)=0;

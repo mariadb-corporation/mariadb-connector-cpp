@@ -87,15 +87,15 @@ public:
   void executeQuery(const SQLString& sql);
   void executeQuery(bool mustExecuteOnMaster, Results* results, const SQLString& sql);
   void executeQuery(bool mustExecuteOnMaster, Results* results, const SQLString& sql, const Charset* charset);
-  void executeQuery(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* clientPrepareResult, std::vector<Unique::ParameterHolder>& parameters);
-  void executeQuery(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* clientPrepareResult, std::vector<Unique::ParameterHolder>& parameters,
+  void executeQuery(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* clientPrepareResult, ParamSet& parameters);
+  void executeQuery(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* clientPrepareResult, ParamSet& parameters,
     int32_t timeout);
   bool executeBatchClient(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* prepareResult,
-    std::vector<std::vector<Unique::ParameterHolder>>& parametersList, bool hasLongData);
+    std::vector<ParamSet>& parametersList, bool hasLongData);
   void executeBatchStmt(bool mustExecuteOnMaster, Results* results, const std::vector<SQLString>& queries);
-  void executePreparedQuery(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Results* results, std::vector<Unique::ParameterHolder>& parameters);
+  void executePreparedQuery(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Results* results, ParamSet& parameters);
   bool executeBatchServer(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Results* results, const SQLString& sql,
-                          std::vector<std::vector<Unique::ParameterHolder>>& parameterList, bool hasLongData);
+                          std::vector<ParamSet>& parameterList, bool hasLongData);
   void moveToNextResult(Results* results, ServerPrepareResult* spr=nullptr);
   void getResult(Results* results, ServerPrepareResult *pr=nullptr, bool readAllResults=false);
   void cancelCurrentQuery();

@@ -26,7 +26,7 @@
 #include "PreparedStatement.hpp"
 
 #include "ColumnType.h"
-#include "parameters/ParameterHolder.h"
+#include "parameters/ParameterSet.h"
 
 #include "MariaDbStatement.h"
 #include "PrepareResult.h"
@@ -71,8 +71,8 @@ protected:
   */
   Shared::ExceptionFactory exceptionFactory;
   Protocol* protocol;
-  std::vector<std::vector<Unique::ParameterHolder>> parameterList;
-  std::vector<Unique::ParameterHolder> parameters;
+  std::vector<ParamSet> parameterList;
+  ParamSet parameters;
 
   BasePrepareStatement(
     MariaDbConnection* connection,
@@ -88,7 +88,18 @@ protected:
   virtual bool executeInternal(int32_t fetchSize)=0;
   virtual PrepareResult* getPrepareResult()=0;
   virtual Logger* getLogger() const=0;
-  void initParamset(std::size_t paramCount);
+  void initParamset(std::size_t paramCount, bool binary= false);
+
+  template <class T, class... Args> void setParam(int32_t parameterIndex, Args&&... args)
+  {
+    if (parameterIndex > 0 && static_cast<std::size_t>(parameterIndex) <= parameters.size()) {
+      parameters.set<T>(static_cast<std::size_t>(parameterIndex) - 1, std::forward<Args>(args)...);
+    }
+    else {
+      setParameter(parameterIndex, new T(std::forward<Args>(args)...));
+    }
+  }
+
 
 public:
   void validateParamset(std::size_t paramCount);

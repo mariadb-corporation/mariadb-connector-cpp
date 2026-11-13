@@ -95,7 +95,7 @@ namespace mariadb
       setNull(parameterIndex,ColumnType::BLOB);
       return;
     }
-    setParameter(parameterIndex,new ReaderParameter(reader,length,noBackslashEscapes));
+    setParam<ReaderParameter>(parameterIndex, reader,length,noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -122,7 +122,7 @@ namespace mariadb
       setNull(parameterIndex,ColumnType::BLOB);
       return;
     }
-    setParameter(parameterIndex,new ReaderParameter(reader,length,noBackslashEscapes));
+    setParam<ReaderParameter>(parameterIndex, reader,length,noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -151,7 +151,7 @@ namespace mariadb
       setNull(parameterIndex,ColumnType::BLOB);
       return;
     }
-    setParameter(parameterIndex,new ReaderParameter(reader,noBackslashEscapes));
+    setParam<ReaderParameter>(parameterIndex, reader,noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -172,9 +172,7 @@ namespace mariadb
       setNull(parameterIndex, Types::BLOB);
       return;
     }
-    setParameter(
-      parameterIndex,
-      new StreamParameter(blob.getBinaryStream(), blob.size(), noBackslashEscapes));
+    setParam<StreamParameter>(parameterIndex, blob.getBinaryStream(), blob.size(), noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -195,9 +193,7 @@ namespace mariadb
       return;
     }
 
-    setParameter(
-      parameterIndex,
-      new ReaderParameter(clob.getCharacterStream(), clob.size(), noBackslashEscapes));
+    setParam<ReaderParameter>(parameterIndex, clob.getCharacterStream(), clob.size(), noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -263,8 +259,7 @@ namespace mariadb
       setNull(parameterIndex, Types::DATE);
       return;
     }
-    setParameter(
-      parameterIndex, new DateParameter(date, TimeZone.getDefault(), getProtocol()->getOptions()));
+    setParam<DateParameter>(parameterIndex, date, TimeZone.getDefault(), getProtocol()->getOptions());
   }
 
  /**
@@ -283,8 +278,7 @@ namespace mariadb
       setNull(parameterIndex, ColumnType::TIME);
       return;
     }
-    setParameter(
-      parameterIndex, new TimeParameter(time, TimeZone.getDefault(), useFractionalSeconds));
+    setParam<TimeParameter>(parameterIndex, time, TimeZone.getDefault(), useFractionalSeconds);
   }
 
   /**
@@ -303,9 +297,7 @@ namespace mariadb
       this->setNull(parameterIndex, ColumnType::DATETIME);
       return;
     }
-    setParameter(
-      parameterIndex,
-      new TimestampParameter(timestamp, getProtocol()->getTimeZone(), useFractionalSeconds));
+    setParam<TimestampParameter>(parameterIndex, timestamp, getProtocol()->getTimeZone(), useFractionalSeconds);
   }
 
   /**
@@ -525,10 +517,7 @@ namespace mariadb
       setNull(parameterIndex, ColumnType::TIME);
       return;
     }
-    setParameter(
-      parameterIndex,
-      new TimeParameter(
-        time, cal/*.empty() == true*/ ? cal.getTimeZone() : TimeZone.getDefault(), useFractionalSeconds));
+    setParam<TimeParameter>(parameterIndex, time, cal/*.empty() == true*/ ? cal.getTimeZone() : TimeZone.getDefault(), useFractionalSeconds);
   }
 
  /**
@@ -553,7 +542,7 @@ namespace mariadb
       return;
     }
     TimeZone tz= cal/*.empty() == true*/ ? cal.getTimeZone() : getProtocol()->getTimeZone();
-    setParameter(parameterIndex, new TimestampParameter(timestamp, tz, useFractionalSeconds));
+    setParam<TimestampParameter>(parameterIndex, timestamp, tz, useFractionalSeconds);
   }
 
   void BasePrepareStatement::setURL(int32_t parameterIndex, const URL& url)
@@ -562,7 +551,7 @@ namespace mariadb
       setNull(parameterIndex, ColumnType::STRING);
       return;
     }
-    setParameter(parameterIndex, new StringParameter(url/*.toString()*/, noBackslashEscapes));
+    setParam<StringParameter>(parameterIndex, url/*.toString()*/, noBackslashEscapes);
   }
 #endif
 
@@ -574,7 +563,7 @@ namespace mariadb
     }
 
     //setParameter(parameterIndex, new TimestampParameter(dt, nullptr, useFractionalSeconds));
-    setParameter(parameterIndex, new StringParameter(dt, false));
+    setParam<StringParameter>(parameterIndex, dt, false);
   }
 
   /**
@@ -601,7 +590,7 @@ namespace mariadb
       setNull(parameterIndex, ColumnType::BLOB);
       return;
     }
-    setParameter(parameterIndex, new StreamParameter(*inputStream, length, noBackslashEscapes));
+    setParam<StreamParameter>(parameterIndex, *inputStream, length, noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -630,7 +619,7 @@ namespace mariadb
       return;
     }
 
-    setParameter(parameterIndex, new StreamParameter(*inputStream, noBackslashEscapes));
+    setParam<StreamParameter>(parameterIndex, *inputStream, noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -647,7 +636,7 @@ namespace mariadb
    */
   void BasePrepareStatement::setNull(int32_t parameterIndex, int32_t /*sqlType*/)
   {
-    setParameter(parameterIndex, new NullParameter());
+    setParam<NullParameter>(parameterIndex);
   }
 
   /**
@@ -663,7 +652,7 @@ namespace mariadb
    */
   void BasePrepareStatement::setNull(int32_t parameterIndex,const ColumnType& mariadbType)
   {
-    setParameter(parameterIndex,new NullParameter(mariadbType));
+    setParam<NullParameter>(parameterIndex, mariadbType);
   }
 
   /**
@@ -691,7 +680,7 @@ namespace mariadb
    */
   void BasePrepareStatement::setNull(int32_t parameterIndex, int32_t /*sqlType*/, const SQLString& /*typeName*/)
   {
-    setParameter(parameterIndex, new NullParameter());
+    setParam<NullParameter>(parameterIndex);
   }
 
 #ifdef JDBC_SPECIFIC_TYPES_IMPLEMENTED
@@ -823,31 +812,16 @@ namespace mariadb
     }else if (INSTANCEOF(obj, SQLString)){
       setDate(parameterIndex,Date.valueOf((LocalDate)obj));
     }else if (INSTANCEOF(obj, SQLString)){
-      setParameter(
-          parameterIndex,
-          new ZonedDateTimeParameter(
-            ((OffsetDateTime)obj).toZonedDateTime(),
-            getProtocol()->getTimeZone().toZoneId(),
-            useFractionalSeconds,
-            options));
+      setParam<ZonedDateTimeParameter>(parameterIndex, ((OffsetDateTime)obj).toZonedDateTime(), getProtocol()->getTimeZone().toZoneId(), useFractionalSeconds, options);
     }else if (INSTANCEOF(obj, SQLString)){
-      setParameter(
-          parameterIndex,
-          new OffsetTimeParameter(
-            (OffsetTime)obj,getProtocol()->getTimeZone().toZoneId(),useFractionalSeconds,options));
+      setParam<OffsetTimeParameter>(parameterIndex, (OffsetTime)obj,getProtocol()->getTimeZone().toZoneId(),useFractionalSeconds,options);
     }else if (INSTANCEOF(obj, SQLString)){
-      setParameter(
-          parameterIndex,
-          new ZonedDateTimeParameter(
-            (ZonedDateTime)obj,
-            getProtocol()->getTimeZone().toZoneId(),
-            useFractionalSeconds,
-            options));
+      setParam<ZonedDateTimeParameter>(parameterIndex, (ZonedDateTime)obj, getProtocol()->getTimeZone().toZoneId(), useFractionalSeconds, options);
     }else if (INSTANCEOF(obj, SQLString)){
-      setParameter(parameterIndex,new LocalTimeParameter((LocalTime)obj,useFractionalSeconds));
+      setParam<LocalTimeParameter>(parameterIndex, (LocalTime)obj,useFractionalSeconds);
     }else {
 
-      setParameter(parameterIndex,new SerializableParameter(obj,noBackslashEscapes));
+      setParam<SerializableParameter>(parameterIndex, obj,noBackslashEscapes);
       hasLongData= true;
     }
   }
@@ -934,22 +908,10 @@ namespace mariadb
             setTime(parameterIndex,Time.valueOf((SQLString)obj));
             break;
           case Types::TIME_WITH_TIMEZONE:
-            setParameter(
-                parameterIndex,
-                new OffsetTimeParameter(
-                  OffsetTime::parse(str),
-                  getProtocol()->getTimeZone().toZoneId(),
-                  useFractionalSeconds,
-                  options));
+            setParam<OffsetTimeParameter>(parameterIndex, OffsetTime::parse(str), getProtocol()->getTimeZone().toZoneId(), useFractionalSeconds, options);
             break;
           case Types::TIMESTAMP_WITH_TIMEZONE:
-            setParameter(
-                parameterIndex,
-                new ZonedDateTimeParameter(
-                  ZonedDateTime::parse(str,SPEC_ISO_ZONED_DATE_TIME),
-                  getProtocol()->getTimeZone().toZoneId(),
-                  useFractionalSeconds,
-                  options));
+            setParam<ZonedDateTimeParameter>(parameterIndex, ZonedDateTime::parse(str,SPEC_ISO_ZONED_DATE_TIME), getProtocol()->getTimeZone().toZoneId(), useFractionalSeconds, options);
             break;
           default:
             throw *exceptionFactory->create(
@@ -1044,28 +1006,13 @@ namespace mariadb
     }else if (INSTANCEOF(obj, SQLString)){
       setDate(parameterIndex,Date.valueOf((LocalDate)obj));
     }else if (INSTANCEOF(obj, SQLString)){
-      setParameter(
-          parameterIndex,
-          new ZonedDateTimeParameter(
-            ((OffsetDateTime)obj).toZonedDateTime(),
-            getProtocol()->getTimeZone().toZoneId(),
-            useFractionalSeconds,
-            options));
+      setParam<ZonedDateTimeParameter>(parameterIndex, ((OffsetDateTime)obj).toZonedDateTime(), getProtocol()->getTimeZone().toZoneId(), useFractionalSeconds, options);
     }else if (INSTANCEOF(obj, SQLString)){
-      setParameter(
-          parameterIndex,
-          new OffsetTimeParameter(
-            (OffsetTime)obj,getProtocol()->getTimeZone().toZoneId(),useFractionalSeconds,options));
+      setParam<OffsetTimeParameter>(parameterIndex, (OffsetTime)obj,getProtocol()->getTimeZone().toZoneId(),useFractionalSeconds,options);
     }else if (INSTANCEOF(obj, SQLString)){
-      setParameter(
-          parameterIndex,
-          new ZonedDateTimeParameter(
-            (ZonedDateTime)obj,
-            getProtocol()->getTimeZone().toZoneId(),
-            useFractionalSeconds,
-            options));
+      setParam<ZonedDateTimeParameter>(parameterIndex, (ZonedDateTime)obj, getProtocol()->getTimeZone().toZoneId(), useFractionalSeconds, options);
     }else if (INSTANCEOF(obj, SQLString)){
-      setParameter(parameterIndex,new LocalTimeParameter((LocalTime)obj,useFractionalSeconds));
+      setParam<LocalTimeParameter>(parameterIndex, (LocalTime)obj,useFractionalSeconds);
     }else {
       throw *exceptionFactory->create(
           "Could not set parameter in setObject, could not convert: "
@@ -1092,7 +1039,7 @@ namespace mariadb
       return;
     }
 
-    setParameter(parameterIndex, new BigDecimalParameter(bigDecimal));
+    setParam<BigDecimalParameter>(parameterIndex, bigDecimal);
   }
 #endif
 
@@ -1120,7 +1067,7 @@ namespace mariadb
       setNull(parameterIndex,ColumnType::BLOB);
       return;
     }
-    setParameter(parameterIndex,new StreamParameter(stream,length,noBackslashEscapes));
+    setParam<StreamParameter>(parameterIndex, stream,length,noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -1152,7 +1099,7 @@ namespace mariadb
       setNull(parameterIndex,ColumnType::BLOB);
       return;
     }
-    setParameter(parameterIndex,new StreamParameter(stream,noBackslashEscapes));
+    setParam<StreamParameter>(parameterIndex, stream,noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -1179,7 +1126,7 @@ namespace mariadb
       setNull(parameterIndex,ColumnType::BLOB);
       return;
     }
-    setParameter(parameterIndex,new StreamParameter(stream,length,noBackslashEscapes));
+    setParam<StreamParameter>(parameterIndex, stream,length,noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -1205,7 +1152,7 @@ namespace mariadb
       setNull(parameterIndex,ColumnType::BLOB);
       return;
     }
-    setParameter(parameterIndex,new StreamParameter(stream,length,noBackslashEscapes));
+    setParam<StreamParameter>(parameterIndex, stream,length,noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -1235,7 +1182,7 @@ namespace mariadb
       setNull(parameterIndex,ColumnType::BLOB);
       return;
     }
-    setParameter(parameterIndex,new StreamParameter(stream,noBackslashEscapes));
+    setParam<StreamParameter>(parameterIndex, stream,noBackslashEscapes);
     hasLongData= true;
   }
 
@@ -1261,7 +1208,7 @@ namespace mariadb
       setNull(parameterIndex,ColumnType::BLOB);
       return;
     }
-    setParameter(parameterIndex,new StreamParameter(stream,length,noBackslashEscapes));
+    setParam<StreamParameter>(parameterIndex, stream,length,noBackslashEscapes);
     hasLongData= true;
   }
 #endif
@@ -1278,7 +1225,7 @@ namespace mariadb
    */
   void BasePrepareStatement::setBoolean(int32_t parameterIndex, bool value)
   {
-    setParameter(parameterIndex,new BooleanParameter(value));
+    setParam<BooleanParameter>(parameterIndex, value);
   }
 
   /**
@@ -1293,7 +1240,7 @@ namespace mariadb
    */
   void BasePrepareStatement::setByte(int32_t parameterIndex, int8_t bit)
   {
-    setParameter(parameterIndex,new ByteParameter(bit));
+    setParam<ByteParameter>(parameterIndex, bit);
   }
 
   /**
@@ -1308,7 +1255,7 @@ namespace mariadb
    */
   void BasePrepareStatement::setShort(int32_t parameterIndex,const int16_t value)
   {
-    setParameter(parameterIndex,new ShortParameter(value));
+    setParam<ShortParameter>(parameterIndex, value);
   }
 
   /**
@@ -1327,7 +1274,7 @@ namespace mariadb
       return;
     }*/
 
-    setParameter(parameterIndex,new StringParameter(str, noBackslashEscapes));
+    setParam<StringParameter>(parameterIndex, str, noBackslashEscapes);
   }
 
   /**
@@ -1349,12 +1296,12 @@ namespace mariadb
       return;
     }
 
-    setParameter(parameterIndex, new ByteArrayParameter(*bytes, noBackslashEscapes));
+    setParam<ByteArrayParameter>(parameterIndex, *bytes, noBackslashEscapes);
   }
 
   void BasePrepareStatement::setInt(int32_t column, int32_t value)
   {
-    setParameter(column, new IntParameter(value));
+    setParam<IntParameter>(column, value);
   }
 
   /**
@@ -1368,17 +1315,17 @@ namespace mariadb
    *     PreparedStatement</code>
    */
   void BasePrepareStatement::setLong(int32_t parameterIndex, int64_t value) {
-    setParameter(parameterIndex, new LongParameter(value));
+    setParam<LongParameter>(parameterIndex, value);
   }
 
 
   void BasePrepareStatement::setUInt64(int32_t parameterIndex, uint64_t value) {
-    setParameter(parameterIndex, new ULongParameter(value));
+    setParam<ULongParameter>(parameterIndex, value);
   }
 
 
   void BasePrepareStatement::setUInt(int32_t parameterIndex, uint32_t value) {
-    setParameter(parameterIndex, new ULongParameter(value));
+    setParam<ULongParameter>(parameterIndex, value);
   }
 
 
@@ -1388,7 +1335,7 @@ namespace mariadb
       return;
     }*/
 
-    setParameter(parameterIndex, new StringParameter(str, noBackslashEscapes));
+    setParam<StringParameter>(parameterIndex, str, noBackslashEscapes);
   }
 
   /**
@@ -1403,7 +1350,7 @@ namespace mariadb
    */
   void BasePrepareStatement::setFloat(int32_t parameterIndex, float value)
   {
-    setParameter(parameterIndex,new FloatParameter(value));
+    setParam<FloatParameter>(parameterIndex, value);
   }
 
   /**
@@ -1418,7 +1365,7 @@ namespace mariadb
    */
   void BasePrepareStatement::setDouble(int32_t parameterIndex, double value)
   {
-    setParameter(parameterIndex,new DoubleParameter(value));
+    setParam<DoubleParameter>(parameterIndex, value);
   }
 
 
@@ -1446,20 +1393,19 @@ namespace mariadb
   }
 
 
-  void BasePrepareStatement::initParamset(std::size_t paramCount)
+  void BasePrepareStatement::initParamset(std::size_t paramCount, bool binary)
   {
-    parameters.reserve(paramCount);
-    for (std::size_t i = 0; i < paramCount; ++i) {
-      parameters.emplace_back(nullptr);
-    }
+    parameters.init(paramCount, binary);
   }
 
 
   void BasePrepareStatement::validateParamset(std::size_t paramCount)
   {
-    // valid parameters
+    if (paramCount == parameters.size() && parameters.complete()) {
+      return;
+    }
     for (std::size_t i = 0; i < paramCount; i++) {
-      if (i > parameters.size() || !parameters[i]) {
+      if (i >= parameters.size() || !parameters[i]) {
         getLogger()->error("Parameter at position " + std::to_string(i + 1) + " is not set");
         exceptionFactory->raiseStatementError(connection, this)->create("Parameter at position "
           + std::to_string(i + 1) + " is not set", "07004").Throw();
@@ -1478,7 +1424,6 @@ namespace mariadb
   void BasePrepareStatement::clearParameters()
   {
     parameters.clear();
-    initParamset(getPrepareResult()->getParamCount());
     hasLongData= false;
   }
 
@@ -1496,12 +1441,7 @@ namespace mariadb
     std::size_t paramCount= getPrepareResult()->getParamCount();
     validateParamset(paramCount);
 
-    parameterList.emplace_back();
-    parameterList.back().reserve(paramCount);
-
-    for (auto& it : parameters) {
-      parameterList.back().emplace_back(it->clone());
-    }
+    parameterList.emplace_back(parameters.clone());
   }
 
 

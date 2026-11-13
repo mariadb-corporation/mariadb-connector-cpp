@@ -26,12 +26,6 @@ namespace sql
 namespace mariadb
 {
 
-  DoubleParameter::DoubleParameter(long double value)
-    : value(value)
-  {
-  }
-
-
   void DoubleParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     //std::to_string is not precise enough. at least on windows it does just sprintf("%f")
@@ -75,24 +69,9 @@ namespace mariadb
     return getValueBinLen();
   }
 
-  const ColumnType& DoubleParameter::getColumnType() const
-  {
-    return ColumnType::DOUBLE;
-  }
-
   SQLString DoubleParameter::toString()
   {
     return std::to_string(value);
-  }
-
-  bool DoubleParameter::isNullData() const
-  {
-    return false;
-  }
-
-  bool DoubleParameter::isLongData()
-  {
-    return false;
   }
 }
 }

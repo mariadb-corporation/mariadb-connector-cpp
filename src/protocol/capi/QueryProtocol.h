@@ -72,7 +72,7 @@ namespace capi
       bool mustExecuteOnMaster,
       Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<Unique::ParameterHolder>& parameters);
+      ParamSet& parameters);
 
     /*void assemblePreparedQueryForExec(
       SQLString& out,
@@ -84,14 +84,14 @@ namespace capi
       bool mustExecuteOnMaster,
       Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<Unique::ParameterHolder>& parameters,
+      ParamSet& parameters,
       int32_t queryTimeout);
 
     bool executeBatchClient(
       bool mustExecuteOnMaster,
       Results* results,
       ClientPrepareResult* prepareResult,
-      std::vector<std::vector<Unique::ParameterHolder>>& parametersList,
+      std::vector<ParamSet>& parametersList,
       bool hasLongData);
 
   private:
@@ -99,19 +99,19 @@ namespace capi
     bool executeBulkBatch(
       Results* results, const SQLString& sql,
       ServerPrepareResult* serverPrepareResult,
-      std::vector<std::vector<Unique::ParameterHolder>>& parametersList);
+      std::vector<ParamSet>& parametersList);
     void initializeBatchReader();
 
     void executeBatchMulti(
       Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<std::vector<Unique::ParameterHolder>>& parametersList);
+      std::vector<ParamSet>& parametersList);
 
     void executeBatchSlow(
       bool mustExecuteOnMaster,
       Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<std::vector<Unique::ParameterHolder>>& parametersList);
+      std::vector<ParamSet>& parametersList);
 
   public:
     void executeBatchStmt(bool mustExecuteOnMaster, Results* results, const std::vector<SQLString>& queries);
@@ -129,7 +129,7 @@ namespace capi
     void executeBatchRewrite(
       Results* results,
       ClientPrepareResult* prepareResult,
-      std::vector<std::vector<Unique::ParameterHolder>>& parameterList,
+      std::vector<ParamSet>& parameterList,
       bool rewriteValues);
 
   public:
@@ -138,14 +138,14 @@ namespace capi
       bool mustExecuteOnMaster,
       ServerPrepareResult* serverPrepareResult,
       Results* results, const SQLString& sql,
-      std::vector<std::vector<Unique::ParameterHolder>>& parametersList,
+      std::vector<ParamSet>& parametersList,
       bool hasLongData);
 
     void executePreparedQuery(
       bool mustExecuteOnMaster,
       ServerPrepareResult* serverPrepareResult,
       Results* results,
-      std::vector<Unique::ParameterHolder>& parameters);
+      ParamSet& parameters);
     void rollback();
     bool forceReleasePrepareStatement(capi::MYSQL_STMT* statementId);
     void forceReleaseWaitingPrepareStatement();
