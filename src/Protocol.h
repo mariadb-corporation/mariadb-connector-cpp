@@ -29,7 +29,7 @@
 #include "UrlParser.h"
 #include "HostAddress.h"
 #include "options/Options.h"
-#include "parameters/ParameterHolder.h"
+#include "parameters/ParameterSet.h"
 #include "util/ServerPrepareStatementCache.h"
 
 namespace sql
@@ -94,17 +94,17 @@ public:
   virtual void executeQuery(bool mustExecuteOnMaster, Results* results, const SQLString& sql)= 0;
   virtual void executeQuery(bool mustExecuteOnMaster, Results* results, const SQLString& sql, const Charset* charset)= 0;
   virtual void executeQuery(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* clientPrepareResult,
-    std::vector<Unique::ParameterHolder>& parameters)= 0;
+    ParamSet& parameters)= 0;
   virtual void executeQuery(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* clientPrepareResult,
-    std::vector<Unique::ParameterHolder>& parameters,
+    ParamSet& parameters,
     int32_t timeout)= 0;
   virtual bool executeBatchClient(bool mustExecuteOnMaster, Results* results, ClientPrepareResult* prepareResult,
-    std::vector<std::vector<Unique::ParameterHolder>>& parametersList, bool hasLongData)=0;
+    std::vector<ParamSet>& parametersList, bool hasLongData)=0;
   virtual void executeBatchStmt(bool mustExecuteOnMaster, Results* results, const std::vector<SQLString>& queries)= 0;
   virtual void executePreparedQuery(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Results* results,
-    std::vector<Unique::ParameterHolder>& parameters)= 0;
+    ParamSet& parameters)= 0;
   virtual bool executeBatchServer(bool mustExecuteOnMaster, ServerPrepareResult* serverPrepareResult, Results* results, const SQLString& sql,
-                                  std::vector<std::vector<Unique::ParameterHolder>>& parameterList, bool hasLongData)= 0;
+                                  std::vector<ParamSet>& parameterList, bool hasLongData)= 0;
   virtual void moveToNextResult(Results* results, ServerPrepareResult* spr= nullptr)=0;
   virtual void getResult(Results* results, ServerPrepareResult *pr=nullptr, bool readAllResults= false)=0;
   virtual void cancelCurrentQuery()=0;

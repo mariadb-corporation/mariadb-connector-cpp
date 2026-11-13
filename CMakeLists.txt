@@ -115,6 +115,7 @@ SET (MACPP_SOURCES src/MariaDbDriver.cpp
                    src/logger/ProtocolLoggingProxy.cpp
 
                    src/parameters/ParameterHolder.cpp
+                   src/parameters/ParameterSet.cpp
 
                    src/options/Options.cpp
                    src/options/DefaultOptions.cpp
@@ -242,6 +243,7 @@ IF(WIN32)
                    src/logger/ProtocolLoggingProxy.h
 
                    src/parameters/ParameterHolder.h
+                   src/parameters/ParameterSet.h
 
                    src/options/Options.h
                    src/options/DefaultOptions.h

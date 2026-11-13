@@ -35,17 +35,19 @@ class BooleanParameter : public ParameterHolder {
   bool value;
 
 public:
-  BooleanParameter(bool value);
+  enum { PlainValueId= 6 };
+
+  BooleanParameter(bool value) : value(value) {}
   void  writeTo(PacketOutputStream& os);
   void writeTo(SQLString& str, capi::MYSQL*);
   int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
-  const ColumnType& getColumnType() const;
+  const ColumnType& getColumnType() const { return ColumnType::TINYINT; }
   SQLString toString();
-  bool isNullData() const;
-  bool isLongData();
-  void* getValuePtr();
+  bool isNullData() const { return false; }
+  bool isLongData() { return false; }
+  void* getValuePtr() { return static_cast<void *>(&value); }
   unsigned long getValueBinLen() const { return 1; }
   ParameterHolder* clone() { return new BooleanParameter(*this); }
   };

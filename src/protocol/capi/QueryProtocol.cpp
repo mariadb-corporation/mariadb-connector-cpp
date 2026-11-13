@@ -22,7 +22,7 @@
 
 #include "logger/LoggerFactory.h"
 #include "Results.h"
-#include "parameters/ParameterHolder.h"
+#include "parameters/ParameterSet.h"
 #include "util/LogQueryTool.h"
 #include "util/ClientPrepareResult.h"
 #include "util/ServerPrepareResult.h"
@@ -152,7 +152,7 @@ namespace capi
       bool mustExecuteOnMaster,
       Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<Unique::ParameterHolder>& parameters)
+      ParamSet& parameters)
   {
     executeQuery(mustExecuteOnMaster, results, clientPrepareResult, parameters, -1);
   }
@@ -168,7 +168,7 @@ namespace capi
 
 
   std::size_t estimatePreparedQuerySize(ClientPrepareResult* clientPrepareResult, const std::vector<std::string> &queryPart,
-      std::vector<Unique::ParameterHolder>& parameters)
+      ParamSet& parameters)
   {
     std::size_t estimate= queryPart.front().length() + 1/* for \0 */, offset = 0;
     if (clientPrepareResult->isRewriteType()) {
@@ -186,7 +186,7 @@ namespace capi
   void assemblePreparedQueryForExec(
     SQLString& out,
     ClientPrepareResult* clientPrepareResult,
-    std::vector<Unique::ParameterHolder>& parameters,
+    ParamSet& parameters,
     capi::MYSQL* connection,
     int32_t queryTimeout)
   {
@@ -232,7 +232,7 @@ namespace capi
       bool /*mustExecuteOnMaster*/,
       Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<Unique::ParameterHolder>& parameters,
+      ParamSet& parameters,
       int32_t queryTimeout)
   {
     cmdPrologue();
@@ -284,7 +284,7 @@ namespace capi
       bool mustExecuteOnMaster,
       Results* results,
       ClientPrepareResult* prepareResult,
-      std::vector<std::vector<Unique::ParameterHolder>>& parametersList,
+      std::vector<ParamSet>& parametersList,
       bool hasLongData)
   {
     // ***********************************************************************************************************
@@ -352,7 +352,7 @@ namespace capi
   bool QueryProtocol::executeBulkBatch(
       Results* results, const SQLString& origSql,
       ServerPrepareResult* serverPrepareResult,
-      std::vector<std::vector<Unique::ParameterHolder>>& parametersList)
+      std::vector<ParamSet>& parametersList)
   {
     const int16_t NullType= ColumnType::_NULL.getType();
     // **************************************************************************************
@@ -367,7 +367,7 @@ namespace capi
       return false;
 
     // ensure that type doesn't change
-    std::vector<Unique::ParameterHolder> &initParameters= parametersList.front();
+    ParamSet &initParameters= parametersList.front();
     std::size_t parameterCount= initParameters.size();
     std::vector<int16_t> types;
     types.reserve(parameterCount);
@@ -507,7 +507,7 @@ namespace capi
   void QueryProtocol::executeBatchMulti(
       Results* results,
       ClientPrepareResult* clientPrepareResult,
-      std::vector<std::vector<Unique::ParameterHolder>>& parametersList)
+      std::vector<ParamSet>& parametersList)
   {
     cmdPrologue();
     initializeBatchReader();
@@ -558,7 +558,7 @@ namespace capi
     bool mustExecuteOnMaster,
     Results* results,
     ClientPrepareResult* clientPrepareResult,
-    std::vector<std::vector<Unique::ParameterHolder>>& parametersList)
+    std::vector<ParamSet>& parametersList)
   {
     cmdPrologue();
     // send query one by one, reading results for each query before sending another one
@@ -853,12 +853,12 @@ namespace capi
     const std::vector<std::string> &queryParts,
     std::size_t currentIndex,
     std::size_t paramCount,
-    std::vector<std::vector<Unique::ParameterHolder>>& parameterList,
+    std::vector<ParamSet>& parameterList,
     capi::MYSQL* connection,
     bool rewriteValues)
   {
     std::size_t index= currentIndex, capacity= StringImp::get(pos).capacity(), estimatedLength;
-    std::vector<Unique::ParameterHolder> &parameters= parameterList[index++];
+    ParamSet &parameters= parameterList[index++];
 
     const SQLString &firstPart= queryParts[1];
     const SQLString &secondPart= queryParts.front();
@@ -1003,7 +1003,7 @@ namespace capi
   void QueryProtocol::executeBatchRewrite(
       Results* results,
       ClientPrepareResult* prepareResult,
-      std::vector<std::vector<Unique::ParameterHolder>>& parameterList,
+      std::vector<ParamSet>& parameterList,
       bool rewriteValues)
   {
     cmdPrologue();
@@ -1054,7 +1054,7 @@ namespace capi
       bool /*mustExecuteOnMaster*/,
       ServerPrepareResult* serverPrepareResult,
       Results* results, const SQLString& sql,
-      std::vector<std::vector<Unique::ParameterHolder>>& parametersList,
+      std::vector<ParamSet>& parametersList,
       bool hasLongData)
   {
     bool needToRelease= false;
@@ -1092,7 +1092,7 @@ namespace capi
       bool /*mustExecuteOnMaster*/,
       ServerPrepareResult* serverPrepareResult,
       Results* results,
-      std::vector<Unique::ParameterHolder>& parameters)
+      ParamSet& parameters)
   {
     cmdPrologue();
 
@@ -1103,7 +1103,7 @@ namespace capi
 
       serverPrepareResult->bindParameters(parameters);
 
-      for (uint32_t i= 0; i < serverPrepareResult->getParameters().size(); i++) {
+      for (uint32_t i= 0; parameters.hasLongData() && i < serverPrepareResult->getParameters().size(); i++) {
         if (parameters[i]->isLongData()) {
           if (!ldBuffer) {
             ldBuffer.reset(new sql::bytes(MAX_PACKET_LENGTH - 4));

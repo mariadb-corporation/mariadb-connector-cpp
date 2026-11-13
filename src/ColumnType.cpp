@@ -365,10 +365,6 @@ namespace capi
     return javaTypeName;
   }
 
-  int16_t ColumnType::getType() const {
-    return mariadbType;
-  }
-
   const SQLString& ColumnType::getCppTypeName() const {
     return javaTypeName;
   }

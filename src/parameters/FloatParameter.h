@@ -34,16 +34,18 @@ class FloatParameter  : public ParameterHolder {
   float value;
 
 public:
-  FloatParameter(float value);
+  enum { PlainValueId= 7 };
+
+  FloatParameter(float value) : value(value) {}
   void writeTo(SQLString& str, capi::MYSQL*);
   void  writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
-  const ColumnType& getColumnType() const;
+  const ColumnType& getColumnType() const { return ColumnType::FLOAT; }
   SQLString toString();
-  bool isNullData() const;
-  bool isLongData();
+  bool isNullData() const { return false; }
+  bool isLongData() { return false; }
   void* getValuePtr() { return static_cast<void*>(&value); }
   unsigned long getValueBinLen() const { return sizeof(value); }
   ParameterHolder* clone() { return new FloatParameter(*this); }

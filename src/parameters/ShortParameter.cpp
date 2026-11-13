@@ -25,12 +25,6 @@ namespace sql
 namespace mariadb
 {
 
-  ShortParameter::ShortParameter(int16_t value)
-    : value(value)
-  {
-  }
-
-
   void ShortParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(std::to_string(value));
@@ -66,24 +60,9 @@ namespace mariadb
     return getValueBinLen();
   }
 
-  const ColumnType& ShortParameter::getColumnType() const
-  {
-    return ColumnType::SMALLINT;
-  }
-
   SQLString ShortParameter::toString()
   {
     return std::to_string(value);
-  }
-
-  bool ShortParameter::isNullData() const
-  {
-    return false;
-  }
-
-  bool ShortParameter::isLongData()
-  {
-    return false;
   }
 }
 }

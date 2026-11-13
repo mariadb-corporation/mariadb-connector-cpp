@@ -36,16 +36,18 @@ class ByteParameter  : public ParameterHolder {
   int8_t value;
 
 public:
-  ByteParameter(int8_t value);
+  enum { PlainValueId= 5 };
+
+  ByteParameter(int8_t value) : value(value) {}
   void writeTo(PacketOutputStream& os);
   void writeTo(SQLString& os, capi::MYSQL*);
   int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& buffer);
-  const ColumnType& getColumnType() const;
+  const ColumnType& getColumnType() const { return ColumnType::TINYINT; }
   SQLString toString();
-  bool isNullData() const;
-  bool isLongData();
+  bool isNullData() const { return false; }
+  bool isLongData() { return false; }
   void* getValuePtr() { return static_cast<void*>(&value); }
   unsigned long getValueBinLen() const { return 1; }
   ParameterHolder* clone() { return new ByteParameter(*this); }

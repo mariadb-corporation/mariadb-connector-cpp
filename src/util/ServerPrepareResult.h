@@ -40,6 +40,7 @@ namespace capi
 class ColumnDefinition;
 class ColumnType;
 class ParameterHolder;
+class ParamSet;
 
 class ServerPrepareResult  : public PrepareResult {
 
@@ -49,13 +50,16 @@ class ServerPrepareResult  : public PrepareResult {
   capi::MYSQL_STMT* statementId;
   capi::MYSQL_RES* metadata;
   std::vector<capi::MYSQL_BIND> paramBind;
+  // Id and version of the bind array of the parameters set, that is currently bound to the stmt handle
+  uint64_t boundSetId= 0;
+  uint64_t boundVersion= 0;
   Protocol* unProxiedProtocol= nullptr;
   std::atomic<int32_t> shareCounter{1};
   std::atomic<bool> isBeingDeallocate{false};
   std::mutex lock;
 
 public:
-  typedef std::vector<Unique::ParameterHolder> ParamsetType;
+  typedef ParamSet ParamsetType;
   typedef std::vector<ParamsetType> ParamsetArrType;
   ~ServerPrepareResult();
 

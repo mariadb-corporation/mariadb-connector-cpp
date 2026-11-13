@@ -25,12 +25,6 @@ namespace sql
 namespace mariadb
 {
 
-  IntParameter::IntParameter(int32_t value)
-    : value(value)
-  {
-  }
-
-
   void IntParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(std::to_string(value));
@@ -69,24 +63,9 @@ namespace mariadb
     return getValueBinLen();
   }
 
-  const ColumnType& IntParameter::getColumnType() const
-  {
-    return ColumnType::INTEGER;
-  }
-
   SQLString IntParameter::toString()
   {
     return std::to_string(value);
-  }
-
-  bool IntParameter::isNullData() const
-  {
-    return false;
-  }
-
-  bool IntParameter::isLongData()
-  {
-    return false;
   }
 }
 }

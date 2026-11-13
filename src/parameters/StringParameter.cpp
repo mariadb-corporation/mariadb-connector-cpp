@@ -27,12 +27,6 @@ namespace sql
 namespace mariadb
 {
 
-  StringParameter::StringParameter(const SQLString& str, bool noBackslashEscapes)
-    : stringValue(str)
-    , noBackslashEscapes(noBackslashEscapes)
-  {
-  }
-
   /**
     * Send escaped String to outputStream.
     *
@@ -80,11 +74,6 @@ namespace mariadb
     return getValueBinLen();
   }
 
-  const ColumnType& StringParameter::getColumnType() const
-  {
-    return ColumnType::STRING;
-  }
-
   SQLString StringParameter::toString()
   {
     if (stringValue.size()<1024) {
@@ -93,16 +82,6 @@ namespace mariadb
     else {
       return "'"+stringValue.substr(0, 1024)+"...'";
     }
-  }
-
-  bool StringParameter::isNullData() const
-  {
-    return false;
-  }
-
-  bool StringParameter::isLongData()
-  {
-    return false;
   }
 }
 }

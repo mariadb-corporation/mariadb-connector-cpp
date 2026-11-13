@@ -27,11 +27,6 @@ namespace mariadb
 
   const std::string ByteParameter::hexArray("0123456789ABCDEF");
 
-  ByteParameter::ByteParameter(int8_t value)
-    : value(value)
-  {
-  }
-
   /**
     * Write Byte value to stream using TEXT protocol.
     *
@@ -78,24 +73,9 @@ namespace mariadb
     return getValueBinLen();
   }
 
-  const ColumnType& ByteParameter::getColumnType() const
-  {
-    return ColumnType::TINYINT;
-  }
-
   SQLString ByteParameter::toString()
   {
     return SQLString("0x").append(hexArray[value & 0xF0]).append(hexArray[value & 0x0F]);
-  }
-
-  bool ByteParameter::isNullData() const
-  {
-    return false;
-  }
-
-  bool ByteParameter::isLongData()
-  {
-    return false;
   }
 }
 }

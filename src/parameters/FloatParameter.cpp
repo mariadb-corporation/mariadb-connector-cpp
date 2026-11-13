@@ -25,11 +25,6 @@ namespace sql
 namespace mariadb
 {
 
-  FloatParameter::FloatParameter(float value)
-    : value(value)
-  {
-  }
-
   void FloatParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(std::to_string(value));
@@ -68,24 +63,9 @@ namespace mariadb
     return getValueBinLen();
   }
 
-  const ColumnType& FloatParameter::getColumnType() const
-  {
-    return ColumnType::FLOAT;
-  }
-
   SQLString FloatParameter::toString()
   {
     return std::to_string(value);
-  }
-
-  bool FloatParameter::isNullData() const
-  {
-    return false;
-  }
-
-  bool FloatParameter::isLongData()
-  {
-    return false;
   }
 }
 }

@@ -35,17 +35,19 @@ class NullParameter  : public ParameterHolder {
   const ColumnType& type;
 
 public:
-  NullParameter();
-  NullParameter(const ColumnType& type);
+  enum { PlainValueId= 9 };
+
+  NullParameter() : type(ColumnType::_NULL) {}
+  NullParameter(const ColumnType& _type) : type(_type) {}
   void writeTo(SQLString& str, capi::MYSQL*);
   void  writeTo(PacketOutputStream& str);
   int64_t getApproximateTextProtocolLength() const;
   void writeBinary(PacketOutputStream& pos);
   uint32_t writeBinary(sql::bytes& /*buffer*/) { return 0; }
-  const ColumnType& getColumnType() const;
+  const ColumnType& getColumnType() const { return type; }
   SQLString toString();
-  bool isNullData() const;
-  bool isLongData();
+  bool isNullData() const { return true; }
+  bool isLongData() { return false; }
   void* getValuePtr() { return nullptr; }
   unsigned long getValueBinLen() const { return 0; }
   ParameterHolder* clone() { return new NullParameter(*this); }

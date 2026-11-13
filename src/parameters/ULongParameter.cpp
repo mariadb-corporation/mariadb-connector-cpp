@@ -25,12 +25,6 @@ namespace sql
 namespace mariadb
 {
 
-  ULongParameter::ULongParameter(uint64_t _value)
-    : value(_value)
-  {
-  }
-
-
   void ULongParameter::writeTo(SQLString& str, capi::MYSQL*)
   {
     str.append(std::to_string(value));
@@ -69,24 +63,9 @@ namespace mariadb
     return getValueBinLen();
   }
 
-  const ColumnType& ULongParameter::getColumnType() const
-  {
-    return ColumnType::BIGINT;
-  }
-
   SQLString ULongParameter::toString()
   {
     return std::to_string(value);
-  }
-
-  bool ULongParameter::isNullData() const
-  {
-    return false;
-  }
-
-  bool ULongParameter::isLongData()
-  {
-    return false;
   }
 }
 }

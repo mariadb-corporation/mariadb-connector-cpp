@@ -321,7 +321,7 @@ namespace mariadb
   void ClientSidePreparedStatement::setParameter(int32_t parameterIndex, ParameterHolder* holder)
   {
     if (parameterIndex >= 1 && static_cast<std::size_t>(parameterIndex) < prepareResult->getParamCount() + 1) {
-      parameters[parameterIndex - 1].reset(holder);
+      parameters.set(static_cast<std::size_t>(parameterIndex) - 1, holder);
     }
     else {
       SQLString error("Could not set parameter at position "
@@ -411,15 +411,15 @@ namespace mariadb
   {
     SQLString sb("sql : '"+sqlQuery +"'");
     sb.append(", parameters : [");
-    for (const auto& cit: parameters ) {
-      if (!cit) {
+    for (std::size_t i= 0; i < parameters.size(); ++i) {
+      if (i > 0) {
+        sb.append(",");
+      }
+      if (!parameters[i]) {
         sb.append("NULL");
       }
       else {
-        sb.append(cit->toString());
-      }
-      if (cit != parameters.back()) {
-        sb.append(",");
+        sb.append(parameters[i]->toString());
       }
     }
     sb.append("]");
