@@ -389,8 +389,9 @@ namespace mariadb
    */
   bool ResultSet::getCached(MYSQL_BIND* bind, uint32_t column0basedIdx, uint64_t offset)
   {
-    uint32_t terminateWithNull= 1, position= column0basedIdx + 1;
+    uint32_t terminateWithNull= 1;
     bool intAppType= false;
+    const ColumnDefinition* columnInfo= &columnsInformation[column0basedIdx];
 
     if (bind->error == nullptr) {
       bind->error= &bind->error_value;
@@ -400,7 +401,6 @@ namespace mariadb
     }
     if (row->lastValueWasNull()) {
       *bind->is_null= '\1';
-      checkObjectRange(position);
       return false;
     }
     else {
@@ -416,33 +416,35 @@ namespace mariadb
     {
     case MYSQL_TYPE_BIT:
     case MYSQL_TYPE_TINY:
-      *static_cast<uint8_t*>(bind->buffer)= getByte(position);
+      *static_cast<uint8_t*>(bind->buffer)= row->getInternalByte(columnInfo);
       *bind->length= 1;
       intAppType= true;
       break;
     case MYSQL_TYPE_YEAR:
     case MYSQL_TYPE_SHORT:
-      *static_cast<int16_t*>(bind->buffer)= getShort(position);
+      *static_cast<int16_t*>(bind->buffer)= row->getInternalShort(columnInfo);
       *bind->length= 2;
       intAppType= true;
       break;
     case MYSQL_TYPE_INT24:
     case MYSQL_TYPE_LONG:
       if (bind->is_unsigned) {
-        *static_cast<uint32_t*>(bind->buffer)= getUInt(position);
+        int64_t value= row->getInternalLong(columnInfo);
+        row->rangeCheck("uint32_t", 0, UINT32_MAX, value, columnInfo);
+        *static_cast<uint32_t*>(bind->buffer)= static_cast<uint32_t>(value);
       }
       else {
-        *static_cast<int32_t*>(bind->buffer)= getInt(position);
+        *static_cast<int32_t*>(bind->buffer)= row->getInternalInt(columnInfo);
       }
       *bind->length= 4;
       intAppType= true;
       break;
     case MYSQL_TYPE_FLOAT:
-      *static_cast<float*>(bind->buffer)= getFloat(position);
+      *static_cast<float*>(bind->buffer)= row->getInternalFloat(columnInfo);
       *bind->length= 4;
       break;
     case MYSQL_TYPE_DOUBLE:
-      *static_cast<double*>(bind->buffer)= getDouble(position);
+      *static_cast<double*>(bind->buffer)= static_cast<double>(row->getInternalDouble(columnInfo));
       *bind->length= 8;
       break;
     case MYSQL_TYPE_NULL:
@@ -451,10 +453,10 @@ namespace mariadb
       break;
     case MYSQL_TYPE_LONGLONG:
       if (bind->is_unsigned) {
-        *static_cast<uint64_t*>(bind->buffer)= getUInt64(position);
+        *static_cast<uint64_t*>(bind->buffer)= static_cast<uint64_t>(row->getInternalULong(columnInfo));
       }
       else {
-        *static_cast<int64_t*>(bind->buffer)= getLong(position);
+        *static_cast<int64_t*>(bind->buffer)= row->getInternalLong(columnInfo);
       }
       *bind->length= 8;
       intAppType= true;

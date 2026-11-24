@@ -371,21 +371,9 @@ namespace mariadb
     buf= &_buf;
   }
 
-  uint32_t Row::getLengthMaxFieldSize()
-  {
-    return length;
-  }
-
-
   uint32_t Row::getMaxFieldSize()
   {
     return 0;
-  }
-
-
-  bool Row::lastValueWasNull()
-  {
-    return (lastValueNull & BIT_LAST_FIELD_NULL) != 0;
   }
 
 

@@ -809,7 +809,9 @@ namespace mariadb
   void ResultSetBin::bind(MYSQL_BIND* bind)
   {
     //mysql_stmt_bind_result(capiStmtHandle, bind);
-    resultBind.reset(new MYSQL_BIND[columnInformationLength]());
+    if (!resultBind) {
+      resultBind.reset(new MYSQL_BIND[columnInformationLength]);
+    }
     std::memcpy(resultBind.get(), bind, columnInformationLength*sizeof(MYSQL_BIND));
     if (!resultCodec.empty()) {
       for (const auto& it : resultCodec) {
@@ -847,8 +849,12 @@ namespace mariadb
         reBound= false;
       }
       if (resultCodec.empty()) {
+        const bool skipDummy= data.empty();
         for (int32_t i= 0; i < columnInformationLength; ++i) {
           MYSQL_BIND* bind= resultBind.get() + i;
+          if (skipDummy && (bind->flags & MADB_BIND_DUMMY) != 0) {
+            continue;
+          }
           if (bind->error == nullptr) {
             bind->error= &bind->error_value;
           }
