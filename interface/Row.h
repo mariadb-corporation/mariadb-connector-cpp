@@ -105,7 +105,7 @@ public:
 
   void resetRow(std::vector<bytes_view>& buf);
   virtual void setPosition(int32_t position)=0;
-  uint32_t getLengthMaxFieldSize();
+  inline uint32_t getLengthMaxFieldSize() { return length; }
   uint32_t getMaxFieldSize();
 
   virtual int32_t fetchNext()=0;
@@ -129,7 +129,7 @@ public:
 
   virtual bool isBinaryEncoded()=0;
   virtual void cacheCurrentRow(std::vector<bytes_view>& rowData, std::size_t columnCount)=0;
-  bool lastValueWasNull();
+  inline bool lastValueWasNull() { return (lastValueNull & BIT_LAST_FIELD_NULL) != 0; }
 
 protected:
   SQLString zeroFillingIfNeeded(const SQLString& value, const ColumnDefinition* columnInformation);
