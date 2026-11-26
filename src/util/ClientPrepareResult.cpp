@@ -112,7 +112,7 @@ namespace mariadb
 
   static inline std::size_t skipBlockComment(const char* query, std::size_t queryLength, std::size_t i)
   {
-    ++i;
+    i+= 2;
     while (i < queryLength && !(query[i] == '/' && query[i - 1] == '*')) {
       ++i;
     }
@@ -493,10 +493,10 @@ namespace mariadb
           && queryLength > i + 7
           && isKeyword(query + i + 1, "elect", 5)) {
 
-          if (i > 0 && (query[i - 1] > ' ' && SpecChars.find_first_of(query[i - 1]) == std::string::npos)) {
+          if (i > 0 && (static_cast<unsigned char>(query[i - 1]) > ' ' && SpecChars.find_first_of(query[i - 1]) == std::string::npos)) {
             break;
           }
-          if (query[i + 6] > ' ' && SpecChars.find_first_of(query[i + 6]) == std::string::npos) {
+          if (static_cast<unsigned char>(query[i + 6]) > ' ' && SpecChars.find_first_of(query[i + 6]) == std::string::npos) {
             break;
           }
           reWritablePrepare= false;
@@ -506,10 +506,10 @@ namespace mariadb
       case 'v':
       case 'V':
         if (!preValuePart1Set
-          && (i == 0 || query[i - 1] == ')' || ((int8_t)query[i - 1] <= 40))
+          && (i == 0 || query[i - 1] == ')' || (static_cast<unsigned char>(query[i - 1]) <= 40))
           && queryLength > i + 7
           && isKeyword(query + i + 1, "alues", 5)
-          && (query[i + 6] == '(' || ((int8_t)query[i + 6] <= 40))) {
+          && (query[i + 6] == '(' || (static_cast<unsigned char>(query[i + 6]) <= 40))) {
           i+= 5;
           preValuePart1= QueryPart(partBegin, i + 1 - partBegin);
           preValuePart1Set= true;

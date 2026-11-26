@@ -2630,6 +2630,7 @@ void preparedstatement::rewriteParsedQueries()
     {"INSERT INTO rewriteParsedQueries SELECT ?, ?", 2, 1, 3},
     {"INSERT INTO rewriteParsedQueries(id) VALUES (?), (?)", 2, 2, 6},
     {"INSERT INTO rewriteParsedQueries(id, val) VALUES (2--1, ?)", 1, 1, 3},
+    {"INSERT INTO rewriteParsedQueries(id) VALUES (/*/ ? */ ?)", 1, 1, 3},
     {"UPDATE rewriteParsedQueries SET val=? WHERE id=?", 2, 0, 0},
     {"DELETE FROM rewriteParsedQueries WHERE id IN (?, ?) OR val=?", 3, 0, 0}
   };
@@ -2660,6 +2661,21 @@ void preparedstatement::rewriteParsedQueries()
     ASSERT(res->next());
     ASSERT_EQUALS(test.rowsAfterBatch, res->getInt(1));
   }
+
+  // The table name is "rewrit" + e with acute(2 bytes in utf8) + "values". The last byte of the multibyte character was
+  // taken for the keyword boundary, and "values" in the name for the keyword
+  createSchemaObject("TABLE", "rewrit\xc3\xa9values", "(id int not NULL)");
+  pstmt.reset(con->prepareStatement("INSERT INTO rewrit\xc3\xa9values (id) VALUES (?)"));
+  for (int32_t row= 1; row < 4; ++row) {
+    pstmt->setInt(1, row);
+    pstmt->addBatch();
+  }
+  pstmt->executeBatch();
+
+  res.reset(stmt->executeQuery("SELECT COUNT(*), SUM(id) FROM rewrit\xc3\xa9values"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(3, res->getInt(1));
+  ASSERT_EQUALS(6, res->getInt(2));
 }
 } /* namespace classes */
 } /* namespace testsuite */
