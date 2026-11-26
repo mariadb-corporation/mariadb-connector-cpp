@@ -2603,5 +2603,79 @@ void preparedstatement::concpp172_executeAfterFailedBatch()
   ASSERT_EQUALS(2, res->getInt(1));
   ASSERT(!res->next());
 }
+
+void preparedstatement::rewriteParsedQueries()
+{
+  sql::ConnectOptionsMap connection_properties{
+    {"userName", user},
+    {"password", passwd},
+    {"useBulkStmts", "false"},
+    {"rewriteBatchedStatements", "true"},
+    {"useTls", useTls ? "true" : "false"}};
+
+  con.reset(driver->connect(url, connection_properties));
+  stmt.reset(con->createStatement());
+  createSchemaObject("TABLE", "rewriteParsedQueries", "(id int not NULL, val VARCHAR(31) NOT NULL DEFAULT '')");
+
+  struct {
+    const char* query;
+    int32_t paramCount;
+    int32_t rowsAfterExec;
+    int32_t rowsAfterBatch;
+  } testCase[]= {
+    {"INSERT INTO rewriteParsedQueries VALUES(?,?)", 2, 1, 3},
+    {"INSERT INTO rewriteParsedQueries VALUES (?, '?') -- ?", 1, 1, 3},
+    {"/* ? */ INSERT INTO rewriteParsedQueries VALUE (?, ?)", 2, 1, 3},
+    {"INSERT INTO rewriteParsedQueries SET id=?, val=?", 2, 1, 3},
+    {"INSERT INTO rewriteParsedQueries SELECT ?, ?", 2, 1, 3},
+    {"INSERT INTO rewriteParsedQueries(id) VALUES (?), (?)", 2, 2, 6},
+    {"INSERT INTO rewriteParsedQueries(id, val) VALUES (2--1, ?)", 1, 1, 3},
+    {"INSERT INTO rewriteParsedQueries(id) VALUES (/*/ ? */ ?)", 1, 1, 3},
+    {"UPDATE rewriteParsedQueries SET val=? WHERE id=?", 2, 0, 0},
+    {"DELETE FROM rewriteParsedQueries WHERE id IN (?, ?) OR val=?", 3, 0, 0}
+  };
+
+  for (auto& test : testCase) {
+    stmt->executeUpdate("DELETE FROM rewriteParsedQueries");
+    pstmt.reset(con->prepareStatement(test.query));
+    ASSERT_EQUALS(test.paramCount, static_cast<int32_t>(pstmt->getParameterMetaData()->getParameterCount()));
+
+    for (int32_t i= 1; i <= test.paramCount; ++i) {
+      pstmt->setInt(i, 100 + i);
+    }
+    pstmt->executeUpdate();
+
+    res.reset(stmt->executeQuery("SELECT COUNT(*) FROM rewriteParsedQueries"));
+    ASSERT(res->next());
+    ASSERT_EQUALS(test.rowsAfterExec, res->getInt(1));
+
+    for (int32_t row= 1; row < 3; ++row) {
+      for (int32_t i= 1; i <= test.paramCount; ++i) {
+        pstmt->setInt(i, 100 * row + i);
+      }
+      pstmt->addBatch();
+    }
+    pstmt->executeBatch();
+
+    res.reset(stmt->executeQuery("SELECT COUNT(*) FROM rewriteParsedQueries"));
+    ASSERT(res->next());
+    ASSERT_EQUALS(test.rowsAfterBatch, res->getInt(1));
+  }
+
+  // The table name is "rewrit" + e with acute(2 bytes in utf8) + "values". The last byte of the multibyte character was
+  // taken for the keyword boundary, and "values" in the name for the keyword
+  createSchemaObject("TABLE", "rewrit\xc3\xa9values", "(id int not NULL)");
+  pstmt.reset(con->prepareStatement("INSERT INTO rewrit\xc3\xa9values (id) VALUES (?)"));
+  for (int32_t row= 1; row < 4; ++row) {
+    pstmt->setInt(1, row);
+    pstmt->addBatch();
+  }
+  pstmt->executeBatch();
+
+  res.reset(stmt->executeQuery("SELECT COUNT(*), SUM(id) FROM rewrit\xc3\xa9values"));
+  ASSERT(res->next());
+  ASSERT_EQUALS(3, res->getInt(1));
+  ASSERT_EQUALS(6, res->getInt(2));
+}
 } /* namespace classes */
 } /* namespace testsuite */

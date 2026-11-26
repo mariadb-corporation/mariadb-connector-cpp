@@ -85,6 +85,7 @@ public:
     TEST_CASE(concpp153_mbCsParamEscaping);
     TEST_CASE(concpp172_failedBatch);
     TEST_CASE(concpp172_executeAfterFailedBatch);
+    TEST_CASE(rewriteParsedQueries);
   }
 
   /**
@@ -192,6 +193,7 @@ public:
   void bytesArrParam();
 
   void concpp138_useRsAfterConClose();
+  void rewriteParsedQueries();
 
   void concpp153_mbCsParamEscaping();
 
